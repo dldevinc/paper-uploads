@@ -9,7 +9,7 @@ import os
 import sys
 from shutil import rmtree
 
-from setuptools import setup, Command
+from setuptools import setup, find_packages, Command
 
 # Package meta-data.
 NAME = 'paper-uploads'
@@ -21,7 +21,7 @@ VERSION = '0.0.1'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'django>2.0,<3.0',
+    'django>2.1,<3.0',
     'variations>0.0,<0.1',
     'filetype>1.0',
     'python-magic>0.4,<0.5',
@@ -30,8 +30,8 @@ REQUIRED = [
 
 # What packages are optional?
 EXTRAS = {
-    'django-rq': ['django-rq>2.1,<2.2'],
-    'face_recognition': ['face_recognition>1.2,<1.3'],
+    'rq': ['django-rq>2.1,<2.2'],
+    'facedetection': ['face_recognition>1.2,<1.3'],
 }
 
 KEYWORDS = [
@@ -112,9 +112,7 @@ setup(
     author_email=EMAIL,
     url=URL,
     license='BSD',
-    packages=[
-        'paper_uploads',
-    ],
+    packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     package_data={
         'paper_uploads': [
             'static/paper_uploads/dist/*',
