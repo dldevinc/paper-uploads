@@ -1,0 +1,32 @@
+{
+  "name": "paper-uploads",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/js/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.5.5",
+    "@babel/plugin-syntax-dynamic-import": "^7.2.0",
+    "@babel/preset-env": "^7.5.5",
+    "autoprefixer": "^9.6.1",
+    "babel-loader": "^8.0.6",
+    "deepmerge": "^4.0.0",
+    "fast-async": "^6.3.8",
+    "fast-css-loader": "^1.0.2",
+    "file-loader": "^4.2.0",
+    "fine-uploader": "^5.16.2",
+    "mini-css-extract-plugin": "^0.8.0",
+    "node-sass": "^4.12.0",
+    "optimize-css-assets-webpack-plugin": "^5.0.3",
+    "pixrem": "^5.0.0",
+    "postcss-loader": "^3.0.0",
+    "sass-loader": "^7.3.1",
+    "terser-webpack-plugin": "^1.4.1",
+    "webpack": "^4.39.3",
+    "webpack-cli": "^3.3.7"
+  }
+}
