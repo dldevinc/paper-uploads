@@ -11,6 +11,7 @@ const DIST_DIR = 'paper_uploads/static/paper_uploads/dist';
 
 
 module.exports = {
+    devtool: 'source-map',
     mode: 'production',
     entry: {
         widget: path.resolve(`${SOURCE_DIR}/js/widget.js`),
@@ -94,6 +95,7 @@ module.exports = {
             new TerserPlugin({
                 parallel: true,
                 cache: 'cache',
+                sourceMap: true,
                 extractComments: true,
             }),
             new OptimizeCSSAssetsPlugin({
