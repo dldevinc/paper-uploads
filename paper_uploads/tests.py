@@ -22,15 +22,15 @@ class TestFiles(TestCase):
     def test_file_upload(self):
         from .models import UploadedFile
 
-        file = UploadedFile(
-            file=File(
-                open(os.path.join(TESTS_PATH, 'small.pdf'), 'rb'),
-                name='bubuka.PDF'
-            ),
-        )
-        file.save()
+        with open(os.path.join(TESTS_PATH, 'small.pdf'), 'rb') as fp:
+            file = UploadedFile(
+                file=File(fp, name='bubuka.PDF'),
+            )
+            file.save()
+
         try:
             self.assertEqual(file.name, 'bubuka')
+            self.assertEqual(file.display_name, 'bubuka')
             self.assertEqual(file.extension, 'pdf')
             self.assertEqual(file.size, 9678)
             self.assertEqual(file.hash, 'bebc2ddd2a8b8270b359990580ff346d14c021fa')
@@ -42,13 +42,12 @@ class TestFiles(TestCase):
     def test_image_upload(self):
         from .models import UploadedImage
 
-        image = UploadedImage(
-            file=File(
-                open(os.path.join(TESTS_PATH, 'image.jpg'), 'rb'),
-                name='the car.JPEG'
-            ),
-        )
-        image.save()
+        with open(os.path.join(TESTS_PATH, 'image.jpg'), 'rb') as fp:
+            image = UploadedImage(
+                file=File(fp, name='the car.JPEG'),
+            )
+            image.save()
+
         try:
             self.assertEqual(image.name, 'the car')
             self.assertEqual(image.extension, 'jpeg')
@@ -69,13 +68,14 @@ class TestFiles(TestCase):
 
         gallery = TestGallery.objects.create()
         try:
-            item = GalleryFileItem(
-                file=File(
-                    open(os.path.join(TESTS_PATH, 'small.pdf'), 'rb'),
-                    name='bubuka.PDF'
-                ),
-            )
-            item.attach_to(gallery, 'file')
+            with open(os.path.join(TESTS_PATH, 'small.pdf'), 'rb') as fp:
+                item = GalleryFileItem(
+                    file=File(fp, name='bubuka.PDF'),
+                )
+                item.attach_to(gallery, 'file')
+                item.full_clean()
+                item.save()
+
             self.assertEqual(item.name, 'bubuka')
             self.assertEqual(item.extension, 'pdf')
             self.assertEqual(item.size, 9678)
