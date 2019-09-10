@@ -47,7 +47,7 @@ class Command(BaseCommand):
                             raise TypeError("variation '%s' is undefined" % name)
 
                 # recut field
-                instances = model._meta.base_manager.exclude((fieldname, None))
+                instances = model._meta.base_manager.using(self.database).exclude((fieldname, None))
                 instance_count = instances.count()
                 for index, instance in enumerate(instances, start=1):
                     if self.verbosity >= 1:
@@ -76,7 +76,7 @@ class Command(BaseCommand):
                             path
                         )
                     ))
-                module.recut(names=variations)
+                module.recut(names=variations, using=self.database)
             else:
                 self.stderr.write(self.style.ERROR(
                     "Error: the model '%s' is not a subclass of Gallery" % path

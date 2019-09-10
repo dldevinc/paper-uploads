@@ -269,6 +269,7 @@ class UploadedImageBase(UploadedFileBase):
             'model_name': self._meta.model_name,
             'object_id': self.pk,
             'names': names,
+            'using': self._state.db,
         })
 
     def _postprocess(self, names=()):

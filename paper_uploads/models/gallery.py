@@ -1,11 +1,11 @@
 import magic
 import posixpath
-from django.db import models
+from django.db import models, DEFAULT_DB_ALIAS
 from django.core import checks
-from django.db.models.base import ModelBase
 from django.template import loader
 from django.utils.timezone import now
 from django.db.models import functions
+from django.db.models.base import ModelBase
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from django.utils.module_loading import import_string
@@ -221,21 +221,6 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
         }
 
 
-class GalleryRecutDescriptor:
-    """
-    Дескриптор, позволяющий вызывать метод recut() как из объекта галереи,
-    так и из класса.
-    """
-    def __get__(self, instance, owner):
-        if instance is None:
-            def decorator(*args, **kwargs):
-                for instance in owner.objects.all():
-                    instance.recut(*args, **kwargs)
-            return decorator
-        else:
-            return instance._recut
-
-
 class GalleryBase(models.Model):
     # Карта поддерживаемых моделей элементов.
     # Пример:
@@ -295,11 +280,11 @@ class GalleryBase(models.Model):
             raise ValueError('Unsupported gallery item type: %s' % item_type)
         return self.items.filter(item_type=item_type).order_by('order')
 
-    def _recut_sync(self, names=()):
-        for item in self.items.filter(item_type__in=self.RECUTABLE_ITEM_TYPES):
+    def _recut_sync(self, names=(), using=DEFAULT_DB_ALIAS):
+        for item in self.items.using(using).filter(item_type__in=self.RECUTABLE_ITEM_TYPES):
             item._recut_sync(names)
 
-    def _recut_async(self, names=()):
+    def _recut_async(self, names=(), using=DEFAULT_DB_ALIAS):
         from django_rq.queues import get_queue
         queue = get_queue(settings.RQ_QUEUE_NAME)
         queue.enqueue_call(tasks.recut_gallery, kwargs={
@@ -307,15 +292,14 @@ class GalleryBase(models.Model):
             'model_name': self._meta.model_name,
             'object_id': self.pk,
             'names': names,
+            'using': using,
         })
 
-    def _recut(self, names=None):
+    def recut(self, names=None, using=DEFAULT_DB_ALIAS):
         if settings.RQ_ENABLED:
-            self._recut_async(names)
+            self._recut_async(names, using=using)
         else:
-            self._recut_sync(names)
-
-    recut = GalleryRecutDescriptor()
+            self._recut_sync(names, using=using)
 
 
 # ==============================================================================
@@ -404,7 +388,7 @@ class Gallery(GalleryBase, metaclass=GalleryProxyChilds):
         'file': GalleryFileItem,
         'svg': GallerySVGItem,
     }
-    RECUTABLE_ITEM_TYPES = ['image']
+    RECUTABLE_ITEM_TYPES = ['image']    # TODO: оно все равно одно. Может переделать?
 
     # поле, ссылающееся на одно из изображений галереи (для экономии SQL-запросов)
     cover = models.ForeignKey(GalleryImageItem, verbose_name=_('cover image'),
