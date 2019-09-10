@@ -35,22 +35,18 @@
 утилитами как `mozjpeg` и `pngquant`.
 
 ## Installation
-Add `paper_uploads` to your INSTALLED_APPS setting.
 ```python
 INSTALLED_APPS = [
     # ...
     'paper_uploads',
     # ...
 ]
-```
 
-Setup upload settings
-```python
 PAPER_UPLOADS = {
     'STORAGE': 'django.core.files.storage.FileSystemStorage',
     'RQ_ENABLED': True,
     'POSTPROCESS_JPEG': {
-        'COMMAND': 'mozjpeg',
+        'COMMAND': 'cjpeg',
         'ARGUMENTS': '-copy none -progressive -optimize -outfile {file} {file}'
     },
     'POSTPROCESS_PNG': {
@@ -71,6 +67,7 @@ class Page(models.Model):
 ```
 
 ## ImageField
+Натсройки вариаций идентичны настройкам модуля [variations](https://github.com/dldevinc/variations).
 ```python
 from pilkit import processors
 from django.db import models
@@ -142,6 +139,30 @@ class PageImages(ImageGallery):
 class Page(models.Model):
     files = GalleryField(PageFiles, verbose_name=_('files'))
     images = GalleryField(PageImages, verbose_name=_('images'))
+```
+
+## Programmatically upload files
+```python
+from django.core.files import File
+from paper_uploads.models import UploadedFile, GalleryImageItem
+
+# file / image
+with open('file.doc', 'rb') as fp:
+    file = UploadedFile(
+        file=File(fp, name='file.doc'),
+    )
+    file.full_clean()   # optional validation
+    file.save()
+
+# gallery
+gallery = PageGallery.objects.create()
+with open('image.jpg', 'rb') as fp:
+    item = GalleryImageItem(
+        file=File(fp, name='image.jpg'),
+    )
+    item.attach_to(gallery)
+    item.full_clean()   # optional validation
+    item.save()
 ```
 
 ## Appearance
