@@ -445,7 +445,6 @@ class ImageGallery(Gallery):
     """
     Галерея, позволяющая хранить только изображения.
     """
-
     ALLOWED_ITEM_TYPES = {
         'image': GalleryImageItem,
     }
