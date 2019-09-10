@@ -127,9 +127,10 @@ Object.defineProperty(ImageWidget.prototype, 'loading', {
  */
 ImageWidget.prototype.initUploader = function() {
     const _this = this;
-    const uploader = new Uploader(this.element, {
+    return new Uploader(this.element, {
         url: this._opts.urls.upload,
         button: this.uploadButton,
+        acceptFiles: 'image/*',
         dropzones: this.element.querySelectorAll('.dropzone-overlay'),
     }).on('submit', function(id) {
         _this.trigger('upload:submit', [id]);
@@ -166,11 +167,6 @@ ImageWidget.prototype.initUploader = function() {
     }).on('all_complete', function() {
         _this.loading = false;
     });
-
-    // Accept attribute
-    this.uploadButton.querySelector('input[type=file]').setAttribute('accept', 'image/*');
-
-    return uploader;
 };
 
 /**

@@ -11,6 +11,7 @@ function Uploader(element, options) {
         button: null,
         dropzones: null,
         extraData: null,
+        acceptFiles: null,
         filters: []
     }, options);
 
@@ -50,6 +51,9 @@ Uploader.prototype._makeUploader = function() {
         },
         text: {
             fileInputTitle: 'Select file'
+        },
+        validation: {
+            acceptFiles: this._opts.acceptFiles,
         },
         callbacks: {
             onSubmit: function(id) {
