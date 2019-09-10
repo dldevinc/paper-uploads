@@ -115,13 +115,13 @@ class VariationFile(File):
 
 
 class UploadedImageBase(UploadedFileBase):
-    width = models.PositiveSmallIntegerField(_('width'), default=0, editable=False)
-    height = models.PositiveSmallIntegerField(_('height'), default=0, editable=False)
-    cropregion = models.CharField(_('crop region'), max_length=24, blank=True, editable=False)
     alt = models.CharField(_('alternate text'), max_length=255, blank=True,
         help_text=_('This text will be used by screen readers, search engines, or when the image cannot be loaded'))
     title = models.CharField(_('title'), max_length=255, blank=True,
         help_text=_('The title is used as a tooltip when the user hovers the mouse over the image'))
+    width = models.PositiveSmallIntegerField(_('width'), default=0, editable=False)
+    height = models.PositiveSmallIntegerField(_('height'), default=0, editable=False)
+    cropregion = models.CharField(_('crop region'), max_length=24, blank=True, editable=False)
 
     class Meta(UploadedFileBase.Meta):
         abstract = True

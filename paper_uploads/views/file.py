@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
-from ..forms.dialogs import FileEditForm
+from ..forms.dialogs.file import UploadedFileDialog
 from ..models import UploadedFileBase
 from .. import exceptions
 from .. import utils
@@ -94,7 +94,7 @@ def delete(request):
 class ChangeView(PermissionRequiredMixin, FormView):
     template_name = 'paper_uploads/popups/edit_form.html'
     permission_required = 'paper_uploads.change'
-    form_class = FileEditForm
+    form_class = UploadedFileDialog
     instance = None
 
     def get_instance(self):

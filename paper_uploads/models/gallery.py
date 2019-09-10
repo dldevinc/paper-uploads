@@ -152,7 +152,6 @@ class GalleryFileItemBase(GalleryItemBase, UploadedFileBase):
     file = models.FileField(_('file'), max_length=255, storage=upload_storage,
         upload_to=settings.GALLERY_FILES_UPLOAD_TO)
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
-    preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
 
     class Meta(GalleryItemBase.Meta):
         abstract = True
@@ -164,19 +163,12 @@ class GalleryFileItemBase(GalleryItemBase, UploadedFileBase):
             **super().as_dict(),
             'name': self.canonical_name,
             'url': self.file.url,
-            'preview': loader.render_to_string('paper_uploads/gallery_item/preview/file.html', {
-                'item': self,
-                'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
-            })
         }
 
     def pre_save_new_file(self):
         super().pre_save_new_file()
         if not self.pk and not self.display_name:
             self.display_name = self.name
-        icon = FILE_ICONS.get(self.extension, FILE_ICON_DEFAULT)
-        self.preview = static('paper_uploads/dist/image/{}.svg'.format(icon))
 
 
 class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
@@ -313,15 +305,29 @@ class GalleryBase(models.Model):
 
 
 class GalleryFileItem(GalleryFileItemBase):
-    FORM_CLASS = 'paper_uploads.forms.dialogs.GalleryFileItemForm'
+    FORM_CLASS = 'paper_uploads.forms.dialogs.gallery.GalleryFileDialog'
+
+    preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
+
+    def as_dict(self):
+        return {
+            **super().as_dict(),
+            'preview': loader.render_to_string('paper_uploads/gallery_item/preview/file.html', {
+                'item': self,
+                'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
+                'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
+            })
+        }
+
+    def pre_save_new_file(self):
+        super().pre_save_new_file()
+        icon = FILE_ICONS.get(self.extension, FILE_ICON_DEFAULT)
+        self.preview = static('paper_uploads/dist/image/{}.svg'.format(icon))
 
 
-class GallerySVGItem(GalleryItemBase, UploadedFileBase):
-    FORM_CLASS = 'paper_uploads.forms.dialogs.GalleryFileItemForm'
+class GallerySVGItem(GalleryFileItemBase):
+    FORM_CLASS = 'paper_uploads.forms.dialogs.gallery.GalleryFileDialog'
     TEMPLATE_NAME = 'paper_uploads/gallery_item/svg.html'
-
-    file = models.FileField(_('file'), max_length=255, storage=upload_storage,
-        upload_to=settings.GALLERY_FILES_UPLOAD_TO)
 
     class Meta(GalleryItemBase.Meta):
         verbose_name = _('SVG-file')
@@ -330,8 +336,6 @@ class GallerySVGItem(GalleryItemBase, UploadedFileBase):
     def as_dict(self):
         return {
             **super().as_dict(),
-            'name': self.canonical_name,
-            'url': self.file.url,
             'preview': loader.render_to_string('paper_uploads/gallery_item/preview/svg.html', {
                 'item': self,
                 'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
@@ -341,7 +345,7 @@ class GallerySVGItem(GalleryItemBase, UploadedFileBase):
 
 
 class GalleryImageItem(GalleryImageItemBase):
-    FORM_CLASS = 'paper_uploads.forms.dialogs.GalleryImageItemForm'
+    FORM_CLASS = 'paper_uploads.forms.dialogs.gallery.GalleryImageDialog'
 
     def get_variations(self):
         if not hasattr(self, '_variations_cache'):

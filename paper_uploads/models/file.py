@@ -22,10 +22,10 @@ class UploadedFile(UploadedFileBase):
 
     def as_dict(self):
         return {
-            'display_name': self.display_name,
+            **super().as_dict(),
+            'name': self.display_name,
             'file_info': '({ext}, {size})'.format(
                 ext=self.extension,
                 size=filesizeformat(self.size)
             ),
-            **super().as_dict(),
         }

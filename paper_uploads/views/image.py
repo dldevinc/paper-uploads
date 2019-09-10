@@ -9,7 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
-from ..forms.dialogs import ImageEditForm
+from ..forms.dialogs.image import UploadedImageDialog
 from ..models import UploadedImageBase
 from .. import exceptions
 from .. import utils
@@ -112,7 +112,7 @@ def delete(request):
 class ChangeView(PermissionRequiredMixin, FormView):
     template_name = 'paper_uploads/popups/edit_form.html'
     permission_required = 'paper_uploads.change'
-    form_class = ImageEditForm
+    form_class = UploadedImageDialog
     instance = None
 
     def get_instance(self):
