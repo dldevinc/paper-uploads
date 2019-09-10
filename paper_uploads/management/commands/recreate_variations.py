@@ -47,7 +47,7 @@ class Command(BaseCommand):
                             raise TypeError("variation '%s' is undefined" % name)
 
                 # recut field
-                instances = model.objects.exclude((fieldname, None))
+                instances = model._meta.base_manager.exclude((fieldname, None))
                 instance_count = instances.count()
                 for index, instance in enumerate(instances, start=1):
                     if self.verbosity >= 1:
