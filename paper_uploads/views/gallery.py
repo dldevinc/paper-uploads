@@ -97,9 +97,6 @@ def upload_item(request):
         utils.logger.exception('Error')
         return helpers.error_response('Multiple objects returned')
 
-    model_class = gallery_cls.ALLOWED_ITEM_TYPES[item_type]
-    owner_field_name = request.POST.get('paperOwnerFieldname')
-
     # Определение модели владельца файла
     owner_content_type = None
     if gallery is None:
@@ -120,9 +117,10 @@ def upload_item(request):
                 # Создание галереи
                 gallery = gallery_cls._meta.default_manager.create(
                     owner_ct=owner_content_type,
-                    owner_fieldname=owner_field_name
+                    owner_fieldname=request.POST.get('paperOwnerFieldname')
                 )
 
+            model_class = gallery_cls.ALLOWED_ITEM_TYPES[item_type]
             instance = model_class(
                 content_type_id=gallery_content_type_id,
                 object_id=gallery.pk,
