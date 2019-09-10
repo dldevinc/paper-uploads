@@ -1,8 +1,21 @@
 import os
 from django.test import TestCase
 from django.core.files import File
+from .models import Gallery
 
 TESTS_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'tests'))
+
+
+class TestGallery(Gallery):
+    pass
+
+
+class TestGalleryWithVariations(Gallery):
+    VARIATIONS = dict(
+        foo=dict(
+            size=(100, 100)
+        )
+    )
 
 
 class TestFiles(TestCase):
@@ -49,18 +62,10 @@ class TestFiles(TestCase):
             image.delete()
 
     def test_gallery_proxy_inheritance(self):
-        from .models import Gallery
-
-        class TestGallery(Gallery):
-            pass
-
         self.assertTrue(TestGallery._meta.proxy)
 
     def test_gallery_file(self):
-        from .models import Gallery, GalleryFileItem
-
-        class TestGallery(Gallery):
-            pass
+        from .models import GalleryFileItem
 
         gallery = TestGallery.objects.create()
         try:
@@ -83,16 +88,9 @@ class TestFiles(TestCase):
             gallery.delete()
 
     def test_gallery_image(self):
-        from .models import Gallery, GalleryImageItem
+        from .models import GalleryImageItem
 
-        class TestGallery(Gallery):
-            VARIATIONS = dict(
-                foo=dict(
-                    size=(100, 100)
-                )
-            )
-
-        gallery = TestGallery.objects.create()
+        gallery = TestGalleryWithVariations.objects.create()
         try:
             item = GalleryImageItem(
                 file=File(
