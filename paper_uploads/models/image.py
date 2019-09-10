@@ -318,8 +318,11 @@ class UploadedImageBase(UploadedFileBase):
                 shell=True
             )
             out, err = process.communicate()
-            utils.logger.debug('Run: {} {}\nOutput: {}'.format(
-                postprocess_cmd, postprocess_args, out.decode()
+            utils.logger.debug('Run: {} {}\nstdout: {}\nstderr: {}'.format(
+                postprocess_cmd,
+                postprocess_args,
+                out.decode() if out is not None else '',
+                err.decode() if err is not None else '',
             ))
 
     def recut(self, names=None):
