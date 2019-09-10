@@ -264,6 +264,30 @@ class GalleryBase(models.Model):
         verbose_name = _('gallery')
         verbose_name_plural = _('galleries')
 
+    @classmethod
+    def check(cls, **kwargs):
+        return [
+            *super().check(**kwargs),
+            *cls._check_image_item_unique(),
+        ]
+
+    @classmethod
+    def _check_image_item_unique(cls, **kwargs):
+        errors = []
+        image_models = tuple(
+            model
+            for model in cls.ALLOWED_ITEM_TYPES.values()
+            if issubclass(model, GalleryImageItemBase)
+        )
+        if len(image_models) > 1:
+            errors.append(
+                checks.Error(
+                    "Gallery must not contain multiple image items",
+                    obj=cls,
+                )
+            )
+        return errors
+
     def get_items(self, item_type=None):
         if item_type is None:
             return self.items.order_by('order')
