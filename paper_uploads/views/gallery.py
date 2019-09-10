@@ -238,8 +238,8 @@ def sort_items(request):
     return helpers.success_response()
 
 
-class ChangeImageView(PermissionRequiredMixin, FormView):
-    template_name = 'paper_uploads/popups/edit_form.html'
+class ChangeView(PermissionRequiredMixin, FormView):
+    template_name = 'paper_uploads/dialogs/gallery.html'
     permission_required = 'paper_uploads.change'
     instance = None
 

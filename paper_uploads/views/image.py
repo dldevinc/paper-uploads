@@ -110,7 +110,7 @@ def delete(request):
 
 
 class ChangeView(PermissionRequiredMixin, FormView):
-    template_name = 'paper_uploads/popups/edit_form.html'
+    template_name = 'paper_uploads/dialogs/image.html'
     permission_required = 'paper_uploads.change'
     form_class = UploadedImageDialog
     instance = None

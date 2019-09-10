@@ -1,0 +1,16 @@
+<form action="{{ action }}" method="post">
+  {% csrf_token %}
+  {% for field in form.hidden_fields %}
+    {{ field }}
+  {% endfor %}
+
+  {% for field in form.visible_fields %}
+    <div class="field-{{ field.name }} {% if not forloop.last %}mb-3{% endif %}">
+      {{ field.label_tag }}
+      {{ field }}
+      {% if field.help_text %}
+        <div class="small text-muted mt-1">{{ field.help_text }}</div>
+      {% endif %}
+    </div>
+  {% endfor %}
+</form>

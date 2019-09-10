@@ -91,7 +91,7 @@ class GalleryAdminBase(UploadedFileBase):
             ),
             path(
                 'change_item/',
-                self.admin_site.admin_view(views.gallery.ChangeImageView.as_view()),
+                self.admin_site.admin_view(views.gallery.ChangeView.as_view()),
                 name='%s_%s_change_item' % info
             ),
             path(
