@@ -8,6 +8,7 @@ import paper_uploads.models.fields.gallery
 class Migration(migrations.Migration):
 
     dependencies = [
+        ('paper_uploads', '0010_remove_gallery_owner_ct'),
         ('app', '0005_auto_20190830_0815'),
     ]
 
