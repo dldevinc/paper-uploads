@@ -130,7 +130,6 @@ ImageWidget.prototype.initUploader = function() {
     return new Uploader(this.element, {
         url: this._opts.urls.upload,
         button: this.uploadButton,
-        acceptFiles: 'image/*',
         dropzones: this.element.querySelectorAll('.dropzone-overlay'),
     }).on('submit', function(id) {
         _this.trigger('upload:submit', [id]);
