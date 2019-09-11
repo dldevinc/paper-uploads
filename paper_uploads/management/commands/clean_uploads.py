@@ -160,18 +160,26 @@ class Command(BaseCommand):
         self.database = options['database']
         self.interactive = options['interactive']
 
+        since = now() - timedelta(minutes=options['since'])
         self.clean_source_missing(UploadedFile._meta.base_manager.using(self.database).all())
-        self.clean_model(UploadedFile._meta.base_manager.using(self.database).all())
+        self.clean_model(
+            UploadedFile._meta.base_manager.using(self.database).filter(
+                uploaded_at__gte=since
+            )
+        )
 
         self.clean_source_missing(UploadedImage._meta.base_manager.using(self.database).all())
-        self.clean_model(UploadedImage._meta.base_manager.using(self.database).all())
+        self.clean_model(
+            UploadedImage._meta.base_manager.using(self.database).filter(
+                uploaded_at__gte=since
+            )
+        )
 
         for model in apps.get_models():
             if issubclass(model, GalleryItemBase) and model is not GalleryItemBase and not model._meta.abstract:
                 self.clean_source_missing(model._meta.base_manager.using(self.database).all())
 
         # Do not touch fresh galleries - they may not be saved yet.
-        since = now() - timedelta(minutes=options['since'])
         for model in apps.get_models():
             if issubclass(model, GalleryBase) and not model._meta.abstract:
                 content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
