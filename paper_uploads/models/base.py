@@ -1,12 +1,15 @@
 import hashlib
 import posixpath
 from itertools import chain
+from django.apps import apps
 from django.db import models
 from django.core import checks
 from django.utils.timezone import now
+from django.core.exceptions import FieldDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from ..storage import upload_storage
 from ..conf import PROXY_FILE_ATTRIBUTES
+from .. import utils
 
 
 class Permissions(models.Model):
@@ -147,3 +150,36 @@ class UploadedFileBase(models.Model):
             'size': self.size,
             'url': self.file.url,
         }
+
+
+class SlaveModelMixin(models.Model):
+    """
+    Миксина, позволяющая обратиться к модели или полю модели, для которой
+    был создан объект.
+    """
+    owner_app_label = models.CharField(max_length=100, editable=False)
+    owner_model_name = models.CharField(max_length=100, editable=False)
+    owner_fieldname = models.CharField(max_length=255, editable=False)
+
+    class Meta:
+        abstract = True
+
+    def get_owner_model(self):
+        try:
+            return apps.get_model(self.owner_app_label, self.owner_model_name)
+        except LookupError:
+            utils.logger.debug("Not found model: %s.%s" % (self.owner_app_label, self.owner_model_name))
+
+    def get_owner_field(self):
+        owner_model = self.get_owner_model()
+        if owner_model is None:
+            return
+
+        try:
+            return owner_model._meta.get_field(self.owner_fieldname)
+        except FieldDoesNotExist:
+            utils.logger.debug(
+                "Not found field '%s' in model %s.%s" % (
+                    self.owner_app_label, self.owner_model_name, self.owner_fieldname
+                )
+            )

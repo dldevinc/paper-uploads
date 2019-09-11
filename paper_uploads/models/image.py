@@ -11,7 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
 from django.contrib.contenttypes.models import ContentType
 from variations.utils import prepare_image
-from .base import UploadedFileBase
+from .base import UploadedFileBase, SlaveModelMixin
 from ..storage import upload_storage
 from ..conf import settings, PROXY_FILE_ATTRIBUTES
 from .. import utils
@@ -333,12 +333,8 @@ class UploadedImageBase(UploadedFileBase):
             self._recut_sync(names)
 
 
-class UploadedImage(UploadedImageBase):
-    file = models.FileField(_('file'), max_length=255, upload_to=settings.IMAGES_UPLOAD_TO,
-        storage=upload_storage)
-    owner_ct = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True,
-        related_name='+', editable=False)
-    owner_fieldname = models.CharField(max_length=255, editable=False)
+class UploadedImage(UploadedImageBase, SlaveModelMixin):
+    file = models.FileField(_('file'), max_length=255, upload_to=settings.IMAGES_UPLOAD_TO, storage=upload_storage)
 
     class Meta(UploadedImageBase.Meta):
         verbose_name = _('image')
@@ -346,18 +342,11 @@ class UploadedImage(UploadedImageBase):
 
     def get_variations(self):
         if not hasattr(self, '_variations_cache'):
-            if self.owner_ct is None:
-                utils.logger.error('UploadedImage #{} have no owner_ct'.format(self.pk))
-                self._variations_cache = {}
-            else:
-                owner_field = utils.get_field(
-                    self.owner_ct.app_label,
-                    self.owner_ct.model,
-                    self.owner_fieldname
-                )
-                if owner_field is None:
-                    return {}
+            owner_field = self.get_owner_field()
+            if owner_field is not None:
                 self._variations_cache = getattr(owner_field, 'variations')
+            else:
+                return {}
         return self._variations_cache
 
     def as_dict(self):
