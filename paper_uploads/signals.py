@@ -50,27 +50,26 @@ class RenameFileField(migrations.RunPython):
         db = schema_editor.connection.alias
         state_model = state.models[self.app_label, self.model_name]
 
-        try:
-            content_type_model = content_type_model.objects.db_manager(db).get_by_natural_key(self.app_label, self.model_name)
-        except content_type_model.DoesNotExist:
-            pass
-        else:
-            for name, instance in state_model.fields:
-                if name != self.new_name:
-                    continue
+        for name, field in state_model.fields:
+            if name != self.new_name:
+                continue
 
-                if not isinstance(instance, (ImageField, GalleryField)):
-                    continue
+            if not field.is_relation:
+                continue
 
-                owner_app_label, owner_model_name = instance.related_model.rsplit('.', 1)
-                owner_model = apps.get_model(owner_app_label, owner_model_name)
-                with transaction.atomic(using=db):
-                    owner_model.objects.db_manager(db).filter(
-                        owner_ct=content_type_model,
-                        owner_fieldname=old_name
-                    ).update(
-                        owner_fieldname=new_name
-                    )
+            if not isinstance(field, (ImageField, GalleryField)):
+                continue
+
+            owner_app_label, owner_model_name = field.related_model.rsplit('.', 1)
+            owner_model = apps.get_model(owner_app_label, owner_model_name)
+            with transaction.atomic(using=db):
+                owner_model.objects.db_manager(db).filter(
+                    owner_app_label=self.app_label,
+                    owner_model_name=self.model_name,
+                    owner_fieldname=old_name
+                ).update(
+                    owner_fieldname=new_name
+                )
 
     def rename_forward(self, apps, schema_editor, state_model):
         self._rename(apps, schema_editor, state_model, self.old_name, self.new_name)
@@ -95,13 +94,14 @@ def inject_rename_filefield_operations(plan=None, **kwargs):
     for migration, backward in plan:
         inserts = []
         for index, operation in enumerate(migration.operations):
-            if not isinstance(operation, migrations.RenameField):
-                continue
-
-            operation = RenameFileField(
-                migration.app_label, operation.model_name, operation.old_name_lower, operation.new_name_lower
-            )
-            inserts.append((index + 1, operation))
+            if isinstance(operation, migrations.RenameField):
+                operation = RenameFileField(
+                    migration.app_label,
+                    operation.model_name,
+                    operation.old_name_lower,
+                    operation.new_name_lower
+                )
+                inserts.append((index + 1, operation))
 
         for inserted, (index, operation) in enumerate(inserts):
             migration.operations.insert(inserted + index, operation)

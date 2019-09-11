@@ -13,6 +13,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from polymorphic.models import PolymorphicModel
+from .base import SlaveModelMixin
 from .file import UploadedFileBase
 from .image import UploadedImageBase
 from ..conf import settings, FILE_ICONS, FILE_ICON_DEFAULT
@@ -220,7 +221,7 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
         }
 
 
-class GalleryBase(models.Model):
+class GalleryBase(SlaveModelMixin):
     # Карта поддерживаемых моделей элементов.
     # Пример:
     #   ALLOWED_ITEM_TYPES = {
@@ -234,8 +235,6 @@ class GalleryBase(models.Model):
     RECUTABLE_ITEM_TYPES = []
 
     items = GenericRelation(GalleryItemBase, for_concrete_model=False)
-    owner_ct = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, related_name='+', editable=False)
-    owner_fieldname = models.CharField(max_length=255, editable=False)
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
 
     class Meta:

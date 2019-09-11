@@ -5,7 +5,6 @@ from django.core.files import File
 from django.views.generic import FormView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.module_loading import import_string
-from django.contrib.contenttypes.models import ContentType
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
@@ -97,26 +96,13 @@ def upload_item(request):
         utils.logger.exception('Error')
         return helpers.error_response('Multiple objects returned')
 
-    # Определение модели владельца файла
-    owner_content_type = None
-    if gallery is None:
-        owner_app_label = request.POST.get('paperOwnerAppLabel')
-        owner_model_name = request.POST.get('paperOwnerModelName')
-        try:
-            owner_content_type = ContentType.objects.get(
-                app_label=owner_app_label,
-                model=owner_model_name
-            )
-        except ContentType.DoesNotExist:
-            utils.logger.exception('Invalid owner content type: %s.%s' % (owner_app_label, owner_model_name))
-            return helpers.error_response('Invalid owner content type')
-
     try:
         with transaction.atomic():
             if gallery is None:
                 # Создание галереи
                 gallery = gallery_cls._meta.default_manager.create(
-                    owner_ct=owner_content_type,
+                    owner_app_label=request.POST.get('paperOwnerAppLabel'),
+                    owner_model_name=request.POST.get('paperOwnerModelName'),
                     owner_fieldname=request.POST.get('paperOwnerFieldname')
                 )
 
