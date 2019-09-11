@@ -119,7 +119,6 @@ Object.defineProperty(Gallery.prototype, 'empty', {
  * Инициализация галереи
  */
 Gallery.prototype.init = function() {
-    this.allowedMimeTypes = JSON.parse(this.element.dataset.allowedMimetypes);
     this.empty = isNaN(this.galleryId);
     this.uploader = this.initUploader();
     this.sortable = this.initSortable();
@@ -136,20 +135,12 @@ Gallery.prototype.initUploader = function() {
         multiple: true,
         button: this.uploadButton,
         dropzones: this.element.querySelectorAll('.dropzone-overlay'),
+        validation: JSON.parse(this.element.dataset.validation),
         extraData: {
             gallery_id: function() {
                 return _this.galleryId;
             }
         },
-        filters: [
-            function(id, file) {
-                if (_this.allowedMimeTypes && _this.allowedMimeTypes.length) {
-                    if (_this.allowedMimeTypes.indexOf(file.type) < 0) {
-                        throw new Error(`Unsupported MIME type: ${file.type}`);
-                    }
-                }
-            }
-        ]
     }).on('submit', function(id) {
         const template = _this.element.querySelector(_this._opts.preloaderTemplate);
         const clone = document.importNode(template.content, true);
@@ -229,11 +220,11 @@ Gallery.prototype.initUploader = function() {
     }).on('cancel', function(id) {
         const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
         _this.trigger('gallery:cancel_item', [preloader, id]);
-        preloader.remove();
+        preloader && preloader.remove();
     }).on('error', function(id, reason) {
         const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
         _this.trigger('gallery:error', [preloader, reason]);
-        preloader.remove();
+        preloader && preloader.remove();
     }).on('reject', function(id, file, reason) {
         _this.trigger('gallery:reject', [id, file, reason]);
     });
@@ -750,7 +741,7 @@ function initWidget(element) {
     }).on('gallery:error', function(item, reason) {
         alertMessage(reason);
     }).on('gallery:reject', function(id, file, reason) {
-        alertMessage(`File "${file.name}" <b>rejected</b>:<br>${reason}`);
+        alertMessage(`File "${file.name}" <b>rejected</b>!<br>${reason}`);
     });
 }
 

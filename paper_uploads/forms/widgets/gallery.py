@@ -35,7 +35,7 @@ class GalleryWidget(FileWidgetBase):
             'gallery_cls': gallery_cls,
             'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
             'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
-            'allowed_mimetypes': json.dumps(gallery_cls.ALLOWED_MIMETYPES)
+            'validation': json.dumps(gallery_cls.get_validation()),
         })
 
         # urls

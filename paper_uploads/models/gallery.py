@@ -233,10 +233,6 @@ class GalleryBase(models.Model):
     # Типы файлов, которые нужно перенарезать при вызове метода recut()
     RECUTABLE_ITEM_TYPES = []
 
-    # Перечень MIME-типов, доступных для загрузки.
-    # Тип проверяется на клиентской стороне перед загрузкой.
-    ALLOWED_MIMETYPES = []
-
     items = GenericRelation(GalleryItemBase, for_concrete_model=False)
     owner_ct = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, related_name='+', editable=False)
     owner_fieldname = models.CharField(max_length=255, editable=False)
@@ -299,6 +295,18 @@ class GalleryBase(models.Model):
             self._recut_async(names, using=using)
         else:
             self._recut_sync(names, using=using)
+
+    @classmethod
+    def get_validation(cls):
+        """
+        Возвращает конфигурацию валидации загружаемых файлов FineUploader.
+        см. https://docs.fineuploader.com/branch/master/api/options.html#validation
+        Из-за чересчур прямолинейной реализации валидации FineUploder, валидация
+        переделана вручную. Формат конфигурации сохранен, но реализованы не все
+        параметры, входящие в комплект FineUploader.
+        :return: dict
+        """
+        return {}
 
 
 # ==============================================================================
@@ -448,18 +456,24 @@ class ImageGallery(Gallery):
     ALLOWED_ITEM_TYPES = {
         'image': GalleryImageItem,
     }
-    ALLOWED_MIMETYPES = [
-        'image/bmp',
-        'image/gif',
-        'image/jpeg',
-        'image/pjpeg',
-        'image/png',
-        'image/tiff',
-        'image/webp',
-        'image/x-tiff',
-        'image/x-windows-bmp',
-    ]
 
     @classmethod
     def guess_item_type(cls, file):
         return 'image'
+
+    @classmethod
+    def get_validation(cls):
+        return {
+            **super().get_validation(),
+            'acceptFiles': [
+                'image/bmp',
+                'image/gif',
+                'image/jpeg',
+                'image/pjpeg',
+                'image/png',
+                'image/tiff',
+                'image/webp',
+                'image/x-tiff',
+                'image/x-windows-bmp',
+            ],
+        }
