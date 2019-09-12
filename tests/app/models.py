@@ -66,3 +66,13 @@ class Page(models.Model):
 
     def __str__(self):
         return self.header
+
+
+class Document(models.Model):
+    title = models.CharField(_('title'), max_length=255)
+    image = ImageField(_('simple image'), blank=True)
+    files = GalleryField(PageFilesGallery, verbose_name=_('files'))
+
+    class Meta:
+        verbose_name = _('document')
+        verbose_name_plural = _('documents')

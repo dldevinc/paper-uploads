@@ -132,6 +132,7 @@ PAPER_MENU = [
         icon='fa fa-fw fa-lg fa-home',
         models=[
             'Page',
+            'Document',
         ]
     ),
     '-',
