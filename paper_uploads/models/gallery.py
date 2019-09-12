@@ -231,9 +231,6 @@ class GalleryBase(SlaveModelMixin):
     #   }
     ALLOWED_ITEM_TYPES = {}
 
-    # Типы файлов, которые нужно перенарезать при вызове метода recut()
-    RECUTABLE_ITEM_TYPES = []
-
     items = GenericRelation(GalleryItemBase, for_concrete_model=False)
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
 
@@ -275,7 +272,12 @@ class GalleryBase(SlaveModelMixin):
         return self.items.filter(item_type=item_type).order_by('order')
 
     def _recut_sync(self, names=(), using=DEFAULT_DB_ALIAS):
-        for item in self.items.using(using).filter(item_type__in=self.RECUTABLE_ITEM_TYPES):
+        recutable_items = tuple(
+            name
+            for name, item_type in self.ALLOWED_ITEM_TYPES.items()
+            if hasattr(item_type, 'recut')
+        )
+        for item in self.items.using(using).filter(item_type__in=recutable_items):
             item._recut_sync(names)
 
     def _recut_async(self, names=(), using=DEFAULT_DB_ALIAS):
@@ -406,7 +408,6 @@ class Gallery(GalleryBase, metaclass=GalleryProxyChilds):
         'file': GalleryFileItem,
         'svg': GallerySVGItem,
     }
-    RECUTABLE_ITEM_TYPES = ['image']    # TODO: оно все равно одно. Может переделать?
 
     # поле, ссылающееся на одно из изображений галереи (для экономии SQL-запросов)
     cover = models.ForeignKey(GalleryImageItem, verbose_name=_('cover image'),
