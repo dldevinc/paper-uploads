@@ -392,6 +392,17 @@ class GalleryProxyChilds(ModelBase):
         return super().__new__(mcs, name, bases, attrs, **kwargs)
 
 
+class GalleryManager(models.Manager):
+    """
+    Из-за того, что все галереи являются прокси-моделями, запросы от имени
+    любого из классов галереи затрагивает абсолютно все объекты галереи.
+    С помощью этого менеджера можно работать только с галерями текущего типа.
+    """
+    def get_queryset(self):
+        gallery_ct = ContentType.objects.get_for_model(self.model, for_concrete_model=False)
+        return super().get_queryset().filter(gallery_content_type=gallery_ct)
+
+
 class Gallery(GalleryBase, metaclass=GalleryProxyChilds):
     """
     Галерея, позволяющая хранить изображаения, SVG-файлы и файлы.
@@ -414,6 +425,8 @@ class Gallery(GalleryBase, metaclass=GalleryProxyChilds):
         null=True, editable=False, on_delete=models.SET_NULL)
     gallery_content_type = models.ForeignKey(ContentType, null=True,
         verbose_name=_('gallery type'), on_delete=models.SET_NULL, editable=False)
+
+    objects = GalleryManager()
 
     def save(self, *args, **kwargs):
         if not self.gallery_content_type:

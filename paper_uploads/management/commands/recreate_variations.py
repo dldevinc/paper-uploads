@@ -77,7 +77,7 @@ class Command(BaseCommand):
                         )
                     ))
 
-                for gallery in module._meta.base_manager.all():
+                for gallery in module.objects.all():
                     gallery.recut(names=variations, using=self.database)
             else:
                 self.stderr.write(self.style.ERROR(
