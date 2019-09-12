@@ -76,7 +76,9 @@ class Command(BaseCommand):
                             path
                         )
                     ))
-                module.recut(names=variations, using=self.database)
+
+                for gallery in module._meta.base_manager.all():
+                    gallery.recut(names=variations, using=self.database)
             else:
                 self.stderr.write(self.style.ERROR(
                     "Error: the model '%s' is not a subclass of Gallery" % path
@@ -88,5 +90,5 @@ class Command(BaseCommand):
 
         for path in options['fields_or_models']:
             module_path, _, variations = path.partition(':')
-            variations = tuple(map(str.strip, variations.split(',')))
+            variations = tuple(filter(bool, map(str.strip, variations.split(','))))
             self.process_path(module_path, variations)
