@@ -164,14 +164,14 @@ class Command(BaseCommand):
         self.clean_source_missing(UploadedFile._meta.base_manager.using(self.database).all())
         self.clean_model(
             UploadedFile._meta.base_manager.using(self.database).filter(
-                uploaded_at__gte=since
+                uploaded_at__lte=since
             )
         )
 
         self.clean_source_missing(UploadedImage._meta.base_manager.using(self.database).all())
         self.clean_model(
             UploadedImage._meta.base_manager.using(self.database).filter(
-                uploaded_at__gte=since
+                uploaded_at__lte=since
             )
         )
 
