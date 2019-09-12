@@ -11,5 +11,8 @@ class FileField(FileFieldBase):
     def formfield(self, **kwargs):
         return super().formfield(**{
             'form_class': forms.FileField,
+            'owner_app_label': self.opts.app_label.lower(),
+            'owner_model_name': self.opts.model_name.lower(),
+            'owner_fieldname': self.name,
             **kwargs
         })

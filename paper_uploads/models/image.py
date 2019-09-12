@@ -9,7 +9,6 @@ from django.core.files import File
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
-from django.contrib.contenttypes.models import ContentType
 from variations.utils import prepare_image
 from .base import UploadedFileBase, SlaveModelMixin
 from ..storage import upload_storage

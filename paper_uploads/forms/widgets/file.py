@@ -5,6 +5,9 @@ from .base import FileWidgetBase
 
 class FileWidget(FileWidgetBase):
     template_name = 'paper_uploads/file_widget.html'
+    owner_app_label = None
+    owner_model_name = None
+    owner_fieldname = None
 
     @property
     def media(self):
@@ -21,6 +24,9 @@ class FileWidget(FileWidgetBase):
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
+        context['owner_app_label'] = self.owner_app_label
+        context['owner_model_name'] = self.owner_model_name
+        context['owner_fieldname'] = self.owner_fieldname
 
         # urls
         model_class = self.choices.queryset.model

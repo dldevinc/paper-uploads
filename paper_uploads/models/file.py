@@ -1,12 +1,12 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
-from .base import UploadedFileBase
+from .base import UploadedFileBase, SlaveModelMixin
 from ..storage import upload_storage
 from ..conf import settings
 
 
-class UploadedFile(UploadedFileBase):
+class UploadedFile(UploadedFileBase, SlaveModelMixin):
     file = models.FileField(_('file'), max_length=255,
         upload_to=settings.FILES_UPLOAD_TO, storage=upload_storage)
     display_name = models.CharField(_('display name'), max_length=255, blank=True)

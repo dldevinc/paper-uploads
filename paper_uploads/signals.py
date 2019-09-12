@@ -2,7 +2,7 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete, Signal
 from django.db import migrations, transaction
 from .models import UploadedFileBase, GalleryImageItemBase
-from .models.fields import ImageField, GalleryField
+from .models.fields.base import FileFieldBase
 
 gallery_reordered = Signal(providing_args=["instance"])
 
@@ -52,7 +52,7 @@ class RenameFileField(migrations.RunPython):
             if field.name != self.new_name:
                 continue
 
-            if isinstance(field, (ImageField, GalleryField)):
+            if isinstance(field, FileFieldBase):
                 with transaction.atomic(using=db):
                     field.related_model.objects.db_manager(db).filter(
                         owner_app_label=self.app_label,
@@ -82,7 +82,7 @@ class RenameFileModel(migrations.RunPython):
         db = schema_editor.connection.alias
         state_model = apps.get_model(self.app_label, old_name if backward else new_name)
         for field in state_model._meta.fields:
-            if isinstance(field, (ImageField, GalleryField)):
+            if isinstance(field, FileFieldBase):
                 with transaction.atomic(using=db):
                     field.related_model.objects.db_manager(db).filter(
                         owner_app_label=self.app_label,

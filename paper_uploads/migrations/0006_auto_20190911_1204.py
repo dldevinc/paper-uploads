@@ -4,10 +4,6 @@ from django.db import migrations
 
 
 def update_owner(apps, schema_editor, reverse=False):
-    """
-    Update the content_type of proxy model permissions to use the ContentType
-    of the proxy model.
-    """
     UploadedImage = apps.get_model('paper_uploads', 'UploadedImage')
     for image in UploadedImage._meta.base_manager.all():
         image.owner_app_label = image.owner_ct.app_label

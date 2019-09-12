@@ -49,6 +49,9 @@ def upload(request):
         with transaction.atomic():
             instance = model_class(
                 file=file,
+                owner_app_label=request.POST.get('paperOwnerAppLabel'),
+                owner_model_name=request.POST.get('paperOwnerModelName'),
+                owner_fieldname=request.POST.get('paperOwnerFieldname')
             )
             instance.full_clean()
             instance.save()
