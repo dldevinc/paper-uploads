@@ -297,18 +297,6 @@ class GalleryBase(SlaveModelMixin):
         else:
             self._recut_sync(names, using=using)
 
-    @classmethod
-    def get_validation(cls):
-        """
-        Возвращает конфигурацию валидации загружаемых файлов FineUploader.
-        см. https://docs.fineuploader.com/branch/master/api/options.html#validation
-        Из-за чересчур прямолинейной реализации валидации FineUploder, валидация
-        переделана вручную. Формат конфигурации сохранен, но реализованы не все
-        параметры, входящие в комплект FineUploader.
-        :return: dict
-        """
-        return {}
-
 
 # ==============================================================================
 

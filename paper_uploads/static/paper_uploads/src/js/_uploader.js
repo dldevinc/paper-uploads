@@ -52,6 +52,9 @@ Uploader.prototype._makeUploader = function() {
         text: {
             fileInputTitle: 'Select file'
         },
+        validation: (_this._opts.validation && _this._opts.validation.acceptFiles) ? {
+            acceptFiles: _this._opts.validation.acceptFiles
+        } : {},
         callbacks: {
             onSubmit: function(id) {
                 const uploader = this;

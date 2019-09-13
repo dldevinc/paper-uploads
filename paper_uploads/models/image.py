@@ -348,6 +348,23 @@ class UploadedImage(UploadedImageBase, SlaveModelMixin):
                 return {}
         return self._variations_cache
 
+    @classmethod
+    def get_validation(cls):
+        return {
+            **super().get_validation(),
+            'acceptFiles': [
+                'image/bmp',
+                'image/gif',
+                'image/jpeg',
+                'image/pjpeg',
+                'image/png',
+                'image/tiff',
+                'image/webp',
+                'image/x-tiff',
+                'image/x-windows-bmp',
+            ],
+        }
+
     def as_dict(self):
         return {
             **super().as_dict(),

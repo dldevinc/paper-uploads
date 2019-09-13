@@ -7,9 +7,6 @@ from ...conf import settings
 
 class GalleryWidget(FileWidgetBase):
     template_name = 'paper_uploads/gallery_widget.html'
-    owner_app_label = None
-    owner_model_name = None
-    owner_fieldname = None
 
     @property
     def media(self):
@@ -29,9 +26,6 @@ class GalleryWidget(FileWidgetBase):
 
         context = super().get_context(name, value, attrs)
         context.update({
-            'owner_app_label': self.owner_app_label,
-            'owner_model_name': self.owner_model_name,
-            'owner_fieldname': self.owner_fieldname,
             'gallery_cls': gallery_cls,
             'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
             'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,

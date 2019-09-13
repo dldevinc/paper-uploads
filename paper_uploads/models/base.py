@@ -183,3 +183,15 @@ class SlaveModelMixin(models.Model):
                     self.owner_app_label, self.owner_model_name, self.owner_fieldname
                 )
             )
+
+    @classmethod
+    def get_validation(cls):
+        """
+        Возвращает конфигурацию валидации загружаемых файлов FineUploader.
+        см. https://docs.fineuploader.com/branch/master/api/options.html#validation
+        Из-за чересчур прямолинейной реализации валидации FineUploder, валидация
+        переделана вручную. Формат конфигурации сохранен, но реализованы не все
+        параметры, входящие в комплект FineUploader.
+        :return: dict
+        """
+        return {}

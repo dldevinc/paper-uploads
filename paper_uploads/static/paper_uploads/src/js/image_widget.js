@@ -131,6 +131,7 @@ ImageWidget.prototype.initUploader = function() {
         url: this._opts.urls.upload,
         button: this.uploadButton,
         dropzones: this.element.querySelectorAll('.dropzone-overlay'),
+        validation: JSON.parse(this.element.dataset.validation),
     }).on('submit', function(id) {
         _this.trigger('upload:submit', [id]);
     }).on('upload', function(id) {
