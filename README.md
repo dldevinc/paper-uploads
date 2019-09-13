@@ -268,6 +268,23 @@ python3 manage.py recreate_variations 'page.PageGallery' --variations big small
 python3 manage.py recreate_variations 'page.Page' --field=image 
 ```
 
+## Validation
+* `SizeLimitValidator` - устанавливает максимально допустимый
+размер загружаемого файла в байтах.
+* `ImageMinSizeValidator` - устанавливает минимальный размер загружаемых изображений.
+* `ImageMaxSizeValidator` - устанавливает максимальный размер загружаемых изображений.
+
+```python
+from paper_uploads.models.fields import ImageField
+from paper_uploads.validators import SizeLimitValidator, ImageMaxSizeValidator
+
+class Page(models.Model):
+    image = ImageField(_('image'), blank=True, validators=[
+        SizeLimitValidator(10 * 1024 * 1024),   # max 10Mb
+        ImageMaxSizeValidator(800, 800)     # max dimensions 800x800
+    ])
+```
+
 ## Settings
 Все настройки указываются в словаре `PAPER_UPLOADS`.
 

@@ -14,16 +14,16 @@ def success_response(data=None):
     return JsonResponse(data)
 
 
-def error_response(reason, prevent_retry=True):
+def error_response(errors, prevent_retry=True):
     data = {
         'success': False,
-        'error': reason,
+        'errors': errors if isinstance(errors, (list, tuple)) else [errors],
         'preventRetry': prevent_retry
     }
     return JsonResponse(data)
 
 
-def exception_response(exception):
+def get_exception_messages(exception):
     messages = []
     for msg in exception:
         if isinstance(msg, tuple):
@@ -37,13 +37,7 @@ def exception_response(exception):
                 )
         else:
             messages.append(msg)
-
-    if len(messages) == 1:
-        return 'Error: {}'.format(messages[0])
-    else:
-        return 'Errors:<br>{}'.format(
-            '<br>'.join(messages)
-        )
+    return messages
 
 
 def read_file(request):

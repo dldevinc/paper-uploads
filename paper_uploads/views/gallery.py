@@ -118,9 +118,9 @@ def upload_item(request):
             instance.full_clean()
             instance.save()
     except ValidationError as e:
-        message = helpers.exception_response(e)
-        logger.debug(message)
-        return helpers.error_response(message)
+        messages = helpers.get_exception_messages(e)
+        logger.debug(messages)
+        return helpers.error_response(messages)
     except Exception as e:
         logger.exception('Error')
         if hasattr(e, 'args'):

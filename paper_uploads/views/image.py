@@ -10,6 +10,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
 from ..forms.dialogs.image import UploadedImageDialog
 from ..models import UploadedImageBase
+from ..utils import run_validators
 from ..logging import logger
 from .. import exceptions
 from . import helpers
@@ -55,12 +56,14 @@ def upload(request):
                 owner_fieldname=request.POST.get('paperOwnerFieldname')
             )
             instance.full_clean()
+            owner_field = instance.get_owner_field()
+            if owner_field is not None:
+                run_validators(file, owner_field.validators)
             instance.save()
     except ValidationError as e:
-        message = helpers.exception_response(e)
-        logger.debug(message)
-        return helpers.error_response(message)
-
+        messages = helpers.get_exception_messages(e)
+        logger.debug(messages)
+        return helpers.error_response(messages)
     return helpers.success_response(instance.as_dict())
 
 
