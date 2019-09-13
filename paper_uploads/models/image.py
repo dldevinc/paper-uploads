@@ -13,7 +13,7 @@ from variations.utils import prepare_image
 from .base import UploadedFileBase, SlaveModelMixin
 from ..storage import upload_storage
 from ..conf import settings, PROXY_FILE_ATTRIBUTES
-from .. import utils
+from ..logging import logger
 from .. import tasks
 
 
@@ -279,7 +279,7 @@ class UploadedImageBase(UploadedFileBase):
             path = self.get_variation_path(name)
             full_path = upload_storage.path(path)
             if not os.path.exists(full_path):
-                utils.logger.warning('File not found: {}'.format(path))
+                logger.warning('File not found: {}'.format(path))
                 continue
 
             output_format = variation.output_format(path)
@@ -318,7 +318,7 @@ class UploadedImageBase(UploadedFileBase):
                 shell=True
             )
             out, err = process.communicate()
-            utils.logger.debug('Run: {} {}\nstdout: {}\nstderr: {}'.format(
+            logger.debug('Run: {} {}\nstdout: {}\nstderr: {}'.format(
                 postprocess_cmd,
                 postprocess_args,
                 out.decode() if out is not None else '',

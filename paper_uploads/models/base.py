@@ -9,7 +9,7 @@ from django.core.exceptions import FieldDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from ..storage import upload_storage
 from ..conf import PROXY_FILE_ATTRIBUTES
-from .. import utils
+from ..logging import logger
 
 
 class Permissions(models.Model):
@@ -168,7 +168,7 @@ class SlaveModelMixin(models.Model):
         try:
             return apps.get_model(self.owner_app_label, self.owner_model_name)
         except LookupError:
-            utils.logger.debug("Not found model: %s.%s" % (self.owner_app_label, self.owner_model_name))
+            logger.debug("Not found model: %s.%s" % (self.owner_app_label, self.owner_model_name))
 
     def get_owner_field(self):
         owner_model = self.get_owner_model()
@@ -178,7 +178,7 @@ class SlaveModelMixin(models.Model):
         try:
             return owner_model._meta.get_field(self.owner_fieldname)
         except FieldDoesNotExist:
-            utils.logger.debug(
+            logger.debug(
                 "Not found field '%s' in model %s.%s" % (
                     self.owner_app_label, self.owner_model_name, self.owner_fieldname
                 )

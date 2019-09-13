@@ -1,10 +1,7 @@
-import logging
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
 from variations.variation import Variation
 from .conf import settings
-
-logger = logging.getLogger('paper_uploads')
 
 
 def build_variations(options):

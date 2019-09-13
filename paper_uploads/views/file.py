@@ -9,8 +9,8 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
 from ..forms.dialogs.file import UploadedFileDialog
 from ..models import UploadedFileBase
+from ..logging import logger
 from .. import exceptions
-from .. import utils
 from . import helpers
 
 
@@ -28,10 +28,10 @@ def upload(request):
     except exceptions.ContinueUpload:
         return helpers.success_response()
     except exceptions.InvalidUUID:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid UUID')
     except exceptions.InvalidChunking:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid chunking', prevent_retry=False)
     else:
         if not isinstance(file, File):
@@ -42,7 +42,7 @@ def upload(request):
     try:
         model_class = helpers.get_model_class(content_type_id, base_class=UploadedFileBase)
     except exceptions.InvalidContentType:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid content type')
 
     try:
@@ -57,7 +57,7 @@ def upload(request):
             instance.save()
     except ValidationError as e:
         message = helpers.exception_response(e)
-        utils.logger.debug(message)
+        logger.debug(message)
         return helpers.error_response(message)
 
     return helpers.success_response(instance.as_dict())
@@ -75,19 +75,19 @@ def delete(request):
     try:
         model_class = helpers.get_model_class(content_type_id, base_class=UploadedFileBase)
     except exceptions.InvalidContentType:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid content type')
 
     try:
         instance = helpers.get_instance(model_class, instance_id)
     except exceptions.InvalidObjectId:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid ID')
     except ObjectDoesNotExist:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Object not found')
     except MultipleObjectsReturned:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Multiple objects returned')
 
     instance.delete()
@@ -144,7 +144,7 @@ class ChangeView(PermissionRequiredMixin, FormView):
         try:
             self.instance = self.get_instance()
         except exceptions.AjaxFormError as exc:
-            utils.logger.exception('Error')
+            logger.exception('Error')
             return helpers.error_response(exc.message)
         return super().get_form(form_class)
 
