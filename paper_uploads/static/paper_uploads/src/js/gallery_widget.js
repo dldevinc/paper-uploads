@@ -221,9 +221,9 @@ Gallery.prototype.initUploader = function() {
         const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
         _this.trigger('gallery:cancel_item', [preloader, id]);
         preloader && preloader.remove();
-    }).on('error', function(id, reason) {
+    }).on('error', function(id, messages) {
         const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
-        _this.trigger('gallery:error', [preloader, reason]);
+        _this.trigger('gallery:error', [preloader, messages]);
         preloader && preloader.remove();
     }).on('reject', function(id, file, reason) {
         _this.trigger('gallery:reject', [id, file, reason]);
@@ -264,16 +264,23 @@ Gallery.prototype.initSortable = function() {
                     error.response = response;
                     throw error;
                 }
-
                 return response.json();
             }).then(function(response) {
-                if (response.error) {
-                    const error = new Error(response.error);
+                if (response.errors && response.errors.length) {
+                    const error = new Error('Invalid request');
                     error.response = response;
                     throw error
                 }
             }).catch(function(error) {
-                _this.trigger('gallery:error', [null, error]);
+                let messages;
+                if ((typeof error === 'object') && error.response && error.response.errors) {
+                    messages = error.response.errors;
+                } else if (error instanceof Error) {
+                    messages = [error.message];
+                } else {
+                    messages = error;
+                }
+                _this.trigger('gallery:error', [null, messages]);
             })
         },
     });
@@ -334,8 +341,8 @@ Gallery.prototype._deleteItem = function(item) {
 
         return response.json();
     }).then(function(response) {
-        if (response.error) {
-            const error = new Error(response.error);
+        if (response.errors && response.errors.length) {
+            const error = new Error('Invalid request');
             error.response = response;
             throw error
         }
@@ -353,8 +360,16 @@ Gallery.prototype._deleteItem = function(item) {
         preloader.hide();
         item.remove();
     }).catch(function(error) {
+        let messages;
         preloader.hide();
-        _this.trigger('gallery:error', [item, error]);
+        if ((typeof error === 'object') && error.response && error.response.errors) {
+            messages = error.response.errors;
+        } else if (error instanceof Error) {
+            messages = [error.message];
+        } else {
+            messages = error;
+        }
+        _this.trigger('gallery:error', [item, messages]);
     });
 };
 
@@ -393,8 +408,8 @@ Gallery.prototype._changeItem = function(item, $dialog) {
 
         return response.json();
     }).then(function(response) {
-        if (response.error) {
-            const error = new Error(response.error);
+        if (response.errors && response.errors.length) {
+            const error = new Error('Invalid request');
             error.response = response;
             throw error
         }
@@ -419,8 +434,16 @@ Gallery.prototype._changeItem = function(item, $dialog) {
             }
         }
     }).catch(function(error) {
+        let messages;
         preloader.hide();
-        _this.trigger('gallery:error', [null, error]);
+        if ((typeof error === 'object') && error.response && error.response.errors) {
+            messages = error.response.errors;
+        } else if (error instanceof Error) {
+            messages = [error.message];
+        } else {
+            messages = error;
+        }
+        _this.trigger('gallery:error', [null, messages]);
     });
 };
 
@@ -453,8 +476,8 @@ Gallery.prototype._deleteGallery = function() {
         }
         return response.json();
     }).then(function(response) {
-        if (response.error) {
-            const error = new Error(response.error);
+        if (response.errors && response.errors.length) {
+            const error = new Error('Invalid request');
             error.response = response;
             throw error
         }
@@ -464,7 +487,15 @@ Gallery.prototype._deleteGallery = function() {
         _this.galleryId = '';
         _this.trigger('gallery:deleted');
     }).catch(function(error) {
-        _this.trigger('gallery:error', [null, error]);
+        let messages;
+        if ((typeof error === 'object') && error.response && error.response.errors) {
+            messages = error.response.errors;
+        } else if (error instanceof Error) {
+            messages = [error.message];
+        } else {
+            messages = error;
+        }
+        _this.trigger('gallery:error', [null, messages]);
     });
 };
 
@@ -551,8 +582,8 @@ Gallery.prototype.addListeners = function() {
 
             return response.json();
         }).then(function(response) {
-            if (response.error) {
-                const error = new Error(response.error);
+            if (response.errors && response.errors.length) {
+                const error = new Error('Invalid request');
                 error.response = response;
                 throw error
             }
@@ -584,8 +615,16 @@ Gallery.prototype.addListeners = function() {
                 return false;
             });
         }).catch(function(error) {
+            let messages;
             preloader.hide();
-            _this.trigger('gallery:error', [null, error]);
+            if ((typeof error === 'object') && error.response && error.response.errors) {
+                messages = error.response.errors;
+            } else if (error instanceof Error) {
+                messages = [error.message];
+            } else {
+                messages = error;
+            }
+            _this.trigger('gallery:error', [null, messages]);
         });
     });
 
@@ -703,21 +742,29 @@ Gallery.prototype.addListeners = function() {
 
 let _errors = [];
 let _errorTimer = null;
-function alertMessage(text) {
-    _errors.push(text);
+function alertMessage(messages) {
+    if (typeof messages === 'string') {
+        _errors.push(messages);
+    } else if (Array.isArray(messages)) {
+        _errors = _errors.concat(messages);
+    }
+
     if (_errorTimer) {
         clearTimeout(_errorTimer);
     }
-
     _errorTimer = setTimeout(function() {
-        let message = ['<ul class="px-4 mb-0">'];
+        let output = [
+            `Please correct the following errors:`,
+            `<ul class="px-4 mb-0">`,
+        ];
         for (let i=0, l=_errors.length; i<l; i++) {
-            message.push(`<li>${_errors[i]}</li>`);
+            output.push(`<li>${_errors[i]}</li>`);
         }
-        message.push(`</ul>`);
+        output.push(`</ul>`);
+        output = output.join('\n');
 
         bootbox.alert({
-            message: message.join('')
+            message: output
         });
 
         _errors = [];

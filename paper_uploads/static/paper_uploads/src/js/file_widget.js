@@ -162,8 +162,8 @@ FileWidget.prototype.initUploader = function() {
         _this.trigger('upload:complete');
     }).on('cancel', function(id) {
         _this.trigger('upload:cancel', [id]);
-    }).on('error', function(id, reason) {
-        _this.trigger('upload:error', [reason]);
+    }).on('error', function(id, messages) {
+        _this.trigger('upload:error', [id, messages]);
     }).on('all_complete', function() {
         _this.loading = false;
     });
@@ -198,8 +198,8 @@ FileWidget.prototype._change = function($dialog) {
 
         return response.json();
     }).then(function(response) {
-        if (response.error) {
-            const error = new Error(response.error);
+        if (response.errors && response.errors.length) {
+            const error = new Error('Invalid request');
             error.response = response;
             throw error
         }
@@ -221,8 +221,16 @@ FileWidget.prototype._change = function($dialog) {
             previewLink && (previewLink.href = response.url);
         }
     }).catch(function(error) {
+        let messages;
         preloader.hide();
-        _this.trigger('upload:error', [null, error]);
+        if ((typeof error === 'object') && error.response && error.response.errors) {
+            messages = error.response.errors;
+        } else if (error instanceof Error) {
+            messages = [error.message];
+        } else {
+            messages = error;
+        }
+        _this.trigger('upload:error', [null, messages]);
     });
 };
 
@@ -255,8 +263,8 @@ FileWidget.prototype._delete = function() {
         }
         return response.json();
     }).then(function(response) {
-        if (response.error) {
-            const error = new Error(response.error);
+        if (response.errors && response.errors.length) {
+            const error = new Error('Invalid request');
             error.response = response;
             throw error
         }
@@ -272,7 +280,15 @@ FileWidget.prototype._delete = function() {
 
         _this.trigger('upload:deleted');
     }).catch(function(error) {
-        _this.trigger('upload:error', [null, error]);
+        let messages;
+        if ((typeof error === 'object') && error.response && error.response.errors) {
+            messages = error.response.errors;
+        } else if (error instanceof Error) {
+            messages = [error.message];
+        } else {
+            messages = error;
+        }
+        _this.trigger('upload:error', [null, messages]);
     });
 };
 
@@ -331,8 +347,8 @@ FileWidget.prototype.addListeners = function() {
 
             return response.json();
         }).then(function(response) {
-            if (response.error) {
-                const error = new Error(response.error);
+            if (response.errors && response.errors.length) {
+                const error = new Error('Invalid request');
                 error.response = response;
                 throw error
             }
@@ -364,8 +380,16 @@ FileWidget.prototype.addListeners = function() {
                 return false;
             });
         }).catch(function(error) {
+            let messages;
             preloader.hide();
-            _this.trigger('upload:error', [error]);
+            if ((typeof error === 'object') && error.response && error.response.errors) {
+                messages = error.response.errors;
+            } else if (error instanceof Error) {
+                messages = [error.message];
+            } else {
+                messages = error;
+            }
+            _this.trigger('upload:error', [null, messages]);
         });
     });
 };
@@ -384,10 +408,24 @@ function initWidget(element) {
             change: element.dataset.changeUrl,
             delete: element.dataset.deleteUrl,
         }
-    }).on('upload:error', function(reason) {
+    }).on('upload:error', function(id, messages) {
+        let output;
+        if (typeof messages === 'string') {
+            output = `<b>Error</b>: ${messages}`;
+        } else if (Array.isArray(messages)) {
+            output = [
+                `Please correct the following errors:`,
+                `<ul class="px-4 mb-0">`,
+            ];
+            for (let i=0, l=messages.length; i<l; i++) {
+                output.push(`<li>${messages[i]}</li>`);
+            }
+            output.push(`</ul>`);
+            output = output.join('\n');
+        }
+
         bootbox.alert({
-            message: reason,
-            size: 'small'
+            message: output
         });
     });
 }

@@ -187,8 +187,21 @@ Uploader.prototype._makeUploader = function() {
                 }
                 _this.trigger('all_complete', [succeeded, failed]);
             },
-            onError: function(id, name, reason) {
-                _this.trigger('error', [id, reason]);
+            onError: function(id, name, reason, xhr) {
+                let response, messages;
+                try {
+                    response = JSON.parse(xhr.responseText);
+                } catch (error) {
+
+                }
+
+                if (response) {
+                    messages = response.errors || response.error || reason;
+                } else {
+                    messages = reason;
+                }
+
+                _this.trigger('error', [id, messages]);
             }
         }
     });
