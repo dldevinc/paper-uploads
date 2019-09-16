@@ -209,25 +209,5 @@
 
         > article.image_ext.normal.url
         '/media/images/2018-10-09/image.normal.jpg'
-
-    Перенарезка вариаций
-    --------------------
-        # перенарезка всех вариаций одной картинки
-        > article.image_ext.recut()
-
-        # перенарезка указанных вариаций для всех статей
-        > for article in Article.objects.all():
-              if article.image_ext:
-                  article.image_ext.recut(['desktop', 'tablet'])
-
-    Динамическое создание элемента галереи
-    --------------------------------------
-        from django.core.files import File
-
-        image_item = ArticleGalleryImageItem(
-            file=File(open('1600x1200.jpg', 'rb'), name='1600x1200.jpg')
-        )
-        image_item.attach_to(article.gallery, 'image')
-
 """
 default_app_config = 'paper_uploads.apps.Config'

@@ -1,20 +1,20 @@
 import os
 from django.test import TestCase
 from django.core.files import File
+from .models import gallery
 from .models.fields import GalleryItemTypeField
-from .models import Gallery, ImageGallery, GallerySVGItem, GalleryImageItem, GalleryFileItem
 from .views.gallery import detect_file_type
 
 TESTS_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'tests'))
 
 
-class TestGallery(Gallery):
-    svg = GalleryItemTypeField(GallerySVGItem)
-    image = GalleryItemTypeField(GalleryImageItem)
-    file = GalleryItemTypeField(GalleryFileItem)
+class TestGallery(gallery.Gallery):
+    svg = GalleryItemTypeField(gallery.GallerySVGItem)
+    image = GalleryItemTypeField(gallery.GalleryImageItem)
+    file = GalleryItemTypeField(gallery.GalleryFileItem)
 
 
-class TestGalleryWithVariations(ImageGallery):
+class TestGalleryWithVariations(gallery.ImageGallery):
     VARIATIONS = dict(
         foo=dict(
             size=(100, 100)
@@ -92,7 +92,7 @@ class TestFiles(TestCase):
                 item = GalleryFileItem(
                     file=File(fp, name='bubuka.PDF'),
                 )
-                item.attach_to(gallery, 'file')
+                item.attach_to(gallery)
                 item.full_clean()
                 item.save()
 
@@ -118,7 +118,7 @@ class TestFiles(TestCase):
                     name='the car.JPEG'
                 ),
             )
-            item.attach_to(gallery, 'image')
+            item.attach_to(gallery)
             self.assertEqual(item.name, 'the car')
             self.assertEqual(item.extension, 'jpeg')
             self.assertEqual(item.size, 214779)

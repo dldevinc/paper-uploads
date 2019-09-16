@@ -107,8 +107,8 @@ class Page(models.Model):
 
 **Note**: наследование от `Gallery` на самом деле создает
 [proxy-модель](https://docs.djangoproject.com/en/2.2/topics/db/models/#proxy-models),
-чтобы не плодить множество однотипных таблиц в БД.
-Благодаря переопределенному менеджеру `objects` в классе
+чтобы не плодить множество однотипных таблиц в БД. Но,
+благодаря переопределенному менеджеру `objects` в классе
 `Gallery`, запросы через этот менеджер будут затрагивать 
 только галереи того же класса, от имени которого вызываются.
 
@@ -122,51 +122,50 @@ MyGallery._meta.base_manager.all()
 
 ---
 
-Галерея может включать элементы практически 
-любого вида (изображение с вариациями, SVG-файл, простой файл).
-Каждый такой тип должен описывается моделью, унаследованной 
-от `GalleryItemBase`. Эти модели подключаются к галерее с
-помощью `GalleryItemTypeField`. Синтаксис подключения 
+Галерея может включать элементы любого вида, который можно 
+описать с помощью модели, унаследованной от `GalleryItemBase`. 
+Перечень допустимых классов элементов галереи задается
+с помощью `GalleryItemTypeField`. Синтаксис подключения 
 подобен добавлению поля `ForeignKey` к модели.
 
-"Из коробки" доступны  следующие виды элементов галереи:
+"Из коробки" доступны следующие классы элементов галереи:
 * `GalleryImageItem` - изображение с вариациями.
 * `GalleryFileItem` - любой файл.
 * `GallerySVGItem` - для хранения svg-файлов. Аналогичен `GalleryFileItem`, но в превью админки показывается картинка.
 
 ```python
+from paper_uploads.models import gallery
 from paper_uploads.models.fields import GalleryItemTypeField
-from paper_uploads.models import (
-    Gallery, GalleryImageItem, GallerySVGItem, GalleryFileItem
-)
 
 
-class PageFiles(Gallery):
-    svg = GalleryItemTypeField(GallerySVGItem)
-    image = GalleryItemTypeField(GalleryImageItem)
-    file = GalleryItemTypeField(GalleryFileItem)
+class PageFiles(gallery.Gallery):
+    svg = GalleryItemTypeField(gallery.GallerySVGItem)
+    image = GalleryItemTypeField(gallery.GalleryImageItem)
+    file = GalleryItemTypeField(gallery.GalleryFileItem)
 ```
+
+Порядок подключения классов имеет значение: при загрузке
+файла через админку, его класс определется первым классом,
+чей метод `check_file` вернет `True`. 
 
 Для галерей, предназначенных исключительно для изображений, 
 "из коробки" доступна модель для наследования `ImageGallery`,
-с предустановленным контролем mimetype на этапе выбора файла.
+с предустановленным фильтром mimetype на этапе выбора файла.
 
 ---
 
 ```python
 from django.db import models
+from paper_uploads.models import gallery
 from paper_uploads.models.fields import GalleryField, GalleryItemTypeField
-from paper_uploads.models import (
-    Gallery, ImageGallery, GalleryFileItem, GallerySVGItem
-)
 
 
-class PageFiles(Gallery):
-    svg = GalleryItemTypeField(GallerySVGItem)
-    file = GalleryItemTypeField(GalleryFileItem)
+class PageFiles(gallery.Gallery):
+    svg = GalleryItemTypeField(gallery.GallerySVGItem)
+    file = GalleryItemTypeField(gallery.GalleryFileItem)
 
 
-class PageImages(ImageGallery):
+class PageImages(gallery.ImageGallery):
     VARIATIONS = dict(
         wide=dict(
             size=(1600, 0),
