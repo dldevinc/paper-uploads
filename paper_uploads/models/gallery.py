@@ -7,7 +7,6 @@ from django.template import loader
 from django.utils.timezone import now
 from django.db.models import functions
 from django.db.models.base import ModelBase
-from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from django.utils.module_loading import import_string
 from django.contrib.contenttypes.models import ContentType
@@ -103,15 +102,6 @@ class GalleryItemBase(PolymorphicModel):
             self.order = max_order + 1
         super().save(*args, **kwargs)
 
-    @cached_property
-    def gallery_model(self):
-        """
-        Модель галереи.
-
-        :rtype: T <= GalleryBase
-        """
-        return self.content_type.model_class()
-
     def as_dict(self):
         """
         Словарь, возвращаемый в виде JSON после загрузки файла.
@@ -123,6 +113,14 @@ class GalleryItemBase(PolymorphicModel):
             'gallery_id': self.object_id,
             'item_type': self.item_type,
         }
+
+    @classmethod
+    def check_file(cls, file):
+        """
+        Проверка загруженного файла на принадлежность текущему типу элемента галереи.
+        Если укзанный файл поддерживается, метод должен вернуть True.
+        """
+        raise NotImplementedError
 
     def attach_to(self, gallery, item_type=None, commit=True):
         """
@@ -222,6 +220,13 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
             })
         }
 
+    @classmethod
+    def check_file(cls, file):
+        mimetype = magic.from_buffer(file.read(1024), mime=True)
+        file.seek(0)    # correct file position after mimetype detection
+        basetype, subtype = mimetype.split('/', 1)
+        return basetype == 'image'
+
 
 class GalleryMetaclass(ModelBase):
     """
@@ -283,20 +288,6 @@ class GalleryBase(SlaveModelMixin, metaclass=GalleryMetaclass):
             errors.extend(field.check(**kwargs))
         return errors
 
-    @classmethod
-    def guess_item_type(cls, file):
-        # FIX: SVG не обрабатывается PIL, но имеет MIME-тип изображения
-        filename, ext = posixpath.splitext(file.name)
-        if ext.lower() == '.svg':
-            return 'svg'
-
-        mimetype = magic.from_buffer(file.read(1024), mime=True)
-        file.seek(0)
-        basetype, subtype = mimetype.split('/', 1)
-        if basetype == 'image':
-            return 'image'
-        return 'file'
-
     def get_items(self, item_type=None):
         if item_type is None:
             return self.items.order_by('order')
@@ -339,6 +330,10 @@ class GalleryFileItem(GalleryFileItemBase):
 
     preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
 
+    @classmethod
+    def check_file(cls, file):
+        return True
+
     def as_dict(self):
         return {
             **super().as_dict(),
@@ -362,6 +357,11 @@ class GallerySVGItem(GalleryFileItemBase):
     class Meta(GalleryItemBase.Meta):
         verbose_name = _('SVG-file')
         verbose_name_plural = _('SVG-files')
+
+    @classmethod
+    def check_file(cls, file):
+        filename, ext = posixpath.splitext(file.name)
+        return ext.lower() == '.svg'
 
     def as_dict(self):
         return {
@@ -450,10 +450,6 @@ class ImageGallery(Gallery):
     Галерея, позволяющая хранить только изображения.
     """
     image = GalleryItemTypeField(GalleryImageItem)
-
-    @classmethod
-    def guess_item_type(cls, file):
-        return 'image'
 
     @classmethod
     def get_validation(cls):

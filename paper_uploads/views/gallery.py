@@ -16,6 +16,13 @@ from .. import signals
 from . import helpers
 
 
+def detect_file_type(gallery_cls, file):
+    for item_type, item_type_field in gallery_cls.item_types.items():
+        if item_type_field.model.check_file(file):
+            return item_type
+    return None
+
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def delete_gallery(request):
@@ -79,9 +86,9 @@ def upload_item(request):
         return helpers.error_response('Invalid gallery content type')
 
     # Определение типа элемента галереи
-    item_type = gallery_cls.guess_item_type(file)
+    item_type = detect_file_type(gallery_cls, file)
     if item_type is None:
-        return helpers.error_response('Unsupported file type')
+        return helpers.error_response('Unsupported file')
 
     # Получение объекта галереи
     gallery_id = request.POST.get('gallery_id')

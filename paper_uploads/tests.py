@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.core.files import File
 from .models.fields import GalleryItemTypeField
 from .models import Gallery, ImageGallery, GallerySVGItem, GalleryImageItem, GalleryFileItem
+from .views.gallery import detect_file_type
 
 TESTS_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'tests'))
 
@@ -62,6 +63,22 @@ class TestFiles(TestCase):
             self.assertTrue(os.path.isfile(image.path))
         finally:
             image.delete()
+
+    def test_detect_file_type(self):
+        with self.subTest('svg'):
+            with open(os.path.join(TESTS_PATH, 'cartman.svg'), 'rb') as svg:
+                item_type = detect_file_type(TestGallery, svg)
+                self.assertEqual(item_type, 'svg')
+
+        with self.subTest('image'):
+            with open(os.path.join(TESTS_PATH, 'image.jpg'), 'rb') as image:
+                item_type = detect_file_type(TestGallery, image)
+                self.assertEqual(item_type, 'image')
+
+        with self.subTest('image'):
+            with open(os.path.join(TESTS_PATH, 'small.pdf'), 'rb') as file:
+                item_type = detect_file_type(TestGallery, file)
+                self.assertEqual(item_type, 'file')
 
     def test_gallery_proxy_inheritance(self):
         self.assertTrue(TestGallery._meta.proxy)
