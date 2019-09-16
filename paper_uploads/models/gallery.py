@@ -102,6 +102,15 @@ class GalleryItemBase(PolymorphicModel):
             self.order = max_order + 1
         super().save(*args, **kwargs)
 
+    def get_gallery_class(self):
+        return self.content_type.model_class()
+
+    def get_gallery_field(self):
+        gallery_cls = self.get_gallery_class()
+        for name, field in gallery_cls.item_types.items():
+            if field.model is type(self):
+                return field
+
     def as_dict(self):
         """
         Словарь, возвращаемый в виде JSON после загрузки файла.
@@ -170,7 +179,6 @@ class GalleryFileItemBase(GalleryItemBase, UploadedFileBase):
 
 class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
     TEMPLATE_NAME = 'paper_uploads/gallery_item/image.html'
-    VARIATIONS = {}
     PREVIEW_VARIATIONS = settings.GALLERY_IMAGE_ITEM_PREVIEW_VARIATIONS
 
     file = models.FileField(_('file'), max_length=255, storage=upload_storage,
@@ -182,10 +190,32 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
         verbose_name_plural = _('images')
 
     def get_variations(self):
+        """
+        Перебираем возможные места вероятного определения вариаций и берем
+        первое непустое значение. Порядок проверки:
+            1) параметр `variations` поля `GalleryItemTypeField`
+            2) член класса галереи VARIATIONS
+        К найденному словарю примешиваются вариации для админки.
+        :return: dict
+        """
         if not hasattr(self, '_variations_cache'):
-            variations = dict(self.VARIATIONS, **self.PREVIEW_VARIATIONS)
+            item_type_field = self.get_gallery_field()
+            variations = item_type_field.extra.get('variations')
+            if variations is None:
+                gallery_cls = self.get_gallery_class()
+                variations = getattr(gallery_cls, 'VARIATIONS', None)
+
+            variations = (variations or {}).copy()
+            variations.update(self.PREVIEW_VARIATIONS)
             self._variations_cache = utils.build_variations(variations)
         return self._variations_cache
+
+    def as_dict(self):
+        return {
+            **super().as_dict(),
+            'name': self.canonical_name,
+            'url': self.file.url,
+        }
 
     def post_save_new_file(self):
         """
@@ -203,25 +233,6 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
             ))
         else:
             self.recut()
-
-    def as_dict(self):
-        return {
-            **super().as_dict(),
-            'name': self.canonical_name,
-            'url': self.file.url,
-            'preview': loader.render_to_string('paper_uploads/gallery_item/preview/image.html', {
-                'item': self,
-                'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
-            })
-        }
-
-    @classmethod
-    def check_file(cls, file):
-        mimetype = magic.from_buffer(file.read(1024), mime=True)
-        file.seek(0)    # correct file position after mimetype detection
-        basetype, subtype = mimetype.split('/', 1)
-        return basetype == 'image'
 
 
 class GalleryMetaclass(ModelBase):
@@ -373,24 +384,24 @@ class GallerySVGItem(GalleryFileItemBase):
 class GalleryImageItem(GalleryImageItemBase):
     FORM_CLASS = 'paper_uploads.forms.dialogs.gallery.GalleryImageDialog'
 
-    def get_variations(self):
-        if not hasattr(self, '_variations_cache'):
-            if self.VARIATIONS:
-                variations = self.VARIATIONS.copy()
-            elif 'gallery' in self.__dict__ and self.gallery:   # fix __getattr__ recursion
-                variations = self.gallery.VARIATIONS.copy()
-            else:
-                # Получение вариаций из модели галереи для решения проблемы
-                # с остаточными вариациями при удалением непустой галереи.
-                gallery_method = getattr(self.content_type.model_class(), 'get_variations', None)
-                if gallery_method is not None:
-                    variations = gallery_method()
-                else:
-                    variations = {}
+    def as_dict(self):
+        return {
+            **super().as_dict(),
+            'name': self.canonical_name,
+            'url': self.file.url,
+            'preview': loader.render_to_string('paper_uploads/gallery_item/preview/image.html', {
+                'item': self,
+                'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
+                'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
+            })
+        }
 
-            variations.update(self.PREVIEW_VARIATIONS)
-            self._variations_cache = utils.build_variations(variations)
-        return self._variations_cache
+    @classmethod
+    def check_file(cls, file):
+        mimetype = magic.from_buffer(file.read(1024), mime=True)
+        file.seek(0)    # correct file position after mimetype detection
+        basetype, subtype = mimetype.split('/', 1)
+        return basetype == 'image'
 
 
 class GalleryManager(models.Manager):
@@ -408,8 +419,6 @@ class Gallery(GalleryBase):
     """
     Галерея, позволяющая хранить изображаения, SVG-файлы и файлы.
     """
-    VARIATIONS = {}
-
     # поле, ссылающееся на одно из изображений галереи (для экономии SQL-запросов)
     cover = models.ForeignKey(GalleryImageItem, verbose_name=_('cover image'),
         null=True, editable=False, on_delete=models.SET_NULL)
@@ -427,18 +436,6 @@ class Gallery(GalleryBase):
                 for_concrete_model=False
             )
         super().save(*args, **kwargs)
-
-    @classmethod
-    def get_variations(cls):
-        """
-        Кэшируем конфиги вариаций для частичного решения проблемы с остаточными
-        вариациями при удалением непустой галереи.
-        """
-        if not hasattr(cls, '_variations_cache'):
-            variations = cls.VARIATIONS.copy()
-            variations.update(cls.item_types['image'].model.PREVIEW_VARIATIONS)
-            cls._variations_cache = variations
-        return cls._variations_cache
 
 
 class ImageGallery(Gallery):

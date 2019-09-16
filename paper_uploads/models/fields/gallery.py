@@ -51,7 +51,7 @@ class GalleryItemTypeField:
     """
     default_validators = []  # Default set of validators
 
-    def __init__(self, to, name=None, validators=()):
+    def __init__(self, to, name=None, validators=(), **kwargs):
         self.name = name
 
         try:
@@ -66,6 +66,7 @@ class GalleryItemTypeField:
 
         self.model = to
         self._validators = list(validators)
+        self.extra = kwargs.copy()
 
     def check(self, **kwargs):
         return [
