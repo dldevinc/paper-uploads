@@ -1,5 +1,6 @@
 import magic
 import posixpath
+from collections import OrderedDict
 from django.db import models, DEFAULT_DB_ALIAS
 from django.core import checks
 from django.template import loader
@@ -16,6 +17,7 @@ from polymorphic.models import PolymorphicModel
 from .base import SlaveModelMixin
 from .file import UploadedFileBase
 from .image import UploadedImageBase
+from .fields import GalleryItemTypeField
 from ..conf import settings, FILE_ICONS, FILE_ICON_DEFAULT
 from ..storage import upload_storage
 from .. import tasks
@@ -134,13 +136,13 @@ class GalleryItemBase(PolymorphicModel):
         self.content_type = ContentType.objects.get_for_model(gallery, for_concrete_model=False)
         self.object_id = gallery.pk
         if item_type is None:
-            for allowed_type, model in gallery.ALLOWED_ITEM_TYPES.items():
-                if model is type(self):
-                    item_type = allowed_type
+            for name, field in gallery.item_types.items():
+                if field.model is type(self):
+                    item_type = name
                     break
             else:
                 raise ValueError('Gallery item type is not recognized')
-        if item_type not in gallery.ALLOWED_ITEM_TYPES:
+        if item_type not in gallery.item_types:
             raise ValueError('Unsupported gallery item type: %s' % item_type)
         self.item_type = item_type
         if commit:
@@ -221,61 +223,92 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
         }
 
 
-class GalleryBase(SlaveModelMixin):
-    # Карта поддерживаемых моделей элементов.
-    # Пример:
-    #   ALLOWED_ITEM_TYPES = {
-    #       'image': GalleryImageItem,
-    #       'video': GalleryVideoItem,
-    #       'file': GalleryFileItem,
-    #   }
-    ALLOWED_ITEM_TYPES = {}
+class GalleryMetaclass(ModelBase):
+    """
+    Хак, создающий прокси-модели вместо наследования, если явно не указано
+    обратное.
+    """
+    def __new__(mcs, name, bases, attrs, **kwargs):
+        new_attrs = {
+            '_local_item_type_fields': []
+        }
+        for obj_name, obj in list(attrs.items()):
+            new_attrs[obj_name] = obj
 
+        # set proxy=True by default
+        meta = new_attrs.pop('Meta', None)
+        if meta is None:
+            meta = type('Meta', (), {'proxy': True})
+        elif not hasattr(meta, 'proxy'):
+            meta = type('Meta', meta.__bases__, dict(meta.__dict__))
+        new_attrs['Meta'] = meta
+
+        new_class = super().__new__(mcs, name, bases, new_attrs, **kwargs)
+        for base in bases:
+            item_type_fields = getattr(base, '_local_item_type_fields', [])
+            for field in item_type_fields:
+                new_class.add_to_class(field.name, field)
+        return new_class
+
+
+class GalleryItemTypesDescriptor:
+    def __init__(self, name):
+        self.name = name
+
+    def __get__(self, instance, owner):
+        if owner is None:
+            owner = type(instance)
+        return OrderedDict(
+            (field.name, field)
+            for field in owner._local_item_type_fields
+        )
+
+
+class GalleryBase(SlaveModelMixin, metaclass=GalleryMetaclass):
+    item_types = GalleryItemTypesDescriptor(name='item_types')
     items = GenericRelation(GalleryItemBase, for_concrete_model=False)
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
 
     class Meta:
+        proxy = False
         abstract = True
         default_permissions = ()
         verbose_name = _('gallery')
         verbose_name_plural = _('galleries')
 
     @classmethod
-    def check(cls, **kwargs):
-        return [
-            *super().check(**kwargs),
-            *cls._check_image_item_unique(),
-        ]
+    def _check_fields(cls, **kwargs):
+        errors = super()._check_fields(**kwargs)
+        for field in cls._local_item_type_fields:
+            errors.extend(field.check(**kwargs))
+        return errors
 
     @classmethod
-    def _check_image_item_unique(cls, **kwargs):
-        errors = []
-        image_models = tuple(
-            model
-            for model in cls.ALLOWED_ITEM_TYPES.values()
-            if issubclass(model, GalleryImageItemBase)
-        )
-        if len(image_models) > 1:
-            errors.append(
-                checks.Error(
-                    "Gallery must not contain multiple image items",
-                    obj=cls,
-                )
-            )
-        return errors
+    def guess_item_type(cls, file):
+        # FIX: SVG не обрабатывается PIL, но имеет MIME-тип изображения
+        filename, ext = posixpath.splitext(file.name)
+        if ext.lower() == '.svg':
+            return 'svg'
+
+        mimetype = magic.from_buffer(file.read(1024), mime=True)
+        file.seek(0)
+        basetype, subtype = mimetype.split('/', 1)
+        if basetype == 'image':
+            return 'image'
+        return 'file'
 
     def get_items(self, item_type=None):
         if item_type is None:
             return self.items.order_by('order')
-        if item_type not in self.ALLOWED_ITEM_TYPES:
+        if item_type not in self.item_types:
             raise ValueError('Unsupported gallery item type: %s' % item_type)
         return self.items.filter(item_type=item_type).order_by('order')
 
     def _recut_sync(self, names=(), using=DEFAULT_DB_ALIAS):
         recutable_items = tuple(
             name
-            for name, item_type in self.ALLOWED_ITEM_TYPES.items()
-            if hasattr(item_type, 'recut')
+            for name, field in self.item_types.items()
+            if hasattr(field.model, 'recut')
         )
         for item in self.items.using(using).filter(item_type__in=recutable_items):
             item._recut_sync(names)
@@ -364,22 +397,6 @@ class GalleryImageItem(GalleryImageItemBase):
         return self._variations_cache
 
 
-class GalleryMetaclass(ModelBase):
-    """
-    Хак, задающий унаследованным моделям proxy=True по умолчанию.
-    """
-    def __new__(mcs, name, bases, attrs, **kwargs):
-        flag = '_{}__ProxyGallery'.format(name)
-        if attrs.get(flag) is not False:
-            attr_meta = attrs.pop('Meta', None)
-            if attr_meta is None:
-                attr_meta = type('Meta', (), {'proxy': True})
-            elif not hasattr(attr_meta, 'proxy'):
-                setattr(attr_meta, 'proxy', True)
-            attrs['Meta'] = attr_meta
-        return super().__new__(mcs, name, bases, attrs, **kwargs)
-
-
 class GalleryManager(models.Manager):
     """
     Из-за того, что все галереи являются прокси-моделями, запросы от имени
@@ -391,22 +408,11 @@ class GalleryManager(models.Manager):
         return super().get_queryset().filter(gallery_content_type=gallery_ct)
 
 
-class Gallery(GalleryBase, metaclass=GalleryMetaclass):
+class Gallery(GalleryBase):
     """
     Галерея, позволяющая хранить изображаения, SVG-файлы и файлы.
-    Наследование от этой галереи создает proxy-модель.
     """
-
-    # Флаг, отмечающий реальную модель, от которой при обычном наследовании
-    # будут создвваться прокси-модели (если явно не указано обратное).
-    __ProxyGallery = False
-
     VARIATIONS = {}
-    ALLOWED_ITEM_TYPES = {
-        'image': GalleryImageItem,
-        'file': GalleryFileItem,
-        'svg': GallerySVGItem,
-    }
 
     # поле, ссылающееся на одно из изображений галереи (для экономии SQL-запросов)
     cover = models.ForeignKey(GalleryImageItem, verbose_name=_('cover image'),
@@ -416,26 +422,15 @@ class Gallery(GalleryBase, metaclass=GalleryMetaclass):
 
     objects = GalleryManager()
 
+    class Meta:
+        proxy = False   # явно указываем, что это не проски-модель
+
     def save(self, *args, **kwargs):
         if not self.gallery_content_type:
             self.gallery_content_type = ContentType.objects.get_for_model(self,
                 for_concrete_model=False
             )
         super().save(*args, **kwargs)
-
-    @classmethod
-    def guess_item_type(cls, file):
-        # FIX: SVG не обрабатывается PIL, но имеет MIME-тип изображения
-        filename, ext = posixpath.splitext(file.name)
-        if ext.lower() == '.svg':
-            return 'svg'
-
-        mimetype = magic.from_buffer(file.read(1024), mime=True)
-        file.seek(0)
-        basetype, subtype = mimetype.split('/', 1)
-        if basetype == 'image':
-            return 'image'
-        return 'file'
 
     @classmethod
     def get_variations(cls):
@@ -445,7 +440,7 @@ class Gallery(GalleryBase, metaclass=GalleryMetaclass):
         """
         if not hasattr(cls, '_variations_cache'):
             variations = cls.VARIATIONS.copy()
-            variations.update(cls.ALLOWED_ITEM_TYPES['image'].PREVIEW_VARIATIONS)
+            variations.update(cls.item_types['image'].model.PREVIEW_VARIATIONS)
             cls._variations_cache = variations
         return cls._variations_cache
 
@@ -454,9 +449,7 @@ class ImageGallery(Gallery):
     """
     Галерея, позволяющая хранить только изображения.
     """
-    ALLOWED_ITEM_TYPES = {
-        'image': GalleryImageItem,
-    }
+    image = GalleryItemTypeField(GalleryImageItem)
 
     @classmethod
     def guess_item_type(cls, file):

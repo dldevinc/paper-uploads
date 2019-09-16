@@ -1,16 +1,19 @@
 import os
 from django.test import TestCase
 from django.core.files import File
-from .models import Gallery
+from .models.fields import GalleryItemTypeField
+from .models import Gallery, ImageGallery, GallerySVGItem, GalleryImageItem, GalleryFileItem
 
 TESTS_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'tests'))
 
 
 class TestGallery(Gallery):
-    pass
+    svg = GalleryItemTypeField(GallerySVGItem)
+    image = GalleryItemTypeField(GalleryImageItem)
+    file = GalleryItemTypeField(GalleryFileItem)
 
 
-class TestGalleryWithVariations(Gallery):
+class TestGalleryWithVariations(ImageGallery):
     VARIATIONS = dict(
         foo=dict(
             size=(100, 100)

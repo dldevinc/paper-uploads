@@ -1,4 +1,6 @@
 from django.core import checks
+from django.db.models import Field
+from django.utils.functional import cached_property
 from .base import FileFieldBase
 from ... import forms
 
@@ -40,3 +42,41 @@ class GalleryField(FileFieldBase):
             'owner_fieldname': self.name,
             **kwargs
         })
+
+
+class GalleryItemTypeField:
+    """
+    Поле для подключения классов элементов галереи.
+    Допустимо для использования только в подклассах галерей.
+    """
+    default_validators = []  # Default set of validators
+
+    def __init__(self, to, name=None, validators=()):
+        self.name = name
+
+        try:
+            to._meta.model_name
+        except AttributeError:
+            assert isinstance(to, str), (
+                "%s(%r) is invalid. First parameter to GalleryItemField must be a model" % (
+                    self.__class__.__name__,
+                    to,
+                )
+            )
+
+        self.model = to
+        self._validators = list(validators)
+
+    def check(self, **kwargs):
+        return [
+            *Field._check_field_name(self, **kwargs),
+            *Field._check_validators(self, **kwargs),
+        ]
+
+    @cached_property
+    def validators(self):
+        return [*self.default_validators, *self._validators]
+
+    def contribute_to_class(self, cls, name, **kwargs):
+        self.name = self.name or name
+        cls._local_item_type_fields.append(self)

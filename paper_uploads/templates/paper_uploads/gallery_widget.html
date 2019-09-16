@@ -46,9 +46,9 @@
     {% include 'paper_uploads/gallery_item/preloader.html' %}
   </template>
 
-  {% for item_type, item_model in gallery_cls.ALLOWED_ITEM_TYPES.items %}
-    <template class="gallery__{{ item_type }}-item-template">
-      {% include item_model.TEMPLATE_NAME %}
+  {% for name, field in gallery_cls.item_types.items %}
+    <template class="gallery__{{ name }}-item-template">
+      {% include field.model.TEMPLATE_NAME %}
     </template>
   {% endfor %}
 </div>

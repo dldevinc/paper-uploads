@@ -125,9 +125,9 @@ MyGallery._meta.base_manager.all()
 Галерея может включать элементы практически 
 любого вида (изображение с вариациями, SVG-файл, простой файл).
 Каждый такой тип должен описывается моделью, унаследованной 
-от `GalleryItemBase`. Перечень типов элементов, которые
-должна поддерживать галерея, указывается в словаре 
-`ALLOWED_ITEM_TYPES`.
+от `GalleryItemBase`. Эти модели подключаются к галерее с
+помощью `GalleryItemTypeField`. Синтаксис подключения 
+подобен добавлению поля `ForeignKey` к модели.
 
 "Из коробки" доступны  следующие виды элементов галереи:
 * `GalleryImageItem` - изображение с вариациями.
@@ -135,15 +135,19 @@ MyGallery._meta.base_manager.all()
 * `GallerySVGItem` - для хранения svg-файлов. Аналогичен `GalleryFileItem`, но в превью админки показывается картинка.
 
 ```python
+from paper_uploads.models.fields import GalleryItemTypeField
+from paper_uploads.models import (
+    Gallery, GalleryImageItem, GallerySVGItem, GalleryFileItem
+)
+
+
 class PageFiles(Gallery):
-    ALLOWED_ITEM_TYPES = {
-        'image': GalleryImageItem,
-        'svg': GallerySVGItem,
-        'file': GalleryFileItem,
-    }
+    svg = GalleryItemTypeField(GallerySVGItem)
+    image = GalleryItemTypeField(GalleryImageItem)
+    file = GalleryItemTypeField(GalleryFileItem)
 ```
 
-Для галерей, предназначенных исключительно для изображений 
+Для галерей, предназначенных исключительно для изображений, 
 "из коробки" доступна модель для наследования `ImageGallery`,
 с предустановленным контролем mimetype на этапе выбора файла.
 
@@ -151,17 +155,15 @@ class PageFiles(Gallery):
 
 ```python
 from django.db import models
-from paper_uploads.models.fields import GalleryField
+from paper_uploads.models.fields import GalleryField, GalleryItemTypeField
 from paper_uploads.models import (
     Gallery, ImageGallery, GalleryFileItem, GallerySVGItem
 )
 
 
 class PageFiles(Gallery):
-    ALLOWED_ITEM_TYPES = {
-        'file': GalleryFileItem,
-        'svg': GallerySVGItem,
-    }
+    svg = GalleryItemTypeField(GallerySVGItem)
+    file = GalleryItemTypeField(GalleryFileItem)
 
 
 class PageImages(ImageGallery):
@@ -275,13 +277,21 @@ python3 manage.py recreate_variations 'page.Page' --field=image
 * `ImageMaxSizeValidator` - устанавливает максимальный размер загружаемых изображений.
 
 ```python
-from paper_uploads.models.fields import ImageField
+from django.db import models
+from paper_uploads.models import Gallery, GalleryFileItem
+from paper_uploads.models.fields import ImageField, GalleryItemTypeField 
 from paper_uploads.validators import SizeLimitValidator, ImageMaxSizeValidator
 
 class Page(models.Model):
     image = ImageField(_('image'), blank=True, validators=[
         SizeLimitValidator(10 * 1024 * 1024),   # max 10Mb
         ImageMaxSizeValidator(800, 800)     # max dimensions 800x800
+    ])
+
+
+class PageGallery(Gallery):
+    file = GalleryItemTypeField(GalleryFileItem, validators=[
+        SizeLimitValidator(10 * 1024 * 1024), 
     ])
 ```
 

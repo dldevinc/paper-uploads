@@ -1,8 +1,8 @@
 from pilkit import processors
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from paper_uploads.models import Gallery, ImageGallery
-from paper_uploads.models.fields import FileField, ImageField, GalleryField
+from paper_uploads.models import Gallery, ImageGallery, GalleryImageItem, GallerySVGItem, GalleryFileItem
+from paper_uploads.models.fields import FileField, ImageField, GalleryField, GalleryItemTypeField
 
 
 class PageGallery(ImageGallery):
@@ -26,7 +26,9 @@ class PageGallery(ImageGallery):
 
 
 class PageFilesGallery(Gallery):
-    pass
+    svg = GalleryItemTypeField(GallerySVGItem)
+    image = GalleryItemTypeField(GalleryImageItem)
+    file = GalleryItemTypeField(GalleryFileItem)
 
 
 class Page(models.Model):

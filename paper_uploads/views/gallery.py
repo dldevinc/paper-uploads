@@ -23,7 +23,7 @@ def delete_gallery(request):
 
     gallery_content_type_id = request.POST.get('paperGalleryContentType')
     try:
-        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
+        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)  # type: GalleryBase
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid gallery content type')
@@ -72,7 +72,7 @@ def upload_item(request):
     # Определение модели галереи
     gallery_content_type_id = request.POST.get('paperGalleryContentType')
     try:
-        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
+        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)  # type: GalleryBase
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid gallery content type')
@@ -106,7 +106,7 @@ def upload_item(request):
                     owner_fieldname=request.POST.get('paperOwnerFieldname')
                 )
 
-            model_class = gallery_cls.ALLOWED_ITEM_TYPES[item_type]
+            model_class = gallery_cls.item_types[item_type].model
             instance = model_class(
                 content_type_id=gallery_content_type_id,
                 object_id=gallery.pk,
@@ -144,15 +144,15 @@ def delete_item(request):
 
     gallery_content_type_id = request.POST.get('paperGalleryContentType')
     try:
-        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
+        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)  # type: GalleryBase
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid gallery content type')
 
     item_type = request.POST.get('item_type')
-    for key, model in gallery_cls.ALLOWED_ITEM_TYPES.items():
-        if item_type == key:
-            model_class = model
+    for name, field in gallery_cls.item_types.items():
+        if item_type == name:
+            model_class = field.model
             break
     else:
         return helpers.error_response('Invalid item type')
@@ -185,7 +185,7 @@ def sort_items(request):
 
     gallery_content_type_id = request.POST.get('paperGalleryContentType')
     try:
-        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
+        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)  # type: GalleryBase
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid gallery content type')
@@ -233,15 +233,15 @@ class ChangeView(PermissionRequiredMixin, FormView):
     def get_instance(self):
         gallery_content_type_id = self.request.GET.get('paperGalleryContentType')
         try:
-            gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
+            gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)  # type: GalleryBase
         except exceptions.InvalidContentType:
             logger.exception('Error')
             return helpers.error_response('Invalid gallery content type')
 
         item_type = self.request.GET.get('item_type')
-        for key, model in gallery_cls.ALLOWED_ITEM_TYPES.items():
-            if item_type == key:
-                model_class = model
+        for name, field in gallery_cls.item_types.items():
+            if item_type == name:
+                model_class = field.model
                 break
         else:
             raise exceptions.AjaxFormError('Invalid item type')
