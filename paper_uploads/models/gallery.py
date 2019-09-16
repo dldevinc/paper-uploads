@@ -364,7 +364,7 @@ class GalleryImageItem(GalleryImageItemBase):
         return self._variations_cache
 
 
-class GalleryProxyChilds(ModelBase):
+class GalleryMetaclass(ModelBase):
     """
     Хак, задающий унаследованным моделям proxy=True по умолчанию.
     """
@@ -391,7 +391,7 @@ class GalleryManager(models.Manager):
         return super().get_queryset().filter(gallery_content_type=gallery_ct)
 
 
-class Gallery(GalleryBase, metaclass=GalleryProxyChilds):
+class Gallery(GalleryBase, metaclass=GalleryMetaclass):
     """
     Галерея, позволяющая хранить изображаения, SVG-файлы и файлы.
     Наследование от этой галереи создает proxy-модель.
