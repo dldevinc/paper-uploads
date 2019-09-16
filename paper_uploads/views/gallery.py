@@ -9,6 +9,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
 from ..models import GalleryItemBase, GalleryBase
+from ..utils import run_validators
 from ..logging import logger
 from .. import exceptions
 from .. import signals
@@ -106,8 +107,8 @@ def upload_item(request):
                     owner_fieldname=request.POST.get('paperOwnerFieldname')
                 )
 
-            model_class = gallery_cls.item_types[item_type].model
-            instance = model_class(
+            item_type_field = gallery_cls.item_types[item_type]
+            instance = item_type_field.model(
                 content_type_id=gallery_content_type_id,
                 object_id=gallery.pk,
                 item_type=item_type,
@@ -116,6 +117,7 @@ def upload_item(request):
                 size=file.size
             )
             instance.full_clean()
+            run_validators(file, item_type_field.validators)
             instance.save()
     except ValidationError as e:
         messages = helpers.get_exception_messages(e)
