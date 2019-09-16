@@ -122,27 +122,23 @@ class GalleryItemBase(PolymorphicModel):
         """
         raise NotImplementedError
 
-    def attach_to(self, gallery, item_type=None, commit=True):
+    def attach_to(self, gallery, commit=True):
         """
         Подключение элемента к галерее.
         Используется в случае динамического создания элементов галереи.
 
         :type gallery: GalleryBase
-        :type item_type: str
         :type commit: bool
         """
         self.content_type = ContentType.objects.get_for_model(gallery, for_concrete_model=False)
         self.object_id = gallery.pk
-        if item_type is None:
-            for name, field in gallery.item_types.items():
-                if field.model is type(self):
-                    item_type = name
-                    break
-            else:
-                raise ValueError('Gallery item type is not recognized')
-        if item_type not in gallery.item_types:
-            raise ValueError('Unsupported gallery item type: %s' % item_type)
-        self.item_type = item_type
+        for name, field in gallery.item_types.items():
+            if field.model is type(self):
+                self.item_type = name
+                break
+        else:
+            raise ValueError('Unsupported gallery item: %s' % type(self).__name__)
+
         if commit:
             self.save()
 
