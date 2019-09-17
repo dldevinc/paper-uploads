@@ -279,7 +279,7 @@ class UploadedImageBase(UploadedFileBase):
             logger.warning('File not found: {}'.format(path))
             return
 
-        output_format = variation.output_format(path)
+        output_format = variation.output_format(path).lower()
         variation_postprocess = variation.extra_context.get(output_format, {}).get('postprocess', {})
         global_postprocess = getattr(settings, 'POSTPROCESS', {}).get(output_format, {})
 

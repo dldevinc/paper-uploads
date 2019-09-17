@@ -54,7 +54,11 @@ PAPER_UPLOADS = {
         'PNG': {
             'COMMAND': 'pngquant',
             'ARGUMENTS': '--force --skip-if-larger --output {file} {file}'
-        }
+        },
+        'SVG': {
+            'COMMAND': 'svgo',
+            'ARGUMENTS': '--precision=4 {file}',
+        },   
     }
 }
 ```

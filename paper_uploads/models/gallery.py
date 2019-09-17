@@ -1,5 +1,8 @@
+import os
 import magic
+import shutil
 import posixpath
+import subprocess
 from collections import OrderedDict
 from django.db import models, DEFAULT_DB_ALIAS
 from django.core import checks
@@ -19,6 +22,7 @@ from .image import UploadedImageBase
 from .fields import GalleryItemTypeField
 from ..conf import settings, FILE_ICONS, FILE_ICON_DEFAULT
 from ..storage import upload_storage
+from ..logging import logger
 from .. import tasks
 from .. import utils
 
@@ -378,6 +382,62 @@ class GallerySVGItem(GalleryFileItemBase):
                 'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
             })
         }
+
+    def post_save_new_file(self):
+        super().post_save_new_file()
+        self._postprocess(self.file)
+
+    def _postprocess(self, file):
+        full_path = upload_storage.path(file.name)
+        if not os.path.exists(full_path):
+            logger.warning('File not found: {}'.format(full_path))
+            return
+
+        item_type_field = self.get_gallery_field()
+        if item_type_field is None:
+            return
+
+        field_postprocess = item_type_field.extra.get('postprocess')
+        global_postprocess = getattr(settings, 'POSTPROCESS', {}).get('SVG', {})
+
+        postprocess = field_postprocess or global_postprocess or {}
+        if not postprocess:
+            return
+
+        # fix case
+        postprocess = {
+            key.lower(): value
+            for key, value in postprocess.items()
+        }
+
+        command = postprocess.get('command')
+        if not command:
+            return
+
+        command_path = shutil.which(command)
+        if command_path is None:
+            logger.warning("Command '{}' not found".format(command))
+            return
+
+        root, filename = os.path.split(full_path)
+        arguments = postprocess['arguments'].format(
+            dir=root,
+            filename=filename,
+            file=full_path
+        )
+        process = subprocess.Popen(
+            '{} {}'.format(command_path, arguments),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True
+        )
+        out, err = process.communicate()
+        logger.debug('Command: {} {}\nStdout: {}\nStderr: {}'.format(
+            command_path,
+            arguments,
+            out.decode() if out is not None else '',
+            err.decode() if err is not None else '',
+        ))
 
 
 class GalleryImageItem(GalleryImageItemBase):
