@@ -1,9 +1,5 @@
-import os
-import shutil
 import base64
 import filetype
-import posixpath
-import subprocess
 from PIL import Image
 from django.db import models
 from django.core.files import File
@@ -14,7 +10,7 @@ from variations.utils import prepare_image
 from .base import UploadedFileBase, SlaveModelMixin
 from ..storage import upload_storage
 from ..conf import settings, PROXY_FILE_ATTRIBUTES
-from ..logging import logger
+from .. import utils
 from .. import tasks
 
 
@@ -23,7 +19,7 @@ class VariationFile(File):
         self.instance = instance
         self.variation_name = variation_name
         self.storage = instance.file.storage
-        filename = instance.get_variation_path(variation_name)
+        filename = utils.get_variation_filename(instance.file.name, variation_name, self.variation)
         super().__init__(None, filename)
 
     def _get_file(self):
@@ -202,23 +198,6 @@ class UploadedImageBase(UploadedFileBase):
             setattr(self, variation_cache_name, variation_cache)
         return variation_cache
 
-    def get_variation_path(self, variation_name):
-        """
-        Получение пути к файлу вариации.
-
-        :type variation_name: str
-        :rtype: str
-        """
-        variations = self.get_variations()
-        variation = variations[variation_name]
-
-        root, basename = posixpath.split(self.file.name)
-        filename, ext = posixpath.splitext(basename)
-        filename = posixpath.extsep.join((filename, variation_name))
-        basename = ''.join((filename, ext))
-        path = posixpath.join(root, basename)
-        return variation.replace_extension(path)
-
     def get_draft_size(self, source_size):
         """
         Вычисление максимально возможных значений ширины и высоты для всех
@@ -256,10 +235,10 @@ class UploadedImageBase(UploadedFileBase):
                     continue
 
                 image = variation.process(img)
-                path = self.get_variation_path(name)
-                with self.file.storage.open(path, 'wb+') as fp:
+                variation_path = utils.get_variation_filename(self.file.name, name, variation)
+                with self.file.storage.open(variation_path, 'wb+') as fp:
                     variation.save(image, fp)
-                    self._postprocess(name, variation)
+                    utils.postprocess_variation(self.file.name, name, variation)
 
     def _recut_async(self, names=()):
         from django_rq.queues import get_queue
@@ -271,56 +250,6 @@ class UploadedImageBase(UploadedFileBase):
             'names': names,
             'using': self._state.db,
         })
-
-    def _postprocess(self, name, variation):
-        path = self.get_variation_path(name)
-        full_path = upload_storage.path(path)
-        if not os.path.exists(full_path):
-            logger.warning('File not found: {}'.format(path))
-            return
-
-        output_format = variation.output_format(path).lower()
-        variation_postprocess = variation.extra_context.get(output_format, {}).get('postprocess', {})
-        global_postprocess = getattr(settings, 'POSTPROCESS', {}).get(output_format, {})
-
-        postprocess = variation_postprocess or global_postprocess or {}
-        if not postprocess:
-            return
-
-        # fix case
-        postprocess = {
-            key.lower(): value
-            for key, value in postprocess.items()
-        }
-
-        command = postprocess.get('command')
-        if not command:
-            return
-
-        command_path = shutil.which(command)
-        if command_path is None:
-            logger.warning("Command '{}' not found".format(command))
-            return
-
-        root, filename = os.path.split(full_path)
-        arguments = postprocess['arguments'].format(
-            dir=root,
-            filename=filename,
-            file=full_path
-        )
-        process = subprocess.Popen(
-            '{} {}'.format(command_path, arguments),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            shell=True
-        )
-        out, err = process.communicate()
-        logger.debug('Command: {} {}\nStdout: {}\nStderr: {}'.format(
-            command_path,
-            arguments,
-            out.decode() if out is not None else '',
-            err.decode() if err is not None else '',
-        ))
 
     def recut(self, names=None):
         if settings.RQ_ENABLED:

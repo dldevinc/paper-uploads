@@ -7,6 +7,13 @@ from paper_uploads.models.fields import FileField, ImageField, GalleryField, Gal
 
 class PageGallery(gallery.ImageGallery):
     VARIATIONS = dict(
+        wide_raw=dict(
+            size=(1600, 0),
+            clip=False,
+            jpeg=dict(
+                postprocess=None
+            )
+        ),
         wide=dict(
             size=(1600, 0),
             clip=False,
