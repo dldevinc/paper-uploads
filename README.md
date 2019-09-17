@@ -46,13 +46,15 @@ INSTALLED_APPS = [
 PAPER_UPLOADS = {
     'STORAGE': 'django.core.files.storage.FileSystemStorage',
     'RQ_ENABLED': True,
-    'POSTPROCESS_JPEG': {
-        'COMMAND': 'cjpeg',
-        'ARGUMENTS': '-copy none -progressive -optimize -outfile {file} {file}'
-    },
-    'POSTPROCESS_PNG': {
-        'COMMAND': 'pngquant',
-        'ARGUMENTS': '--force --skip-if-larger --speed 2 --output {file} {file}'
+    'POSTPROCESS': {
+        'JPEG': {
+            'COMMAND': 'jpeg-recompress',
+            'ARGUMENTS': '--quality high --method smallfry {file} {file}',
+        },
+        'PNG': {
+            'COMMAND': 'pngquant',
+            'ARGUMENTS': '--force --skip-if-larger --output {file} {file}'
+        }
     }
 }
 ```
@@ -313,4 +315,4 @@ class PageGallery(Gallery):
 | GALLERY_IMAGE_ITEM_PREVIEW_VARIATIONS | Вариации для превью картинок галереи в виджете админки. |
 | RQ_ENABLED | Включает нарезку картинок на вариации через отложенные задачи. Требует наличие установленного пакета [django-rq](https://github.com/rq/django-rq) |
 | RQ_QUEUE_NAME | Название очереди, в которую помещаются задачи по нарезке картинок. По-умолчанию, `default` |
-| POSTPROCESS_JPEG, POSTPROCESS_PNG, POSTPROCESS_GIF | Словари, задающие команду, запускаемую после нарезки вариации. Для каждого формата своя команда. Путь к исполняемому файлу передается в ключе COMMAND, а её аргументы в ключе ARGUMENTS.  |
+| POSTPROCESS | Словарь, задающий команды, запускаемые после загрузки файла. Для каждого формата своя команда. |

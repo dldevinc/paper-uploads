@@ -225,7 +225,6 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
         if settings.RQ_ENABLED:
             preview_variations = tuple(self.PREVIEW_VARIATIONS.keys())
             self._recut_sync(names=preview_variations)
-            self._postprocess(names=preview_variations)
             self.recut(names=tuple(
                 name
                 for name in self.get_variations()

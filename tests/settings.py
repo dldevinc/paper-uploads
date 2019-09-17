@@ -157,12 +157,14 @@ RQ_QUEUES = {
 PAPER_UPLOADS = {
     'STORAGE': 'django.core.files.storage.FileSystemStorage',
     # 'RQ_ENABLED': True,
-    'POSTPROCESS_JPEG': {
-        'COMMAND': 'cjpeg',
-        'ARGUMENTS': '-copy none -progressive -optimize -outfile {file} {file}'
-    },
-    'POSTPROCESS_PNG': {
-        'COMMAND': 'pngquant',
-        'ARGUMENTS': '--force --skip-if-larger --output {file} {file}'
+    'POSTPROCESS': {
+        'JPEG': {
+            'COMMAND': 'jpeg-recompress',
+            'ARGUMENTS': '--strip --quality medium --method smallfry {file} {file}',
+        },
+        'PNG': {
+            'COMMAND': 'pngquant',
+            'ARGUMENTS': '--force --skip-if-larger --output {file} {file}'
+        }
     }
 }

@@ -1,4 +1,5 @@
 import os
+import shutil
 import base64
 import filetype
 import posixpath
@@ -258,7 +259,7 @@ class UploadedImageBase(UploadedFileBase):
                 path = self.get_variation_path(name)
                 with self.file.storage.open(path, 'wb+') as fp:
                     variation.save(image, fp)
-        self._postprocess(names)
+                    self._postprocess(name, variation)
 
     def _recut_async(self, names=()):
         from django_rq.queues import get_queue
@@ -271,59 +272,55 @@ class UploadedImageBase(UploadedFileBase):
             'using': self._state.db,
         })
 
-    def _postprocess(self, names=()):
-        for name, variation in self.get_variations().items():
-            if names and name not in names:
-                continue
+    def _postprocess(self, name, variation):
+        path = self.get_variation_path(name)
+        full_path = upload_storage.path(path)
+        if not os.path.exists(full_path):
+            logger.warning('File not found: {}'.format(path))
+            return
 
-            path = self.get_variation_path(name)
-            full_path = upload_storage.path(path)
-            if not os.path.exists(full_path):
-                logger.warning('File not found: {}'.format(path))
-                continue
+        output_format = variation.output_format(path)
+        variation_postprocess = variation.extra_context.get(output_format, {}).get('postprocess', {})
+        global_postprocess = getattr(settings, 'POSTPROCESS', {}).get(output_format, {})
 
-            output_format = variation.output_format(path)
-            default_postprocess_opts = getattr(settings, 'POSTPROCESS_{}'.format(output_format), {})
-            user_format_opts = variation.extra_context.get(output_format, {})
-            user_postprocess_opts = user_format_opts.get('postprocess', {})
+        postprocess = variation_postprocess or global_postprocess or {}
+        if not postprocess:
+            return
 
-            if user_postprocess_opts is None:
-                # компрессия явно запрещена
-                continue
-            elif 'command' in user_postprocess_opts:
-                postprocess_cmd = user_postprocess_opts['command']
-            elif 'COMMAND' in default_postprocess_opts:
-                postprocess_cmd = default_postprocess_opts['COMMAND']
-            else:
-                # нет настроек для данного формата
-                continue
+        # fix case
+        postprocess = {
+            key.lower(): value
+            for key, value in postprocess.items()
+        }
 
-            if 'arguments' in user_postprocess_opts:
-                postprocess_args = user_postprocess_opts['arguments']
-            elif 'ARGUMENTS' in default_postprocess_opts:
-                postprocess_args = default_postprocess_opts['ARGUMENTS']
-            else:
-                postprocess_args = []
+        command = postprocess.get('command')
+        if not command:
+            return
 
-            root, filename = os.path.split(full_path)
-            postprocess_args = postprocess_args.format(
-                dir=root,
-                filename=filename,
-                file=full_path
-            )
-            process = subprocess.Popen(
-                '{} {}'.format(postprocess_cmd, postprocess_args),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                shell=True
-            )
-            out, err = process.communicate()
-            logger.debug('Run: {} {}\nstdout: {}\nstderr: {}'.format(
-                postprocess_cmd,
-                postprocess_args,
-                out.decode() if out is not None else '',
-                err.decode() if err is not None else '',
-            ))
+        command_path = shutil.which(command)
+        if command_path is None:
+            logger.warning("Command '{}' not found".format(command))
+            return
+
+        root, filename = os.path.split(full_path)
+        arguments = postprocess['arguments'].format(
+            dir=root,
+            filename=filename,
+            file=full_path
+        )
+        process = subprocess.Popen(
+            '{} {}'.format(command_path, arguments),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True
+        )
+        out, err = process.communicate()
+        logger.debug('Command: {} {}\nStdout: {}\nStderr: {}'.format(
+            command_path,
+            arguments,
+            out.decode() if out is not None else '',
+            err.decode() if err is not None else '',
+        ))
 
     def recut(self, names=None):
         if settings.RQ_ENABLED:
