@@ -2,7 +2,7 @@ import time
 from django.apps import apps
 from django.db import DEFAULT_DB_ALIAS
 from django.core.exceptions import ObjectDoesNotExist
-from . import utils
+from . logging import logger
 
 MAX_DB_ATTEMPTS = 3
 
@@ -17,7 +17,7 @@ def _get_instance(app_label, model_name, object_id, using=DEFAULT_DB_ALIAS):
             # delay recheck if transaction not commited yet
             attempts += 1
             if attempts > MAX_DB_ATTEMPTS:
-                utils.logger.exception('Not found %s' % object_id)
+                logger.exception('Not found %s' % object_id)
                 raise
             else:
                 time.sleep(1)
