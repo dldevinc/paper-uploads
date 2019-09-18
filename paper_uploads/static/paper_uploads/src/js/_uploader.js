@@ -1,4 +1,5 @@
 import {FineUploaderBasic, DragAndDrop, isFile} from "fine-uploader";
+import match from 'mime-match';
 
 // PaperAdmin API
 const EventEmitter = window.paperAdmin.EventEmitter;
@@ -86,20 +87,21 @@ Uploader.prototype._makeUploader = function() {
                 const validationOptions = _this._opts.validation;
                 if (validationOptions) {
                     // check mimetypes
-                    if (validationOptions.acceptFiles) {
-                        const allowedMimeTypes = validationOptions.acceptFiles;
+                    const allowedMimeTypes = validationOptions.acceptFiles;
+                    if (allowedMimeTypes && allowedMimeTypes.length) {
+                        let allowed = false;
                         if (Array.isArray(allowedMimeTypes)) {
-                            if (allowedMimeTypes.indexOf(file.type) < 0) {
-                                const reason = `Unsupported MIME type: ${file.type}`;
-                                _this.trigger('reject', [id, file, reason]);
-                                return false;
-                            }
+                            allowed = allowedMimeTypes.some(function(template) {
+                                return match(file.type, template);
+                            });
                         } else if (typeof allowedMimeTypes === 'string') {
-                            if (file.type !== allowedMimeTypes) {
-                                const reason = `Unsupported MIME type: ${file.type}`;
-                                _this.trigger('reject', [id, file, reason]);
-                                return false;
-                            }
+                            allowed = match(file.type, allowedMimeTypes);
+                        }
+
+                        if (!allowed) {
+                            const reason = `Unsupported MIME type: ${file.type}`;
+                            _this.trigger('reject', [id, file, reason]);
+                            return false;
                         }
                     }
 

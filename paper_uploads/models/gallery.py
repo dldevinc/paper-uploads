@@ -458,15 +458,5 @@ class ImageGallery(Gallery):
     def get_validation(cls):
         return {
             **super().get_validation(),
-            'acceptFiles': [
-                'image/bmp',
-                'image/gif',
-                'image/jpeg',
-                'image/pjpeg',
-                'image/png',
-                'image/tiff',
-                'image/webp',
-                'image/x-tiff',
-                'image/x-windows-bmp',
-            ],
+            'acceptFiles': 'image/*',
         }
