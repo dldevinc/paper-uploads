@@ -275,9 +275,21 @@ class GalleryItemTypesDescriptor:
         )
 
 
+class ContentItemRelation(GenericRelation):
+    """
+    FIX: cascade delete polimorphic
+    https://github.com/django-polymorphic/django-polymorphic/issues/34
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def bulk_related_objects(self, objs, using=DEFAULT_DB_ALIAS):
+        return super().bulk_related_objects(objs).non_polymorphic()
+
+
 class GalleryBase(SlaveModelMixin, metaclass=GalleryMetaclass):
     item_types = GalleryItemTypesDescriptor(name='item_types')
-    items = GenericRelation(GalleryItemBase, for_concrete_model=False)
+    items = ContentItemRelation(GalleryItemBase, for_concrete_model=False)
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
 
     class Meta:
