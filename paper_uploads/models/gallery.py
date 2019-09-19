@@ -1,6 +1,7 @@
 import magic
 import posixpath
 from collections import OrderedDict
+from typing import Dict, Type, Any, IO, Iterable
 from django.db import models, DEFAULT_DB_ALIAS
 from django.core import checks
 from django.template import loader
@@ -13,6 +14,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from polymorphic.models import PolymorphicModel
+from variations.variation import Variation
 from .base import SlaveModelMixin
 from .file import UploadedFileBase
 from .image import UploadedImageBase
@@ -102,20 +104,19 @@ class GalleryItemBase(PolymorphicModel):
             self.order = max_order + 1
         super().save(*args, **kwargs)
 
-    def get_gallery_class(self):
+    def get_gallery_class(self) -> Type['GalleryBase']:
         return self.content_type.model_class()
 
-    def get_gallery_field(self):
+    def get_gallery_field(self) -> GalleryItemTypeField:
         gallery_cls = self.get_gallery_class()
         for name, field in gallery_cls.item_types.items():
             if field.model is type(self):
                 return field
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         """
         Словарь, возвращаемый в виде JSON после загрузки файла.
-
-        :return: dict
+        Служит для формирования виджета файла без перезагрузки страницы.
         """
         return {
             'id': self.pk,
@@ -124,20 +125,17 @@ class GalleryItemBase(PolymorphicModel):
         }
 
     @classmethod
-    def check_file(cls, file):
+    def check_file(cls, file: IO) -> bool:
         """
         Проверка загруженного файла на принадлежность текущему типу элемента галереи.
         Если укзанный файл поддерживается, метод должен вернуть True.
         """
         raise NotImplementedError
 
-    def attach_to(self, gallery, commit=True):
+    def attach_to(self, gallery: 'GalleryBase', commit: bool = True):
         """
         Подключение элемента к галерее.
         Используется в случае динамического создания элементов галереи.
-
-        :type gallery: GalleryBase
-        :type commit: bool
         """
         self.content_type = ContentType.objects.get_for_model(gallery, for_concrete_model=False)
         self.object_id = gallery.pk
@@ -169,7 +167,7 @@ class GalleryFileItemBase(GalleryItemBase, UploadedFileBase):
         if not self.pk and not self.display_name:
             self.display_name = self.name
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
             'name': self.canonical_name,
@@ -189,14 +187,13 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
         verbose_name = _('image')
         verbose_name_plural = _('images')
 
-    def get_variations(self):
+    def get_variations(self) -> Dict[str, Variation]:
         """
         Перебираем возможные места вероятного определения вариаций и берем
         первое непустое значение. Порядок проверки:
             1) параметр `variations` поля `GalleryItemTypeField`
             2) член класса галереи VARIATIONS
         К найденному словарю примешиваются вариации для админки.
-        :return: dict
         """
         if not hasattr(self, '_variations_cache'):
             item_type_field = self.get_gallery_field()
@@ -210,7 +207,7 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
             self._variations_cache = utils.build_variations(variations)
         return self._variations_cache
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
             'name': self.canonical_name,
@@ -222,6 +219,7 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
         При отложенной нарезке превью для админки режутся сразу,
         а остальное - потом.
         """
+        super(UploadedImageBase, self).post_save_new_file()
         if settings.RQ_ENABLED:
             preview_variations = tuple(self.PREVIEW_VARIATIONS.keys())
             self._recut_sync(names=preview_variations)
@@ -306,14 +304,14 @@ class GalleryBase(SlaveModelMixin, metaclass=GalleryMetaclass):
             errors.extend(field.check(**kwargs))
         return errors
 
-    def get_items(self, item_type=None):
+    def get_items(self, item_type: str = None):
         if item_type is None:
             return self.items.order_by('order')
         if item_type not in self.item_types:
             raise ValueError('Unsupported gallery item type: %s' % item_type)
         return self.items.filter(item_type=item_type).order_by('order')
 
-    def _recut_sync(self, names=(), using=DEFAULT_DB_ALIAS):
+    def _recut_sync(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS):
         recutable_items = tuple(
             name
             for name, field in self.item_types.items()
@@ -322,7 +320,7 @@ class GalleryBase(SlaveModelMixin, metaclass=GalleryMetaclass):
         for item in self.items.using(using).filter(item_type__in=recutable_items):
             item._recut_sync(names)
 
-    def _recut_async(self, names=(), using=DEFAULT_DB_ALIAS):
+    def _recut_async(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS):
         from django_rq.queues import get_queue
         queue = get_queue(settings.RQ_QUEUE_NAME)
         queue.enqueue_call(tasks.recut_gallery, kwargs={
@@ -333,7 +331,7 @@ class GalleryBase(SlaveModelMixin, metaclass=GalleryMetaclass):
             'using': using,
         })
 
-    def recut(self, names=None, using=DEFAULT_DB_ALIAS):
+    def recut(self, names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS):
         if settings.RQ_ENABLED:
             self._recut_async(names, using=using)
         else:
@@ -349,10 +347,10 @@ class GalleryFileItem(GalleryFileItemBase):
     preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
 
     @classmethod
-    def check_file(cls, file):
+    def check_file(cls, file: IO) -> bool:
         return True
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
             'preview': loader.render_to_string('paper_uploads/gallery_item/preview/file.html', {
@@ -377,11 +375,11 @@ class GallerySVGItem(GalleryFileItemBase):
         verbose_name_plural = _('SVG-files')
 
     @classmethod
-    def check_file(cls, file):
+    def check_file(cls, file: IO) -> bool:
         filename, ext = posixpath.splitext(file.name)
         return ext.lower() == '.svg'
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
             'preview': loader.render_to_string('paper_uploads/gallery_item/preview/svg.html', {
@@ -406,7 +404,7 @@ class GallerySVGItem(GalleryFileItemBase):
 class GalleryImageItem(GalleryImageItemBase):
     FORM_CLASS = 'paper_uploads.forms.dialogs.gallery.GalleryImageDialog'
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
             'name': self.canonical_name,
@@ -419,7 +417,7 @@ class GalleryImageItem(GalleryImageItemBase):
         }
 
     @classmethod
-    def check_file(cls, file):
+    def check_file(cls, file: IO) -> bool:
         mimetype = magic.from_buffer(file.read(1024), mime=True)
         file.seek(0)    # correct file position after mimetype detection
         basetype, subtype = mimetype.split('/', 1)
@@ -467,7 +465,7 @@ class ImageGallery(Gallery):
     image = GalleryItemTypeField(GalleryImageItem)
 
     @classmethod
-    def get_validation(cls):
+    def get_validation(cls) -> Dict[str, Any]:
         return {
             **super().get_validation(),
             'acceptFiles': 'image/*',

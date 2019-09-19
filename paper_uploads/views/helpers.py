@@ -2,19 +2,22 @@ import os
 import uuid
 import shutil
 import tempfile
+from typing import Optional, Dict, Any, Iterable, Union, List, IO, Type, TypeVar
 from django.http import JsonResponse
-from django.core.exceptions import NON_FIELD_ERRORS
+from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.contrib.contenttypes.models import ContentType
 from .. import exceptions
 
+T = TypeVar('T')
 
-def success_response(data=None):
+
+def success_response(data: Optional[Dict[str, Any]] = None) -> JsonResponse:
     data = data or {}
     data['success'] = True
     return JsonResponse(data)
 
 
-def error_response(errors, prevent_retry=True):
+def error_response(errors: Union[str, Iterable[str]], prevent_retry: bool = True) -> JsonResponse:
     data = {
         'success': False,
         'errors': errors if isinstance(errors, (list, tuple)) else [errors],
@@ -23,7 +26,7 @@ def error_response(errors, prevent_retry=True):
     return JsonResponse(data)
 
 
-def get_exception_messages(exception):
+def get_exception_messages(exception: ValidationError) -> List[str]:
     messages = []
     for msg in exception:
         if isinstance(msg, tuple):
@@ -40,12 +43,9 @@ def get_exception_messages(exception):
     return messages
 
 
-def read_file(request):
+def read_file(request) -> IO:
     """
     Загрузка файла с поддержкой chunks.
-
-    :type request: django.core.handlers.wsgi.WSGIRequest
-    :rtype: file
     """
     try:
         chunk_index = int(request.POST['qqpartindex'])
@@ -76,7 +76,7 @@ def read_file(request):
     return file
 
 
-def get_model_class(content_type_id, base_class=None):
+def get_model_class(content_type_id: int, base_class: Type[T]) -> Type[T]:
     """
     Получение класса модели загружаемого файла по ContentType ID.
     """
@@ -85,15 +85,14 @@ def get_model_class(content_type_id, base_class=None):
     except ContentType.DoesNotExist:
         raise exceptions.InvalidContentType(content_type_id)
 
-    if base_class is not None:
-        model_class = content_type.model_class()
-        if issubclass(model_class, base_class):
-            return model_class
+    model_class = content_type.model_class()
+    if issubclass(model_class, base_class):
+        return model_class
 
     raise exceptions.InvalidContentType(content_type_id)
 
 
-def get_instance(model_class, instance_id):
+def get_instance(model_class: Type[T], instance_id: int) -> T:
     """
     Получение экземпляра модели загружаемого файла.
     """

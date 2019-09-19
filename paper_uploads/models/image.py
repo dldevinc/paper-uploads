@@ -1,11 +1,13 @@
 import base64
 import filetype
 from PIL import Image
+from typing import Dict, Iterator, Tuple, Iterable, Optional, Any
 from django.db import models
 from django.core.files import File
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
+from variations.variation import Variation
 from variations.utils import prepare_image
 from .base import UploadedFileBase, SlaveModelMixin
 from ..storage import upload_storage
@@ -36,19 +38,19 @@ class VariationFile(File):
     file = property(_get_file, _set_file, _del_file)
 
     @property
-    def variation(self):
+    def variation(self) -> Variation:
         variations = self.instance.get_variations()
         return variations[self.variation_name]
 
     @property
-    def path(self):
+    def path(self) -> str:
         return self.storage.path(self.name)
 
     @property
-    def url(self):
+    def url(self) -> str:
         return self.storage.url(self.name)
 
-    def data_uri(self):
+    def data_uri(self) -> str:
         parts = ['data:']
 
         self.open()
@@ -65,13 +67,13 @@ class VariationFile(File):
     data_uri.alters_data = True
 
     @property
-    def size(self):
+    def size(self) -> int:
         return self.storage.size(self.name)
 
-    def exists(self):
+    def exists(self) -> bool:
         return self.storage.exists(self.name)
 
-    def open(self, mode='rb'):
+    def open(self, mode: str = 'rb'):
         if hasattr(self, '_file') and self._file is not None:
             self.file.open(mode)
         else:
@@ -84,7 +86,7 @@ class VariationFile(File):
     delete.alters_data = True
 
     @property
-    def closed(self):
+    def closed(self) -> bool:
         file = getattr(self, '_file', None)
         return file is None or file.closed
 
@@ -94,11 +96,11 @@ class VariationFile(File):
             file.close()
 
     @property
-    def width(self):
+    def width(self) -> int:
         return self._get_image_dimensions()[0]
 
     @property
-    def height(self):
+    def height(self) -> int:
         return self._get_image_dimensions()[1]
 
     def _get_image_dimensions(self):
@@ -151,39 +153,33 @@ class UploadedImageBase(UploadedFileBase):
         """
         При сохранении нового файла, автоматически создаем для него все вариации.
         """
+        super().post_save_new_file()
         self.recut()
 
     def post_delete_callback(self):
         """
         При удалении экземпляра, автоматически удаляем все вариации.
         """
-        for vname, vfile in self.get_variation_files():
-            vfile.delete()
+        for name, file in self.get_variation_files():
+            file.delete()
         super().post_delete_callback()
 
-    def get_variations(self):
+    def get_variations(self) -> Dict[str, Variation]:
         """
-        Получение вариаций из экземпляра поля, ссылающегося на файл.
-
-        :rtype: dict[str, variations.variation.Variation]
+        Получение объектов вариаций
         """
         raise NotImplementedError
 
-    def get_variation_files(self):
+    def get_variation_files(self) -> Iterator[Tuple[str, VariationFile]]:
         """
-        Итератор по файлам вариаций.
-
-        :rtype: collections.Iterable[(str, VariationFile)]
+        Итератор по вариациям файла.
         """
         for variation_name in self.get_variations():
             yield variation_name, self.get_variation_file(variation_name)
 
-    def get_variation_file(self, variation_name):
+    def get_variation_file(self, variation_name: str) -> Optional[VariationFile]:
         """
         Получение экземпляра VariationFile, представляющего файл вариации.
-
-        :type variation_name: str
-        :rtype: VariationFile
         """
         if not self.file:
             return
@@ -198,13 +194,10 @@ class UploadedImageBase(UploadedFileBase):
             setattr(self, variation_cache_name, variation_cache)
         return variation_cache
 
-    def get_draft_size(self, source_size):
+    def get_draft_size(self, source_size: Iterable[int]) -> Tuple[int, int]:
         """
         Вычисление максимально возможных значений ширины и высоты для всех
         вариаций, чтобы передать их в Image.draft().
-
-        :type source_size: list | tuple
-        :rtype: tuple
         """
         max_width = 0
         max_height = 0
@@ -215,12 +208,10 @@ class UploadedImageBase(UploadedFileBase):
         if max_width and max_height:
             return max_width, max_height
 
-    def _recut_sync(self, names=()):
+    def _recut_sync(self, names: Iterable[str] = ()):
         """
         Перенарезка указанных вариаций.
         Если конкретные вариации не указаны, перенарезаны будут все.
-
-        :type names: list | tuple
         """
         if not self.file:
             return
@@ -240,7 +231,7 @@ class UploadedImageBase(UploadedFileBase):
                     variation.save(image, fp)
                     utils.postprocess_variation(self.file.name, name, variation)
 
-    def _recut_async(self, names=()):
+    def _recut_async(self, names: Iterable[str] = ()):
         from django_rq.queues import get_queue
         queue = get_queue(settings.RQ_QUEUE_NAME)
         queue.enqueue_call(tasks.recut_image, kwargs={
@@ -251,7 +242,7 @@ class UploadedImageBase(UploadedFileBase):
             'using': self._state.db,
         })
 
-    def recut(self, names=None):
+    def recut(self, names: Iterable[str] = None):
         if settings.RQ_ENABLED:
             self._recut_async(names)
         else:
@@ -265,7 +256,7 @@ class UploadedImage(UploadedImageBase, SlaveModelMixin):
         verbose_name = _('image')
         verbose_name_plural = _('images')
 
-    def get_variations(self):
+    def get_variations(self) -> Dict[str, Variation]:
         if not hasattr(self, '_variations_cache'):
             owner_field = self.get_owner_field()
             if owner_field is not None:
@@ -275,23 +266,13 @@ class UploadedImage(UploadedImageBase, SlaveModelMixin):
         return self._variations_cache
 
     @classmethod
-    def get_validation(cls):
+    def get_validation(cls) -> Dict[str, Any]:
         return {
             **super().get_validation(),
-            'acceptFiles': [
-                'image/bmp',
-                'image/gif',
-                'image/jpeg',
-                'image/pjpeg',
-                'image/png',
-                'image/tiff',
-                'image/webp',
-                'image/x-tiff',
-                'image/x-windows-bmp',
-            ],
+            'acceptFiles': 'image/*',
         }
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
             'width': self.width,

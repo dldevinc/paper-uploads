@@ -2,16 +2,16 @@ import os
 import shutil
 import posixpath
 import subprocess
-from typing import IO
+from typing import IO, Dict, Any, Iterable, Union
 from django.core import exceptions
+from django.core.files import File
 from variations.variation import Variation
 from .conf import settings
 from .logging import logger
 from .storage import upload_storage
-from .typing import PostprocessOptions
 
 
-def build_variations(options: dict) -> dict:
+def build_variations(options: Dict[str, Any]) -> Dict[str, Variation]:
     """
     Создание объектов вариаций из словаря конфигурации.
     """
@@ -23,7 +23,7 @@ def build_variations(options: dict) -> dict:
     return variations
 
 
-def run_validators(value: IO, validators: list):
+def run_validators(value: Union[IO, File], validators: Iterable[Any]):
     errors = []
     for v in validators:
         try:
@@ -48,7 +48,7 @@ def get_variation_filename(filename: str, variation_name: str, variation: Variat
     return variation.replace_extension(path)
 
 
-def _postprocess_file(path: str, options: PostprocessOptions):
+def _postprocess_file(path: str, options: Dict[str, str]):
     """
     Запуск консольной команды для постобработки файла.
     """
@@ -84,7 +84,7 @@ def _postprocess_file(path: str, options: PostprocessOptions):
     ))
 
 
-def postprocess_variation(source_filename: str, variation_name: str, variation: Variation, options: PostprocessOptions = None):
+def postprocess_variation(source_filename: str, variation_name: str, variation: Variation, options: Dict[str, str] = None):
     """
     Постобработка файла вариации изображения.
     """
@@ -106,7 +106,7 @@ def postprocess_variation(source_filename: str, variation_name: str, variation: 
         _postprocess_file(full_path, postprocess_options)
 
 
-def postprocess_svg(source_filename: str, options: PostprocessOptions = None):
+def postprocess_svg(source_filename: str, options: Dict[str, str] = None):
     """
     Постобработка SVG-файла.
     """

@@ -1,3 +1,4 @@
+from typing import Dict, Any
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
@@ -20,7 +21,7 @@ class UploadedFile(UploadedFileBase, SlaveModelMixin):
         if not self.pk and not self.display_name:
             self.display_name = self.name
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
             'name': self.display_name,

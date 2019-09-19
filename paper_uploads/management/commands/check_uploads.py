@@ -41,9 +41,9 @@ class Command(BaseCommand):
 
                 missed_original = not instance.file.storage.exists(instance.file.name)
                 missed_variations = []
-                for vname, vfile in instance.get_variation_files():
-                    if not vfile.exists():
-                        missed_variations.append(vname)
+                for name, file in instance.get_variation_files():
+                    if not file.exists():
+                        missed_variations.append(name)
 
                 if missed_original:
                     invalid = True

@@ -31,7 +31,7 @@ def delete_gallery(request):
 
     gallery_content_type_id = request.POST.get('paperGalleryContentType')
     try:
-        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)  # type: GalleryBase
+        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid gallery content type')
@@ -80,7 +80,7 @@ def upload_item(request):
     # Определение модели галереи
     gallery_content_type_id = request.POST.get('paperGalleryContentType')
     try:
-        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)  # type: GalleryBase
+        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid gallery content type')
@@ -153,7 +153,7 @@ def delete_item(request):
 
     gallery_content_type_id = request.POST.get('paperGalleryContentType')
     try:
-        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)  # type: GalleryBase
+        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid gallery content type')
@@ -194,7 +194,7 @@ def sort_items(request):
 
     gallery_content_type_id = request.POST.get('paperGalleryContentType')
     try:
-        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)  # type: GalleryBase
+        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid gallery content type')
@@ -242,7 +242,7 @@ class ChangeView(PermissionRequiredMixin, FormView):
     def get_instance(self):
         gallery_content_type_id = self.request.GET.get('paperGalleryContentType')
         try:
-            gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)  # type: GalleryBase
+            gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
         except exceptions.InvalidContentType:
             logger.exception('Error')
             return helpers.error_response('Invalid gallery content type')

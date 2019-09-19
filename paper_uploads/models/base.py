@@ -1,5 +1,6 @@
 import hashlib
 import posixpath
+from typing import Dict, Type, Any, Optional
 from itertools import chain
 from django.apps import apps
 from django.db import models
@@ -26,7 +27,7 @@ class Permissions(models.Model):
 class UploadedFileBase(models.Model):
     file = models.FileField(_('file'), max_length=255, storage=upload_storage)
     name = models.CharField(_('file name'), max_length=255, blank=True)
-    extension = models.CharField(_('file extension'), max_length=32, blank=True)
+    extension = models.CharField(_('file extension'), max_length=32, editable=False, help_text=_('Lowercase string without leading dot'))
     size = models.PositiveIntegerField(_('file size'), default=0, editable=False)
     hash = models.CharField(_('file hash'), max_length=40, editable=False,
         help_text=_('SHA-1 hash of the file contents')
@@ -94,7 +95,10 @@ class UploadedFileBase(models.Model):
             self.post_save_new_file()
 
     @property
-    def canonical_name(self):
+    def canonical_name(self) -> str:
+        """
+        Имя реального файла без учета суффикса, добавляемого FileStorage.
+        """
         return '{}.{}'.format(self.name, self.extension)
 
     def pre_save_new_file(self):
@@ -120,28 +124,31 @@ class UploadedFileBase(models.Model):
         """
         self.file.delete(save=False)
 
-    def update_hash(self, commit=True):
-        old_hash = self.hash
+    def update_hash(self, commit: bool = True):
+        current_hash_value = self.hash
+
+        # keep file state
         file_closed = self.file.closed
-        fp = self.file.open()
-        self.hash = hashlib.sha1(fp.read()).hexdigest()
+        sha1 = hashlib.sha1()
+        for chunk in self.file.open():
+            sha1.update(chunk)
         if file_closed:
             self.file.close()
         else:
             self.file.seek(0)
 
         # обновляем дату загрузки если хэш изменился
-        if old_hash and old_hash != self.hash:
+        self.hash = sha1.hexdigest()
+        if current_hash_value and current_hash_value != self.hash:
             self.uploaded_at = now()
 
         if commit:
             self.save(update_fields=['hash'])
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         """
         Словарь, возвращаемый в виде JSON после загрузки файла.
-
-        :return: dict
+        Служит для формирования виджета файла без перезагрузки страницы.
         """
         return {
             'instance_id': self.pk,
@@ -164,13 +171,16 @@ class SlaveModelMixin(models.Model):
     class Meta:
         abstract = True
 
-    def get_owner_model(self):
+    def get_owner_model(self) -> Optional[Type[models.Model]]:
+        if not self.owner_app_label or not self.owner_model_name:
+            return
+
         try:
             return apps.get_model(self.owner_app_label, self.owner_model_name)
         except LookupError:
             logger.debug("Not found model: %s.%s" % (self.owner_app_label, self.owner_model_name))
 
-    def get_owner_field(self):
+    def get_owner_field(self) -> Optional[models.Field]:
         owner_model = self.get_owner_model()
         if owner_model is None:
             return
@@ -185,13 +195,12 @@ class SlaveModelMixin(models.Model):
             )
 
     @classmethod
-    def get_validation(cls):
+    def get_validation(cls) -> Dict[str, Any]:
         """
         Возвращает конфигурацию валидации загружаемых файлов FineUploader.
         см. https://docs.fineuploader.com/branch/master/api/options.html#validation
         Из-за чересчур прямолинейной реализации валидации FineUploder, валидация
         переделана вручную. Формат конфигурации сохранен, но реализованы не все
         параметры, входящие в комплект FineUploader.
-        :return: dict
         """
         return {}
