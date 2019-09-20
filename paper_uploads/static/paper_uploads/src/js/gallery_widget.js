@@ -736,6 +736,22 @@ Gallery.prototype.addListeners = function() {
             }
         }
     });
+
+    // просмотр при двойном клике
+    this.element.addEventListener('dblclick', function(event) {
+        const item = event.target.closest(_this._opts.item);
+        if (!item) {
+            return
+        }
+
+        const itemLink = item.querySelector(_this._opts.itemLink);
+        if (itemLink) {
+            itemLink.dispatchEvent(new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true
+            }));
+        }
+    });
 };
 
 // ======================================
