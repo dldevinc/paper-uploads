@@ -18,5 +18,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(update_owner),
+        migrations.RunPython(update_owner, migrations.RunPython.noop),
     ]
