@@ -445,6 +445,7 @@ class Gallery(GalleryBase):
     gallery_content_type = models.ForeignKey(ContentType, null=True,
         verbose_name=_('gallery type'), on_delete=models.SET_NULL, editable=False)
 
+    default_mgr = models.Manager()     # fix migrations manager
     objects = GalleryManager()
 
     class Meta:
