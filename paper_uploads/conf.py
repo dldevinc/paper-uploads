@@ -49,9 +49,7 @@ DEFAULTS = {
     'RQ_ENABLED': False,
     'RQ_QUEUE_NAME': 'default',
 
-    'POSTPROCESS_JPEG': {},
-    'POSTPROCESS_PNG': {},
-    'POSTPROCESS_GIF': {},
+    'POSTPROCESS': {},
 }
 
 # List of settings that may be in string import notation.

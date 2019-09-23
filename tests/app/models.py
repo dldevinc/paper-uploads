@@ -1,12 +1,19 @@
 from pilkit import processors
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from paper_uploads.models import Gallery, ImageGallery
-from paper_uploads.models.fields import FileField, ImageField, GalleryField
+from paper_uploads.models import gallery
+from paper_uploads.models.fields import FileField, ImageField, GalleryField, GalleryItemTypeField
 
 
-class PageGallery(ImageGallery):
+class PageGallery(gallery.ImageGallery):
     VARIATIONS = dict(
+        wide_raw=dict(
+            size=(1600, 0),
+            clip=False,
+            jpeg=dict(
+                postprocess=None
+            )
+        ),
         wide=dict(
             size=(1600, 0),
             clip=False,
@@ -25,8 +32,10 @@ class PageGallery(ImageGallery):
     )
 
 
-class PageFilesGallery(Gallery):
-    pass
+class PageFilesGallery(gallery.Gallery):
+    svg = GalleryItemTypeField(gallery.GallerySVGItem)
+    image = GalleryItemTypeField(gallery.GalleryImageItem)
+    file = GalleryItemTypeField(gallery.GalleryFileItem)
 
 
 class Page(models.Model):
@@ -66,3 +75,13 @@ class Page(models.Model):
 
     def __str__(self):
         return self.header
+
+
+class Document(models.Model):
+    title = models.CharField(_('title'), max_length=255)
+    image = ImageField(_('simple image'), blank=True)
+    files = GalleryField(PageFilesGallery, verbose_name=_('files'))
+
+    class Meta:
+        verbose_name = _('document')
+        verbose_name_plural = _('documents')

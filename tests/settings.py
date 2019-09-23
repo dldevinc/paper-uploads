@@ -132,6 +132,7 @@ PAPER_MENU = [
         icon='fa fa-fw fa-lg fa-home',
         models=[
             'Page',
+            'Document',
         ]
     ),
     '-',
@@ -155,13 +156,19 @@ RQ_QUEUES = {
 # ===============
 PAPER_UPLOADS = {
     'STORAGE': 'django.core.files.storage.FileSystemStorage',
-    'RQ_ENABLED': True,
-    'POSTPROCESS_JPEG': {
-        'COMMAND': 'mozjpeg',
-        'ARGUMENTS': '-copy none -progressive -optimize -outfile {file} {file}'
-    },
-    'POSTPROCESS_PNG': {
-        'COMMAND': 'pngquant',
-        'ARGUMENTS': '--force --skip-if-larger --output {file} {file}'
+    # 'RQ_ENABLED': True,
+    'POSTPROCESS': {
+        'JPEG': {
+            'COMMAND': 'jpeg-recompress',
+            'ARGUMENTS': '--strip --quality medium --method smallfry {file} {file}',
+        },
+        'PNG': {
+            'COMMAND': 'pngquant',
+            'ARGUMENTS': '--force --skip-if-larger --output {file} {file}'
+        },
+        'SVG': {
+            'COMMAND': 'svgo',
+            'ARGUMENTS': '--precision=4 {file}',
+        },
     }
 }

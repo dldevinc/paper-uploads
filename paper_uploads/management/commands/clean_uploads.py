@@ -63,7 +63,7 @@ class Command(BaseCommand):
                 # db_cursor.execute('LOCK TABLE %s IN ACCESS SHARE MODE' % model._meta.db_table)
 
                 for field in fields:
-                    used_values = model._meta.base_manager.exclude(
+                    used_values = model._meta.base_manager.using(self.database).exclude(
                         models.Q((field.name, None))
                     ).values_list(
                         field.name,
@@ -116,18 +116,18 @@ class Command(BaseCommand):
         """
         Поиск файлов
         """
-        missing = set()
+        sourceless_items = set()
         related_model = queryset.model
         for instance in queryset.iterator():
             file = getattr(instance, file_field)
             if not file.storage.exists(file.name):
-                missing.add(instance.pk)
+                sourceless_items.add(instance.pk)
 
-        if not missing:
+        if not sourceless_items:
             if self.verbosity >= 2:
                 self.stderr.write(
                     self.style.NOTICE(
-                        "There are no instances of {} which are linked to a non-existent files.".format(related_model.__name__)
+                        "There are no instances of {} which have no source file.".format(related_model.__name__)
                     )
                 )
             return
@@ -138,21 +138,21 @@ class Command(BaseCommand):
                     'Found \033[92m%d %s\033[0m objects which are linked to a non-existent files.\n'
                     'What would you like to do with them?\n'
                     '(p)rint / (k)eep / (d)elete [default=keep]? ' % (
-                        len(missing),
+                        len(sourceless_items),
                         related_model.__name__
                     )
                 )
                 answer = answer.lower() or 'k'
                 if answer in {'p', 'print'}:
                     self.stdout.write('\n')
-                    qs = queryset.filter(pk__in=missing).order_by('pk').only('file')
+                    qs = queryset.filter(pk__in=sourceless_items).order_by('pk').only('file')
                     for index, item in enumerate(qs, start=1):
                         self.stdout.write('  {}) #{} (File: {})'.format(index, item.pk, item.file.name))
                     self.stdout.write('\n')
                 elif answer in {'k', 'keep'}:
                     return
                 elif answer in {'d', 'delete'}:
-                    queryset.filter(pk__in=missing).delete()
+                    queryset.filter(pk__in=sourceless_items).delete()
                     return
 
     def handle(self, *args, **options):
@@ -160,22 +160,30 @@ class Command(BaseCommand):
         self.database = options['database']
         self.interactive = options['interactive']
 
-        self.clean_source_missing(UploadedFile._meta.base_manager.all())
-        self.clean_model(UploadedFile._meta.base_manager.all())
+        since = now() - timedelta(minutes=options['since'])
+        self.clean_source_missing(UploadedFile._meta.base_manager.using(self.database).all())
+        self.clean_model(
+            UploadedFile._meta.base_manager.using(self.database).filter(
+                uploaded_at__lte=since
+            )
+        )
 
-        self.clean_source_missing(UploadedImage._meta.base_manager.all())
-        self.clean_model(UploadedImage._meta.base_manager.all())
+        self.clean_source_missing(UploadedImage._meta.base_manager.using(self.database).all())
+        self.clean_model(
+            UploadedImage._meta.base_manager.using(self.database).filter(
+                uploaded_at__lte=since
+            )
+        )
 
         for model in apps.get_models():
             if issubclass(model, GalleryItemBase) and model is not GalleryItemBase and not model._meta.abstract:
-                self.clean_source_missing(model._meta.base_manager.all())
+                self.clean_source_missing(model._meta.base_manager.using(self.database).all())
 
         # Do not touch fresh galleries - they may not be saved yet.
-        since = now() - timedelta(minutes=options['since'])
         for model in apps.get_models():
             if issubclass(model, GalleryBase) and not model._meta.abstract:
                 content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
-                gallery_qs = model._meta.base_manager.filter(
+                gallery_qs = model._meta.base_manager.using(self.database).filter(
                     gallery_content_type=content_type,
                     created_at__lte=since
                 )

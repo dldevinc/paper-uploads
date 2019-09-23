@@ -5,15 +5,22 @@ from django.core.files import File
 from django.views.generic import FormView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.module_loading import import_string
-from django.contrib.contenttypes.models import ContentType
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
 from ..models import GalleryItemBase, GalleryBase
+from ..utils import run_validators
+from ..logging import logger
 from .. import exceptions
 from .. import signals
-from .. import utils
 from . import helpers
+
+
+def detect_file_type(gallery_cls, file):
+    for item_type, item_type_field in gallery_cls.item_types.items():
+        if item_type_field.model.check_file(file):
+            return item_type
+    return None
 
 
 @csrf_exempt
@@ -26,20 +33,20 @@ def delete_gallery(request):
     try:
         gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
     except exceptions.InvalidContentType:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid gallery content type')
 
     gallery_id = request.POST.get('gallery_id')
     try:
         instance = helpers.get_instance(gallery_cls, gallery_id)
     except exceptions.InvalidObjectId:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid ID')
     except ObjectDoesNotExist:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Object not found')
     except MultipleObjectsReturned:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Multiple objects returned')
 
     instance.delete()
@@ -61,10 +68,10 @@ def upload_item(request):
     except exceptions.ContinueUpload:
         return helpers.success_response()
     except exceptions.InvalidUUID:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid UUID')
     except exceptions.InvalidChunking:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid chunking', prevent_retry=False)
     else:
         if not isinstance(file, File):
@@ -75,13 +82,13 @@ def upload_item(request):
     try:
         gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
     except exceptions.InvalidContentType:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid gallery content type')
 
     # Определение типа элемента галереи
-    item_type = gallery_cls.guess_item_type(file)
+    item_type = detect_file_type(gallery_cls, file)
     if item_type is None:
-        return helpers.error_response('Unsupported file type')
+        return helpers.error_response('Unsupported file')
 
     # Получение объекта галереи
     gallery_id = request.POST.get('gallery_id')
@@ -91,39 +98,24 @@ def upload_item(request):
         # создадим новую галерею
         gallery = None
     except ObjectDoesNotExist:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Gallery not found')
     except MultipleObjectsReturned:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Multiple objects returned')
-
-    model_class = gallery_cls.ALLOWED_ITEM_TYPES[item_type]
-    owner_field_name = request.POST.get('paperOwnerFieldname')
-
-    # Определение модели владельца файла
-    owner_content_type = None
-    if gallery is None:
-        owner_app_label = request.POST.get('paperOwnerAppLabel')
-        owner_model_name = request.POST.get('paperOwnerModelName')
-        try:
-            owner_content_type = ContentType.objects.get(
-                app_label=owner_app_label,
-                model=owner_model_name
-            )
-        except ContentType.DoesNotExist:
-            utils.logger.exception('Invalid owner content type: %s.%s' % (owner_app_label, owner_model_name))
-            return helpers.error_response('Invalid owner content type')
 
     try:
         with transaction.atomic():
             if gallery is None:
                 # Создание галереи
                 gallery = gallery_cls._meta.default_manager.create(
-                    owner_ct=owner_content_type,
-                    owner_fieldname=owner_field_name
+                    owner_app_label=request.POST.get('paperOwnerAppLabel'),
+                    owner_model_name=request.POST.get('paperOwnerModelName'),
+                    owner_fieldname=request.POST.get('paperOwnerFieldname')
                 )
 
-            instance = model_class(
+            item_type_field = gallery_cls.item_types[item_type]
+            instance = item_type_field.model(
                 content_type_id=gallery_content_type_id,
                 object_id=gallery.pk,
                 item_type=item_type,
@@ -132,13 +124,14 @@ def upload_item(request):
                 size=file.size
             )
             instance.full_clean()
+            run_validators(file, item_type_field.validators)
             instance.save()
     except ValidationError as e:
-        message = helpers.exception_response(e)
-        utils.logger.debug(message)
-        return helpers.error_response(message)
+        messages = helpers.get_exception_messages(e)
+        logger.debug(messages)
+        return helpers.error_response(messages)
     except Exception as e:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         if hasattr(e, 'args'):
             message = '{}: {}'.format(type(e).__name__, e.args[0])
         else:
@@ -162,13 +155,13 @@ def delete_item(request):
     try:
         gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
     except exceptions.InvalidContentType:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid gallery content type')
 
     item_type = request.POST.get('item_type')
-    for key, model in gallery_cls.ALLOWED_ITEM_TYPES.items():
-        if item_type == key:
-            model_class = model
+    for name, field in gallery_cls.item_types.items():
+        if item_type == name:
+            model_class = field.model
             break
     else:
         return helpers.error_response('Invalid item type')
@@ -177,13 +170,13 @@ def delete_item(request):
     try:
         instance = helpers.get_instance(model_class, instance_id)
     except exceptions.InvalidObjectId:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid ID')
     except ObjectDoesNotExist:
         # silently skip
         return helpers.success_response()
     except MultipleObjectsReturned:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Multiple objects returned')
     else:
         instance.delete()
@@ -203,27 +196,27 @@ def sort_items(request):
     try:
         gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
     except exceptions.InvalidContentType:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid gallery content type')
 
     gallery_id = request.POST.get('gallery_id')
     try:
         instance = helpers.get_instance(gallery_cls, gallery_id)
     except exceptions.InvalidObjectId:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid ID')
     except ObjectDoesNotExist:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Object not found')
     except MultipleObjectsReturned:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Multiple objects returned')
 
     order_string = request.POST.get('order', '')
     try:
         item_ids = (int(pk) for pk in order_string.split(','))
     except ValueError:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid order')
 
     gallery_items = set(instance.items.values_list('pk', flat=True))
@@ -238,8 +231,8 @@ def sort_items(request):
     return helpers.success_response()
 
 
-class ChangeImageView(PermissionRequiredMixin, FormView):
-    template_name = 'paper_uploads/popups/edit_form.html'
+class ChangeView(PermissionRequiredMixin, FormView):
+    template_name = 'paper_uploads/dialogs/gallery.html'
     permission_required = 'paper_uploads.change'
     instance = None
 
@@ -251,13 +244,13 @@ class ChangeImageView(PermissionRequiredMixin, FormView):
         try:
             gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
         except exceptions.InvalidContentType:
-            utils.logger.exception('Error')
+            logger.exception('Error')
             return helpers.error_response('Invalid gallery content type')
 
         item_type = self.request.GET.get('item_type')
-        for key, model in gallery_cls.ALLOWED_ITEM_TYPES.items():
-            if item_type == key:
-                model_class = model
+        for name, field in gallery_cls.item_types.items():
+            if item_type == name:
+                model_class = field.model
                 break
         else:
             raise exceptions.AjaxFormError('Invalid item type')
@@ -298,7 +291,7 @@ class ChangeImageView(PermissionRequiredMixin, FormView):
         try:
             self.instance = self.get_instance()
         except exceptions.AjaxFormError as exc:
-            utils.logger.exception('Error')
+            logger.exception('Error')
             return helpers.error_response(exc.message)
         return super().get_form(form_class)
 

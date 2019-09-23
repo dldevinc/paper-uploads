@@ -7,10 +7,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
-from ..forms.dialogs import FileEditForm
+from ..forms.dialogs.file import UploadedFileDialog
 from ..models import UploadedFileBase
+from ..utils import run_validators
+from ..logging import logger
 from .. import exceptions
-from .. import utils
 from . import helpers
 
 
@@ -28,10 +29,10 @@ def upload(request):
     except exceptions.ContinueUpload:
         return helpers.success_response()
     except exceptions.InvalidUUID:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid UUID')
     except exceptions.InvalidChunking:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid chunking', prevent_retry=False)
     else:
         if not isinstance(file, File):
@@ -42,21 +43,26 @@ def upload(request):
     try:
         model_class = helpers.get_model_class(content_type_id, base_class=UploadedFileBase)
     except exceptions.InvalidContentType:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid content type')
 
     try:
         with transaction.atomic():
             instance = model_class(
                 file=file,
+                owner_app_label=request.POST.get('paperOwnerAppLabel'),
+                owner_model_name=request.POST.get('paperOwnerModelName'),
+                owner_fieldname=request.POST.get('paperOwnerFieldname')
             )
             instance.full_clean()
+            owner_field = instance.get_owner_field()
+            if owner_field is not None:
+                run_validators(file, owner_field.validators)
             instance.save()
     except ValidationError as e:
-        message = helpers.exception_response(e)
-        utils.logger.debug(message)
-        return helpers.error_response(message)
-
+        messages = helpers.get_exception_messages(e)
+        logger.debug(messages)
+        return helpers.error_response(messages)
     return helpers.success_response(instance.as_dict())
 
 
@@ -72,19 +78,19 @@ def delete(request):
     try:
         model_class = helpers.get_model_class(content_type_id, base_class=UploadedFileBase)
     except exceptions.InvalidContentType:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid content type')
 
     try:
         instance = helpers.get_instance(model_class, instance_id)
     except exceptions.InvalidObjectId:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Invalid ID')
     except ObjectDoesNotExist:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Object not found')
     except MultipleObjectsReturned:
-        utils.logger.exception('Error')
+        logger.exception('Error')
         return helpers.error_response('Multiple objects returned')
 
     instance.delete()
@@ -92,9 +98,9 @@ def delete(request):
 
 
 class ChangeView(PermissionRequiredMixin, FormView):
-    template_name = 'paper_uploads/popups/edit_form.html'
+    template_name = 'paper_uploads/dialogs/file.html'
     permission_required = 'paper_uploads.change'
-    form_class = FileEditForm
+    form_class = UploadedFileDialog
     instance = None
 
     def get_instance(self):
@@ -141,7 +147,7 @@ class ChangeView(PermissionRequiredMixin, FormView):
         try:
             self.instance = self.get_instance()
         except exceptions.AjaxFormError as exc:
-            utils.logger.exception('Error')
+            logger.exception('Error')
             return helpers.error_response(exc.message)
         return super().get_form(form_class)
 

@@ -119,7 +119,6 @@ Object.defineProperty(Gallery.prototype, 'empty', {
  * Инициализация галереи
  */
 Gallery.prototype.init = function() {
-    this.allowedMimeTypes = JSON.parse(this.element.dataset.allowedMimetypes);
     this.empty = isNaN(this.galleryId);
     this.uploader = this.initUploader();
     this.sortable = this.initSortable();
@@ -136,20 +135,12 @@ Gallery.prototype.initUploader = function() {
         multiple: true,
         button: this.uploadButton,
         dropzones: this.element.querySelectorAll('.dropzone-overlay'),
+        validation: JSON.parse(this.element.dataset.validation),
         extraData: {
             gallery_id: function() {
                 return _this.galleryId;
             }
         },
-        filters: [
-            function(id, file) {
-                if (_this.allowedMimeTypes && _this.allowedMimeTypes.length) {
-                    if (_this.allowedMimeTypes.indexOf(file.type) < 0) {
-                        throw new Error(`Unsupported MIME type: ${file.type}`);
-                    }
-                }
-            }
-        ]
     }).on('submit', function(id) {
         const template = _this.element.querySelector(_this._opts.preloaderTemplate);
         const clone = document.importNode(template.content, true);
@@ -229,11 +220,11 @@ Gallery.prototype.initUploader = function() {
     }).on('cancel', function(id) {
         const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
         _this.trigger('gallery:cancel_item', [preloader, id]);
-        preloader.remove();
-    }).on('error', function(id, reason) {
+        preloader && preloader.remove();
+    }).on('error', function(id, messages) {
         const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
-        _this.trigger('gallery:error', [preloader, reason]);
-        preloader.remove();
+        _this.trigger('gallery:error', [preloader, messages]);
+        preloader && preloader.remove();
     }).on('reject', function(id, file, reason) {
         _this.trigger('gallery:reject', [id, file, reason]);
     });
@@ -273,16 +264,23 @@ Gallery.prototype.initSortable = function() {
                     error.response = response;
                     throw error;
                 }
-
                 return response.json();
             }).then(function(response) {
-                if (response.error) {
-                    const error = new Error(response.error);
+                if (response.errors && response.errors.length) {
+                    const error = new Error('Invalid request');
                     error.response = response;
                     throw error
                 }
             }).catch(function(error) {
-                _this.trigger('gallery:error', [null, error]);
+                let messages;
+                if ((typeof error === 'object') && error.response && error.response.errors) {
+                    messages = error.response.errors;
+                } else if (error instanceof Error) {
+                    messages = [error.message];
+                } else {
+                    messages = error;
+                }
+                _this.trigger('gallery:error', [null, messages]);
             })
         },
     });
@@ -343,8 +341,8 @@ Gallery.prototype._deleteItem = function(item) {
 
         return response.json();
     }).then(function(response) {
-        if (response.error) {
-            const error = new Error(response.error);
+        if (response.errors && response.errors.length) {
+            const error = new Error('Invalid request');
             error.response = response;
             throw error
         }
@@ -362,8 +360,16 @@ Gallery.prototype._deleteItem = function(item) {
         preloader.hide();
         item.remove();
     }).catch(function(error) {
+        let messages;
         preloader.hide();
-        _this.trigger('gallery:error', [item, error]);
+        if ((typeof error === 'object') && error.response && error.response.errors) {
+            messages = error.response.errors;
+        } else if (error instanceof Error) {
+            messages = [error.message];
+        } else {
+            messages = error;
+        }
+        _this.trigger('gallery:error', [item, messages]);
     });
 };
 
@@ -402,8 +408,8 @@ Gallery.prototype._changeItem = function(item, $dialog) {
 
         return response.json();
     }).then(function(response) {
-        if (response.error) {
-            const error = new Error(response.error);
+        if (response.errors && response.errors.length) {
+            const error = new Error('Invalid request');
             error.response = response;
             throw error
         }
@@ -428,8 +434,16 @@ Gallery.prototype._changeItem = function(item, $dialog) {
             }
         }
     }).catch(function(error) {
+        let messages;
         preloader.hide();
-        _this.trigger('gallery:error', [null, error]);
+        if ((typeof error === 'object') && error.response && error.response.errors) {
+            messages = error.response.errors;
+        } else if (error instanceof Error) {
+            messages = [error.message];
+        } else {
+            messages = error;
+        }
+        _this.trigger('gallery:error', [null, messages]);
     });
 };
 
@@ -462,8 +476,8 @@ Gallery.prototype._deleteGallery = function() {
         }
         return response.json();
     }).then(function(response) {
-        if (response.error) {
-            const error = new Error(response.error);
+        if (response.errors && response.errors.length) {
+            const error = new Error('Invalid request');
             error.response = response;
             throw error
         }
@@ -473,7 +487,15 @@ Gallery.prototype._deleteGallery = function() {
         _this.galleryId = '';
         _this.trigger('gallery:deleted');
     }).catch(function(error) {
-        _this.trigger('gallery:error', [null, error]);
+        let messages;
+        if ((typeof error === 'object') && error.response && error.response.errors) {
+            messages = error.response.errors;
+        } else if (error instanceof Error) {
+            messages = [error.message];
+        } else {
+            messages = error;
+        }
+        _this.trigger('gallery:error', [null, messages]);
     });
 };
 
@@ -560,8 +582,8 @@ Gallery.prototype.addListeners = function() {
 
             return response.json();
         }).then(function(response) {
-            if (response.error) {
-                const error = new Error(response.error);
+            if (response.errors && response.errors.length) {
+                const error = new Error('Invalid request');
                 error.response = response;
                 throw error
             }
@@ -593,8 +615,16 @@ Gallery.prototype.addListeners = function() {
                 return false;
             });
         }).catch(function(error) {
+            let messages;
             preloader.hide();
-            _this.trigger('gallery:error', [null, error]);
+            if ((typeof error === 'object') && error.response && error.response.errors) {
+                messages = error.response.errors;
+            } else if (error instanceof Error) {
+                messages = [error.message];
+            } else {
+                messages = error;
+            }
+            _this.trigger('gallery:error', [null, messages]);
         });
     });
 
@@ -706,27 +736,51 @@ Gallery.prototype.addListeners = function() {
             }
         }
     });
+
+    // просмотр при двойном клике
+    this.element.addEventListener('dblclick', function(event) {
+        const item = event.target.closest(_this._opts.item);
+        if (!item) {
+            return
+        }
+
+        const itemLink = item.querySelector(_this._opts.itemLink);
+        if (itemLink) {
+            itemLink.dispatchEvent(new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true
+            }));
+        }
+    });
 };
 
 // ======================================
 
 let _errors = [];
 let _errorTimer = null;
-function alertMessage(text) {
-    _errors.push(text);
+function alertMessage(messages) {
+    if (typeof messages === 'string') {
+        _errors.push(messages);
+    } else if (Array.isArray(messages)) {
+        _errors = _errors.concat(messages);
+    }
+
     if (_errorTimer) {
         clearTimeout(_errorTimer);
     }
-
     _errorTimer = setTimeout(function() {
-        let message = ['<ul class="px-4 mb-0">'];
+        let output = [
+            `Please correct the following errors:`,
+            `<ul class="px-4 mb-0">`,
+        ];
         for (let i=0, l=_errors.length; i<l; i++) {
-            message.push(`<li>${_errors[i]}</li>`);
+            output.push(`<li>${_errors[i]}</li>`);
         }
-        message.push(`</ul>`);
+        output.push(`</ul>`);
+        output = output.join('\n');
 
         bootbox.alert({
-            message: message.join('')
+            message: output
         });
 
         _errors = [];
@@ -750,7 +804,7 @@ function initWidget(element) {
     }).on('gallery:error', function(item, reason) {
         alertMessage(reason);
     }).on('gallery:reject', function(id, file, reason) {
-        alertMessage(`File "${file.name}" <b>rejected</b>:<br>${reason}`);
+        alertMessage(`File "${file.name}" <b>rejected</b>!<br>${reason}`);
     });
 }
 

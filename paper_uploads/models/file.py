@@ -1,12 +1,13 @@
+from typing import Dict, Any
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
-from .base import UploadedFileBase
+from .base import UploadedFileBase, SlaveModelMixin
 from ..storage import upload_storage
 from ..conf import settings
 
 
-class UploadedFile(UploadedFileBase):
+class UploadedFile(UploadedFileBase, SlaveModelMixin):
     file = models.FileField(_('file'), max_length=255,
         upload_to=settings.FILES_UPLOAD_TO, storage=upload_storage)
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
@@ -20,12 +21,12 @@ class UploadedFile(UploadedFileBase):
         if not self.pk and not self.display_name:
             self.display_name = self.name
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         return {
-            'display_name': self.display_name,
+            **super().as_dict(),
+            'name': self.display_name,
             'file_info': '({ext}, {size})'.format(
                 ext=self.extension,
                 size=filesizeformat(self.size)
             ),
-            **super().as_dict(),
         }

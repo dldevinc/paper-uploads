@@ -1,20 +1,24 @@
 import magic
 import posixpath
-from django.db import models
+from collections import OrderedDict
+from typing import Dict, Type, Any, IO, Iterable
+from django.db import models, DEFAULT_DB_ALIAS
 from django.core import checks
-from django.db.models.base import ModelBase
 from django.template import loader
 from django.utils.timezone import now
 from django.db.models import functions
-from django.utils.functional import cached_property
+from django.db.models.base import ModelBase
 from django.utils.translation import gettext_lazy as _
 from django.utils.module_loading import import_string
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from polymorphic.models import PolymorphicModel
+from variations.variation import Variation
+from .base import SlaveModelMixin
 from .file import UploadedFileBase
 from .image import UploadedImageBase
+from .fields import GalleryItemTypeField
 from ..conf import settings, FILE_ICONS, FILE_ICON_DEFAULT
 from ..storage import upload_storage
 from .. import tasks
@@ -100,20 +104,19 @@ class GalleryItemBase(PolymorphicModel):
             self.order = max_order + 1
         super().save(*args, **kwargs)
 
-    @cached_property
-    def gallery_model(self):
-        """
-        Модель галереи.
-
-        :rtype: T <= GalleryBase
-        """
+    def get_gallery_class(self) -> Type['GalleryBase']:
         return self.content_type.model_class()
 
-    def as_dict(self):
+    def get_gallery_field(self) -> GalleryItemTypeField:
+        gallery_cls = self.get_gallery_class()
+        for name, field in gallery_cls.item_types.items():
+            if field.model is type(self):
+                return field
+
+    def as_dict(self) -> Dict[str, Any]:
         """
         Словарь, возвращаемый в виде JSON после загрузки файла.
-
-        :return: dict
+        Служит для формирования виджета файла без перезагрузки страницы.
         """
         return {
             'id': self.pk,
@@ -121,20 +124,28 @@ class GalleryItemBase(PolymorphicModel):
             'item_type': self.item_type,
         }
 
-    def attach_to(self, gallery, item_type, commit=True):
+    @classmethod
+    def check_file(cls, file: IO) -> bool:
+        """
+        Проверка загруженного файла на принадлежность текущему типу элемента галереи.
+        Если укзанный файл поддерживается, метод должен вернуть True.
+        """
+        raise NotImplementedError
+
+    def attach_to(self, gallery: 'GalleryBase', commit: bool = True):
         """
         Подключение элемента к галерее.
         Используется в случае динамического создания элементов галереи.
-
-        :type gallery: GalleryBase
-        :type item_type: str
-        :type commit: bool
         """
         self.content_type = ContentType.objects.get_for_model(gallery, for_concrete_model=False)
         self.object_id = gallery.pk
-        if item_type not in gallery.ALLOWED_ITEM_TYPES:
-            raise ValueError('Unsupported gallery item type: %s' % item_type)
-        self.item_type = item_type
+        for name, field in gallery.item_types.items():
+            if field.model is type(self):
+                self.item_type = name
+                break
+        else:
+            raise ValueError('Unsupported gallery item: %s' % type(self).__name__)
+
         if commit:
             self.save()
 
@@ -145,36 +156,27 @@ class GalleryFileItemBase(GalleryItemBase, UploadedFileBase):
     file = models.FileField(_('file'), max_length=255, storage=upload_storage,
         upload_to=settings.GALLERY_FILES_UPLOAD_TO)
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
-    preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
 
     class Meta(GalleryItemBase.Meta):
         abstract = True
         verbose_name = _('file')
         verbose_name_plural = _('files')
 
-    def as_dict(self):
-        return {
-            **super().as_dict(),
-            'name': self.canonical_name,
-            'url': self.file.url,
-            'preview': loader.render_to_string('paper_uploads/gallery_item/preview/file.html', {
-                'item': self,
-                'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
-            })
-        }
-
     def pre_save_new_file(self):
         super().pre_save_new_file()
         if not self.pk and not self.display_name:
             self.display_name = self.name
-        icon = FILE_ICONS.get(self.extension, FILE_ICON_DEFAULT)
-        self.preview = static('paper_uploads/dist/image/{}.svg'.format(icon))
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            **super().as_dict(),
+            'name': self.canonical_name,
+            'url': self.file.url,
+        }
 
 
 class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
     TEMPLATE_NAME = 'paper_uploads/gallery_item/image.html'
-    VARIATIONS = {}
     PREVIEW_VARIATIONS = settings.GALLERY_IMAGE_ITEM_PREVIEW_VARIATIONS
 
     file = models.FileField(_('file'), max_length=255, storage=upload_storage,
@@ -185,21 +187,42 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
         verbose_name = _('image')
         verbose_name_plural = _('images')
 
-    def get_variations(self):
+    def get_variations(self) -> Dict[str, Variation]:
+        """
+        Перебираем возможные места вероятного определения вариаций и берем
+        первое непустое значение. Порядок проверки:
+            1) параметр `variations` поля `GalleryItemTypeField`
+            2) член класса галереи VARIATIONS
+        К найденному словарю примешиваются вариации для админки.
+        """
         if not hasattr(self, '_variations_cache'):
-            variations = dict(self.VARIATIONS, **self.PREVIEW_VARIATIONS)
+            item_type_field = self.get_gallery_field()
+            variations = item_type_field.extra.get('variations')
+            if variations is None:
+                gallery_cls = self.get_gallery_class()
+                variations = getattr(gallery_cls, 'VARIATIONS', None)
+
+            variations = (variations or {}).copy()
+            variations.update(self.PREVIEW_VARIATIONS)
             self._variations_cache = utils.build_variations(variations)
         return self._variations_cache
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            **super().as_dict(),
+            'name': self.canonical_name,
+            'url': self.file.url,
+        }
 
     def post_save_new_file(self):
         """
         При отложенной нарезке превью для админки режутся сразу,
         а остальное - потом.
         """
+        super(UploadedImageBase, self).post_save_new_file()
         if settings.RQ_ENABLED:
             preview_variations = tuple(self.PREVIEW_VARIATIONS.keys())
             self._recut_sync(names=preview_variations)
-            self._postprocess(names=preview_variations)
             self.recut(names=tuple(
                 name
                 for name in self.get_variations()
@@ -208,7 +231,180 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
         else:
             self.recut()
 
-    def as_dict(self):
+
+class GalleryMetaclass(ModelBase):
+    """
+    Хак, создающий прокси-модели вместо наследования, если явно не указано
+    обратное.
+    """
+    def __new__(mcs, name, bases, attrs, **kwargs):
+        new_attrs = {
+            '_local_item_type_fields': []
+        }
+        for obj_name, obj in list(attrs.items()):
+            new_attrs[obj_name] = obj
+
+        # set proxy=True by default
+        meta = new_attrs.pop('Meta', None)
+        if meta is None:
+            meta = type('Meta', (), {'proxy': True})
+        elif not hasattr(meta, 'proxy'):
+            meta = type('Meta', meta.__bases__, dict(meta.__dict__))
+        new_attrs['Meta'] = meta
+
+        new_class = super().__new__(mcs, name, bases, new_attrs, **kwargs)
+        for base in bases:
+            item_type_fields = getattr(base, '_local_item_type_fields', [])
+            for field in item_type_fields:
+                new_class.add_to_class(field.name, field)
+        return new_class
+
+
+class GalleryItemTypesDescriptor:
+    def __init__(self, name):
+        self.name = name
+
+    def __get__(self, instance, owner):
+        if owner is None:
+            owner = type(instance)
+        return OrderedDict(
+            (field.name, field)
+            for field in owner._local_item_type_fields
+        )
+
+
+class ContentItemRelation(GenericRelation):
+    """
+    FIX: cascade delete polimorphic
+    https://github.com/django-polymorphic/django-polymorphic/issues/34
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def bulk_related_objects(self, objs, using=DEFAULT_DB_ALIAS):
+        return super().bulk_related_objects(objs).non_polymorphic()
+
+
+class GalleryBase(SlaveModelMixin, metaclass=GalleryMetaclass):
+    item_types = GalleryItemTypesDescriptor(name='item_types')
+    items = ContentItemRelation(GalleryItemBase, for_concrete_model=False)
+    created_at = models.DateTimeField(_('created at'), default=now, editable=False)
+
+    class Meta:
+        proxy = False
+        abstract = True
+        default_permissions = ()
+        verbose_name = _('gallery')
+        verbose_name_plural = _('galleries')
+
+    @classmethod
+    def _check_fields(cls, **kwargs):
+        errors = super()._check_fields(**kwargs)
+        for field in cls._local_item_type_fields:
+            errors.extend(field.check(**kwargs))
+        return errors
+
+    def get_items(self, item_type: str = None):
+        if item_type is None:
+            return self.items.order_by('order')
+        if item_type not in self.item_types:
+            raise ValueError('Unsupported gallery item type: %s' % item_type)
+        return self.items.filter(item_type=item_type).order_by('order')
+
+    def _recut_sync(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS):
+        recutable_items = tuple(
+            name
+            for name, field in self.item_types.items()
+            if hasattr(field.model, 'recut')
+        )
+        for item in self.items.using(using).filter(item_type__in=recutable_items):
+            item._recut_sync(names)
+
+    def _recut_async(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS):
+        from django_rq.queues import get_queue
+        queue = get_queue(settings.RQ_QUEUE_NAME)
+        queue.enqueue_call(tasks.recut_gallery, kwargs={
+            'app_label': self._meta.app_label,
+            'model_name': self._meta.model_name,
+            'object_id': self.pk,
+            'names': names,
+            'using': using,
+        })
+
+    def recut(self, names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS):
+        if settings.RQ_ENABLED:
+            self._recut_async(names, using=using)
+        else:
+            self._recut_sync(names, using=using)
+
+
+# ==============================================================================
+
+
+class GalleryFileItem(GalleryFileItemBase):
+    FORM_CLASS = 'paper_uploads.forms.dialogs.gallery.GalleryFileDialog'
+
+    preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
+
+    @classmethod
+    def check_file(cls, file: IO) -> bool:
+        return True
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            **super().as_dict(),
+            'preview': loader.render_to_string('paper_uploads/gallery_item/preview/file.html', {
+                'item': self,
+                'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
+                'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
+            })
+        }
+
+    def pre_save_new_file(self):
+        super().pre_save_new_file()
+        icon = FILE_ICONS.get(self.extension, FILE_ICON_DEFAULT)
+        self.preview = static('paper_uploads/dist/image/{}.svg'.format(icon))
+
+
+class GallerySVGItem(GalleryFileItemBase):
+    FORM_CLASS = 'paper_uploads.forms.dialogs.gallery.GalleryFileDialog'
+    TEMPLATE_NAME = 'paper_uploads/gallery_item/svg.html'
+
+    class Meta(GalleryItemBase.Meta):
+        verbose_name = _('SVG-file')
+        verbose_name_plural = _('SVG-files')
+
+    @classmethod
+    def check_file(cls, file: IO) -> bool:
+        filename, ext = posixpath.splitext(file.name)
+        return ext.lower() == '.svg'
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            **super().as_dict(),
+            'preview': loader.render_to_string('paper_uploads/gallery_item/preview/svg.html', {
+                'item': self,
+                'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
+                'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
+            })
+        }
+
+    def post_save_new_file(self):
+        super().post_save_new_file()
+
+        # postprocess svg
+        gallery_field = self.get_gallery_field()
+        if gallery_field is not None:
+            postprocess_options = gallery_field.extra.get('postprocess')
+        else:
+            postprocess_options = None
+        utils.postprocess_svg(self.file.name, postprocess_options)
+
+
+class GalleryImageItem(GalleryImageItemBase):
+    FORM_CLASS = 'paper_uploads.forms.dialogs.gallery.GalleryImageDialog'
+
+    def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
             'name': self.canonical_name,
@@ -220,173 +416,40 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
             })
         }
 
+    @classmethod
+    def check_file(cls, file: IO) -> bool:
+        mimetype = magic.from_buffer(file.read(1024), mime=True)
+        file.seek(0)    # correct file position after mimetype detection
+        basetype, subtype = mimetype.split('/', 1)
+        return basetype == 'image'
 
-class GalleryRecutDescriptor:
+
+class GalleryManager(models.Manager):
     """
-    Дескриптор, позволяющий вызывать метод recut() как из объекта галереи,
-    так и из класса.
+    Из-за того, что все галереи являются прокси-моделями, запросы от имени
+    любого из классов галереи затрагивает абсолютно все объекты галереи.
+    С помощью этого менеджера можно работать только с галерями текущего типа.
     """
-    def __get__(self, instance, owner):
-        if instance is None:
-            def decorator(*args, **kwargs):
-                for instance in owner.objects.all():
-                    instance.recut(*args, **kwargs)
-            return decorator
-        else:
-            return instance._recut
+    def get_queryset(self):
+        gallery_ct = ContentType.objects.get_for_model(self.model, for_concrete_model=False)
+        return super().get_queryset().filter(gallery_content_type=gallery_ct)
 
 
-class GalleryBase(models.Model):
-    # Карта поддерживаемых моделей элементов.
-    # Пример:
-    #   ALLOWED_ITEM_TYPES = {
-    #       'image': GalleryImageItem,
-    #       'video': GalleryVideoItem,
-    #       'file': GalleryFileItem,
-    #   }
-    ALLOWED_ITEM_TYPES = {}
-
-    # Типы файлов, которые нужно перенарезать при вызове метода recut()
-    RECUTABLE_ITEM_TYPES = []
-
-    # Перечень MIME-типов, доступных для загрузки.
-    # Тип проверяется на клиентской стороне перед загрузкой.
-    ALLOWED_MIMETYPES = []
-
-    items = GenericRelation(GalleryItemBase, for_concrete_model=False)
-    owner_ct = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, related_name='+', editable=False)
-    owner_fieldname = models.CharField(max_length=255, editable=False)
-    created_at = models.DateTimeField(_('created at'), default=now, editable=False)
-
-    class Meta:
-        abstract = True
-        default_permissions = ()
-        verbose_name = _('gallery')
-        verbose_name_plural = _('galleries')
-
-    def get_items(self, item_type=None):
-        if item_type is None:
-            return self.items.order_by('order')
-        if item_type not in self.ALLOWED_ITEM_TYPES:
-            raise ValueError('Unsupported gallery item type: %s' % item_type)
-        return self.items.filter(item_type=item_type).order_by('order')
-
-    def _recut_sync(self, names=()):
-        for item in self.items.filter(item_type__in=self.RECUTABLE_ITEM_TYPES):
-            item._recut_sync(names)
-
-    def _recut_async(self, names=()):
-        from django_rq.queues import get_queue
-        queue = get_queue(settings.RQ_QUEUE_NAME)
-        queue.enqueue_call(tasks.recut_gallery, kwargs={
-            'app_label': self._meta.app_label,
-            'model_name': self._meta.model_name,
-            'object_id': self.pk,
-            'names': names,
-        })
-
-    def _recut(self, names=None):
-        if settings.RQ_ENABLED:
-            self._recut_async(names)
-        else:
-            self._recut_sync(names)
-
-    recut = GalleryRecutDescriptor()
-
-
-# ==============================================================================
-
-
-class GalleryFileItem(GalleryFileItemBase):
-    FORM_CLASS = 'paper_uploads.forms.dialogs.GalleryFileItemForm'
-
-
-class GallerySVGItem(GalleryItemBase, UploadedFileBase):
-    FORM_CLASS = 'paper_uploads.forms.dialogs.GalleryFileItemForm'
-    TEMPLATE_NAME = 'paper_uploads/gallery_item/svg.html'
-
-    file = models.FileField(_('file'), max_length=255, storage=upload_storage,
-        upload_to=settings.GALLERY_FILES_UPLOAD_TO)
-
-    class Meta(GalleryItemBase.Meta):
-        verbose_name = _('SVG-file')
-        verbose_name_plural = _('SVG-files')
-
-    def as_dict(self):
-        return {
-            **super().as_dict(),
-            'name': self.canonical_name,
-            'url': self.file.url,
-            'preview': loader.render_to_string('paper_uploads/gallery_item/preview/svg.html', {
-                'item': self,
-                'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
-            })
-        }
-
-
-class GalleryImageItem(GalleryImageItemBase):
-    FORM_CLASS = 'paper_uploads.forms.dialogs.GalleryImageItemForm'
-
-    def get_variations(self):
-        if not hasattr(self, '_variations_cache'):
-            if self.VARIATIONS:
-                variations = self.VARIATIONS.copy()
-            elif 'gallery' in self.__dict__ and self.gallery:   # fix __getattr__ recursion
-                variations = self.gallery.VARIATIONS.copy()
-            else:
-                # Получение вариаций из модели галереи для решения проблемы
-                # с остаточными вариациями при удалением непустой галереи.
-                gallery_method = getattr(self.content_type.model_class(), 'get_variations', None)
-                if gallery_method is not None:
-                    variations = gallery_method()
-                else:
-                    variations = {}
-
-            variations.update(self.PREVIEW_VARIATIONS)
-            self._variations_cache = utils.build_variations(variations)
-        return self._variations_cache
-
-
-class GalleryProxyChilds(ModelBase):
-    """
-    Хак, задающий унаследованным моделям proxy=True по умолчанию.
-    """
-    def __new__(mcs, name, bases, attrs, **kwargs):
-        flag = '_{}__ProxyGallery'.format(name)
-        if attrs.get(flag) is not False:
-            attr_meta = attrs.pop('Meta', None)
-            if attr_meta is None:
-                attr_meta = type('Meta', (), {'proxy': True})
-            elif not hasattr(attr_meta, 'proxy'):
-                setattr(attr_meta, 'proxy', True)
-            attrs['Meta'] = attr_meta
-        return super().__new__(mcs, name, bases, attrs, **kwargs)
-
-
-class Gallery(GalleryBase, metaclass=GalleryProxyChilds):
+class Gallery(GalleryBase):
     """
     Галерея, позволяющая хранить изображаения, SVG-файлы и файлы.
-    Наследование от этой галереи создает proxy-модель.
     """
-
-    # Флаг, отмечающий реальную модель, от которой при обычном наследовании
-    # будут создвваться прокси-модели (если явно не указано обратное).
-    __ProxyGallery = False
-
-    VARIATIONS = {}
-    ALLOWED_ITEM_TYPES = {
-        'image': GalleryImageItem,
-        'file': GalleryFileItem,
-        'svg': GallerySVGItem,
-    }
-    RECUTABLE_ITEM_TYPES = ['image']
-
     # поле, ссылающееся на одно из изображений галереи (для экономии SQL-запросов)
     cover = models.ForeignKey(GalleryImageItem, verbose_name=_('cover image'),
         null=True, editable=False, on_delete=models.SET_NULL)
     gallery_content_type = models.ForeignKey(ContentType, null=True,
         verbose_name=_('gallery type'), on_delete=models.SET_NULL, editable=False)
+
+    default_mgr = models.Manager()     # fix migrations manager
+    objects = GalleryManager()
+
+    class Meta:
+        proxy = False   # явно указываем, что это не проски-модель
 
     def save(self, *args, **kwargs):
         if not self.gallery_content_type:
@@ -395,53 +458,16 @@ class Gallery(GalleryBase, metaclass=GalleryProxyChilds):
             )
         super().save(*args, **kwargs)
 
-    @classmethod
-    def guess_item_type(cls, file):
-        # FIX: SVG не обрабатывается PIL, но имеет MIME-тип изображения
-        filename, ext = posixpath.splitext(file.name)
-        if ext.lower() == '.svg':
-            return 'svg'
-
-        mimetype = magic.from_buffer(file.read(1024), mime=True)
-        file.seek(0)
-        basetype, subtype = mimetype.split('/', 1)
-        if basetype == 'image':
-            return 'image'
-        return 'file'
-
-    @classmethod
-    def get_variations(cls):
-        """
-        Кэшируем конфиги вариаций для частичного решения проблемы с остаточными
-        вариациями при удалением непустой галереи.
-        """
-        if not hasattr(cls, '_variations_cache'):
-            variations = cls.VARIATIONS.copy()
-            variations.update(cls.ALLOWED_ITEM_TYPES['image'].PREVIEW_VARIATIONS)
-            cls._variations_cache = variations
-        return cls._variations_cache
-
 
 class ImageGallery(Gallery):
     """
     Галерея, позволяющая хранить только изображения.
     """
-
-    ALLOWED_ITEM_TYPES = {
-        'image': GalleryImageItem,
-    }
-    ALLOWED_MIMETYPES = [
-        'image/bmp',
-        'image/gif',
-        'image/jpeg',
-        'image/pjpeg',
-        'image/png',
-        'image/tiff',
-        'image/webp',
-        'image/x-tiff',
-        'image/x-windows-bmp',
-    ]
+    image = GalleryItemTypeField(GalleryImageItem)
 
     @classmethod
-    def guess_item_type(cls, file):
-        return 'image'
+    def get_validation(cls) -> Dict[str, Any]:
+        return {
+            **super().get_validation(),
+            'acceptFiles': 'image/*',
+        }

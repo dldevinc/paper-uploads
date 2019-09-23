@@ -18,44 +18,47 @@
 * [variations](https://github.com/dldevinc/variations)
 
 ## Features
-* По-умолчанию, если при сохранении формы были ошибки
-валидации, то все выбранные на форме файлы сбрасывались.
-При асинхронной загрузке файлов такого больше не будет.
+* Каждый файл представлен своей моделью, что позволяет
+хранить метаданные. Например alt и title для изображения.
+* Загрузка файла происходит асинхронно.
+* Поскольку поля для хранения файлов являются производными
+от OneToOneField, то в случаях, когда форма не прошла
+валидацию прикрепленные файлы не сбрасываются.
 * Загруженные картинки можно нарезать на множество вариаций.
-Каждая вариация гибко настраивается. Можно указать качество сжатия,
-размеры, добавить дополнительные 
+Каждая вариация гибко настраивается. Можно указать размеры, 
+качество сжатия, добавить дополнительные 
 [pilkit](https://github.com/matthewwithanm/pilkit)-процессоры, 
-распознавание лиц и другое.
-* Для каждого файла можно указать метаданные. 
-Для файлов - имя файла и отображаемое имя.
-Для картинок - имя файла, alt и title.
+распознавание лиц и другое. См. 
+[variations](https://github.com/dldevinc/variations).
 * Интеграция с [django-rq](https://github.com/rq/django-rq)
 для отложенной нарезки картинок на вариации.
-* Возможность постобработки вариаций такими 
-утилитами как `mozjpeg` и `pngquant`.
+* Возможность постобработки вариаций консольными утилитами. 
+Такими как `mozjpeg` и `pngquant`.
 
 ## Installation
-Add `paper_uploads` to your INSTALLED_APPS setting.
 ```python
 INSTALLED_APPS = [
     # ...
     'paper_uploads',
     # ...
 ]
-```
 
-Setup upload settings
-```python
 PAPER_UPLOADS = {
     'STORAGE': 'django.core.files.storage.FileSystemStorage',
     'RQ_ENABLED': True,
-    'POSTPROCESS_JPEG': {
-        'COMMAND': 'mozjpeg',
-        'ARGUMENTS': '-copy none -progressive -optimize -outfile {file} {file}'
-    },
-    'POSTPROCESS_PNG': {
-        'COMMAND': 'pngquant',
-        'ARGUMENTS': '--force --skip-if-larger --speed 2 --output {file} {file}'
+    'POSTPROCESS': {
+        'JPEG': {
+            'COMMAND': 'jpeg-recompress',
+            'ARGUMENTS': '--quality high --method smallfry {file} {file}',
+        },
+        'PNG': {
+            'COMMAND': 'pngquant',
+            'ARGUMENTS': '--force --skip-if-larger --output {file} {file}'
+        },
+        'SVG': {
+            'COMMAND': 'svgo',
+            'ARGUMENTS': '--precision=4 {file}',
+        },   
     }
 }
 ```
@@ -71,6 +74,7 @@ class Page(models.Model):
 ```
 
 ## ImageField
+Настройки вариаций идентичны настройкам модуля [variations](https://github.com/dldevinc/variations).
 ```python
 from pilkit import processors
 from django.db import models
@@ -104,22 +108,73 @@ class Page(models.Model):
 ```
 
 ## GalleryField
+Для создания галереи необходимо создать класс, унаследованый 
+от `Gallery`.
+
+**Note**: наследование от `Gallery` на самом деле создает
+[proxy-модель](https://docs.djangoproject.com/en/2.2/topics/db/models/#proxy-models),
+чтобы не плодить множество однотипных таблиц в БД. Но,
+благодаря переопределенному менеджеру `objects` в классе
+`Gallery`, запросы через этот менеджер будут затрагивать 
+только галереи того же класса, от имени которого вызываются.
+
+```python
+# Вернет только галереи класса MyGallery
+MyGallery.objects.all()
+
+# Вернет абсолютно все галереи, всех классов
+MyGallery._meta.base_manager.all()
+```  
+
+---
+
+Галерея может включать элементы любого вида, который можно 
+описать с помощью модели, унаследованной от `GalleryItemBase`. 
+Перечень допустимых классов элементов галереи задается
+с помощью `GalleryItemTypeField`. Синтаксис подключения 
+подобен добавлению поля `ForeignKey` к модели.
+
+"Из коробки" доступны следующие классы элементов галереи:
+* `GalleryImageItem` - изображение с вариациями.
+* `GalleryFileItem` - любой файл.
+* `GallerySVGItem` - для хранения svg-файлов. Аналогичен `GalleryFileItem`, но в превью админки показывается картинка.
+
+```python
+from paper_uploads.models import gallery
+from paper_uploads.models.fields import GalleryItemTypeField
+
+
+class PageFiles(gallery.Gallery):
+    svg = GalleryItemTypeField(gallery.GallerySVGItem)
+    image = GalleryItemTypeField(gallery.GalleryImageItem)
+    file = GalleryItemTypeField(gallery.GalleryFileItem)
+```
+
+Порядок подключения классов имеет значение: при загрузке
+файла через админку, его класс определется первым классом,
+чей метод `check_file` вернет `True`. 
+
+Менять имена полей `GalleryItemTypeField` нельзя, т.к при 
+добавлении нового элемента это имя заносится в БД.
+
+---
+
+Для галерей, предназначенных исключительно для изображений, 
+"из коробки" доступна модель для наследования `ImageGallery`,
+с предустановленным фильтром mimetype на этапе выбора файла.
+
 ```python
 from django.db import models
-from paper_uploads.models.fields import GalleryField
-from paper_uploads.models import (
-    Gallery, ImageGallery, GalleryFileItem, GallerySVGItem
-)
+from paper_uploads.models import gallery
+from paper_uploads.models.fields import GalleryField, GalleryItemTypeField
 
 
-class PageFiles(Gallery):
-    ALLOWED_ITEM_TYPES = {
-        'file': GalleryFileItem,
-        'svg': GallerySVGItem,
-    }
+class PageFiles(gallery.Gallery):
+    svg = GalleryItemTypeField(gallery.GallerySVGItem)
+    file = GalleryItemTypeField(gallery.GalleryFileItem)
 
 
-class PageImages(ImageGallery):
+class PageImages(gallery.ImageGallery):
     VARIATIONS = dict(
         wide=dict(
             size=(1600, 0),
@@ -144,8 +199,31 @@ class Page(models.Model):
     images = GalleryField(PageImages, verbose_name=_('images'))
 ```
 
+## Programmatically upload files
+```python
+from django.core.files import File
+from paper_uploads.models import UploadedFile, GalleryImageItem
+
+# file / image
+with open('file.doc', 'rb') as fp:
+    file = UploadedFile(
+        file=File(fp, name='file.doc'),
+    )
+    file.save()
+
+# gallery
+gallery = PageGallery.objects.create()
+with open('image.jpg', 'rb') as fp:
+    item = GalleryImageItem(
+        file=File(fp, name='image.jpg'),
+    )
+    item.attach_to(gallery)
+    item.save()
+```
+
 ## Appearance
-Модели файлов проксируют некоторые свойства файла на уровень модели:
+Модели файлов проксируют некоторые свойства файла на уровень
+модели:
 * `url`
 * `path`
 * `open`
@@ -153,7 +231,77 @@ class Page(models.Model):
 * `close`
 * `closed`
 
-Таким образом, вместо `Page.image.file.url` можно использовать `Article.image.url`.
+Таким образом, вместо `Page.image.file.url` можно 
+использовать `Page.image.url`.
+
+## Management Commands
+#### check_uploads
+Проверяет все записи в БД на целостность. Обнаруживает 
+некорректные ссылки на модель-владельца файла 
+и отсутствие файлов вариаций.
+
+При указании ключа `--fix-missing` все отстутствующие 
+вариации будут перенарезаны из исходников.
+
+```python
+python3 manage.py check_uploads --fix-missing
+```
+
+#### clean_uploads
+Находит мусорные записи в БД. Например те, у которых 
+нет владельца, и предлагает их удалить.
+
+Так как при заполнении формы в админке, владелец
+устанавливается в последнюю очередь, при очистке
+могут быть удалены только что загруженные кем-то файлы.
+Поэтому файлы, созданные менее, чем 30 минут назад
+игнорируются. Поменять длину безопасного интервала 
+(в минутах) можно через ключ `--since`.  
+
+```python
+python3 manage.py clean_uploads --since=10
+```
+
+#### recreate_variations
+Перенарезает вариации для указанных моделей / полей.
+Можно указать:
+* модель галереи. Будут перенарезаны вариации для всех
+элементов галереи.
+* поле модели. В этом случае будут перенарезаны все вариации
+этого поля для всех экзепляров указанной модели.
+
+Если нужно перенарезать не все доступные вариации, а только
+определённые, то их можно перечислить в параметре `--variations`.
+
+```python
+python3 manage.py recreate_variations 'page.PageGallery' --variations big small
+python3 manage.py recreate_variations 'page.Page' --field=image 
+```
+
+## Validation
+* `SizeLimitValidator` - устанавливает максимально допустимый
+размер загружаемого файла в байтах.
+* `ImageMinSizeValidator` - устанавливает минимальный размер загружаемых изображений.
+* `ImageMaxSizeValidator` - устанавливает максимальный размер загружаемых изображений.
+
+```python
+from django.db import models
+from paper_uploads.models import Gallery, GalleryFileItem
+from paper_uploads.models.fields import ImageField, GalleryItemTypeField 
+from paper_uploads.validators import SizeLimitValidator, ImageMaxSizeValidator
+
+class Page(models.Model):
+    image = ImageField(_('image'), blank=True, validators=[
+        SizeLimitValidator(10 * 1024 * 1024),   # max 10Mb
+        ImageMaxSizeValidator(800, 800)     # max dimensions 800x800
+    ])
+
+
+class PageGallery(Gallery):
+    file = GalleryItemTypeField(GalleryFileItem, validators=[
+        SizeLimitValidator(10 * 1024 * 1024), 
+    ])
+```
 
 ## Settings
 Все настройки указываются в словаре `PAPER_UPLOADS`.
@@ -171,4 +319,4 @@ class Page(models.Model):
 | GALLERY_IMAGE_ITEM_PREVIEW_VARIATIONS | Вариации для превью картинок галереи в виджете админки. |
 | RQ_ENABLED | Включает нарезку картинок на вариации через отложенные задачи. Требует наличие установленного пакета [django-rq](https://github.com/rq/django-rq) |
 | RQ_QUEUE_NAME | Название очереди, в которую помещаются задачи по нарезке картинок. По-умолчанию, `default` |
-| POSTPROCESS_JPEG, POSTPROCESS_PNG, POSTPROCESS_GIF | Словари, задающие команду, запускаемую после нарезки вариации. Для каждого формата своя команда. Путь к исполняемому файлу передается в ключе COMMAND, а её аргументы в ключе ARGUMENTS.  |
+| POSTPROCESS | Словарь, задающий команды, запускаемые после загрузки файла. Для каждого формата своя команда. |

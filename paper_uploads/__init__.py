@@ -44,9 +44,11 @@
         PAPER_UPLOADS = {
             'STORAGE': 'django.core.files.storage.FileSystemStorage',
             'IMAGES_UPLOAD_TO': 'images/%Y-%m-%d',
-            'POSTPROCESS_JPEG': {
-                'COMMAND': 'mozjpeg',
-                'ARGUMENTS': '-copy none -progressive -optimize -outfile {file} {file}'
+            'POSTPROCESS': {
+                'JPEG': {
+                    'COMMAND': 'jpeg-recompress',
+                    'ARGUMENTS': '--quality high --method smallfry {file} {file}',
+                }
             }
         }
 
@@ -109,10 +111,11 @@
         default         default
         description     Название очереди, в которую помещаются задачи по нарезке
 
-    POSTPROCESS_[FORMAT]
+    POSTPROCESS
         type            bool
         default         dict
-        description     Определяет команду, запускаемую после нарезки.
+        description     Определяет команды, запускаемые после загрузки файла.
+                        Для каждого формата файла можно указать свою команду.
                         Путь к исполняемому файлу передается в ключе COMMAND,
                         а её аргументы в ключе ARGUMENTS.
 
@@ -209,25 +212,5 @@
 
         > article.image_ext.normal.url
         '/media/images/2018-10-09/image.normal.jpg'
-
-    Перенарезка вариаций
-    --------------------
-        # перенарезка всех вариаций одной картинки
-        > article.image_ext.recut()
-
-        # перенарезка указанных вариаций для всех статей
-        > for article in Article.objects.all():
-              if article.image_ext:
-                  article.image_ext.recut(['desktop', 'tablet'])
-
-    Динамическое создание элемента галереи
-    --------------------------------------
-        from django.core.files import File
-
-        image_item = ArticleGalleryImageItem(
-            file=File(open('1600x1200.jpg', 'rb'), name='1600x1200.jpg')
-        )
-        image_item.attach_to(article.gallery, 'image')
-
 """
 default_app_config = 'paper_uploads.apps.Config'
