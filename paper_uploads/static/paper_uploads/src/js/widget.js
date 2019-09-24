@@ -1,4 +1,3 @@
-import "./_uploader";
 import "./file_widget";
 import "./image_widget";
 import "./gallery_widget";
