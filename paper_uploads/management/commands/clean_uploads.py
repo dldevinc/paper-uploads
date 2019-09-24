@@ -177,7 +177,9 @@ class Command(BaseCommand):
 
         for model in apps.get_models():
             if issubclass(model, GalleryItemBase) and model is not GalleryItemBase and not model._meta.abstract:
-                self.clean_source_missing(model._meta.base_manager.using(self.database).all())
+                self.clean_source_missing(
+                    model._meta.base_manager.using(self.database).non_polymorphic()
+                )
 
         # Do not touch fresh galleries - they may not be saved yet.
         for model in apps.get_models():
