@@ -47,6 +47,7 @@ class Page(models.Model):
             desktop=dict(
                 size=(1600, 0),
                 clip=False,
+                format='jpeg',
                 jpeg=dict(
                     quality=92,
                 ),
