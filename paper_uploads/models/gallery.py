@@ -17,7 +17,7 @@ from polymorphic.models import PolymorphicModel
 from variations.variation import Variation
 from .base import SlaveModelMixin
 from .file import UploadedFileBase
-from .image import UploadedImageBase
+from .image import UploadedImageBase, VariationalFileField
 from .fields import GalleryItemTypeField
 from ..conf import settings, FILE_ICONS, FILE_ICON_DEFAULT
 from ..storage import upload_storage
@@ -179,7 +179,7 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
     TEMPLATE_NAME = 'paper_uploads/gallery_item/image.html'
     PREVIEW_VARIATIONS = settings.GALLERY_IMAGE_ITEM_PREVIEW_VARIATIONS
 
-    file = models.FileField(_('file'), max_length=255, storage=upload_storage,
+    file = VariationalFileField(_('file'), max_length=255, storage=upload_storage,
         upload_to=settings.GALLERY_IMAGES_UPLOAD_TO)
 
     class Meta(GalleryItemBase.Meta):
@@ -450,6 +450,7 @@ class Gallery(GalleryBase):
 
     class Meta:
         proxy = False   # явно указываем, что это не проски-модель
+        default_manager_name = 'default_mgr'
 
     def save(self, *args, **kwargs):
         if not self.gallery_content_type:

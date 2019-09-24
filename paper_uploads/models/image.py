@@ -1,12 +1,14 @@
+import os
 import base64
 import filetype
 from PIL import Image
-from typing import Dict, Iterator, Tuple, Iterable, Optional, Any
+from typing import Dict, Iterator, Tuple, Iterable, Optional, Any, Sequence
 from django.db import models
 from django.core.files import File
-from django.core.exceptions import ValidationError
+from django.utils.crypto import get_random_string
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
+from django.core.exceptions import ValidationError, SuspiciousFileOperation
 from variations.variation import Variation
 from variations.utils import prepare_image
 from .base import UploadedFileBase, SlaveModelMixin
@@ -194,7 +196,7 @@ class UploadedImageBase(UploadedFileBase):
             setattr(self, variation_cache_name, variation_cache)
         return variation_cache
 
-    def get_draft_size(self, source_size: Iterable[int]) -> Tuple[int, int]:
+    def get_draft_size(self, source_size: Sequence[int]) -> Tuple[int, int]:
         """
         Вычисление максимально возможных значений ширины и высоты для всех
         вариаций, чтобы передать их в Image.draft().
@@ -249,8 +251,51 @@ class UploadedImageBase(UploadedFileBase):
             self._recut_sync(names)
 
 
+class VariationalFileField(models.FileField):
+    """
+    Из-за того, что вариация может самостоятельно установить свой формат,
+    возможна ситуация, когда вариации одного изображения перезапишут вариации
+    другого. Например, когда загружаются файлы, отличающиеся только расширением.
+    Поэтому мы проверяем все имена будующих вариаций на существование, чтобы
+    не допустить перезапись.
+    """
+    def variation_collapse(self, instance, name):
+        if self.storage.exists(name):
+            return True
+
+        for vname, variation in instance.get_variations().items():
+            variation_filename = utils.get_variation_filename(name, vname, variation)
+            if self.storage.exists(variation_filename):
+                return True
+        return False
+
+    def generate_filename(self, instance, filename):
+        name = super().generate_filename(instance, filename)
+
+        max_length = self.max_length
+        dir_name, file_name = os.path.split(name)
+        file_root, file_ext = os.path.splitext(file_name)
+        while self.variation_collapse(instance, name) or (max_length and len(name) > max_length):
+            name = os.path.join(dir_name, "%s_%s%s" % (file_root, get_random_string(7), file_ext))
+            if max_length is None:
+                continue
+            # Truncate file_root if max_length exceeded.
+            truncation = len(name) - max_length
+            if truncation > 0:
+                file_root = file_root[:-truncation]
+                # Entire file_root was truncated in attempt to find an available filename.
+                if not file_root:
+                    raise SuspiciousFileOperation(
+                        'Storage can not find an available filename for "%s". '
+                        'Please make sure that the corresponding file field '
+                        'allows sufficient "max_length".' % name
+                    )
+                name = os.path.join(dir_name, "%s_%s%s" % (file_root, get_random_string(7), file_ext))
+        return name
+
+
 class UploadedImage(UploadedImageBase, SlaveModelMixin):
-    file = models.FileField(_('file'), max_length=255, upload_to=settings.IMAGES_UPLOAD_TO, storage=upload_storage)
+    file = VariationalFileField(_('file'), max_length=255, upload_to=settings.IMAGES_UPLOAD_TO, storage=upload_storage)
 
     class Meta(UploadedImageBase.Meta):
         verbose_name = _('image')
