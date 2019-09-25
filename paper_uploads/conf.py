@@ -64,32 +64,22 @@ PROXY_FILE_ATTRIBUTES = {
 }
 
 # Иконки для файлов в галерее
-FILE_ICONS = {
-    '7z': '7z',
-    'ai': 'ai',
-    'avi': 'avi',
-    'csv': 'csv',
-    'doc': 'doc',
-    'docx': 'doc',
-    'flac': 'flac',
-    'json': 'json',
-    'mp3': 'mp3',
-    'mp4': 'mp4',
-    'pdf': 'pdf',
-    'ppt': 'ppt',
-    'psd': 'psd',
-    'rar': 'rar',
-    'rtf': 'rtf',
-    'svg': 'svg',
-    'tar': 'tar',
-    'txt': 'txt',
-    'wav': 'wav',
-    'wma': 'wma',
-    'xls': 'xls',
-    'zip': 'zip',
-    'xml': 'xml',
-}
 FILE_ICON_DEFAULT = 'unknown'
+FILE_ICON_OVERRIDES = {
+    '3gp': 'video',
+    'aac': 'audio',
+    'docx': 'doc',
+    'flac': 'audio',
+    'flv': 'video',
+    'gz': 'archive',
+    'm4v': 'video',
+    'mov': 'video',
+    'ogv': 'video',
+    'xlsx': 'xls',
+    'xz': 'archive',
+    'wav': 'audio',
+    'wma': 'audio',
+}
 
 
 def perform_import(val, setting_name):

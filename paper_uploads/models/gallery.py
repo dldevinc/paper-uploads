@@ -11,7 +11,7 @@ from django.db.models.base import ModelBase
 from django.utils.translation import gettext_lazy as _
 from django.utils.module_loading import import_string
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.staticfiles.templatetags.staticfiles import static
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from polymorphic.models import PolymorphicModel
 from variations.variation import Variation
@@ -19,7 +19,7 @@ from .base import SlaveModelMixin
 from .file import UploadedFileBase
 from .image import UploadedImageBase, VariationalFileField
 from .fields import GalleryItemTypeField
-from ..conf import settings, FILE_ICONS, FILE_ICON_DEFAULT
+from ..conf import settings, FILE_ICON_OVERRIDES, FILE_ICON_DEFAULT
 from ..storage import upload_storage
 from .. import tasks
 from .. import utils
@@ -362,8 +362,15 @@ class GalleryFileItem(GalleryFileItemBase):
 
     def pre_save_new_file(self):
         super().pre_save_new_file()
-        icon = FILE_ICONS.get(self.extension, FILE_ICON_DEFAULT)
-        self.preview = static('paper_uploads/dist/image/{}.svg'.format(icon))
+        self.preview = self.get_preview_url()
+
+    def get_preview_url(self):
+        icon_path_template = 'paper_uploads/dist/image/{}.svg'
+        extension = FILE_ICON_OVERRIDES.get(self.extension, self.extension)
+        icon_path = icon_path_template.format(extension)
+        if not staticfiles_storage.exists(icon_path):
+            icon_path = icon_path_template.format(FILE_ICON_DEFAULT)
+        return staticfiles_storage.url(icon_path)
 
 
 class GallerySVGItem(GalleryFileItemBase):
