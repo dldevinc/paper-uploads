@@ -155,7 +155,6 @@ RQ_QUEUES = {
 #  Paper Uploads
 # ===============
 PAPER_UPLOADS = {
-    'STORAGE': 'django.core.files.storage.FileSystemStorage',
     # 'RQ_ENABLED': True,
     'POSTPROCESS': {
         'JPEG': {
