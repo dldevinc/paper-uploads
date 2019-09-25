@@ -3,6 +3,7 @@ import {BaseWidget} from "./base_widget";
 // PaperAdmin API
 const whenDomReady = window.paperAdmin.whenDomReady;
 const emitters = window.paperAdmin.emitters;
+const bootbox = window.paperAdmin.bootbox;
 
 // CSS
 import "../css/widget_image.scss";
