@@ -107,4 +107,3 @@ class ImageMaxSizeValidator:
             return
 
         raise ValidationError(self.error_messages[code], code=code, params=params)
-
