@@ -79,6 +79,15 @@
   vertical-align: middle;
 }
 
+.gallery__help-text {
+  margin-top: 2px;
+}
+
+.gallery__kbd {
+  color: inherit;
+  background-color: #eaeaea;
+}
+
 // прелоадер
 .gallery__item--preloader {
   .gallery__item-preview {
