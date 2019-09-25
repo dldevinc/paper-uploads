@@ -25,7 +25,7 @@ DEFAULTS = {
             size=(288, 216),
             format='jpeg',
             jpeg=dict(
-                quality=84
+                quality=85
             ),
         ),
         admin_preview_webp=dict(
