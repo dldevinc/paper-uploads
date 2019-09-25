@@ -10,7 +10,7 @@ class SizeLimitValidator:
     message = _('Ensure that the size of the file is not more than %(show_limit_value)s.')
     code = 'size_limit'
 
-    def __init__(self, limit_value, message=None):
+    def __init__(self, limit_value: int, message=None):
         self.limit_value = limit_value
         if message:
             self.message = message
@@ -33,7 +33,7 @@ class ImageMinSizeValidator:
         'min_size': _('Image should be at least %(width_limit)s x %(height_limit)s pixels.'),
     }
 
-    def __init__(self, width=0, height=0):
+    def __init__(self, width: int = 0, height: int = 0):
         self.width_limit = width
         self.height_limit = height
 
@@ -75,7 +75,7 @@ class ImageMaxSizeValidator:
         'max_size': _('Image should be at most %(width_limit)s x %(height_limit)s pixels.'),
     }
 
-    def __init__(self, width=0, height=0):
+    def __init__(self, width: int = 0, height: int = 0):
         self.width_limit = width
         self.height_limit = height
 
