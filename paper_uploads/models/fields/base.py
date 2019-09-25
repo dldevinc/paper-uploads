@@ -44,6 +44,14 @@ class FileFieldBase(models.OneToOneField):
             del kwargs['related_name']
         return name, path, args, kwargs
 
+    def formfield(self, **kwargs):
+        return super().formfield(**{
+            'owner_app_label': self.opts.app_label.lower(),
+            'owner_model_name': self.opts.model_name.lower(),
+            'owner_fieldname': self.name,
+            **kwargs
+        })
+
     def contribute_to_class(self, cls, *args, **kwargs):
         super().contribute_to_class(cls, *args, **kwargs)
         if not cls._meta.abstract:
