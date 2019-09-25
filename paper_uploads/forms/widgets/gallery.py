@@ -22,18 +22,16 @@ class GalleryWidget(FileWidgetBase):
         )
 
     def get_context(self, name, value, attrs):
-        gallery_cls = self.choices.queryset.model
-
         context = super().get_context(name, value, attrs)
         context.update({
-            'gallery_cls': gallery_cls,
+            'gallery_cls': self.model,
             'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
             'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
             'validation': json.dumps(gallery_cls.get_validation()),
         })
 
         # urls
-        info = gallery_cls._meta.app_label, gallery_cls._meta.model_name
+        info = self.model._meta.app_label, self.model._meta.model_name
         context.update({
             'delete_gallery_url': reverse_lazy('admin:%s_%s_delete' % info),
             'upload_item_url': reverse_lazy('admin:%s_%s_upload_item' % info),
@@ -44,6 +42,4 @@ class GalleryWidget(FileWidgetBase):
         return context
 
     def get_instance(self, value):
-        if value:
-            gallery_cls = self.choices.queryset.model
-            return gallery_cls._meta.base_manager.prefetch_related('items').get(pk=value)
+        return self.model._meta.base_manager.prefetch_related('items').get(pk=value)
