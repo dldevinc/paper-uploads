@@ -5,11 +5,11 @@
 Предоставляет поля для асинхронной загрузки файлов. Включает
 три класса полей для моделей: 
 * `paper_uploads.models.fields.FileField` для загрузки одного файла.
-* `paper_uploads.models.fields.ImageField` для загрузки одной картинки (с возможностью
-нарезки на дополнительные вариации)
-* `paper_uploads.models.fields.GalleryField` для загрузки множества файлов (не обязательно картинок).
-Для загружаемых картинок есть возможность нарезки на 
-дополнительные вариации.
+* `paper_uploads.models.fields.ImageField` для загрузки одной картинки 
+(с возможностью нарезки на дополнительные вариации)
+* `paper_uploads.models.fields.GalleryField` для загрузки множества 
+файлов (не обязательно картинок). Для загружаемых картинок есть 
+возможность нарезки на дополнительные вариации.
 
 ## Requirements
 * Python (3.5, 3.6, 3.7)
@@ -20,13 +20,14 @@
 ## Features
 * Каждый файл представлен своей моделью, что позволяет
 хранить метаданные. Например alt и title для изображения.
-* Загрузка файла происходит асинхронно.
-* Поскольку поля для хранения файлов являются производными
-от OneToOneField, то в случаях, когда форма не прошла
-валидацию прикрепленные файлы не сбрасываются.
+* Загрузка файлов происходит асинхронно.
+* Поля для хранения файлов являются производными
+от OneToOneField и не используют <input type="file">. Благодаря
+этому, при ошибках валидации формы, не нужно прикреплять файлы 
+повторно.
 * Загруженные картинки можно нарезать на множество вариаций.
 Каждая вариация гибко настраивается. Можно указать размеры, 
-качество сжатия, добавить дополнительные 
+качество сжатия, формат, добавить дополнительные 
 [pilkit](https://github.com/matthewwithanm/pilkit)-процессоры, 
 распознавание лиц и другое. См. 
 [variations](https://github.com/dldevinc/variations).
@@ -44,7 +45,6 @@ INSTALLED_APPS = [
 ]
 
 PAPER_UPLOADS = {
-    'STORAGE': 'django.core.files.storage.FileSystemStorage',
     'RQ_ENABLED': True,
     'POSTPROCESS': {
         'JPEG': {
@@ -64,17 +64,30 @@ PAPER_UPLOADS = {
 ```
 
 ## FileField
+Поле для загрузки файла. Никаких ограничений на загружаемые файлы 
+по-умолчанию нет. Но их можно добавить с помощью [валидаторов](#Validation).
+
 ```python
 from django.db import models
 from paper_uploads.models.fields import FileField
+from paper_uploads.validators import SizeValidator
 
 
 class Page(models.Model):
-    file = FileField(_('simple file'), blank=True)
+    file = FileField(_('file'), blank=True, validators=[
+        SizeValidator(10*1024*1024)    # limit to 10Mb    
+    ])
 ```
 
 ## ImageField
-Настройки вариаций идентичны настройкам модуля [variations](https://github.com/dldevinc/variations).
+Поле для загрузки изображений. Поддерживает нарезку на неограниченное 
+количество вариаций (опционально). Настройки вариаций идентичны 
+настройкам модуля [variations](https://github.com/dldevinc/variations).
+
+В любом случае, исходное изображение сохраняется. При добавлении
+новых вариаций или изменении существующих, можно заново произвести
+нарезку с помощью команды [recreate_variations](#recreate_variations)
+
 ```python
 from pilkit import processors
 from django.db import models
@@ -108,25 +121,8 @@ class Page(models.Model):
 ```
 
 ## GalleryField
-Для создания галереи необходимо создать класс, унаследованый 
-от `Gallery`.
-
-**Note**: наследование от `Gallery` на самом деле создает
-[proxy-модель](https://docs.djangoproject.com/en/2.2/topics/db/models/#proxy-models),
-чтобы не плодить множество однотипных таблиц в БД. Но,
-благодаря переопределенному менеджеру `objects` в классе
-`Gallery`, запросы через этот менеджер будут затрагивать 
-только галереи того же класса, от имени которого вызываются.
-
-```python
-# Вернет только галереи класса MyGallery
-MyGallery.objects.all()
-
-# Вернет абсолютно все галереи, всех классов
-MyGallery._meta.base_manager.all()
-```  
-
----
+Для создания галереи необходимо создать класс модели галереи, 
+унаследованый от `Gallery` или `ImageGallery`.
 
 Галерея может включать элементы любого вида, который можно 
 описать с помощью модели, унаследованной от `GalleryItemBase`. 
@@ -198,6 +194,23 @@ class Page(models.Model):
     files = GalleryField(PageFiles, verbose_name=_('files'))
     images = GalleryField(PageImages, verbose_name=_('images'))
 ```
+
+---
+
+Наследование от `Gallery` на самом деле создает
+[proxy-модель](https://docs.djangoproject.com/en/2.2/topics/db/models/#proxy-models),
+чтобы не плодить множество однотипных таблиц в БД. Благодаря 
+переопределенному менеджеру `objects` в классе `Gallery`, запросы 
+через этот менеджер будут затрагивать только галереи того же класса, 
+от имени которого вызываются.
+
+```python
+# Вернет только галереи класса MyGallery
+MyGallery.objects.all()
+
+# Вернет абсолютно все галереи, всех классов
+MyGallery._base_manager.all()
+```  
 
 ## Programmatically upload files
 ```python
@@ -288,7 +301,7 @@ python3 manage.py recreate_variations 'page.Page' --field=image
 from django.db import models
 from paper_uploads.models import Gallery, GalleryFileItem
 from paper_uploads.models.fields import ImageField, GalleryItemTypeField 
-from paper_uploads.validators import SizeLimitValidator, ImageMaxSizeValidator
+from paper_uploads.validators import SizeValidator, ImageMaxSizeValidator
 
 class Page(models.Model):
     image = ImageField(_('image'), blank=True, validators=[
