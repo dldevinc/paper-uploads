@@ -1,3 +1,4 @@
+import json
 from django.forms import widgets
 from django.utils.functional import cached_property
 from django.contrib.contenttypes.models import ContentType
@@ -7,6 +8,7 @@ class FileWidgetBase(widgets.Widget):
     owner_app_label = None
     owner_model_name = None
     owner_fieldname = None
+    validation = None
 
     @cached_property
     def model(self):
@@ -19,9 +21,16 @@ class FileWidgetBase(widgets.Widget):
             'owner_app_label': self.owner_app_label,
             'owner_model_name': self.owner_model_name,
             'owner_fieldname': self.owner_fieldname,
+            'validation': self.get_validation(),
             'instance': self.get_instance(value) if value is not None else None,
         })
         return context
 
     def get_instance(self, value):
         return self.model._meta.base_manager.get(pk=value)
+
+    def get_validation(self):
+        return json.dumps({
+            **self.model.get_validation(),  # TODO: удалить?
+            **self.validation,
+        })

@@ -1,4 +1,3 @@
-import json
 from django import forms
 from django.urls import reverse_lazy
 from .base import FileWidgetBase
@@ -27,7 +26,6 @@ class GalleryWidget(FileWidgetBase):
             'gallery_cls': self.model,
             'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
             'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
-            'validation': json.dumps(gallery_cls.get_validation()),
         })
 
         # urls

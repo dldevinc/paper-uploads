@@ -1,8 +1,31 @@
+import os
+from typing import Sequence
 from PIL import Image
 from django.core.exceptions import ValidationError
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
+
+
+@deconstructible
+class ExtensionValidator:
+    message = _("%(value)s has an invalid extension. Valid extension(s): %(allowed)s")
+    code = 'invalid_extension'
+
+    def __init__(self, allowed: Sequence[str], message=None):
+        self.allowed = tuple(ext.lower() for ext in allowed)
+        if message:
+            self.message = message
+
+    def __call__(self, value):
+        _, ext = os.path.splitext(value.name)
+        ext = ext.lstrip('.').lower()
+        params = {
+            'allowed': "'%s'" % "', '".join(self.allowed),
+            'value': value.name
+        }
+        if ext not in self.allowed:
+            raise ValidationError(self.message, code=self.code, params=params)
 
 
 @deconstructible
@@ -42,6 +65,8 @@ class ImageMinSizeValidator:
         try:
             img = Image.open(value)
             image_size = img.size
+        except Exception:
+            raise ValidationError('Not an image')
         finally:
             if closed:
                 value.close()

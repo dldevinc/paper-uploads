@@ -53,8 +53,9 @@ Uploader.prototype._makeUploader = function() {
         text: {
             fileInputTitle: 'Select file'
         },
-        validation: (_this._opts.validation && _this._opts.validation.acceptFiles) ? {
-            acceptFiles: _this._opts.validation.acceptFiles
+        validation: _this._opts.validation ? {
+            allowedExtensions: _this._opts.validation.allowedExtensions || [],
+            acceptFiles: _this._opts.validation.acceptFiles || null,
         } : {},
         callbacks: {
             onSubmit: function(id) {
@@ -83,7 +84,8 @@ Uploader.prototype._makeUploader = function() {
 
                 // ручная проверка файлов, т.к. встроенная валидация вызывает onError
                 // без кода ошибки. Отличить одну ошибку от другой не представляется
-                // возможным. Но это необходимо для вызова reject.
+                // возможным. Но это необходимо для вызова reject, который необходим
+                // в галерее для отображения сообщения, привязанному к файлу.
                 const validationOptions = _this._opts.validation;
                 if (validationOptions) {
                     // check mimetypes

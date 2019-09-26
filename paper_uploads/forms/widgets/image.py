@@ -1,4 +1,3 @@
-import json
 from django import forms
 from django.urls import reverse_lazy
 from .base import FileWidgetBase
@@ -22,9 +21,6 @@ class ImageWidget(FileWidgetBase):
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
-        context.update({
-            'validation': json.dumps(model_class.get_validation()),
-        })
 
         # urls
         info = self.model._meta.app_label, self.model._meta.model_name
