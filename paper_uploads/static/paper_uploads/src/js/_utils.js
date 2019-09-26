@@ -32,8 +32,10 @@ function formatErrors(errors) {
  */
 function showError(error) {
     console.debug(`Show error: ${error}`);
-    bootbox.alert({
-        message: formatErrors(error)
+    setTimeout(function() {
+        bootbox.alert({
+            message: formatErrors(error)
+        });
     });
 }
 
@@ -58,11 +60,13 @@ function showCollectedErrors() {
         return
     }
 
-    bootbox.alert({
-        message: formatErrors(_errors)
-    });
+    setTimeout(function() {
+        bootbox.alert({
+            message: formatErrors(_errors)
+        });
 
-    _errors = [];
+        _errors = [];
+    });
 }
 
 export {

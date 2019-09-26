@@ -4,11 +4,13 @@ from django.test import TestCase
 from django.core.files import File
 from tests.app.models import Page
 from ..models import UploadedFile
+from ..models.fields import FileField
+from .. import validators
 
 TESTS_PATH = Path(__file__).parent / 'samples'
 
 
-class TestFileField(TestCase):
+class TestUploadedFile(TestCase):
     def setUp(self) -> None:
         with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as fp:
             self.object = UploadedFile(
@@ -50,7 +52,7 @@ class TestFileField(TestCase):
         self.assertEqual(self.object.get_validation(), {})
 
 
-class TestSlaveFileField(TestCase):
+class TestSlaveUploadedFile(TestCase):
     def setUp(self) -> None:
         with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as fp:
             self.object = UploadedFile(
@@ -69,3 +71,28 @@ class TestSlaveFileField(TestCase):
 
     def test_owner_field(self):
         self.assertIs(self.object.get_owner_field(), Page._meta.get_field('file'))
+
+
+class TestFileField(TestCase):
+    def setUp(self) -> None:
+        self.field = FileField(validators=[
+            validators.SizeValidator(32 * 1024 * 1024),
+            validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
+            validators.MimetypeValidator(['image/jpeg', 'image/bmp', 'image/Png'])
+        ])
+        self.field.contribute_to_class(Page, 'file')
+
+    def test_validation(self):
+        self.assertDictEqual(self.field.get_validation(), {
+            'sizeLimit': 32 * 1024 * 1024,
+            'allowedExtensions': ('svg', 'bmp', 'jpeg'),
+            'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png')
+        })
+
+    def test_widget_validation(self):
+        formfield = self.field.formfield()
+        self.assertDictEqual(formfield.widget.get_validation(), {
+            'sizeLimit': 32 * 1024 * 1024,
+            'allowedExtensions': ('svg', 'bmp', 'jpeg'),
+            'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png')
+        })

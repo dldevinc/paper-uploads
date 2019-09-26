@@ -3,8 +3,10 @@ from pathlib import Path
 from django.test import TestCase
 from django.core.files import File
 from ..models import GallerySVGItem, GalleryImageItem, GalleryFileItem
+from ..models.fields import GalleryField
 from ..conf import PROXY_FILE_ATTRIBUTES
-from tests.app.models import PageGallery, PageFilesGallery
+from .. import validators
+from tests.app.models import Page, PageGallery, PageFilesGallery
 
 TESTS_PATH = Path(__file__).parent / 'samples'
 
@@ -306,3 +308,26 @@ class TestImageGallery(TestCase):
     def test_invalid_get_items(self):
         with self.assertRaises(ValueError):
             self.gallery.get_items('something')
+
+
+class TestGalleryField(TestCase):
+    def setUp(self) -> None:
+        self.field = GalleryField(PageGallery, validators=[
+            validators.SizeValidator(32 * 1024 * 1024),
+            validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
+        ])
+        self.field.contribute_to_class(Page, 'gallery')
+
+    def test_validation(self):
+        self.assertDictEqual(self.field.get_validation(), {
+            'sizeLimit': 32 * 1024 * 1024,
+            'allowedExtensions': ('svg', 'bmp', 'jpeg'),
+        })
+
+    def test_widget_validation(self):
+        formfield = self.field.formfield()
+        self.assertDictEqual(formfield.widget.get_validation(), {
+            'sizeLimit': 32 * 1024 * 1024,
+            'allowedExtensions': ('svg', 'bmp', 'jpeg'),
+            'acceptFiles': 'image/*'
+        })

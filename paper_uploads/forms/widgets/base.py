@@ -21,7 +21,7 @@ class FileWidgetBase(widgets.Widget):
             'owner_app_label': self.owner_app_label,
             'owner_model_name': self.owner_model_name,
             'owner_fieldname': self.owner_fieldname,
-            'validation': self.get_validation(),
+            'validation': json.dumps(self.get_validation()),
             'instance': self.get_instance(value) if value else None,
         })
         return context
@@ -30,7 +30,7 @@ class FileWidgetBase(widgets.Widget):
         return self.model._base_manager.get(pk=value)
 
     def get_validation(self):
-        return json.dumps({
-            **self.model.get_validation(),  # TODO: удалить?
+        return {
+            **self.model.get_validation(),
             **self.validation,
-        })
+        }

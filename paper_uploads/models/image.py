@@ -314,7 +314,7 @@ class UploadedImage(UploadedImageBase, SlaveModelMixin):
     def get_validation(cls) -> Dict[str, Any]:
         return {
             **super().get_validation(),
-            'acceptFiles': 'image/*',
+            'acceptFiles': ['image/*'],
         }
 
     def as_dict(self) -> Dict[str, Any]:

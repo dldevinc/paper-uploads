@@ -68,23 +68,33 @@ class FileFieldBase(models.OneToOneField):
         if uploaded:
             uploaded.delete()
 
+    def run_validators(self, value):
+        """
+        Отключение валидаторов для файловых полей, т.к. нам нужно валидировать
+        не ID OneToOneField, а загружаемые файлы.
+        """
+        return
+
     def get_validation(self) -> Dict[str, Any]:
         """
         Возвращает конфигурацию валидации загружаемых файлов FineUploader.
         см. https://docs.fineuploader.com/branch/master/api/options.html#validation
+
+        image.minWidth и т.п. не используются из-за недостатка кастомизации
+        текста о ошибках.
         """
         validation = {}
         for v in self.validators:
             if isinstance(v, validators.ExtensionValidator):
                 validation['allowedExtensions'] = v.allowed
-            elif isinstance(v, validators.SizeLimitValidator):
+            elif isinstance(v, validators.MimetypeValidator):
+                validation['acceptFiles'] = v.allowed
+            elif isinstance(v, validators.SizeValidator):
                 validation['sizeLimit'] = v.limit_value
             elif isinstance(v, validators.ImageMinSizeValidator):
-                image = validation.setdefault('image', {})
-                image['minWidth'] = v.width_limit
-                image['minHeight'] = v.height_limit
+                validation['minImageWidth'] = v.width_limit
+                validation['minImageHeight'] = v.height_limit
             elif isinstance(v, validators.ImageMaxSizeValidator):
-                image = validation.setdefault('image', {})
-                image['maxWidth'] = v.width_limit
-                image['maxHeight'] = v.height_limit
+                validation['maxImageWidth'] = v.width_limit
+                validation['maxImageHeight'] = v.height_limit
         return validation

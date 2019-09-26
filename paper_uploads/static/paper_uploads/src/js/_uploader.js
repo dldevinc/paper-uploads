@@ -1,4 +1,4 @@
-import {FineUploaderBasic, DragAndDrop} from "fine-uploader";
+import {FineUploaderBasic, DragAndDrop, isFile} from "fine-uploader";
 
 // PaperAdmin API
 const EventEmitter = window.paperAdmin.EventEmitter;
@@ -55,6 +55,12 @@ Uploader.prototype._makeUploader = function() {
         validation: Object.assign({
             stopOnFirstInvalidFile: false,
         }, _this._opts.validation),
+        messages: {
+            maxHeightImageError: "{file} is too tall.",
+            maxWidthImageError: "{file} is too wide.",
+            minHeightImageError: "{file} is not tall enough.",
+            minWidthImageError: "{file} is not wide enough.",
+        },
         callbacks: {
             onSubmit: function(id) {
                 const uploader = this;
@@ -78,6 +84,50 @@ Uploader.prototype._makeUploader = function() {
                             return false;
                         }
                     }
+                }
+
+                // check image size
+                const validationOptions = _this._opts.validation;
+                if (validationOptions.image && isFile(file)) {
+                    return new Promise(function(resolve, reject) {
+                        const image = new Image();
+                        const url = window.URL && window.URL.createObjectURL ? window.URL : window.webkitURL && window.webkitURL.createObjectURL ? window.webkitURL : null;
+                        if (url) {
+                            image.onerror = function() {
+                                reject("Cannot determine dimensions for image. May be too large.");
+                            };
+                            image.onload = function() {
+                                resolve({
+                                    width: this.width,
+                                    height: this.height
+                                });
+                            };
+                            image.src = url.createObjectURL(file);
+                        } else {
+                            reject("No createObjectURL function available to generate image URL!");
+                        }
+                    }).then(function(size) {
+                        if (validationOptions.minImageWidth && (size.width < validationOptions.minImageWidth)) {
+                            const reason = `${file.name} is not wide enough. Minimum width is ${validationOptions.minImageWidth}px`;
+                            _this.trigger('error', [id, reason]);
+                            throw new Error(reason);
+                        }
+                        if (validationOptions.minImageHeight && (size.height < validationOptions.minImageHeight)) {
+                            const reason = `${file.name} is not tall enough. Minimum height is ${validationOptions.minImageHeight}px`;
+                            _this.trigger('error', [id, reason]);
+                            throw new Error(reason);
+                        }
+                        if (validationOptions.maxImageWidth && (size.width > validationOptions.maxImageWidth)) {
+                            const reason = `${file.name} is too wide. Maximum width is ${validationOptions.maxImageWidth}px`;
+                            _this.trigger('error', [id, reason]);
+                            throw new Error(reason);
+                        }
+                        if (validationOptions.maxImageHeight && (size.height > validationOptions.maxImageHeight)) {
+                            const reason = `${file.name} is too tall. Maximum height is ${validationOptions.maxImageHeight}px`;
+                            _this.trigger('error', [id, reason]);
+                            throw new Error(reason);
+                        }
+                    });
                 }
             },
             onSubmitted: function(id) {
