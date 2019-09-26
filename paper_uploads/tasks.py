@@ -16,7 +16,7 @@ def _get_instance(app_label: str, model_name: str, object_id: int, using: str = 
     attempts = 1
     while True:
         try:
-            return model_class._meta.base_manager.using(using).get(pk=object_id)
+            return model_class._base_manager.using(using).get(pk=object_id)
         except ObjectDoesNotExist:
             # delay recheck if transaction not commited yet
             attempts += 1

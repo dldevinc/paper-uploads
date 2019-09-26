@@ -63,7 +63,7 @@ class Command(BaseCommand):
                 # db_cursor.execute('LOCK TABLE %s IN ACCESS SHARE MODE' % model._meta.db_table)
 
                 for field in fields:
-                    used_values = model._meta.base_manager.using(self.database).exclude(
+                    used_values = model._base_manager.using(self.database).exclude(
                         models.Q((field.name, None))
                     ).values_list(
                         field.name,
@@ -161,16 +161,16 @@ class Command(BaseCommand):
         self.interactive = options['interactive']
 
         since = now() - timedelta(minutes=options['since'])
-        self.clean_source_missing(UploadedFile._meta.base_manager.using(self.database).all())
+        self.clean_source_missing(UploadedFile._base_manager.using(self.database).all())
         self.clean_model(
-            UploadedFile._meta.base_manager.using(self.database).filter(
+            UploadedFile._base_manager.using(self.database).filter(
                 uploaded_at__lte=since
             )
         )
 
-        self.clean_source_missing(UploadedImage._meta.base_manager.using(self.database).all())
+        self.clean_source_missing(UploadedImage._base_manager.using(self.database).all())
         self.clean_model(
-            UploadedImage._meta.base_manager.using(self.database).filter(
+            UploadedImage._base_manager.using(self.database).filter(
                 uploaded_at__lte=since
             )
         )
@@ -178,14 +178,14 @@ class Command(BaseCommand):
         for model in apps.get_models():
             if issubclass(model, GalleryItemBase) and model is not GalleryItemBase and not model._meta.abstract:
                 self.clean_source_missing(
-                    model._meta.base_manager.using(self.database).non_polymorphic()
+                    model._base_manager.using(self.database).non_polymorphic()
                 )
 
         # Do not touch fresh galleries - they may not be saved yet.
         for model in apps.get_models():
             if issubclass(model, GalleryBase) and not model._meta.abstract:
                 content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
-                gallery_qs = model._meta.base_manager.using(self.database).filter(
+                gallery_qs = model._base_manager.using(self.database).filter(
                     gallery_content_type=content_type,
                     created_at__lte=since
                 )

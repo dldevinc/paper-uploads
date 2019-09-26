@@ -40,4 +40,4 @@ class GalleryWidget(FileWidgetBase):
         return context
 
     def get_instance(self, value):
-        return self.model._meta.base_manager.prefetch_related('items').get(pk=value)
+        return self.model._base_manager.prefetch_related('items').get(pk=value)

@@ -85,7 +85,7 @@ class UploadedFileBase(models.Model):
             if not self.pk:
                 is_new_file = True
             else:
-                original = type(self)._meta.base_manager.filter(pk=self.pk).only('file').get()
+                original = type(self)._base_manager.filter(pk=self.pk).only('file').get()
                 is_new_file = original.file != self.file
 
         if is_new_file:

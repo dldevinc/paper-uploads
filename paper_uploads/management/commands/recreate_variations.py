@@ -63,7 +63,7 @@ class Command(BaseCommand):
                     if name not in field.variations:
                         raise TypeError("variation '%s' is undefined" % name)
 
-            instances = model._meta.base_manager.using(self.database).exclude((fieldname, None))
+            instances = model._base_manager.using(self.database).exclude((fieldname, None))
             total = instances.count()
             for index, instance in enumerate(instances, start=1):
                 if self.verbosity >= 1:

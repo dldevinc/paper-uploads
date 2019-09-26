@@ -25,11 +25,11 @@ class Command(BaseCommand):
             if not issubclass(model, UploadedImageBase):
                 continue
 
-            total = model._meta.base_manager.using(self.database).count()
+            total = model._base_manager.using(self.database).count()
             if not total:
                 continue
 
-            for index, instance in enumerate(model._meta.base_manager.using(self.database).iterator(), start=1):
+            for index, instance in enumerate(model._base_manager.using(self.database).iterator(), start=1):
                 self.stdout.write('\r' + (' ' * 80), ending='\r')
 
                 invalid = False
@@ -82,11 +82,11 @@ class Command(BaseCommand):
             if model._meta.proxy:
                 continue
 
-            total = model._meta.base_manager.using(self.database).count()
+            total = model._base_manager.using(self.database).count()
             if not total:
                 continue
 
-            for index, instance in enumerate(model._meta.base_manager.using(self.database).iterator(), start=1):
+            for index, instance in enumerate(model._base_manager.using(self.database).iterator(), start=1):
                 self.stdout.write('\r' + (' ' * 80), ending='\r')
 
                 real_model = model
@@ -118,7 +118,7 @@ class Command(BaseCommand):
                         )
                     else:
                         try:
-                            owner_model._meta.base_manager.get(
+                            owner_model._base_manager.get(
                                 (instance.owner_fieldname, instance.pk)
                             )
                         except owner_model.DoesNotExist:

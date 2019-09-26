@@ -5,7 +5,7 @@ from django.db import migrations
 
 def update_owner(apps, schema_editor, reverse=False):
     UploadedImage = apps.get_model('paper_uploads', 'UploadedImage')
-    for image in UploadedImage._meta.base_manager.all():
+    for image in UploadedImage._base_manager.all():
         image.owner_app_label = image.owner_ct.app_label
         image.owner_model_name = image.owner_ct.model
         image.save()

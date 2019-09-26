@@ -27,7 +27,7 @@ class FileWidgetBase(widgets.Widget):
         return context
 
     def get_instance(self, value):
-        return self.model._meta.base_manager.get(pk=value)
+        return self.model._base_manager.get(pk=value)
 
     def get_validation(self):
         return json.dumps({
