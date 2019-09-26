@@ -66,7 +66,7 @@ class ImageMinSizeValidator:
             img = Image.open(value)
             image_size = img.size
         except Exception:
-            raise ValidationError('Not an image')
+            raise ValidationError('%s is not an image' % os.path.basename(value.name))
         finally:
             if closed:
                 value.close()

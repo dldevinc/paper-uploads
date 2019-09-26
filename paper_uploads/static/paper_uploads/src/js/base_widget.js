@@ -2,6 +2,7 @@
 
 import deepmerge from "deepmerge";
 import {Uploader, getPaperParams} from "./_uploader";
+import {showError} from "./_utils";
 
 // PaperAdmin API
 const EventEmitter = window.paperAdmin.EventEmitter;
@@ -16,7 +17,7 @@ const formUtils = window.paperAdmin.formUtils;
  * @fires upload:created
  * @fires upload:deleted
  * @fires upload:complete
- * @fires upload:error
+ * @fires upload:cancel
  * @param element
  * @param options
  * @constructor
@@ -158,7 +159,7 @@ BaseWidget.prototype.initUploader = function() {
     }).on('cancel', function(id) {
         _this.trigger('upload:cancel', [id]);
     }).on('error', function(id, messages) {
-        _this.trigger('upload:error', [id, messages]);
+        showError(messages);
     }).on('all_complete', function() {
         _this.loading = false;
     });
@@ -216,16 +217,14 @@ BaseWidget.prototype._change = function($dialog) {
             previewLink && (previewLink.href = response.url);
         }
     }).catch(function(error) {
-        let messages;
         preloader.hide();
         if ((typeof error === 'object') && error.response && error.response.errors) {
-            messages = error.response.errors;
+            showError(error.response.errors);
         } else if (error instanceof Error) {
-            messages = [error.message];
+            showError(error.message);
         } else {
-            messages = error;
+            showError(error);
         }
-        _this.trigger('upload:error', [null, messages]);
     });
 };
 
@@ -275,15 +274,13 @@ BaseWidget.prototype._delete = function() {
 
         _this.trigger('upload:deleted');
     }).catch(function(error) {
-        let messages;
         if ((typeof error === 'object') && error.response && error.response.errors) {
-            messages = error.response.errors;
+            showError(error.response.errors);
         } else if (error instanceof Error) {
-            messages = [error.message];
+            showError(error.message);
         } else {
-            messages = error;
+            showError(error);
         }
-        _this.trigger('upload:error', [null, messages]);
     });
 };
 
@@ -375,16 +372,14 @@ BaseWidget.prototype.addListeners = function() {
                 return false;
             });
         }).catch(function(error) {
-            let messages;
             preloader.hide();
             if ((typeof error === 'object') && error.response && error.response.errors) {
-                messages = error.response.errors;
+                showError(error.response.errors);
             } else if (error instanceof Error) {
-                messages = [error.message];
+                showError(error.message);
             } else {
-                messages = error;
+                showError(error);
             }
-            _this.trigger('upload:error', [null, messages]);
         });
     });
 };

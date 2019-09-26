@@ -2,6 +2,7 @@
 
 import deepmerge from "deepmerge";
 import {Uploader, getPaperParams} from "./_uploader";
+import {showError, collectError, showCollectedErrors} from "./_utils";
 
 // PaperAdmin API
 const EventEmitter = window.paperAdmin.EventEmitter;
@@ -184,7 +185,8 @@ Gallery.prototype.initUploader = function() {
         const templateSelector = _this._opts.itemSelectorTemplate.replace('{}', itemType);
         const template = _this.element.querySelector(templateSelector);
         if (!template) {
-            _this.trigger('gallery:error', [preloader, `Invalid item_type: ${itemType}`]);
+            _this.trigger('error', [id, `Invalid item_type: ${itemType}`]);
+            return
         } else {
             const clone = document.importNode(template.content, true);
             const item = clone.querySelector(_this._opts.item);
@@ -223,10 +225,10 @@ Gallery.prototype.initUploader = function() {
         preloader && preloader.remove();
     }).on('error', function(id, messages) {
         const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
-        _this.trigger('gallery:error', [preloader, messages]);
         preloader && preloader.remove();
-    }).on('reject', function(id, file, reason) {
-        _this.trigger('gallery:reject', [id, file, reason]);
+        collectError(messages);
+    }).on('all_complete', function() {
+        showCollectedErrors();
     });
 };
 
@@ -272,15 +274,13 @@ Gallery.prototype.initSortable = function() {
                     throw error
                 }
             }).catch(function(error) {
-                let messages;
                 if ((typeof error === 'object') && error.response && error.response.errors) {
-                    messages = error.response.errors;
+                    showError(error.response.errors);
                 } else if (error instanceof Error) {
-                    messages = [error.message];
+                    showError(error.message);
                 } else {
-                    messages = error;
+                    showError(error);
                 }
-                _this.trigger('gallery:error', [null, messages]);
             })
         },
     });
@@ -360,16 +360,14 @@ Gallery.prototype._deleteItem = function(item) {
         preloader.hide();
         item.remove();
     }).catch(function(error) {
-        let messages;
         preloader.hide();
         if ((typeof error === 'object') && error.response && error.response.errors) {
-            messages = error.response.errors;
+            showError(error.response.errors);
         } else if (error instanceof Error) {
-            messages = [error.message];
+            showError(error.message);
         } else {
-            messages = error;
+            showError(error);
         }
-        _this.trigger('gallery:error', [item, messages]);
     });
 };
 
@@ -434,16 +432,14 @@ Gallery.prototype._changeItem = function(item, $dialog) {
             }
         }
     }).catch(function(error) {
-        let messages;
         preloader.hide();
         if ((typeof error === 'object') && error.response && error.response.errors) {
-            messages = error.response.errors;
+            showError(error.response.errors);
         } else if (error instanceof Error) {
-            messages = [error.message];
+            showError(error.message);
         } else {
-            messages = error;
+            showError(error);
         }
-        _this.trigger('gallery:error', [null, messages]);
     });
 };
 
@@ -487,15 +483,13 @@ Gallery.prototype._deleteGallery = function() {
         _this.galleryId = '';
         _this.trigger('gallery:deleted');
     }).catch(function(error) {
-        let messages;
         if ((typeof error === 'object') && error.response && error.response.errors) {
-            messages = error.response.errors;
+            showError(error.response.errors);
         } else if (error instanceof Error) {
-            messages = [error.message];
+            showError(error.message);
         } else {
-            messages = error;
+            showError(error);
         }
-        _this.trigger('gallery:error', [null, messages]);
     });
 };
 
@@ -615,16 +609,14 @@ Gallery.prototype.addListeners = function() {
                 return false;
             });
         }).catch(function(error) {
-            let messages;
             preloader.hide();
             if ((typeof error === 'object') && error.response && error.response.errors) {
-                messages = error.response.errors;
+                showError(error.response.errors);
             } else if (error instanceof Error) {
-                messages = [error.message];
+                showError(error.message);
             } else {
-                messages = error;
+                showError(error);
             }
-            _this.trigger('gallery:error', [null, messages]);
         });
     });
 
@@ -754,39 +746,6 @@ Gallery.prototype.addListeners = function() {
     });
 };
 
-// ======================================
-
-let _errors = [];
-let _errorTimer = null;
-function alertMessage(messages) {
-    if (typeof messages === 'string') {
-        _errors.push(messages);
-    } else if (Array.isArray(messages)) {
-        _errors = _errors.concat(messages);
-    }
-
-    if (_errorTimer) {
-        clearTimeout(_errorTimer);
-    }
-    _errorTimer = setTimeout(function() {
-        let output = [
-            `Please correct the following errors:`,
-            `<ul class="px-4 mb-0">`,
-        ];
-        for (let i=0, l=_errors.length; i<l; i++) {
-            output.push(`<li>${_errors[i]}</li>`);
-        }
-        output.push(`</ul>`);
-        output = output.join('\n');
-
-        bootbox.alert({
-            message: output
-        });
-
-        _errors = [];
-        _errorTimer = null;
-    }, 500);
-}
 
 function initWidget(element) {
     if (element.closest('.empty-form')) {
@@ -801,10 +760,6 @@ function initWidget(element) {
             deleteItem: element.dataset.deleteItemUrl,
             sortItems: element.dataset.sortItemsUrl
         }
-    }).on('gallery:error', function(item, reason) {
-        alertMessage(reason);
-    }).on('gallery:reject', function(id, file, reason) {
-        alertMessage(`File "${file.name}" <b>rejected</b>!<br>${reason}`);
     });
 }
 
