@@ -22,7 +22,7 @@ class FileWidgetBase(widgets.Widget):
             'owner_model_name': self.owner_model_name,
             'owner_fieldname': self.owner_fieldname,
             'validation': self.get_validation(),
-            'instance': self.get_instance(value) if value is not None else None,
+            'instance': self.get_instance(value) if value else None,
         })
         return context
 
