@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from django.test import TestCase
 from django.core.files import File
-from ..models import GallerySVGItem, GalleryImageItem, GalleryFileItem
+from ..models import SVGItem, ImageItem, FileItem
 from ..models.fields import CollectionField
 from ..conf import PROXY_FILE_ATTRIBUTES
 from .. import validators
@@ -16,7 +16,7 @@ class TestGallery(TestCase):
         self.gallery = PageFilesGallery.objects.create()
 
         with open(TESTS_PATH / 'cartman.svg', 'rb') as fp:
-            self.svg_item = GallerySVGItem(
+            self.svg_item = SVGItem(
                 file=File(fp, name='cartman.Svg'),
             )
             self.svg_item.attach_to(self.gallery)
@@ -24,7 +24,7 @@ class TestGallery(TestCase):
             self.svg_item.save()
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as fp:
-            self.image_item = GalleryImageItem(
+            self.image_item = ImageItem(
                 file=File(fp, name='Image.Jpeg'),
                 alt='Alternate text',
                 title='Image title',
@@ -34,7 +34,7 @@ class TestGallery(TestCase):
             self.image_item.save()
 
         with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as fp:
-            self.file_item = GalleryFileItem(
+            self.file_item = FileItem(
                 file=File(fp, name='Doc.PDF'),
             )
             self.file_item.attach_to(self.gallery)
@@ -42,7 +42,7 @@ class TestGallery(TestCase):
             self.file_item.save()
 
         with open(TESTS_PATH / 'audio.ogg', 'rb') as fp:
-            self.audio_item = GalleryFileItem(
+            self.audio_item = FileItem(
                 file=File(fp, name='audio.ogg'),
             )
             self.audio_item.attach_to(self.gallery)
@@ -200,7 +200,7 @@ class TestImageCollection(TestCase):
         self.gallery = PageGallery.objects.create()
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as fp:
-            self.image_item = GalleryImageItem(
+            self.image_item = ImageItem(
                 file=File(fp, name='Image.Jpeg'),
                 alt='Alternate text',
                 title='Image title',

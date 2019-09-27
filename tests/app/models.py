@@ -33,9 +33,9 @@ class PageGallery(gallery.ImageCollection):
 
 
 class PageFilesGallery(gallery.Gallery):
-    svg = CollectionItemTypeField(gallery.GallerySVGItem)
-    image = CollectionItemTypeField(gallery.GalleryImageItem)
-    file = CollectionItemTypeField(gallery.GalleryFileItem)
+    svg = CollectionItemTypeField(gallery.SVGItem)
+    image = CollectionItemTypeField(gallery.ImageItem)
+    file = CollectionItemTypeField(gallery.FileItem)
 
 
 class Page(models.Model):

@@ -150,7 +150,7 @@ class GalleryItemBase(PolymorphicModel):
             self.save()
 
 
-class GalleryFileItemBase(GalleryItemBase, UploadedFileBase):
+class FileItemBase(GalleryItemBase, UploadedFileBase):
     TEMPLATE_NAME = 'paper_uploads/collection_item/file.html'
 
     file = models.FileField(_('file'), max_length=255, storage=upload_storage,
@@ -175,7 +175,7 @@ class GalleryFileItemBase(GalleryItemBase, UploadedFileBase):
         }
 
 
-class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
+class ImageItemBase(GalleryItemBase, UploadedImageBase):
     TEMPLATE_NAME = 'paper_uploads/collection_item/image.html'
     PREVIEW_VARIATIONS = settings.GALLERY_IMAGE_ITEM_PREVIEW_VARIATIONS
 
@@ -232,7 +232,7 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
             self.recut()
 
 
-class GalleryMetaclass(ModelBase):
+class CollectionMetaclass(ModelBase):
     """
     Хак, создающий прокси-модели вместо наследования, если явно не указано
     обратное.
@@ -260,7 +260,7 @@ class GalleryMetaclass(ModelBase):
         return new_class
 
 
-class GalleryItemTypesDescriptor:
+class ItemTypesDescriptor:
     def __init__(self, name):
         self.name = name
 
@@ -285,8 +285,8 @@ class ContentItemRelation(GenericRelation):
         return super().bulk_related_objects(objs).non_polymorphic()
 
 
-class GalleryBase(SlaveModelMixin, metaclass=GalleryMetaclass):
-    item_types = GalleryItemTypesDescriptor(name='item_types')
+class GalleryBase(SlaveModelMixin, metaclass=CollectionMetaclass):
+    item_types = ItemTypesDescriptor(name='item_types')
     items = ContentItemRelation(GalleryItemBase, for_concrete_model=False)
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
 
@@ -341,7 +341,7 @@ class GalleryBase(SlaveModelMixin, metaclass=GalleryMetaclass):
 # ==============================================================================
 
 
-class GalleryFileItem(GalleryFileItemBase):
+class FileItem(FileItemBase):
     FORM_CLASS = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
 
     preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
@@ -373,7 +373,7 @@ class GalleryFileItem(GalleryFileItemBase):
         return staticfiles_storage.url(icon_path)
 
 
-class GallerySVGItem(GalleryFileItemBase):
+class SVGItem(FileItemBase):
     FORM_CLASS = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     TEMPLATE_NAME = 'paper_uploads/collection_item/svg.html'
 
@@ -408,7 +408,7 @@ class GallerySVGItem(GalleryFileItemBase):
         utils.postprocess_svg(self.file.name, postprocess_options)
 
 
-class GalleryImageItem(GalleryImageItemBase):
+class ImageItem(ImageItemBase):
     FORM_CLASS = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
 
     def as_dict(self) -> Dict[str, Any]:
@@ -444,7 +444,7 @@ class CollectionManager(models.Manager):
 
 class Gallery(GalleryBase):
     # поле, ссылающееся на одно из изображений галереи (для экономии SQL-запросов)
-    cover = models.ForeignKey(GalleryImageItem, verbose_name=_('cover image'),
+    cover = models.ForeignKey(ImageItem, verbose_name=_('cover image'),
         null=True, editable=False, on_delete=models.SET_NULL)
     gallery_content_type = models.ForeignKey(ContentType, null=True,
         verbose_name=_('gallery type'), on_delete=models.SET_NULL, editable=False)
@@ -468,7 +468,7 @@ class ImageCollection(Gallery):
     """
     Галерея, позволяющая хранить только изображения.
     """
-    image = CollectionItemTypeField(GalleryImageItem)
+    image = CollectionItemTypeField(ImageItem)
 
     @classmethod
     def get_validation(cls) -> Dict[str, Any]:

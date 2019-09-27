@@ -1,7 +1,7 @@
 from django.dispatch import receiver
 from django.db import migrations, transaction
 from django.db.models.signals import post_save, post_delete, Signal
-from .models import UploadedFileBase, GalleryImageItemBase
+from .models import UploadedFileBase, ImageItemBase
 from .models.fields.base import FileFieldBase
 
 gallery_reordered = Signal(providing_args=["instance"])
@@ -16,14 +16,14 @@ def update_gallery_cover(gallery, skip_if=None):
 
 @receiver(post_save)
 def set_gallery_cover_on_save(sender, instance, **kwargs):
-    if isinstance(instance, GalleryImageItemBase):
+    if isinstance(instance, ImageItemBase):
         if instance.gallery is not None:
             update_gallery_cover(instance.gallery)
 
 
 @receiver(post_delete)
 def set_gallery_cover_on_delete(sender, instance, **kwargs):
-    if isinstance(instance, GalleryImageItemBase):
+    if isinstance(instance, ImageItemBase):
         if 'gallery' not in instance.__dict__:
             # fix __getattr__ recursion
             return

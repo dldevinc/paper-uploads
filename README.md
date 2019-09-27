@@ -131,19 +131,19 @@ class Page(models.Model):
 подобен добавлению поля `ForeignKey` к модели.
 
 "Из коробки" доступны следующие классы элементов галереи:
-* `GalleryImageItem` - изображение с вариациями.
-* `GalleryFileItem` - любой файл.
-* `GallerySVGItem` - для хранения svg-файлов. Аналогичен `GalleryFileItem`, но в превью админки показывается картинка.
+* `ImageItem` - изображение с вариациями.
+* `FileItem` - любой файл.
+* `SVGItem` - для хранения svg-файлов. Аналогичен `FileItem`, но в превью админки показывается картинка.
 
 ```python
 from paper_uploads.models import gallery
-from paper_uploads.models.fields import GalleryItemTypeField
+from paper_uploads.models.fields import CollectionItemTypeField
 
 
 class PageFiles(gallery.Gallery):
-    svg = GalleryItemTypeField(gallery.GallerySVGItem)
-    image = GalleryItemTypeField(gallery.GalleryImageItem)
-    file = GalleryItemTypeField(gallery.GalleryFileItem)
+    svg = CollectionItemTypeField(gallery.SVGItem)
+    image = CollectionItemTypeField(gallery.ImageItem)
+    file = CollectionItemTypeField(gallery.FileItem)
 ```
 
 Порядок подключения классов имеет значение: при загрузке
@@ -166,11 +166,11 @@ from paper_uploads.models.fields import CollectionField, GalleryItemTypeField
 
 
 class PageFiles(gallery.Gallery):
-    svg = GalleryItemTypeField(gallery.GallerySVGItem)
-    file = GalleryItemTypeField(gallery.GalleryFileItem)
+    svg = GalleryItemTypeField(gallery.SVGItem)
+    file = GalleryItemTypeField(gallery.FileItem)
 
 
-class PageImages(gallery.ImageGallery):
+class PageImages(gallery.ImageCollection):
     VARIATIONS = dict(
         wide=dict(
             size=(1600, 0),
@@ -215,7 +215,7 @@ MyGallery._base_manager.all()
 ## Programmatically upload files
 ```python
 from django.core.files import File
-from paper_uploads.models import UploadedFile, GalleryImageItem
+from paper_uploads.models import UploadedFile, ImageItem
 
 # file / image
 with open('file.doc', 'rb') as fp:
@@ -227,7 +227,7 @@ with open('file.doc', 'rb') as fp:
 # gallery
 gallery = PageGallery.objects.create()
 with open('image.jpg', 'rb') as fp:
-    item = GalleryImageItem(
+    item = ImageItem(
         file=File(fp, name='image.jpg'),
     )
     item.attach_to(gallery)
@@ -299,20 +299,20 @@ python3 manage.py recreate_variations 'page.Page' --field=image
 
 ```python
 from django.db import models
-from paper_uploads.models import Gallery, GalleryFileItem
-from paper_uploads.models.fields import ImageField, GalleryItemTypeField 
+from paper_uploads.models import Gallery, FileItem
+from paper_uploads.models.fields import ImageField, CollectionItemTypeField 
 from paper_uploads.validators import SizeValidator, ImageMaxSizeValidator
 
 class Page(models.Model):
     image = ImageField(_('image'), blank=True, validators=[
-        SizeLimitValidator(10 * 1024 * 1024),   # max 10Mb
+        SizeValidator(10 * 1024 * 1024),   # max 10Mb
         ImageMaxSizeValidator(800, 800)     # max dimensions 800x800
     ])
 
 
 class PageGallery(Gallery):
-    file = GalleryItemTypeField(GalleryFileItem, validators=[
-        SizeLimitValidator(10 * 1024 * 1024), 
+    file = CollectionItemTypeField(FileItem, validators=[
+        SizeValidator(10 * 1024 * 1024), 
     ])
 ```
 
