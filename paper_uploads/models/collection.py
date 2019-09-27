@@ -450,7 +450,7 @@ class CollectionManager(models.Manager):
 
 
 class Gallery(CollectionBase):
-    # поле, ссылающееся на одно из изображений галереи (для экономии SQL-запросов)
+    # поле, ссылающееся на одно из изображений коллекции (для экономии SQL-запросов)
     cover = models.ForeignKey(ImageItem, verbose_name=_('cover image'),
         null=True, editable=False, on_delete=models.SET_NULL)
     collection_content_type = models.ForeignKey(ContentType, null=True, on_delete=models.SET_NULL, editable=False)
