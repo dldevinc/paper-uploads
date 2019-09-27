@@ -8,8 +8,8 @@ DEFAULTS = {
 
     'FILES_UPLOAD_TO': 'files/%Y-%m-%d',
     'IMAGES_UPLOAD_TO': 'images/%Y-%m-%d',
-    'COLLECTION_FILES_UPLOAD_TO': 'gallery/files/%Y-%m-%d',
-    'COLLECTION_IMAGES_UPLOAD_TO': 'gallery/images/%Y-%m-%d',
+    'COLLECTION_FILES_UPLOAD_TO': 'collections/files/%Y-%m-%d',
+    'COLLECTION_IMAGES_UPLOAD_TO': 'collections/images/%Y-%m-%d',
 
     'COLLECTION_ITEM_PREVIEW_WIDTH': 144,
     'COLLECTION_ITEM_PREVIEW_HEIGTH': 108,

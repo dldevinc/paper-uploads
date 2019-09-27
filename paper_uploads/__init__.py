@@ -77,12 +77,12 @@
 
     COLLECTION_FILES_UPLOAD_TO
         type            str
-        default         gallery/files/%Y-%m-%d
+        default         collections/files/%Y-%m-%d
         description     Путь к папке, в которую загружаются файлы галереи
 
     COLLECTION_IMAGES_UPLOAD_TO
         type            str
-        default         gallery/images/%Y-%m-%d
+        default         collections/images/%Y-%m-%d
         description     Путь к папке, в которую загружаются картинки галереи
 
     COLLECTION_ITEM_PREVIEW_WIDTH
