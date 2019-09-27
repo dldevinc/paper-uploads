@@ -1,3 +1,3 @@
 from .file import FileField
 from .image import ImageField
-from .gallery import CollectionField, GalleryItemTypeField
+from .collection import CollectionField, CollectionItemTypeField

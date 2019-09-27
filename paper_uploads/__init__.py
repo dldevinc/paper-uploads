@@ -24,7 +24,7 @@
     Это сделано для экономии SQL-запросов при выборке множества объектов, имеющих
     галереи. Например, при выводе списка продуктов магазина.
 
-    Есть два класса галереи: Gallery и ImageGallery. ImageGallery позволяет
+    Есть два класса галереи: Gallery и ImageCollection. ImageCollection позволяет
     загружать только изображения, тогда как в Gallery помимо изображений можно
     добавлять SVG и любые другие файлы.
 
@@ -148,10 +148,10 @@
     ------
     # models.py
         from pilkit import processors
-        from paper_uploads.models import ImageGallery
+        from paper_uploads.models import ImageCollection
         from paper_uploads.models.fields import FileField, ImageField, CollectionField
 
-        class ArticleGallery(ImageGallery):
+        class ArticleGallery(ImageCollection):
             VARIATIONS = dict(
                 wide=dict(
                     size=(1600, 0),

@@ -16,8 +16,8 @@ from .. import signals
 from . import helpers
 
 
-def detect_file_type(gallery_cls, file):
-    for item_type, item_type_field in gallery_cls.item_types.items():
+def detect_file_type(collection_cls, file):
+    for item_type, item_type_field in collection_cls.item_types.items():
         if item_type_field.model.check_file(file):
             return item_type
     return None
@@ -25,20 +25,20 @@ def detect_file_type(gallery_cls, file):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-def delete_gallery(request):
+def delete_collection(request):
     if not request.user.has_perm('paper_uploads.delete'):
         return helpers.error_response('Access denied')
 
-    gallery_content_type_id = request.POST.get('paperGalleryContentType')
+    content_type_id = request.POST.get('paperCollectionContentType')
     try:
-        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
+        collection_cls = helpers.get_model_class(content_type_id, base_class=GalleryBase)
     except exceptions.InvalidContentType:
         logger.exception('Error')
-        return helpers.error_response('Invalid gallery content type')
+        return helpers.error_response('Invalid content type')
 
-    gallery_id = request.POST.get('gallery_id')
+    collection_id = request.POST.get('collectionId')
     try:
-        instance = helpers.get_instance(gallery_cls, gallery_id)
+        instance = helpers.get_instance(collection_cls, collection_id)
     except exceptions.InvalidObjectId:
         logger.exception('Error')
         return helpers.error_response('Invalid ID')
@@ -78,46 +78,46 @@ def upload_item(request):
             file = File(file, name=basename)
 
     # Определение модели галереи
-    gallery_content_type_id = request.POST.get('paperGalleryContentType')
+    content_type_id = request.POST.get('paperCollectionContentType')
     try:
-        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
+        collection_cls = helpers.get_model_class(content_type_id, base_class=GalleryBase)
     except exceptions.InvalidContentType:
         logger.exception('Error')
-        return helpers.error_response('Invalid gallery content type')
+        return helpers.error_response('Invalid content type')
 
     # Определение типа элемента галереи
-    item_type = detect_file_type(gallery_cls, file)
+    item_type = detect_file_type(collection_cls, file)
     if item_type is None:
         return helpers.error_response('Unsupported file')
 
     # Получение объекта галереи
-    gallery_id = request.POST.get('gallery_id')
+    collection_id = request.POST.get('collectionId')
     try:
-        gallery = helpers.get_instance(gallery_cls, gallery_id)
+        collection = helpers.get_instance(collection_cls, collection_id)
     except exceptions.InvalidObjectId:
         # создадим новую галерею
-        gallery = None
+        collection = None
     except ObjectDoesNotExist:
         logger.exception('Error')
-        return helpers.error_response('Gallery not found')
+        return helpers.error_response('Collection not found')
     except MultipleObjectsReturned:
         logger.exception('Error')
         return helpers.error_response('Multiple objects returned')
 
     try:
         with transaction.atomic():
-            if gallery is None:
+            if collection is None:
                 # Создание галереи
-                gallery = gallery_cls._meta.default_manager.create(
+                collection = collection_cls._meta.default_manager.create(
                     owner_app_label=request.POST.get('paperOwnerAppLabel'),
                     owner_model_name=request.POST.get('paperOwnerModelName'),
                     owner_fieldname=request.POST.get('paperOwnerFieldname')
                 )
 
-            item_type_field = gallery_cls.item_types[item_type]
+            item_type_field = collection_cls.item_types[item_type]
             instance = item_type_field.model(
-                content_type_id=gallery_content_type_id,
-                object_id=gallery.pk,
+                content_type_id=content_type_id,
+                object_id=collection.pk,
                 item_type=item_type,
                 file=file,
                 name=filename,
@@ -138,10 +138,10 @@ def upload_item(request):
             message = type(e).__name__
         return helpers.error_response(message)
 
-    gallery.refresh_from_db(fields=['cover_id'])
+    collection.refresh_from_db(fields=['cover_id'])
     return helpers.success_response({
         **instance.as_dict(),
-        'cover': gallery.cover_id,
+        'cover': collection.cover_id,
     })
 
 
@@ -151,15 +151,15 @@ def delete_item(request):
     if not request.user.has_perm('paper_uploads.delete'):
         return helpers.error_response('Access denied')
 
-    gallery_content_type_id = request.POST.get('paperGalleryContentType')
+    content_type_id = request.POST.get('paperCollectionContentType')
     try:
-        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
+        collection_cls = helpers.get_model_class(content_type_id, base_class=GalleryBase)
     except exceptions.InvalidContentType:
         logger.exception('Error')
-        return helpers.error_response('Invalid gallery content type')
+        return helpers.error_response('Invalid content type')
 
     item_type = request.POST.get('item_type')
-    for name, field in gallery_cls.item_types.items():
+    for name, field in collection_cls.item_types.items():
         if item_type == name:
             model_class = field.model
             break
@@ -192,16 +192,16 @@ def sort_items(request):
     if not request.user.has_perm('paper_uploads.change'):
         return helpers.error_response('Access denied')
 
-    gallery_content_type_id = request.POST.get('paperGalleryContentType')
+    content_type_id = request.POST.get('paperCollectionContentType')
     try:
-        gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
+        collection_cls = helpers.get_model_class(content_type_id, base_class=GalleryBase)
     except exceptions.InvalidContentType:
         logger.exception('Error')
-        return helpers.error_response('Invalid gallery content type')
+        return helpers.error_response('Invalid content type')
 
-    gallery_id = request.POST.get('gallery_id')
+    collection_id = request.POST.get('collectionId')
     try:
-        instance = helpers.get_instance(gallery_cls, gallery_id)
+        instance = helpers.get_instance(collection_cls, collection_id)
     except exceptions.InvalidObjectId:
         logger.exception('Error')
         return helpers.error_response('Invalid ID')
@@ -219,20 +219,19 @@ def sort_items(request):
         logger.exception('Error')
         return helpers.error_response('Invalid order')
 
-    gallery_items = set(instance.items.values_list('pk', flat=True))
     with transaction.atomic():
         for index, item_id in enumerate(item_ids):
-            if item_id in gallery_items:
+            if item_id in set(instance.items.values_list('pk', flat=True)):
                 GalleryItemBase.objects.filter(pk=item_id).update(order=index)
             else:
                 GalleryItemBase.objects.filter(pk=item_id).update(order=2**32 - 1)
 
-    signals.gallery_reordered.send(gallery_cls, instance=instance)
+    signals.gallery_reordered.send(collection_cls, instance=instance)
     return helpers.success_response()
 
 
 class ChangeView(PermissionRequiredMixin, FormView):
-    template_name = 'paper_uploads/dialogs/gallery.html'
+    template_name = 'paper_uploads/dialogs/collection.html'
     permission_required = 'paper_uploads.change'
     instance = None
 
@@ -240,15 +239,15 @@ class ChangeView(PermissionRequiredMixin, FormView):
         return import_string(self.instance.FORM_CLASS)
 
     def get_instance(self):
-        gallery_content_type_id = self.request.GET.get('paperGalleryContentType')
+        content_type_id = self.request.GET.get('paperCollectionContentType')
         try:
-            gallery_cls = helpers.get_model_class(gallery_content_type_id, base_class=GalleryBase)
+            collection_cls = helpers.get_model_class(content_type_id, base_class=GalleryBase)
         except exceptions.InvalidContentType:
             logger.exception('Error')
-            return helpers.error_response('Invalid gallery content type')
+            return helpers.error_response('Invalid content type')
 
         item_type = self.request.GET.get('item_type')
-        for name, field in gallery_cls.item_types.items():
+        for name, field in collection_cls.item_types.items():
             if item_type == name:
                 model_class = field.model
                 break

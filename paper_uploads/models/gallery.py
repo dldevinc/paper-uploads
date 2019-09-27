@@ -18,7 +18,7 @@ from variations.variation import Variation
 from .base import SlaveModelMixin
 from .file import UploadedFileBase
 from .image import UploadedImageBase, VariationalFileField
-from .fields import GalleryItemTypeField
+from .fields import CollectionItemTypeField
 from ..conf import settings, FILE_ICON_OVERRIDES, FILE_ICON_DEFAULT
 from ..storage import upload_storage
 from .. import tasks
@@ -107,7 +107,7 @@ class GalleryItemBase(PolymorphicModel):
     def get_gallery_class(self) -> Type['GalleryBase']:
         return self.content_type.model_class()
 
-    def get_gallery_field(self) -> GalleryItemTypeField:
+    def get_gallery_field(self) -> CollectionItemTypeField:
         gallery_cls = self.get_gallery_class()
         for name, field in gallery_cls.item_types.items():
             if field.model is type(self):
@@ -120,7 +120,7 @@ class GalleryItemBase(PolymorphicModel):
         """
         return {
             'id': self.pk,
-            'gallery_id': self.object_id,
+            'collectionId': self.object_id,
             'item_type': self.item_type,
         }
 
@@ -191,7 +191,7 @@ class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
         """
         Перебираем возможные места вероятного определения вариаций и берем
         первое непустое значение. Порядок проверки:
-            1) параметр `variations` поля `GalleryItemTypeField`
+            1) параметр `variations` поля `CollectionItemTypeField`
             2) член класса галереи VARIATIONS
         К найденному словарю примешиваются вариации для админки.
         """
@@ -431,7 +431,7 @@ class GalleryImageItem(GalleryImageItemBase):
         return basetype == 'image'
 
 
-class GalleryManager(models.Manager):
+class CollectionManager(models.Manager):
     """
     Из-за того, что все галереи являются прокси-моделями, запросы от имени
     любого из классов галереи затрагивает абсолютно все объекты галереи.
@@ -450,7 +450,7 @@ class Gallery(GalleryBase):
         verbose_name=_('gallery type'), on_delete=models.SET_NULL, editable=False)
 
     default_mgr = models.Manager()     # fix migrations manager
-    objects = GalleryManager()
+    objects = CollectionManager()
 
     class Meta:
         proxy = False   # явно указываем, что это не проски-модель
@@ -464,11 +464,11 @@ class Gallery(GalleryBase):
         super().save(*args, **kwargs)
 
 
-class ImageGallery(Gallery):
+class ImageCollection(Gallery):
     """
     Галерея, позволяющая хранить только изображения.
     """
-    image = GalleryItemTypeField(GalleryImageItem)
+    image = CollectionItemTypeField(GalleryImageItem)
 
     @classmethod
     def get_validation(cls) -> Dict[str, Any]:

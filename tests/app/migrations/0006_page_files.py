@@ -2,7 +2,7 @@
 
 from django.db import migrations
 import django.db.models.deletion
-import paper_uploads.models.fields.gallery
+import paper_uploads.models.fields.collection
 
 
 class Migration(migrations.Migration):
@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='page',
             name='files',
-            field=paper_uploads.models.fields.gallery.CollectionField(on_delete=django.db.models.deletion.SET_NULL, to='app.PageFilesGallery', verbose_name='file gallery'),
+            field=paper_uploads.models.fields.collection.CollectionField(on_delete=django.db.models.deletion.SET_NULL, to='app.PageFilesGallery', verbose_name='file gallery'),
         ),
     ]

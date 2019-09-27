@@ -75,33 +75,33 @@ class UploadedImageAdmin(UploadedFileBase):
         return urlpatterns
 
 
-class GalleryAdminBase(UploadedFileBase):
+class CollectionAdminBase(UploadedFileBase):
     def get_urls(self):
         info = self.model._meta.app_label, self.model._meta.model_name
         urlpatterns = [
             path(
                 'delete/',
-                self.admin_site.admin_view(views.gallery.delete_gallery),
+                self.admin_site.admin_view(views.collection.delete_collection),
                 name='%s_%s_delete' % info
             ),
             path(
                 'upload_item/',
-                self.admin_site.admin_view(views.gallery.upload_item),
+                self.admin_site.admin_view(views.collection.upload_item),
                 name='%s_%s_upload_item' % info
             ),
             path(
                 'change_item/',
-                self.admin_site.admin_view(views.gallery.ChangeView.as_view()),
+                self.admin_site.admin_view(views.collection.ChangeView.as_view()),
                 name='%s_%s_change_item' % info
             ),
             path(
                 'delete_item/',
-                self.admin_site.admin_view(views.gallery.delete_item),
+                self.admin_site.admin_view(views.collection.delete_item),
                 name='%s_%s_delete_item' % info
             ),
             path(
                 'sort_items/',
-                self.admin_site.admin_view(views.gallery.sort_items),
+                self.admin_site.admin_view(views.collection.sort_items),
                 name='%s_%s_sort_items' % info
             ),
         ]

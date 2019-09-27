@@ -195,7 +195,7 @@ class TestGallery(TestCase):
         self.assertEqual(self.audio_item.preview, '/static/paper_uploads/dist/image/unknown.svg')
 
 
-class TestImageGallery(TestCase):
+class TestImageCollection(TestCase):
     def setUp(self) -> None:
         self.gallery = PageGallery.objects.create()
 

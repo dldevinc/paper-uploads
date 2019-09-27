@@ -174,7 +174,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='ImageGallery',
+            name='ImageCollection',
             fields=[
             ],
             options={

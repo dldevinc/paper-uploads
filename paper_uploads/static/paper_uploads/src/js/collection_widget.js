@@ -137,7 +137,7 @@ Collection.prototype.initUploader = function() {
         dropzones: this.element.querySelectorAll('.dropzone-overlay'),
         validation: JSON.parse(this.element.dataset.validation),
         extraData: {
-            gallery_id: function() {
+            collectionId: function() {
                 return _this.collectionId;
             }
         },
@@ -173,7 +173,7 @@ Collection.prototype.initUploader = function() {
     }).on('complete', function(id, response) {
         if (_this.empty) {
             _this.empty = false;
-            _this.collectionId = response.gallery_id;
+            _this.collectionId = response.collectionId;
             _this.trigger('collection:created');
         }
 
@@ -252,7 +252,7 @@ Collection.prototype.initSortable = function() {
             Object.keys(params).forEach(function(name) {
                 data.append(name, params[name]);
             });
-            data.append('gallery_id', _this.collectionId.toString());
+            data.append('collectionId', _this.collectionId.toString());
             data.append('order', order.join(','));
 
             fetch(_this._opts.urls.sortItems, {
@@ -318,7 +318,7 @@ Collection.prototype._deleteItem = function(item) {
     Object.keys(params).forEach(function(name) {
         data.append(name, params[name]);
     });
-    data.append('gallery_id', this.collectionId.toString());
+    data.append('collectionId', this.collectionId.toString());
     data.append('instance_id', instance_id.toString());
     data.append('item_type', item.dataset.itemType);
 
@@ -456,7 +456,7 @@ Collection.prototype._deleteCollection = function() {
     Object.keys(params).forEach(function(name) {
         data.append(name, params[name]);
     });
-    data.append('gallery_id', this.collectionId.toString());
+    data.append('collectionId', this.collectionId.toString());
 
     const _this = this;
     fetch(this._opts.urls.deleteCollection, {
@@ -555,7 +555,7 @@ Collection.prototype.addListeners = function() {
         Object.keys(params).forEach(function(name) {
             data.append(name, params[name]);
         });
-        data.append('gallery_id', _this.collectionId.toString());
+        data.append('collectionId', _this.collectionId.toString());
         data.append('instance_id', instance_id.toString());
         data.append('item_type', item.dataset.itemType);
         const queryString = new URLSearchParams(data).toString();

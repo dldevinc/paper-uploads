@@ -3,7 +3,7 @@
 from django.db import migrations
 import django.db.models.deletion
 import paper_uploads.models.fields.file
-import paper_uploads.models.fields.gallery
+import paper_uploads.models.fields.collection
 import paper_uploads.models.fields.image
 
 
@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                 'indexes': [],
                 'constraints': [],
             },
-            bases=('paper_uploads.imagegallery',),
+            bases=('paper_uploads.imagecollection',),
         ),
         migrations.AddField(
             model_name='page',
@@ -44,6 +44,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='page',
             name='gallery',
-            field=paper_uploads.models.fields.gallery.CollectionField(on_delete=django.db.models.deletion.SET_NULL, to='app.ArticleGallery', verbose_name='gallery'),
+            field=paper_uploads.models.fields.collection.CollectionField(on_delete=django.db.models.deletion.SET_NULL, to='app.ArticleGallery', verbose_name='gallery'),
         ),
     ]
