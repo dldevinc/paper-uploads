@@ -1,4 +1,4 @@
-<div class="gallery__item gallery__item--file{% if item and item.pk == instance.cover_id %} gallery__item--cover{% endif %}"
+<div class="gallery__item gallery__item--image{% if item and item.pk == instance.cover_id %} gallery__item--cover{% endif %}"
      style="width: {{ preview_width }}px"
      tabindex="-1"
      data-pk="{% if item %}{{ item.pk }}{% endif %}"
@@ -12,7 +12,7 @@
   </div>
 
   <div class="gallery__item-preview" style="width: {{ preview_width }}px; height: {{ preview_height }}px">
-    {% include 'paper_uploads/gallery_item/preview/file.html' %}
+    {% include 'paper_uploads/collection_item/preview/image.html' %}
   </div>
 
   <div class="gallery__item-toolbar">

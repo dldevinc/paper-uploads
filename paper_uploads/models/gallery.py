@@ -151,7 +151,7 @@ class GalleryItemBase(PolymorphicModel):
 
 
 class GalleryFileItemBase(GalleryItemBase, UploadedFileBase):
-    TEMPLATE_NAME = 'paper_uploads/gallery_item/file.html'
+    TEMPLATE_NAME = 'paper_uploads/collection_item/file.html'
 
     file = models.FileField(_('file'), max_length=255, storage=upload_storage,
         upload_to=settings.GALLERY_FILES_UPLOAD_TO)
@@ -176,7 +176,7 @@ class GalleryFileItemBase(GalleryItemBase, UploadedFileBase):
 
 
 class GalleryImageItemBase(GalleryItemBase, UploadedImageBase):
-    TEMPLATE_NAME = 'paper_uploads/gallery_item/image.html'
+    TEMPLATE_NAME = 'paper_uploads/collection_item/image.html'
     PREVIEW_VARIATIONS = settings.GALLERY_IMAGE_ITEM_PREVIEW_VARIATIONS
 
     file = VariationalFileField(_('file'), max_length=255, storage=upload_storage,
@@ -353,7 +353,7 @@ class GalleryFileItem(GalleryFileItemBase):
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
-            'preview': loader.render_to_string('paper_uploads/gallery_item/preview/file.html', {
+            'preview': loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
                 'item': self,
                 'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
                 'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
@@ -375,7 +375,7 @@ class GalleryFileItem(GalleryFileItemBase):
 
 class GallerySVGItem(GalleryFileItemBase):
     FORM_CLASS = 'paper_uploads.forms.dialogs.gallery.GalleryFileDialog'
-    TEMPLATE_NAME = 'paper_uploads/gallery_item/svg.html'
+    TEMPLATE_NAME = 'paper_uploads/collection_item/svg.html'
 
     class Meta(GalleryItemBase.Meta):
         verbose_name = _('SVG-file')
@@ -389,7 +389,7 @@ class GallerySVGItem(GalleryFileItemBase):
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
-            'preview': loader.render_to_string('paper_uploads/gallery_item/preview/svg.html', {
+            'preview': loader.render_to_string('paper_uploads/collection_item/preview/svg.html', {
                 'item': self,
                 'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
                 'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
@@ -416,7 +416,7 @@ class GalleryImageItem(GalleryImageItemBase):
             **super().as_dict(),
             'name': self.canonical_name,
             'url': self.file.url,
-            'preview': loader.render_to_string('paper_uploads/gallery_item/preview/image.html', {
+            'preview': loader.render_to_string('paper_uploads/collection_item/preview/image.html', {
                 'item': self,
                 'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
                 'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,

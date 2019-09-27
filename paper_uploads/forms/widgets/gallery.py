@@ -5,7 +5,7 @@ from ...conf import settings
 
 
 class CollectionWidget(FileWidgetBase):
-    template_name = 'paper_uploads/gallery_widget.html'
+    template_name = 'paper_uploads/colection_widget.html'
 
     @property
     def media(self):
