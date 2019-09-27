@@ -8,7 +8,7 @@ from django.utils.module_loading import import_string
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
-from ..models import GalleryItemBase, CollectionBase
+from ..models import CollectionItemBase, CollectionBase
 from ..utils import run_validators
 from ..logging import logger
 from .. import exceptions
@@ -222,9 +222,9 @@ def sort_items(request):
     with transaction.atomic():
         for index, item_id in enumerate(item_ids):
             if item_id in set(instance.items.values_list('pk', flat=True)):
-                GalleryItemBase.objects.filter(pk=item_id).update(order=index)
+                CollectionItemBase.objects.filter(pk=item_id).update(order=index)
             else:
-                GalleryItemBase.objects.filter(pk=item_id).update(order=2**32 - 1)
+                CollectionItemBase.objects.filter(pk=item_id).update(order=2**32 - 1)
 
     signals.collection_reordered.send(collection_cls, instance=instance)
     return helpers.success_response()

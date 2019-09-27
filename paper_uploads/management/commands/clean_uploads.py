@@ -4,7 +4,7 @@ from django.core.management import BaseCommand
 from django.utils.timezone import now, timedelta
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, DEFAULT_DB_ALIAS
-from ...models import UploadedFile, UploadedImage, GalleryItemBase, CollectionBase
+from ...models import UploadedFile, UploadedImage, CollectionItemBase, CollectionBase
 
 
 class Command(BaseCommand):
@@ -176,7 +176,7 @@ class Command(BaseCommand):
         )
 
         for model in apps.get_models():
-            if issubclass(model, GalleryItemBase) and model is not GalleryItemBase and not model._meta.abstract:
+            if issubclass(model, CollectionItemBase) and model is not CollectionItemBase and not model._meta.abstract:
                 self.clean_source_missing(
                     model._base_manager.using(self.database).non_polymorphic()
                 )

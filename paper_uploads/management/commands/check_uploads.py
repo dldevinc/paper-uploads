@@ -2,7 +2,7 @@ from django.apps import apps
 from django.db import DEFAULT_DB_ALIAS
 from django.core.management import BaseCommand
 from ...models.base import SlaveModelMixin
-from ...models import UploadedFileBase, UploadedImageBase, Collection, GalleryItemBase
+from ...models import UploadedFileBase, UploadedImageBase, Collection, CollectionItemBase
 
 
 class Command(BaseCommand):
@@ -184,8 +184,8 @@ class Command(BaseCommand):
                 self.stdout.write('')
 
     def check_item_types(self):
-        total = GalleryItemBase.objects.using(self.database).count()
-        for index, item in enumerate(GalleryItemBase.objects.using(self.database).iterator(), start=1):
+        total = CollectionItemBase.objects.using(self.database).count()
+        for index, item in enumerate(CollectionItemBase.objects.using(self.database).iterator(), start=1):
             if self.verbosity >= 2:
                 self.stdout.write('\r' + (' ' * 80), ending='\r')
 

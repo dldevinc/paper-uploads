@@ -25,7 +25,7 @@ from .. import tasks
 from .. import utils
 
 
-class GalleryItemBase(PolymorphicModel):
+class CollectionItemBase(PolymorphicModel):
     # Флаг для индикации базового класса элемента коллекции (см. метод checks).
     __BaseCollectionItem = True
 
@@ -150,14 +150,14 @@ class GalleryItemBase(PolymorphicModel):
             self.save()
 
 
-class FileItemBase(GalleryItemBase, UploadedFileBase):
+class FileItemBase(CollectionItemBase, UploadedFileBase):
     TEMPLATE_NAME = 'paper_uploads/collection_item/file.html'
 
     file = models.FileField(_('file'), max_length=255, storage=upload_storage,
         upload_to=settings.COLLECTION_FILES_UPLOAD_TO)
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
-    class Meta(GalleryItemBase.Meta):
+    class Meta(CollectionItemBase.Meta):
         abstract = True
         verbose_name = _('file')
         verbose_name_plural = _('files')
@@ -178,14 +178,14 @@ class FileItemBase(GalleryItemBase, UploadedFileBase):
         }
 
 
-class ImageItemBase(GalleryItemBase, UploadedImageBase):
+class ImageItemBase(CollectionItemBase, UploadedImageBase):
     TEMPLATE_NAME = 'paper_uploads/collection_item/image.html'
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
 
     file = VariationalFileField(_('file'), max_length=255, storage=upload_storage,
         upload_to=settings.COLLECTION_IMAGES_UPLOAD_TO)
 
-    class Meta(GalleryItemBase.Meta):
+    class Meta(CollectionItemBase.Meta):
         abstract = True
         verbose_name = _('image')
         verbose_name_plural = _('images')
@@ -293,7 +293,7 @@ class ContentItemRelation(GenericRelation):
 
 class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
     item_types = ItemTypesDescriptor(name='item_types')
-    items = ContentItemRelation(GalleryItemBase, for_concrete_model=False)
+    items = ContentItemRelation(CollectionItemBase, for_concrete_model=False)
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
 
     class Meta:
@@ -383,7 +383,7 @@ class SVGItem(FileItemBase):
     FORM_CLASS = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     TEMPLATE_NAME = 'paper_uploads/collection_item/svg.html'
 
-    class Meta(GalleryItemBase.Meta):
+    class Meta(CollectionItemBase.Meta):
         verbose_name = _('SVG-file')
         verbose_name_plural = _('SVG-files')
 
