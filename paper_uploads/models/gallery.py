@@ -443,9 +443,6 @@ class GalleryManager(models.Manager):
 
 
 class Gallery(GalleryBase):
-    """
-    Галерея, позволяющая хранить изображаения, SVG-файлы и файлы.
-    """
     # поле, ссылающееся на одно из изображений галереи (для экономии SQL-запросов)
     cover = models.ForeignKey(GalleryImageItem, verbose_name=_('cover image'),
         null=True, editable=False, on_delete=models.SET_NULL)
