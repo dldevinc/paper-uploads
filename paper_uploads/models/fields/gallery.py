@@ -5,7 +5,7 @@ from .base import FileFieldBase
 from ... import forms
 
 
-class GalleryField(FileFieldBase):
+class CollectionField(FileFieldBase):
     def __init__(self, to, **kwargs):
         kwargs['blank'] = True
         super().__init__(to=to, **kwargs)
@@ -36,7 +36,7 @@ class GalleryField(FileFieldBase):
 
     def formfield(self, **kwargs):
         return super().formfield(**{
-            'form_class': forms.GalleryField,
+            'form_class': forms.CollectionField,
             **kwargs
         })
 

@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('title', models.CharField(max_length=255, verbose_name='title')),
-                ('files', paper_uploads.models.fields.gallery.GalleryField(on_delete=django.db.models.deletion.SET_NULL, to='app.PageFilesGallery', verbose_name='files')),
+                ('files', paper_uploads.models.fields.gallery.CollectionField(on_delete=django.db.models.deletion.SET_NULL, to='app.PageFilesGallery', verbose_name='files')),
                 ('image', paper_uploads.models.fields.image.ImageField(blank=True, on_delete=django.db.models.deletion.SET_NULL, to='paper_uploads.UploadedImage', verbose_name='simple image')),
             ],
             options={

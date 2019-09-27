@@ -5,9 +5,9 @@
 
     Каждый загруженный файл представлен моделью, унаследованной от UploadedFileBase.
     Связь любой модели с файлом осуществляется через поля:
-        1) FileField    - загрузка файла
-        2) ImageField   - загрузка картинки с возможностью нарезки на множество размеров
-        3) GalleryField - загрузка множества картинок и/или файлов
+        1) FileField        - загрузка файла
+        2) ImageField       - загрузка картинки с возможностью нарезки на множество размеров
+        3) CollectionField  - загрузка множества картинок и/или файлов
     Все поля являются производными от OneToOneField.
     * Информацию по нарезке картинок смотри в variations.
 
@@ -149,7 +149,7 @@
     # models.py
         from pilkit import processors
         from paper_uploads.models import ImageGallery
-        from paper_uploads.models.fields import FileField, ImageField, GalleryField
+        from paper_uploads.models.fields import FileField, ImageField, CollectionField
 
         class ArticleGallery(ImageGallery):
             VARIATIONS = dict(
@@ -195,7 +195,7 @@
                     )
                 )
             )
-            gallery = GalleryField(ArticleGallery, verbose_name=_('gallery'))
+            gallery = CollectionField(ArticleGallery, verbose_name=_('gallery'))
 
     # shell
         > article.file.url

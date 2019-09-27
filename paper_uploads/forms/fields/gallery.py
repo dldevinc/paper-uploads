@@ -2,5 +2,5 @@ from .base import FileFieldBase
 from ..widgets import GalleryWidget
 
 
-class GalleryField(FileFieldBase):
+class CollectionField(FileFieldBase):
     widget = GalleryWidget

@@ -30,6 +30,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='page',
             name='gallery',
-            field=paper_uploads.models.fields.gallery.GalleryField(on_delete=django.db.models.deletion.SET_NULL, to='app.PageGallery', verbose_name='gallery'),
+            field=paper_uploads.models.fields.gallery.CollectionField(on_delete=django.db.models.deletion.SET_NULL, to='app.PageGallery', verbose_name='gallery'),
         ),
     ]

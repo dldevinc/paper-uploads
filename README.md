@@ -7,7 +7,7 @@
 * `paper_uploads.models.fields.FileField` для загрузки одного файла.
 * `paper_uploads.models.fields.ImageField` для загрузки одной картинки 
 (с возможностью нарезки на дополнительные вариации)
-* `paper_uploads.models.fields.GalleryField` для загрузки множества 
+* `paper_uploads.models.fields.CollectionField` для загрузки множества 
 файлов (не обязательно картинок). Для загружаемых картинок есть 
 возможность нарезки на дополнительные вариации.
 
@@ -120,7 +120,7 @@ class Page(models.Model):
     )
 ```
 
-## GalleryField
+## CollectionField
 Для создания галереи необходимо создать класс модели галереи, 
 унаследованый от `Gallery` или `ImageGallery`.
 
@@ -162,7 +162,7 @@ class PageFiles(gallery.Gallery):
 ```python
 from django.db import models
 from paper_uploads.models import gallery
-from paper_uploads.models.fields import GalleryField, GalleryItemTypeField
+from paper_uploads.models.fields import CollectionField, GalleryItemTypeField
 
 
 class PageFiles(gallery.Gallery):
@@ -191,8 +191,8 @@ class PageImages(gallery.ImageGallery):
 
 
 class Page(models.Model):
-    files = GalleryField(PageFiles, verbose_name=_('files'))
-    images = GalleryField(PageImages, verbose_name=_('images'))
+    files = CollectionField(PageFiles, verbose_name=_('files'))
+    images = CollectionField(PageImages, verbose_name=_('images'))
 ```
 
 ---

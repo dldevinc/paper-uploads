@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='page',
             name='files',
-            field=paper_uploads.models.fields.gallery.GalleryField(on_delete=django.db.models.deletion.SET_NULL, to='app.PageFilesGallery', verbose_name='file gallery'),
+            field=paper_uploads.models.fields.gallery.CollectionField(on_delete=django.db.models.deletion.SET_NULL, to='app.PageFilesGallery', verbose_name='file gallery'),
         ),
     ]

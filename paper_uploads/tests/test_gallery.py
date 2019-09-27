@@ -3,7 +3,7 @@ from pathlib import Path
 from django.test import TestCase
 from django.core.files import File
 from ..models import GallerySVGItem, GalleryImageItem, GalleryFileItem
-from ..models.fields import GalleryField
+from ..models.fields import CollectionField
 from ..conf import PROXY_FILE_ATTRIBUTES
 from .. import validators
 from tests.app.models import Page, PageGallery, PageFilesGallery
@@ -310,9 +310,9 @@ class TestImageGallery(TestCase):
             self.gallery.get_items('something')
 
 
-class TestGalleryField(TestCase):
+class TestCollectionField(TestCase):
     def setUp(self) -> None:
-        self.field = GalleryField(PageGallery, validators=[
+        self.field = CollectionField(PageGallery, validators=[
             validators.SizeValidator(32 * 1024 * 1024),
             validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
         ])

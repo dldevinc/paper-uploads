@@ -2,7 +2,7 @@ from pilkit import processors
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from paper_uploads.models import gallery
-from paper_uploads.models.fields import FileField, ImageField, GalleryField, GalleryItemTypeField
+from paper_uploads.models.fields import FileField, ImageField, CollectionField, GalleryItemTypeField
 
 
 class PageGallery(gallery.ImageGallery):
@@ -65,8 +65,8 @@ class Page(models.Model):
             )
         )
     )
-    files = GalleryField(PageFilesGallery, verbose_name=_('file gallery'))
-    gallery = GalleryField(PageGallery, verbose_name=_('image gallery'))
+    files = CollectionField(PageFilesGallery, verbose_name=_('file gallery'))
+    gallery = CollectionField(PageGallery, verbose_name=_('image gallery'))
     order = models.PositiveIntegerField(_('order'), default=0, editable=False)
 
     class Meta:
@@ -81,7 +81,7 @@ class Page(models.Model):
 class Document(models.Model):
     title = models.CharField(_('title'), max_length=255)
     image = ImageField(_('simple image'), blank=True)
-    files = GalleryField(PageFilesGallery, verbose_name=_('files'))
+    files = CollectionField(PageFilesGallery, verbose_name=_('files'))
 
     class Meta:
         verbose_name = _('document')
