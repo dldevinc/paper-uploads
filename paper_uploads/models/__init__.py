@@ -1,7 +1,7 @@
 from .base import UploadedFileBase
 from .file import UploadedFile
 from .image import UploadedImageBase, UploadedImage
-from .gallery import (
-    GalleryItemBase, FileItemBase, ImageItemBase, GalleryBase,
-    FileItem, SVGItem, ImageItem, Gallery, ImageCollection
+from .collection import (
+    GalleryItemBase, FileItemBase, ImageItemBase, FileItem, SVGItem,
+    ImageItem, CollectionBase, Gallery, ImageCollection
 )

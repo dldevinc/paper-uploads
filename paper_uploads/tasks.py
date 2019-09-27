@@ -32,6 +32,6 @@ def recut_image(app_label: str, model_name: str, object_id: int, names: Iterable
     instance._recut_sync(names)
 
 
-def recut_gallery(app_label: str, model_name: str, object_id: int, names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS):
+def recut_collection(app_label: str, model_name: str, object_id: int, names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS):
     instance = _get_instance(app_label, model_name, object_id, using=using)
     instance._recut_sync(names, using=using)

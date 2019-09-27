@@ -4,7 +4,7 @@ from django.core.management import BaseCommand
 from django.utils.timezone import now, timedelta
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, DEFAULT_DB_ALIAS
-from ...models import UploadedFile, UploadedImage, GalleryItemBase, GalleryBase
+from ...models import UploadedFile, UploadedImage, GalleryItemBase, CollectionBase
 
 
 class Command(BaseCommand):
@@ -183,10 +183,10 @@ class Command(BaseCommand):
 
         # Do not touch fresh galleries - they may not be saved yet.
         for model in apps.get_models():
-            if issubclass(model, GalleryBase) and not model._meta.abstract:
+            if issubclass(model, CollectionBase) and not model._meta.abstract:
                 content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
-                gallery_qs = model._base_manager.using(self.database).filter(
+                collection_qs = model._base_manager.using(self.database).filter(
                     collection_content_type=content_type,
                     created_at__lte=since
                 )
-                self.clean_model(gallery_qs)
+                self.clean_model(collection_qs)

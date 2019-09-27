@@ -26,8 +26,8 @@ from .. import utils
 
 
 class GalleryItemBase(PolymorphicModel):
-    # Флаг для индикации базового класса элемента галереи (см. метод checks).
-    __BaseGalleryItem = True
+    # Флаг для индикации базового класса элемента коллекции (см. метод checks).
+    __BaseCollectionItem = True
 
     FORM_CLASS = None
     TEMPLATE_NAME = None
@@ -52,7 +52,7 @@ class GalleryItemBase(PolymorphicModel):
 
     @classmethod
     def _check_form_class(cls, **kwargs):
-        flag = '_{}__BaseGalleryItem'.format(cls.__name__)
+        flag = '_{}__BaseCollectionItem'.format(cls.__name__)
         if getattr(cls, flag, None) is True or cls._meta.abstract:
             return []
 
@@ -81,7 +81,7 @@ class GalleryItemBase(PolymorphicModel):
 
     @classmethod
     def _check_template_name(cls, **kwargs):
-        flag = '_{}__BaseGalleryItem'.format(cls.__name__)
+        flag = '_{}__BaseCollectionItem'.format(cls.__name__)
         if getattr(cls, flag, None) is True or cls._meta.abstract:
             return []
 
@@ -104,7 +104,7 @@ class GalleryItemBase(PolymorphicModel):
             self.order = max_order + 1
         super().save(*args, **kwargs)
 
-    def get_collection_class(self) -> Type['GalleryBase']:
+    def get_collection_class(self) -> Type['CollectionBase']:
         return self.content_type.model_class()
 
     def get_collection_field(self) -> CollectionItemTypeField:
@@ -132,7 +132,7 @@ class GalleryItemBase(PolymorphicModel):
         """
         raise NotImplementedError
 
-    def attach_to(self, gallery: 'GalleryBase', commit: bool = True):
+    def attach_to(self, gallery: 'CollectionBase', commit: bool = True):
         """
         Подключение элемента к галерее.
         Используется в случае динамического создания элементов галереи.
@@ -154,13 +154,16 @@ class FileItemBase(GalleryItemBase, UploadedFileBase):
     TEMPLATE_NAME = 'paper_uploads/collection_item/file.html'
 
     file = models.FileField(_('file'), max_length=255, storage=upload_storage,
-        upload_to=settings.GALLERY_FILES_UPLOAD_TO)
+        upload_to=settings.COLLECTION_FILES_UPLOAD_TO)
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
     class Meta(GalleryItemBase.Meta):
         abstract = True
         verbose_name = _('file')
         verbose_name_plural = _('files')
+
+    def __str__(self):
+        return self.file.name
 
     def pre_save_new_file(self):
         super().pre_save_new_file()
@@ -177,15 +180,18 @@ class FileItemBase(GalleryItemBase, UploadedFileBase):
 
 class ImageItemBase(GalleryItemBase, UploadedImageBase):
     TEMPLATE_NAME = 'paper_uploads/collection_item/image.html'
-    PREVIEW_VARIATIONS = settings.GALLERY_IMAGE_ITEM_PREVIEW_VARIATIONS
+    PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
 
     file = VariationalFileField(_('file'), max_length=255, storage=upload_storage,
-        upload_to=settings.GALLERY_IMAGES_UPLOAD_TO)
+        upload_to=settings.COLLECTION_IMAGES_UPLOAD_TO)
 
     class Meta(GalleryItemBase.Meta):
         abstract = True
         verbose_name = _('image')
         verbose_name_plural = _('images')
+
+    def __str__(self):
+        return self.file.name
 
     def get_variations(self) -> Dict[str, Variation]:
         """
@@ -285,7 +291,7 @@ class ContentItemRelation(GenericRelation):
         return super().bulk_related_objects(objs).non_polymorphic()
 
 
-class GalleryBase(SlaveModelMixin, metaclass=CollectionMetaclass):
+class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
     item_types = ItemTypesDescriptor(name='item_types')
     items = ContentItemRelation(GalleryItemBase, for_concrete_model=False)
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
@@ -323,7 +329,7 @@ class GalleryBase(SlaveModelMixin, metaclass=CollectionMetaclass):
     def _recut_async(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS):
         from django_rq.queues import get_queue
         queue = get_queue(settings.RQ_QUEUE_NAME)
-        queue.enqueue_call(tasks.recut_gallery, kwargs={
+        queue.enqueue_call(tasks.recut_collection, kwargs={
             'app_label': self._meta.app_label,
             'model_name': self._meta.model_name,
             'object_id': self.pk,
@@ -355,8 +361,8 @@ class FileItem(FileItemBase):
             **super().as_dict(),
             'preview': loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
                 'item': self,
-                'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
+                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
             })
         }
 
@@ -391,8 +397,8 @@ class SVGItem(FileItemBase):
             **super().as_dict(),
             'preview': loader.render_to_string('paper_uploads/collection_item/preview/svg.html', {
                 'item': self,
-                'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
+                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
             })
         }
 
@@ -400,11 +406,12 @@ class SVGItem(FileItemBase):
         super().post_save_new_file()
 
         # postprocess svg
-        gallery_field = self.get_collection_field()
-        if gallery_field is not None:
-            postprocess_options = gallery_field.extra.get('postprocess')
+        collection_field = self.get_collection_field()
+        if collection_field is not None:
+            postprocess_options = collection_field.extra.get('postprocess')
         else:
             postprocess_options = None
+        # TODO: явный запрет постобработки
         utils.postprocess_svg(self.file.name, postprocess_options)
 
 
@@ -418,8 +425,8 @@ class ImageItem(ImageItemBase):
             'url': self.file.url,
             'preview': loader.render_to_string('paper_uploads/collection_item/preview/image.html', {
                 'item': self,
-                'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
+                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
             })
         }
 
@@ -442,7 +449,7 @@ class CollectionManager(models.Manager):
         return super().get_queryset().filter(collection_content_type=collection_ct)
 
 
-class Gallery(GalleryBase):
+class Gallery(CollectionBase):
     # поле, ссылающееся на одно из изображений галереи (для экономии SQL-запросов)
     cover = models.ForeignKey(ImageItem, verbose_name=_('cover image'),
         null=True, editable=False, on_delete=models.SET_NULL)

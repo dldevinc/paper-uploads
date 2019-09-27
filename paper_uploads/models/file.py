@@ -16,6 +16,9 @@ class UploadedFile(UploadedFileBase, SlaveModelMixin):
         verbose_name = _('file')
         verbose_name_plural = _('files')
 
+    def __str__(self):
+        return self.file.name
+
     def pre_save_new_file(self):
         super().pre_save_new_file()
         if not self.pk and not self.display_name:

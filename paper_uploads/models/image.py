@@ -301,6 +301,9 @@ class UploadedImage(UploadedImageBase, SlaveModelMixin):
         verbose_name = _('image')
         verbose_name_plural = _('images')
 
+    def __str__(self):
+        return self.file.name
+
     def get_variations(self) -> Dict[str, Variation]:
         if not hasattr(self, '_variations_cache'):
             owner_field = self.get_owner_field()

@@ -42,20 +42,20 @@ class Command(BaseCommand):
             field = None
 
         variations = options['variations']
-        if issubclass(model, Gallery):
-            # recut gallery
+        if issubclass(model, Gallery) and hasattr(model, 'VARIATIONS'):
+            # recut collection
             if variations:
                 for name in variations:
                     if name not in model.VARIATIONS:
                         raise TypeError("The requested variation '%s' does not exist" % name)
 
             total = model.objects.using(self.database).count()
-            for index, gallery in enumerate(model.objects.using(self.database).iterator(), start=1):     # use objects manager!
+            for index, collection in enumerate(model.objects.using(self.database).iterator(), start=1):     # use objects manager!
                 if self.verbosity >= 1:
                     self.stdout.write(self.style.SUCCESS(
-                        "Recreate variations '{}' #{} ({}/{}) ... ".format(options['model'], gallery.pk, index, total)
+                        "Recreate variations '{}' #{} ({}/{}) ... ".format(options['model'], collection.pk, index, total)
                     ))
-                gallery.recut(names=variations, using=self.database)
+                collection.recut(names=variations, using=self.database)
         elif field is not None:
             # recut model field
             if variations:
@@ -74,4 +74,4 @@ class Command(BaseCommand):
                 field.recut(names=variations)
             self.stdout.write('')
         else:
-            raise RuntimeError('a field name must be specified for non-gallery models')
+            raise RuntimeError('a field name must be specified for non-collection models')

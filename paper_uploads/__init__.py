@@ -24,8 +24,8 @@
     Это сделано для экономии SQL-запросов при выборке множества объектов, имеющих
     галереи. Например, при выводе списка продуктов магазина.
 
-    Есть два класса галереи: Gallery и ImageCollection. ImageCollection позволяет
-    загружать только изображения, тогда как в Gallery помимо изображений можно
+    Есть два класса галереи: Collection и ImageCollection. ImageCollection позволяет
+    загружать только изображения, тогда как в Collection помимо изображений можно
     добавлять SVG и любые другие файлы.
 
     Зависит от:
@@ -75,27 +75,27 @@
         default         images/%Y-%m-%d
         description     Путь к папке, в которую загружаются файлы ImageField
 
-    GALLERY_FILES_UPLOAD_TO
+    COLLECTION_FILES_UPLOAD_TO
         type            str
         default         gallery/files/%Y-%m-%d
         description     Путь к папке, в которую загружаются файлы галереи
 
-    GALLERY_IMAGES_UPLOAD_TO
+    COLLECTION_IMAGES_UPLOAD_TO
         type            str
         default         gallery/images/%Y-%m-%d
         description     Путь к папке, в которую загружаются картинки галереи
 
-    GALLERY_ITEM_PREVIEW_WIDTH
+    COLLECTION_ITEM_PREVIEW_WIDTH
         type            int
         default         144
         description     Ширина превью элемента галереи в виджете админки
 
-    GALLERY_ITEM_PREVIEW_HEIGHT
+    COLLECTION_ITEM_PREVIEW_HEIGHT
         type            int
         default         108
         description     Высота превью элемента галереи в виджете админки
 
-    GALLERY_IMAGE_ITEM_PREVIEW_VARIATIONS
+    COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
         type            dict
         default         ...
         description     Вариации для превью картинок галереи

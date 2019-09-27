@@ -8,12 +8,12 @@ DEFAULTS = {
 
     'FILES_UPLOAD_TO': 'files/%Y-%m-%d',
     'IMAGES_UPLOAD_TO': 'images/%Y-%m-%d',
-    'GALLERY_FILES_UPLOAD_TO': 'gallery/files/%Y-%m-%d',
-    'GALLERY_IMAGES_UPLOAD_TO': 'gallery/images/%Y-%m-%d',
+    'COLLECTION_FILES_UPLOAD_TO': 'gallery/files/%Y-%m-%d',
+    'COLLECTION_IMAGES_UPLOAD_TO': 'gallery/images/%Y-%m-%d',
 
-    'GALLERY_ITEM_PREVIEW_WIDTH': 144,
-    'GALLERY_ITEM_PREVIEW_HEIGTH': 108,
-    'GALLERY_IMAGE_ITEM_PREVIEW_VARIATIONS': dict(
+    'COLLECTION_ITEM_PREVIEW_WIDTH': 144,
+    'COLLECTION_ITEM_PREVIEW_HEIGTH': 108,
+    'COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS': dict(
         admin_preview=dict(
             size=(144, 108),
             format='jpeg',

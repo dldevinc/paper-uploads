@@ -11,7 +11,7 @@ from tests.app.models import Page, PageGallery, PageFilesGallery
 TESTS_PATH = Path(__file__).parent / 'samples'
 
 
-class TestGallery(TestCase):
+class TestCollection(TestCase):
     def setUp(self) -> None:
         self.gallery = PageFilesGallery.objects.create()
 
@@ -166,7 +166,7 @@ class TestGallery(TestCase):
                     getattr(self.audio_item.file, name),
                 )
 
-    def test_proxy_gallery(self):
+    def test_proxy_collection(self):
         self.assertTrue(PageFilesGallery._meta.proxy)
 
     def test_item_types(self):
@@ -175,7 +175,7 @@ class TestGallery(TestCase):
             ['svg', 'image', 'file']
         )
 
-    def test_gallery_manager(self):
+    def test_collection_manager(self):
         self.assertNotIn(self.gallery.pk, PageGallery.objects.values('pk'))
 
     def test_get_items(self):
@@ -287,7 +287,7 @@ class TestImageCollection(TestCase):
                     getattr(self.image_item.file, name),
                 )
 
-    def test_proxy_gallery(self):
+    def test_proxy_collection(self):
         self.assertTrue(PageGallery._meta.proxy)
 
     def test_item_types(self):
@@ -296,7 +296,7 @@ class TestImageCollection(TestCase):
             ['image']
         )
 
-    def test_gallery_manager(self):
+    def test_collection_manager(self):
         self.assertNotIn(self.gallery.pk, PageFilesGallery.objects.values('pk'))
 
     def test_get_items(self):

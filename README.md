@@ -84,9 +84,9 @@ class Page(models.Model):
 количество вариаций (опционально). Настройки вариаций идентичны 
 настройкам модуля [variations](https://github.com/dldevinc/variations).
 
-В любом случае, исходное изображение сохраняется. При добавлении
-новых вариаций или изменении существующих, можно заново произвести
-нарезку с помощью команды [recreate_variations](#recreate_variations)
+Исходное загруженное изображение сохраняется в файловой системе без
+изменений. При добавлении новых вариаций или изменении существующих, 
+можно заново произвести нарезку с помощью команды [recreate_variations](#recreate_variations).
 
 ```python
 from pilkit import processors
@@ -121,56 +121,52 @@ class Page(models.Model):
 ```
 
 ## CollectionField
-Для создания галереи необходимо создать класс модели галереи, 
-унаследованый от `Gallery` или `ImageGallery`.
+Для создания коллекции необходимо создать класс модели коллекции, 
+унаследованый от `Collection` или `ImageCollection`.
 
-Галерея может включать элементы любого вида, который можно 
-описать с помощью модели, унаследованной от `GalleryItemBase`. 
-Перечень допустимых классов элементов галереи задается
-с помощью `GalleryItemTypeField`. Синтаксис подключения 
-подобен добавлению поля `ForeignKey` к модели.
-
-"Из коробки" доступны следующие классы элементов галереи:
-* `ImageItem` - изображение с вариациями.
-* `FileItem` - любой файл.
-* `SVGItem` - для хранения svg-файлов. Аналогичен `FileItem`, но в превью админки показывается картинка.
+Коллекция может включать элементы любого вида, который можно 
+описать с помощью модели, унаследованной от `CollectionItemBase`. 
+Перечень допустимых классов элементов задается с помощью 
+`CollectionItemTypeField`. Синтаксис подключения подобен добавлению 
+поля `ForeignKey` к модели.
 
 ```python
-from paper_uploads.models import gallery
+from paper_uploads.models import collection
 from paper_uploads.models.fields import CollectionItemTypeField
 
 
-class PageFiles(gallery.Gallery):
-    svg = CollectionItemTypeField(gallery.SVGItem)
-    image = CollectionItemTypeField(gallery.ImageItem)
-    file = CollectionItemTypeField(gallery.FileItem)
+class PageFiles(collection.Collection):
+    svg = CollectionItemTypeField(collection.SVGItem)
+    image = CollectionItemTypeField(collection.ImageItem)
+    file = CollectionItemTypeField(collection.FileItem)
 ```
 
-Порядок подключения классов имеет значение: при загрузке
+Порядок подключения классов элементов имеет значение: при загрузке
 файла через админку, его класс определется первым классом,
-чей метод `check_file` вернет `True`. 
+чей метод `check_file` вернет `True`. Поэтому элементы следует
+объявлять от более конкретных к более общим. 
 
-Менять имена полей `GalleryItemTypeField` нельзя, т.к при 
+**Note**: Менять имена полей `CollectionItemTypeField` нельзя, т.к при 
 добавлении нового элемента это имя заносится в БД.
 
 ---
 
-Для галерей, предназначенных исключительно для изображений, 
-"из коробки" доступна модель для наследования `ImageGallery`,
+Для коллекций, предназначенных исключительно для изображений, 
+"из коробки" доступна модель для наследования `ImageCollection`,
 с предустановленным фильтром mimetype на этапе выбора файла.
 
 ```python
 from django.db import models
-from paper_uploads.models import gallery
-from paper_uploads.models.fields import CollectionField, GalleryItemTypeField
+from paper_uploads.models import collection
+from paper_uploads.models.fields import CollectionField, CollectionItemTypeField
 
 
-class PageFiles(gallery.Gallery):
-    svg = GalleryItemTypeField(gallery.SVGItem)
-    file = GalleryItemTypeField(gallery.FileItem)
+class PageFiles(collection.Collection):
+    svg = CollectionItemTypeField(collection.SVGItem)
+    file = CollectionItemTypeField(collection.FileItem)
 
 
-class PageImages(gallery.ImageCollection):
+class PageImages(collection.ImageCollection):
     VARIATIONS = dict(
         wide=dict(
             size=(1600, 0),
@@ -197,20 +193,20 @@ class Page(models.Model):
 
 ---
 
-Наследование от `Gallery` на самом деле создает
+Наследование от `Collection` на самом деле создает
 [proxy-модель](https://docs.djangoproject.com/en/2.2/topics/db/models/#proxy-models),
 чтобы не плодить множество однотипных таблиц в БД. Благодаря 
-переопределенному менеджеру `objects` в классе `Gallery`, запросы 
-через этот менеджер будут затрагивать только галереи того же класса, 
+переопределенному менеджеру `objects` в классе `Collection`, запросы 
+через этот менеджер будут затрагивать только коллекции того же класса, 
 от имени которого вызываются.
 
 ```python
-# Вернет только галереи класса MyGallery
-MyGallery.objects.all()
+# Вернет только экземпляры класса MyCollection
+MyCollection.objects.all()
 
-# Вернет абсолютно все галереи, всех классов
-MyGallery._base_manager.all()
-```  
+# Вернет абсолютно все экземпляры коллекций, всех классов
+MyCollection._base_manager.all()
+```
 
 ## Programmatically upload files
 ```python
@@ -249,26 +245,34 @@ with open('image.jpg', 'rb') as fp:
 
 ## Management Commands
 #### check_uploads
-Проверяет все записи в БД на целостность. Обнаруживает 
-некорректные ссылки на модель-владельца файла 
-и отсутствие файлов вариаций.
+Запускает комплексную проверку загруженных файлов и выводит результат. 
+
+Список производимых тестов:
+* загруженный файл существует в файловой системе
+* для изображений существуют все файлы вариаций
+* модель-владелец (указанная в `owner_app_label` и `owner_model_name`) существует
+* в модели-владельце существует поле `owner_fieldname`
+* существует единственный экземпляр модели-владельца со ссылкой на файл
+* у элементов коллекций указан существующий и допустимый `item_type`
+* модель элементов коллекций идентична указанной для `item_type`
 
 При указании ключа `--fix-missing` все отстутствующие 
-вариации будут перенарезаны из исходников.
+вариации изображений будут автоматически перенарезаны из исходников.
 
 ```python
 python3 manage.py check_uploads --fix-missing
 ```
 
 #### clean_uploads
-Находит мусорные записи в БД. Например те, у которых 
-нет владельца, и предлагает их удалить.
+Находит мусорные записи в БД (например те, у которых 
+нет владельца) и предлагает их удалить.
 
-Так как при заполнении формы в админке, владелец
-устанавливается в последнюю очередь, при очистке
-могут быть удалены только что загруженные кем-то файлы.
-Поэтому файлы, созданные менее, чем 30 минут назад
-игнорируются. Поменять длину безопасного интервала 
+С момента асинхронной загрузки в админке
+до момента отправки формы файл является "сиротой", т.е
+отсутсвует модель, ссылающаяся на него. 
+Для того, чтобы такие файлы не удалялись, по-умолчанию
+установлен фильтр, отсеивающий все файлы, загруженные за 
+последние 30 минут. Указать свой интервал фильтрации
 (в минутах) можно через ключ `--since`.  
 
 ```python
@@ -277,18 +281,27 @@ python3 manage.py clean_uploads --since=10
 
 #### recreate_variations
 Перенарезает вариации для указанных моделей / полей.
-Можно указать:
-* модель галереи. Будут перенарезаны вариации для всех
-элементов галереи.
-* поле модели. В этом случае будут перенарезаны все вариации
-этого поля для всех экзепляров указанной модели.
 
-Если нужно перенарезать не все доступные вариации, а только
-определённые, то их можно перечислить в параметре `--variations`.
+Для перенарезки вариаций для какого-либо поля модели, необходимо
+указать модель в виде строки вида `AppLabel.ModelName` и имя поля 
+в параметре `--field`
+
+```python
+python3 manage.py recreate_variations 'page.Page' --field=image 
+```
+
+Для перенарезки всех изображений галереи достаточно указать
+только модель.
+
+```python
+python3 manage.py recreate_variations 'page.PageGallery'
+```
+
+Если нужно перенарезать не все вариации, а только некоторые,
+то их можно перечислить в параметре `--variations`.
 
 ```python
 python3 manage.py recreate_variations 'page.PageGallery' --variations big small
-python3 manage.py recreate_variations 'page.Page' --field=image 
 ```
 
 ## Validation
@@ -299,7 +312,7 @@ python3 manage.py recreate_variations 'page.Page' --field=image
 
 ```python
 from django.db import models
-from paper_uploads.models import Gallery, FileItem
+from paper_uploads.models import Collection, FileItem
 from paper_uploads.models.fields import ImageField, CollectionItemTypeField 
 from paper_uploads.validators import SizeValidator, ImageMaxSizeValidator
 
@@ -310,7 +323,7 @@ class Page(models.Model):
     ])
 
 
-class PageGallery(Gallery):
+class PageGallery(Collection):
     file = CollectionItemTypeField(FileItem, validators=[
         SizeValidator(10 * 1024 * 1024), 
     ])
@@ -325,11 +338,11 @@ class PageGallery(Gallery):
 | STORAGE_OPTIONS | Параметры инициализации хранилища |
 | FILES_UPLOAD_TO | Путь к папке, в которую загружаются файлы из FileField. По умолчанию, `files/%Y-%m-%d` |
 | IMAGES_UPLOAD_TO | Путь к папке, в которую загружаются файлы ImageField. По умолчанию, `images/%Y-%m-%d` |
-| GALLERY_FILES_UPLOAD_TO | Путь к папке, в которую загружаются файлы галереи. По умолчанию, `gallery/files/%Y-%m-%d` |
-| GALLERY_IMAGES_UPLOAD_TO | Путь к папке, в которую загружаются картинки галереи. По умолчанию, `gallery/images/%Y-%m-%d` |
-| GALLERY_ITEM_PREVIEW_WIDTH | Ширина превью элемента галереи в виджете админки. По-умолчанию, `144` |
-| GALLERY_ITEM_PREVIEW_HEIGHT | Высота превью элемента галереи в виджете админки. По-умолчанию, `108` |
-| GALLERY_IMAGE_ITEM_PREVIEW_VARIATIONS | Вариации для превью картинок галереи в виджете админки. |
+| COLLECTION_FILES_UPLOAD_TO | Путь к папке, в которую загружаются файлы галереи. По умолчанию, `gallery/files/%Y-%m-%d` |
+| COLLECTION_IMAGES_UPLOAD_TO | Путь к папке, в которую загружаются картинки галереи. По умолчанию, `gallery/images/%Y-%m-%d` |
+| COLLECTION_ITEM_PREVIEW_WIDTH | Ширина превью элемента галереи в виджете админки. По-умолчанию, `144` |
+| COLLECTION_ITEM_PREVIEW_HEIGHT | Высота превью элемента галереи в виджете админки. По-умолчанию, `108` |
+| COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS | Вариации для превью картинок галереи в виджете админки. |
 | RQ_ENABLED | Включает нарезку картинок на вариации через отложенные задачи. Требует наличие установленного пакета [django-rq](https://github.com/rq/django-rq) |
 | RQ_QUEUE_NAME | Название очереди, в которую помещаются задачи по нарезке картинок. По-умолчанию, `default` |
 | POSTPROCESS | Словарь, задающий команды, запускаемые после загрузки файла. Для каждого формата своя команда. |

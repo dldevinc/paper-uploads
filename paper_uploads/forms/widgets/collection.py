@@ -24,8 +24,8 @@ class CollectionWidget(FileWidgetBase):
         context = super().get_context(name, value, attrs)
         context.update({
             'collection_cls': self.model,
-            'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
-            'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
+            'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+            'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
         })
 
         # urls

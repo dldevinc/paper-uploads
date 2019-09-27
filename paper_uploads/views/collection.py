@@ -8,7 +8,7 @@ from django.utils.module_loading import import_string
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
-from ..models import GalleryItemBase, GalleryBase
+from ..models import GalleryItemBase, CollectionBase
 from ..utils import run_validators
 from ..logging import logger
 from .. import exceptions
@@ -31,7 +31,7 @@ def delete_collection(request):
 
     content_type_id = request.POST.get('paperCollectionContentType')
     try:
-        collection_cls = helpers.get_model_class(content_type_id, base_class=GalleryBase)
+        collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid content type')
@@ -80,7 +80,7 @@ def upload_item(request):
     # Определение модели галереи
     content_type_id = request.POST.get('paperCollectionContentType')
     try:
-        collection_cls = helpers.get_model_class(content_type_id, base_class=GalleryBase)
+        collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid content type')
@@ -153,7 +153,7 @@ def delete_item(request):
 
     content_type_id = request.POST.get('paperCollectionContentType')
     try:
-        collection_cls = helpers.get_model_class(content_type_id, base_class=GalleryBase)
+        collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid content type')
@@ -194,7 +194,7 @@ def sort_items(request):
 
     content_type_id = request.POST.get('paperCollectionContentType')
     try:
-        collection_cls = helpers.get_model_class(content_type_id, base_class=GalleryBase)
+        collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid content type')
@@ -241,7 +241,7 @@ class ChangeView(PermissionRequiredMixin, FormView):
     def get_instance(self):
         content_type_id = self.request.GET.get('paperCollectionContentType')
         try:
-            collection_cls = helpers.get_model_class(content_type_id, base_class=GalleryBase)
+            collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
         except exceptions.InvalidContentType:
             logger.exception('Error')
             return helpers.error_response('Invalid content type')
