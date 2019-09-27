@@ -104,12 +104,12 @@ class GalleryItemBase(PolymorphicModel):
             self.order = max_order + 1
         super().save(*args, **kwargs)
 
-    def get_gallery_class(self) -> Type['GalleryBase']:
+    def get_collection_class(self) -> Type['GalleryBase']:
         return self.content_type.model_class()
 
-    def get_gallery_field(self) -> CollectionItemTypeField:
-        gallery_cls = self.get_gallery_class()
-        for name, field in gallery_cls.item_types.items():
+    def get_collection_field(self) -> CollectionItemTypeField:
+        collection_cls = self.get_collection_class()
+        for name, field in collection_cls.item_types.items():
             if field.model is type(self):
                 return field
 
@@ -196,11 +196,11 @@ class ImageItemBase(GalleryItemBase, UploadedImageBase):
         К найденному словарю примешиваются вариации для админки.
         """
         if not hasattr(self, '_variations_cache'):
-            item_type_field = self.get_gallery_field()
+            item_type_field = self.get_collection_field()
             variations = item_type_field.extra.get('variations')
             if variations is None:
-                gallery_cls = self.get_gallery_class()
-                variations = getattr(gallery_cls, 'VARIATIONS', None)
+                collection_cls = self.get_collection_class()
+                variations = getattr(collection_cls, 'VARIATIONS', None)
 
             variations = (variations or {}).copy()
             variations.update(self.PREVIEW_VARIATIONS)
@@ -400,7 +400,7 @@ class SVGItem(FileItemBase):
         super().post_save_new_file()
 
         # postprocess svg
-        gallery_field = self.get_gallery_field()
+        gallery_field = self.get_collection_field()
         if gallery_field is not None:
             postprocess_options = gallery_field.extra.get('postprocess')
         else:
@@ -438,16 +438,15 @@ class CollectionManager(models.Manager):
     С помощью этого менеджера можно работать только с галерями текущего типа.
     """
     def get_queryset(self):
-        gallery_ct = ContentType.objects.get_for_model(self.model, for_concrete_model=False)
-        return super().get_queryset().filter(gallery_content_type=gallery_ct)
+        collection_ct = ContentType.objects.get_for_model(self.model, for_concrete_model=False)
+        return super().get_queryset().filter(collection_content_type=collection_ct)
 
 
 class Gallery(GalleryBase):
     # поле, ссылающееся на одно из изображений галереи (для экономии SQL-запросов)
     cover = models.ForeignKey(ImageItem, verbose_name=_('cover image'),
         null=True, editable=False, on_delete=models.SET_NULL)
-    gallery_content_type = models.ForeignKey(ContentType, null=True,
-        verbose_name=_('gallery type'), on_delete=models.SET_NULL, editable=False)
+    collection_content_type = models.ForeignKey(ContentType, null=True, on_delete=models.SET_NULL, editable=False)
 
     default_mgr = models.Manager()     # fix migrations manager
     objects = CollectionManager()
@@ -457,8 +456,8 @@ class Gallery(GalleryBase):
         default_manager_name = 'default_mgr'
 
     def save(self, *args, **kwargs):
-        if not self.gallery_content_type:
-            self.gallery_content_type = ContentType.objects.get_for_model(self,
+        if not self.collection_content_type:
+            self.collection_content_type = ContentType.objects.get_for_model(self,
                 for_concrete_model=False
             )
         super().save(*args, **kwargs)

@@ -186,7 +186,7 @@ class Command(BaseCommand):
             if issubclass(model, GalleryBase) and not model._meta.abstract:
                 content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
                 gallery_qs = model._base_manager.using(self.database).filter(
-                    gallery_content_type=content_type,
+                    collection_content_type=content_type,
                     created_at__lte=since
                 )
                 self.clean_model(gallery_qs)

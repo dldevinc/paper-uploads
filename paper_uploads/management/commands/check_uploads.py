@@ -91,7 +91,7 @@ class Command(BaseCommand):
 
                 real_model = model
                 if isinstance(instance, Gallery):
-                    real_model = instance.gallery_content_type.model_class()
+                    real_model = instance.collection_content_type.model_class()
 
                 invalid = False
                 message = "Errors were found in '{}.{}' #{}:".format(
@@ -154,24 +154,24 @@ class Command(BaseCommand):
                 item.pk
             )
 
-            gallery_cls = item.get_gallery_class()
-            if item.item_type not in gallery_cls.item_types:
+            collection_cls = item.get_collection_class()
+            if item.item_type not in collection_cls.item_types:
                 invalid = True
                 message += "\n  Item type '{}' is not defined in gallery '{}.{}' #{}".format(
                     item.item_type,
-                    gallery_cls._meta.app_label,
-                    gallery_cls._meta.model_name,
+                    collection_cls._meta.app_label,
+                    collection_cls._meta.model_name,
                     item.object_id,
                 )
             else:
-                item_model = gallery_cls.item_types[item.item_type].model
+                item_model = collection_cls.item_types[item.item_type].model
                 if item_model is not type(item):
                     invalid = True
                     message += "\n  Item class '{}.{}' is different from the '{}.{}'".format(
                         item._meta.app_label,
                         item._meta.model_name,
-                        gallery_cls._meta.app_label,
-                        gallery_cls._meta.model_name,
+                        collection_cls._meta.app_label,
+                        collection_cls._meta.model_name,
                     )
 
             if invalid:
