@@ -4,31 +4,31 @@ from django.db.models.signals import post_save, post_delete, Signal
 from .models import UploadedFileBase, ImageItemBase
 from .models.fields.base import FileFieldBase
 
-gallery_reordered = Signal(providing_args=["instance"])
+collection_reordered = Signal(providing_args=["instance"])
 
 
-def update_gallery_cover(gallery, skip_if=None):
-    if gallery.cover_id in {None, skip_if}:
-        type(gallery)._base_manager.filter(pk=gallery.pk).update(
-            cover=gallery.get_items('image').exclude(pk=skip_if).first()
+def update_collection_cover(collection, skip_if=None):
+    if collection.cover_id in {None, skip_if}:
+        type(collection)._base_manager.filter(pk=collection.pk).update(
+            cover=collection.get_items('image').exclude(pk=skip_if).first()
         )
 
 
 @receiver(post_save)
-def set_gallery_cover_on_save(sender, instance, **kwargs):
+def set_cover_on_save(sender, instance, **kwargs):
     if isinstance(instance, ImageItemBase):
         if instance.gallery is not None:
-            update_gallery_cover(instance.gallery)
+            update_collection_cover(instance.gallery)
 
 
 @receiver(post_delete)
-def set_gallery_cover_on_delete(sender, instance, **kwargs):
+def set_cover_on_delete(sender, instance, **kwargs):
     if isinstance(instance, ImageItemBase):
         if 'gallery' not in instance.__dict__:
             # fix __getattr__ recursion
             return
         if instance.gallery is not None:
-            update_gallery_cover(instance.gallery, skip_if=instance.pk)
+            update_collection_cover(instance.gallery, skip_if=instance.pk)
 
 
 @receiver(post_delete)

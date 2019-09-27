@@ -226,7 +226,7 @@ def sort_items(request):
             else:
                 GalleryItemBase.objects.filter(pk=item_id).update(order=2**32 - 1)
 
-    signals.gallery_reordered.send(collection_cls, instance=instance)
+    signals.collection_reordered.send(collection_cls, instance=instance)
     return helpers.success_response()
 
 
