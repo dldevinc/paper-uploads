@@ -4,7 +4,7 @@ from .base import FileWidgetBase
 from ...conf import settings
 
 
-class GalleryWidget(FileWidgetBase):
+class CollectionWidget(FileWidgetBase):
     template_name = 'paper_uploads/gallery_widget.html'
 
     @property
