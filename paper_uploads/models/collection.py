@@ -449,7 +449,7 @@ class CollectionManager(models.Manager):
         return super().get_queryset().filter(collection_content_type=collection_ct)
 
 
-class Gallery(CollectionBase):
+class Collection(CollectionBase):
     # поле, ссылающееся на одно из изображений коллекции (для экономии SQL-запросов)
     cover = models.ForeignKey(ImageItem, verbose_name=_('cover image'),
         null=True, editable=False, on_delete=models.SET_NULL)
@@ -470,7 +470,7 @@ class Gallery(CollectionBase):
         super().save(*args, **kwargs)
 
 
-class ImageCollection(Gallery):
+class ImageCollection(Collection):
     """
     Галерея, позволяющая хранить только изображения.
     """

@@ -2,7 +2,7 @@ from django.apps import apps
 from django.db import DEFAULT_DB_ALIAS
 from django.core.management import BaseCommand
 from ...models.base import SlaveModelMixin
-from ...models import UploadedFileBase, UploadedImageBase, Gallery, GalleryItemBase
+from ...models import UploadedFileBase, UploadedImageBase, Collection, GalleryItemBase
 
 
 class Command(BaseCommand):
@@ -129,7 +129,7 @@ class Command(BaseCommand):
                     self.stdout.write('\r' + (' ' * 80), ending='\r')
 
                 real_model = model
-                if isinstance(instance, Gallery):
+                if isinstance(instance, Collection):
                     real_model = instance.collection_content_type.model_class()
 
                 invalid = False

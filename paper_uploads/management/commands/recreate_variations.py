@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
-from ...models import UploadedImageBase, Gallery
+from ...models import UploadedImageBase, Collection
 
 
 class Command(BaseCommand):
@@ -42,7 +42,7 @@ class Command(BaseCommand):
             field = None
 
         variations = options['variations']
-        if issubclass(model, Gallery) and hasattr(model, 'VARIATIONS'):
+        if issubclass(model, Collection) and hasattr(model, 'VARIATIONS'):
             # recut collection
             if variations:
                 for name in variations:

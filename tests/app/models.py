@@ -32,7 +32,7 @@ class PageGallery(collection.ImageCollection):
     )
 
 
-class PageFilesGallery(collection.Gallery):
+class PageFilesGallery(collection.Collection):
     svg = CollectionItemTypeField(collection.SVGItem)
     image = CollectionItemTypeField(collection.ImageItem)
     file = CollectionItemTypeField(collection.FileItem)
