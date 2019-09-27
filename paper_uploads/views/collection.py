@@ -180,9 +180,9 @@ def delete_item(request):
         return helpers.error_response('Multiple objects returned')
     else:
         instance.delete()
-        instance.gallery.refresh_from_db(fields=['cover_id'])
+        instance.collection.refresh_from_db(fields=['cover_id'])
         return helpers.success_response({
-            'cover': instance.gallery.cover_id,
+            'cover': instance.collection.cover_id,
         })
 
 

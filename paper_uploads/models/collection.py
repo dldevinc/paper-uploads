@@ -34,7 +34,7 @@ class CollectionItemBase(PolymorphicModel):
 
     content_type = models.ForeignKey(ContentType, null=True, on_delete=models.CASCADE)
     object_id = models.IntegerField()
-    gallery = GenericForeignKey(for_concrete_model=False)
+    collection = GenericForeignKey(for_concrete_model=False)
 
     item_type = models.CharField(_('type'), max_length=32, db_index=True, editable=False)
     order = models.IntegerField(_('order'), default=0, editable=False)
@@ -98,7 +98,7 @@ class CollectionItemBase(PolymorphicModel):
     def save(self, *args, **kwargs):
         if not self.pk and not self.order:
             # добаление новых элементов в конец
-            max_order = self.gallery.items.aggregate(
+            max_order = self.collection.items.aggregate(
                 order=functions.Coalesce(models.Max('order'), 0)
             )['order']
             self.order = max_order + 1
@@ -132,19 +132,19 @@ class CollectionItemBase(PolymorphicModel):
         """
         raise NotImplementedError
 
-    def attach_to(self, gallery: 'CollectionBase', commit: bool = True):
+    def attach_to(self, collection: 'CollectionBase', commit: bool = True):
         """
-        Подключение элемента к галерее.
-        Используется в случае динамического создания элементов галереи.
+        Подключение элемента к коллекции.
+        Используется в случае динамического создания элементов колелкции.
         """
-        self.content_type = ContentType.objects.get_for_model(gallery, for_concrete_model=False)
-        self.object_id = gallery.pk
-        for name, field in gallery.item_types.items():
+        self.content_type = ContentType.objects.get_for_model(collection, for_concrete_model=False)
+        self.object_id = collection.pk
+        for name, field in collection.item_types.items():
             if field.model is type(self):
                 self.item_type = name
                 break
         else:
-            raise ValueError('Unsupported gallery item: %s' % type(self).__name__)
+            raise ValueError('Unsupported collection item: %s' % type(self).__name__)
 
         if commit:
             self.save()
@@ -300,8 +300,8 @@ class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
         proxy = False
         abstract = True
         default_permissions = ()
-        verbose_name = _('gallery')
-        verbose_name_plural = _('galleries')
+        verbose_name = _('collection')
+        verbose_name_plural = _('collectionы')
 
     @classmethod
     def _check_fields(cls, **kwargs):
@@ -314,7 +314,7 @@ class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
         if item_type is None:
             return self.items.order_by('order')
         if item_type not in self.item_types:
-            raise ValueError('Unsupported gallery item type: %s' % item_type)
+            raise ValueError('Unsupported collection item type: %s' % item_type)
         return self.items.filter(item_type=item_type).order_by('order')
 
     def _recut_sync(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS):

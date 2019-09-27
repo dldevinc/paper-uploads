@@ -17,18 +17,18 @@ def update_collection_cover(collection, skip_if=None):
 @receiver(post_save)
 def set_cover_on_save(sender, instance, **kwargs):
     if isinstance(instance, ImageItemBase):
-        if instance.gallery is not None:
-            update_collection_cover(instance.gallery)
+        if instance.collection is not None:
+            update_collection_cover(instance.collection)
 
 
 @receiver(post_delete)
 def set_cover_on_delete(sender, instance, **kwargs):
     if isinstance(instance, ImageItemBase):
-        if 'gallery' not in instance.__dict__:
+        if 'collection' not in instance.__dict__:
             # fix __getattr__ recursion
             return
-        if instance.gallery is not None:
-            update_collection_cover(instance.gallery, skip_if=instance.pk)
+        if instance.collection is not None:
+            update_collection_cover(instance.collection, skip_if=instance.pk)
 
 
 @receiver(post_delete)

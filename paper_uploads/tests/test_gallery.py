@@ -13,13 +13,13 @@ TESTS_PATH = Path(__file__).parent / 'samples'
 
 class TestCollection(TestCase):
     def setUp(self) -> None:
-        self.gallery = PageFilesGallery.objects.create()
+        self.collection = PageFilesGallery.objects.create()
 
         with open(TESTS_PATH / 'cartman.svg', 'rb') as fp:
             self.svg_item = SVGItem(
                 file=File(fp, name='cartman.Svg'),
             )
-            self.svg_item.attach_to(self.gallery)
+            self.svg_item.attach_to(self.collection)
             self.svg_item.full_clean()
             self.svg_item.save()
 
@@ -29,7 +29,7 @@ class TestCollection(TestCase):
                 alt='Alternate text',
                 title='Image title',
             )
-            self.image_item.attach_to(self.gallery)
+            self.image_item.attach_to(self.collection)
             self.image_item.full_clean()
             self.image_item.save()
 
@@ -37,7 +37,7 @@ class TestCollection(TestCase):
             self.file_item = FileItem(
                 file=File(fp, name='Doc.PDF'),
             )
-            self.file_item.attach_to(self.gallery)
+            self.file_item.attach_to(self.collection)
             self.file_item.full_clean()
             self.file_item.save()
 
@@ -45,12 +45,12 @@ class TestCollection(TestCase):
             self.audio_item = FileItem(
                 file=File(fp, name='audio.ogg'),
             )
-            self.audio_item.attach_to(self.gallery)
+            self.audio_item.attach_to(self.collection)
             self.audio_item.full_clean()
             self.audio_item.save()
 
     def tearDown(self) -> None:
-        self.gallery.delete()
+        self.collection.delete()
 
     def test_name(self):
         self.assertEqual(self.svg_item.name, 'cartman')
@@ -110,13 +110,13 @@ class TestCollection(TestCase):
         self.assertEqual(self.image_item.cropregion, '')
 
     def test_owner_model(self):
-        self.assertIsNone(self.gallery.get_owner_model())
+        self.assertIsNone(self.collection.get_owner_model())
 
     def test_owner_field(self):
-        self.assertIsNone(self.gallery.get_owner_field())
+        self.assertIsNone(self.collection.get_owner_field())
 
     def test_validation(self):
-        self.assertEqual(self.gallery.get_validation(), {})
+        self.assertEqual(self.collection.get_validation(), {})
 
     def test_get_variations(self):
         variations = self.image_item.get_variations()
@@ -176,19 +176,24 @@ class TestCollection(TestCase):
         )
 
     def test_collection_manager(self):
-        self.assertNotIn(self.gallery.pk, PageGallery.objects.values('pk'))
+        self.assertNotIn(self.collection.pk, PageGallery.objects.values('pk'))
 
     def test_get_items(self):
-        self.assertIs(self.gallery.get_items('svg').count(), 1)
-        self.assertIs(self.gallery.get_items('image').count(), 1)
-        self.assertIs(self.gallery.get_items('file').count(), 2)
+        self.assertIs(self.collection.get_items('svg').count(), 1)
+        self.assertIs(self.collection.get_items('image').count(), 1)
+        self.assertIs(self.collection.get_items('file').count(), 2)
 
     def test_get_items_total(self):
-        self.assertIs(self.gallery.get_items().count(), 4)
+        self.assertIs(self.collection.get_items().count(), 4)
+
+    def test_item_collection_id(self):
+        for item in self.collection.items.all():
+            self.assertEqual(item.object_id, self.collection.pk)
+            self.assertEqual(item.collection, self.collection)
 
     def test_invalid_get_items(self):
         with self.assertRaises(ValueError):
-            self.gallery.get_items('something')
+            self.collection.get_items('something')
 
     def test_file_preview(self):
         self.assertEqual(self.file_item.preview, '/static/paper_uploads/dist/image/pdf.svg')
@@ -197,7 +202,7 @@ class TestCollection(TestCase):
 
 class TestImageCollection(TestCase):
     def setUp(self) -> None:
-        self.gallery = PageGallery.objects.create()
+        self.collection = PageGallery.objects.create()
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as fp:
             self.image_item = ImageItem(
@@ -205,12 +210,12 @@ class TestImageCollection(TestCase):
                 alt='Alternate text',
                 title='Image title',
             )
-            self.image_item.attach_to(self.gallery)
+            self.image_item.attach_to(self.collection)
             self.image_item.full_clean()
             self.image_item.save()
 
     def tearDown(self) -> None:
-        self.gallery.delete()
+        self.collection.delete()
 
     def test_name(self):
         self.assertEqual(self.image_item.name, 'Image')
@@ -249,13 +254,13 @@ class TestImageCollection(TestCase):
         self.assertEqual(self.image_item.cropregion, '')
 
     def test_owner_model(self):
-        self.assertIsNone(self.gallery.get_owner_model())
+        self.assertIsNone(self.collection.get_owner_model())
 
     def test_owner_field(self):
-        self.assertIsNone(self.gallery.get_owner_field())
+        self.assertIsNone(self.collection.get_owner_field())
 
     def test_validation(self):
-        self.assertIn('acceptFiles', self.gallery.get_validation())
+        self.assertIn('acceptFiles', self.collection.get_validation())
 
     def test_get_variations(self):
         variations_ext = self.image_item.get_variations()
@@ -297,17 +302,22 @@ class TestImageCollection(TestCase):
         )
 
     def test_collection_manager(self):
-        self.assertNotIn(self.gallery.pk, PageFilesGallery.objects.values('pk'))
+        self.assertNotIn(self.collection.pk, PageFilesGallery.objects.values('pk'))
 
     def test_get_items(self):
-        self.assertIs(self.gallery.get_items('image').count(), 1)
+        self.assertIs(self.collection.get_items('image').count(), 1)
 
     def test_get_items_total(self):
-        self.assertIs(self.gallery.get_items().count(), 1)
+        self.assertIs(self.collection.get_items().count(), 1)
+
+    def test_item_collection_id(self):
+        for item in self.collection.items.all():
+            self.assertEqual(item.object_id, self.collection.pk)
+            self.assertEqual(item.collection, self.collection)
 
     def test_invalid_get_items(self):
         with self.assertRaises(ValueError):
-            self.gallery.get_items('something')
+            self.collection.get_items('something')
 
 
 class TestCollectionField(TestCase):
