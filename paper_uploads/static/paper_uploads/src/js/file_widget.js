@@ -6,7 +6,7 @@ const emitters = window.paperAdmin.emitters;
 
 
 // CSS
-import "../css/widget_file.scss";
+import "../css/file_widget.scss";
 
 
 function initWidget(element) {

@@ -14,45 +14,44 @@ const preloader = window.paperAdmin.preloader;
 const formUtils = window.paperAdmin.formUtils;
 
 // CSS
-import "../css/widget_gallery.scss";
+import "../css/collection_widget.scss";
 
 
 /**
  * @param element
  * @param options
- * @fires gallery:created
- * @fires gallery:deleted
- * @fires gallery:error
- * @fires gallery:submit_item
- * @fires gallery:upload_item
- * @fires gallery:cancel_item
- * @fires gallery:complete_item
+ * @fires collection:created
+ * @fires collection:deleted
+ * @fires collection:submit_item
+ * @fires collection:upload_item
+ * @fires collection:cancel_item
+ * @fires collection:complete_item
  * @constructor
  */
-function Gallery(element, options) {
+function Collection(element, options) {
     /**
      * @type Object
      */
     this._opts = deepmerge({
-        input: '.gallery__input',
-        itemContainer: '.gallery__items',
-        item: '.gallery__item',
-        uploadButton: '.gallery__upload-button',
-        deleteButton: '.gallery__delete-button',
-        preloaderItem: '.gallery__item--preloader',
-        preloaderTemplate: '.gallery__item-preloader',
+        input: '.collection__input',
+        itemContainer: '.collection__items',
+        item: '.collection__item',
+        uploadButton: '.collection__upload-button',
+        deleteButton: '.collection__delete-button',
+        preloaderItem: '.collection__item--preloader',
+        preloaderTemplate: '.collection__item-preloader',
 
-        itemPreview: '.gallery__item-preview',
-        itemLink: '.gallery__item-link',
-        itemCheckbox: '.gallery__item-checkbox',
-        itemName: '.gallery__item-name',
-        changeItemButton: '.gallery__item-change-button',
-        deleteItemButton: '.gallery__item-delete-button',
-        itemSelectorTemplate: '.gallery__{}-item-template',
-        itemCoverClass: 'gallery__item--cover',
+        itemPreview: '.collection__item-preview',
+        itemLink: '.collection__item-link',
+        itemCheckbox: '.collection__item-checkbox',
+        itemName: '.collection__item-name',
+        changeItemButton: '.collection__item-change-button',
+        deleteItemButton: '.collection__item-delete-button',
+        itemSelectorTemplate: '.collection__{}-item-template',
+        itemCoverClass: 'collection__item--cover',
 
         urls: {
-            deleteGallery: '',
+            deleteCollection: '',
             uploadItem: '',
             changeItem: '',
             deleteItem: '',
@@ -85,9 +84,9 @@ function Gallery(element, options) {
     this.init();
 }
 
-Gallery.prototype = Object.create(EventEmitter.prototype);
+Collection.prototype = Object.create(EventEmitter.prototype);
 
-Object.defineProperty(Gallery.prototype, 'galleryId', {
+Object.defineProperty(Collection.prototype, 'collectionId', {
     get: function() {
         return parseInt(this.input.value);
     },
@@ -96,7 +95,7 @@ Object.defineProperty(Gallery.prototype, 'galleryId', {
     }
 });
 
-Object.defineProperty(Gallery.prototype, 'empty', {
+Object.defineProperty(Collection.prototype, 'empty', {
     get: function() {
         return Boolean(this._empty);
     },
@@ -119,8 +118,8 @@ Object.defineProperty(Gallery.prototype, 'empty', {
 /**
  * Инициализация галереи
  */
-Gallery.prototype.init = function() {
-    this.empty = isNaN(this.galleryId);
+Collection.prototype.init = function() {
+    this.empty = isNaN(this.collectionId);
     this.uploader = this.initUploader();
     this.sortable = this.initSortable();
     this.addListeners();
@@ -129,7 +128,7 @@ Gallery.prototype.init = function() {
 /**
  * Инициализация загрузчика картинок.
  */
-Gallery.prototype.initUploader = function() {
+Collection.prototype.initUploader = function() {
     const _this = this;
     return new Uploader(this.element, {
         url: this._opts.urls.uploadItem,
@@ -139,7 +138,7 @@ Gallery.prototype.initUploader = function() {
         validation: JSON.parse(this.element.dataset.validation),
         extraData: {
             gallery_id: function() {
-                return _this.galleryId;
+                return _this.collectionId;
             }
         },
     }).on('submit', function(id) {
@@ -159,10 +158,10 @@ Gallery.prototype.initUploader = function() {
 
         _this.itemContainer.append(clone);
 
-        _this.trigger('gallery:submit_item', [preloader, id]);
+        _this.trigger('collection:submit_item', [preloader, id]);
     }).on('upload', function(id) {
         const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
-        _this.trigger('gallery:upload_item', [preloader, id]);
+        _this.trigger('collection:upload_item', [preloader, id]);
     }).on('progress', function(id, percentage) {
         const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
         const progressBar = preloader.querySelector('.progress-bar');
@@ -174,12 +173,12 @@ Gallery.prototype.initUploader = function() {
     }).on('complete', function(id, response) {
         if (_this.empty) {
             _this.empty = false;
-            _this.galleryId = response.gallery_id;
-            _this.trigger('gallery:created');
+            _this.collectionId = response.gallery_id;
+            _this.trigger('collection:created');
         }
 
         const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
-        _this.trigger('gallery:complete_item', [preloader, id]);
+        _this.trigger('collection:complete_item', [preloader, id]);
 
         const itemType = response.item_type;
         const templateSelector = _this._opts.itemSelectorTemplate.replace('{}', itemType);
@@ -221,7 +220,7 @@ Gallery.prototype.initUploader = function() {
         }
     }).on('cancel', function(id) {
         const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
-        _this.trigger('gallery:cancel_item', [preloader, id]);
+        _this.trigger('collection:cancel_item', [preloader, id]);
         preloader && preloader.remove();
     }).on('error', function(id, messages) {
         const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
@@ -232,7 +231,7 @@ Gallery.prototype.initUploader = function() {
     });
 };
 
-Gallery.prototype.initSortable = function() {
+Collection.prototype.initSortable = function() {
     const _this = this;
     return Sortable.create(this.itemContainer, {
         animation: 0,
@@ -253,7 +252,7 @@ Gallery.prototype.initSortable = function() {
             Object.keys(params).forEach(function(name) {
                 data.append(name, params[name]);
             });
-            data.append('gallery_id', _this.galleryId.toString());
+            data.append('gallery_id', _this.collectionId.toString());
             data.append('order', order.join(','));
 
             fetch(_this._opts.urls.sortItems, {
@@ -289,13 +288,13 @@ Gallery.prototype.initSortable = function() {
 /**
  * Удаление всех элементов галереи из контейнера.
  */
-Gallery.prototype.cleanItems = function() {
+Collection.prototype.cleanItems = function() {
     while (this.itemContainer.firstChild) {
         this.itemContainer.removeChild(this.itemContainer.firstChild);
     }
 };
 
-Gallery.prototype._deleteItem = function(item) {
+Collection.prototype._deleteItem = function(item) {
     if (item.matches(this._opts.preloaderItem)) {
         // если файл еще не загружен - отменяем загрузку
         if (!item.classList.contains('processing')) {
@@ -305,7 +304,7 @@ Gallery.prototype._deleteItem = function(item) {
         return
     }
 
-    if (isNaN(this.galleryId)) {
+    if (isNaN(this.collectionId)) {
         return
     }
 
@@ -319,7 +318,7 @@ Gallery.prototype._deleteItem = function(item) {
     Object.keys(params).forEach(function(name) {
         data.append(name, params[name]);
     });
-    data.append('gallery_id', this.galleryId.toString());
+    data.append('gallery_id', this.collectionId.toString());
     data.append('instance_id', instance_id.toString());
     data.append('item_type', item.dataset.itemType);
 
@@ -377,8 +376,8 @@ Gallery.prototype._deleteItem = function(item) {
  * @param $dialog
  * @private
  */
-Gallery.prototype._changeItem = function(item, $dialog) {
-    if (isNaN(this.galleryId)) {
+Collection.prototype._changeItem = function(item, $dialog) {
+    if (isNaN(this.collectionId)) {
         return
     }
 
@@ -447,8 +446,8 @@ Gallery.prototype._changeItem = function(item, $dialog) {
  * Удаление галереи.
  * @private
  */
-Gallery.prototype._deleteGallery = function() {
-    if (isNaN(this.galleryId)) {
+Collection.prototype._deleteCollection = function() {
+    if (isNaN(this.collectionId)) {
         return
     }
 
@@ -457,10 +456,10 @@ Gallery.prototype._deleteGallery = function() {
     Object.keys(params).forEach(function(name) {
         data.append(name, params[name]);
     });
-    data.append('gallery_id', this.galleryId.toString());
+    data.append('gallery_id', this.collectionId.toString());
 
     const _this = this;
-    fetch(this._opts.urls.deleteGallery, {
+    fetch(this._opts.urls.deleteCollection, {
         method: 'POST',
         credentials: 'same-origin',
         body: data
@@ -480,8 +479,8 @@ Gallery.prototype._deleteGallery = function() {
 
         _this.cleanItems();
         _this.empty = true;
-        _this.galleryId = '';
-        _this.trigger('gallery:deleted');
+        _this.collectionId = '';
+        _this.trigger('collection:deleted');
     }).catch(function(error) {
         if ((typeof error === 'object') && error.response && error.response.errors) {
             showError(error.response.errors);
@@ -499,13 +498,13 @@ Gallery.prototype._deleteGallery = function() {
  * @param {Boolean} state
  * @private
  */
-Gallery.prototype._checkItem = function(item, state=true) {
-    item.classList.toggle('gallery__item--checked', state);
+Collection.prototype._checkItem = function(item, state=true) {
+    item.classList.toggle('collection__item--checked', state);
     const checkbox = item.querySelector(this._opts.itemCheckbox);
     checkbox.checked = state;
 };
 
-Gallery.prototype.addListeners = function() {
+Collection.prototype.addListeners = function() {
     const _this = this;
 
     // удаление галереи
@@ -519,7 +518,7 @@ Gallery.prototype.addListeners = function() {
         bootbox.dialog({
             size: 'small',
             title: gettext('Confirmation'),
-            message: gettext('Are you sure you want to <b>DELETE</b> this gallery?'),
+            message: gettext('Are you sure you want to <b>DELETE</b> this collection?'),
             onEscape: true,
             buttons: {
                 cancel: {
@@ -530,7 +529,7 @@ Gallery.prototype.addListeners = function() {
                     label: gettext('Delete'),
                     className: 'btn-danger',
                     callback: function() {
-                        _this._deleteGallery();
+                        _this._deleteCollection();
                     }
                 }
             }
@@ -556,7 +555,7 @@ Gallery.prototype.addListeners = function() {
         Object.keys(params).forEach(function(name) {
             data.append(name, params[name]);
         });
-        data.append('gallery_id', _this.galleryId.toString());
+        data.append('gallery_id', _this.collectionId.toString());
         data.append('instance_id', instance_id.toString());
         data.append('item_type', item.dataset.itemType);
         const queryString = new URLSearchParams(data).toString();
@@ -752,9 +751,9 @@ function initWidget(element) {
         return
     }
 
-    new Gallery(element, {
+    new Collection(element, {
         urls: {
-            deleteGallery: element.dataset.deleteGalleryUrl,
+            deleteCollection: element.dataset.deleteCollectionUrl,
             uploadItem: element.dataset.uploadItemUrl,
             changeItem: element.dataset.changeItemUrl,
             deleteItem: element.dataset.deleteItemUrl,
@@ -765,7 +764,7 @@ function initWidget(element) {
 
 
 function initWidgets(root = document.body) {
-    let file_selector = '.gallery';
+    let file_selector = '.collection';
     root.matches(file_selector) && initWidget(root);
     root.querySelectorAll(file_selector).forEach(initWidget);
 }

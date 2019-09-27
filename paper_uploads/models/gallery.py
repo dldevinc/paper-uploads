@@ -342,7 +342,7 @@ class GalleryBase(SlaveModelMixin, metaclass=GalleryMetaclass):
 
 
 class GalleryFileItem(GalleryFileItemBase):
-    FORM_CLASS = 'paper_uploads.forms.dialogs.gallery.GalleryFileDialog'
+    FORM_CLASS = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
 
     preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
 
@@ -374,7 +374,7 @@ class GalleryFileItem(GalleryFileItemBase):
 
 
 class GallerySVGItem(GalleryFileItemBase):
-    FORM_CLASS = 'paper_uploads.forms.dialogs.gallery.GalleryFileDialog'
+    FORM_CLASS = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     TEMPLATE_NAME = 'paper_uploads/collection_item/svg.html'
 
     class Meta(GalleryItemBase.Meta):
@@ -409,7 +409,7 @@ class GallerySVGItem(GalleryFileItemBase):
 
 
 class GalleryImageItem(GalleryImageItemBase):
-    FORM_CLASS = 'paper_uploads.forms.dialogs.gallery.GalleryImageDialog'
+    FORM_CLASS = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
 
     def as_dict(self) -> Dict[str, Any]:
         return {

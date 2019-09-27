@@ -1,17 +1,17 @@
 @import "dropzone";
 
 
-.gallery {
+.collection {
 
 }
 
-.gallery__items {
+.collection__items {
   display: flex;
   margin-right: -0.75rem;
   flex-flow: row wrap;
 }
 
-.gallery__item {
+.collection__item {
   overflow: hidden;
   margin-right: 0.75rem;
   margin-bottom: 1rem;
@@ -37,7 +37,7 @@
   }
 }
 
-.gallery__item-caption {
+.collection__item-caption {
   padding: 0.125rem 1.5rem 0.125rem 0.375rem;
   height: 23px;
   border: 1px solid #ced4da;
@@ -45,7 +45,7 @@
   border-top-right-radius: inherit;
 }
 
-.gallery__item-name {
+.collection__item-name {
   overflow: hidden;
   font-size: 12px;
   align-self: center;
@@ -53,44 +53,44 @@
   text-overflow: ellipsis;
 }
 
-.gallery__item-preview {
+.collection__item-preview {
 
 }
 
-.gallery__item-image {
+.collection__item-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
-.gallery__item-toolbar {
+.collection__item-toolbar {
   padding: 0.125rem;
   border: 1px solid #ced4da;
   border-bottom-left-radius: inherit;
   border-bottom-right-radius: inherit;
 }
 
-.gallery__item-checkbox-holder {
+.collection__item-checkbox-holder {
   line-height: 1;
 }
 
-.gallery__item-checkbox {
+.collection__item-checkbox {
   cursor: pointer;
   vertical-align: middle;
 }
 
-.gallery__help-text {
+.collection__help-text {
   margin-top: 2px;
 }
 
-.gallery__kbd {
+.collection__kbd {
   color: inherit;
   background-color: #eaeaea;
 }
 
 // прелоадер
-.gallery__item--preloader {
-  .gallery__item-preview {
+.collection__item--preloader {
+  .collection__item-preview {
     position: relative;
     border-left: 1px solid #ced4da;
     border-right: 1px solid #ced4da;
@@ -116,7 +116,7 @@
   }
 
   &.processing {
-    .gallery__item-preview {
+    .collection__item-preview {
       background-image: url(../img/preloader.svg);
       background-repeat: no-repeat;
       background-position: center;
@@ -128,7 +128,7 @@
   }
 }
 
-.gallery__item--cover {
+.collection__item--cover {
   position: relative;
 
   &::before {
@@ -145,14 +145,14 @@
   }
 }
 
-.gallery__item--checked {
+.collection__item--checked {
   box-shadow: 0 0 3px 1px #007bff;
 }
 
 
 // файл
-.gallery__item--file {
-  .gallery__item-preview {
+.collection__item--file {
+  .collection__item-preview {
     padding: 10px;
     border-left: 1px solid #ced4da;
     border-right: 1px solid #ced4da;
@@ -160,8 +160,8 @@
 }
 
 // SVG
-.gallery__item--svg {
-  .gallery__item-preview {
+.collection__item--svg {
+  .collection__item-preview {
     border-left: 1px solid #ced4da;
     border-right: 1px solid #ced4da;
   }

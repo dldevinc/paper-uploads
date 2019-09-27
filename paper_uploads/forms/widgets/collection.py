@@ -23,7 +23,7 @@ class CollectionWidget(FileWidgetBase):
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
         context.update({
-            'gallery_cls': self.model,
+            'collection_cls': self.model,
             'preview_width': settings.GALLERY_ITEM_PREVIEW_WIDTH,
             'preview_height': settings.GALLERY_ITEM_PREVIEW_HEIGTH,
         })
@@ -31,7 +31,7 @@ class CollectionWidget(FileWidgetBase):
         # urls
         info = self.model._meta.app_label, self.model._meta.model_name
         context.update({
-            'delete_gallery_url': reverse_lazy('admin:%s_%s_delete' % info),
+            'delete_collection_url': reverse_lazy('admin:%s_%s_delete' % info),
             'upload_item_url': reverse_lazy('admin:%s_%s_upload_item' % info),
             'change_item_url': reverse_lazy('admin:%s_%s_change_item' % info),
             'delete_item_url': reverse_lazy('admin:%s_%s_delete_item' % info),

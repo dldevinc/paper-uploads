@@ -1,5 +1,5 @@
-<div class="gallery dropzone {% if not widget.value %}empty{% endif %}"
-     data-delete-gallery-url="{{ delete_gallery_url }}"
+<div class="collection dropzone {% if not widget.value %}empty{% endif %}"
+     data-delete-collection-url="{{ delete_collection_url }}"
      data-upload-item-url="{{ upload_item_url }}"
      data-change-item-url="{{ change_item_url }}"
      data-delete-item-url="{{ delete_item_url }}"
@@ -10,12 +10,12 @@
      data-paper-gallery-content-type="{{ content_type.pk }}"
      data-validation='{{ validation|safe }}'>
 
-  <input type="hidden" class="gallery__input"
+  <input type="hidden" class="collection__input"
          name="{{ widget.name }}"
          value="{{ widget.value|default:'' }}"
          {% include "django/forms/widgets/attrs.html" %}/>
 
-  <div class="gallery__items">
+  <div class="collection__items">
     {% if widget.value %}
       {% for item in instance.get_items %}
         {% include item.TEMPLATE_NAME %}
@@ -23,22 +23,22 @@
     {% endif %}
   </div>
 
-  <button type="button" class="gallery__upload-button btn btn-success">
+  <button type="button" class="collection__upload-button btn btn-success">
     <i class="fa fa-fw fa-folder-open"></i>
     {{ _('Select files') }}
   </button>
 
   {% if not widget.required %}
-    <button type="button" class="gallery__delete-button btn btn-danger" {% if not widget.value %}disabled{% endif %}>
+    <button type="button" class="collection__delete-button btn btn-danger" {% if not widget.value %}disabled{% endif %}>
       <i class="fa fa-fw fa-trash"></i>
-      {{ _('Delete gallery') }}
+      {{ _('Delete collection') }}
     </button>
   {% endif %}
 
-  <div class="gallery__help-text">
+  <div class="collection__help-text">
     <small class="text-muted">
-      <kbd class="gallery__kbd">Ctrl+Click</kbd> to select multiple items.
-      <kbd class="gallery__kbd">Double-click</kbd> to open item
+      <kbd class="collection__kbd">Ctrl+Click</kbd> to select multiple items.
+      <kbd class="collection__kbd">Double-click</kbd> to open item
     </small>
   </div>
 
@@ -49,12 +49,12 @@
     </div>
   </div>
 
-  <template class="gallery__item-preloader">
+  <template class="collection__item-preloader">
     {% include 'paper_uploads/collection_item/preloader.html' %}
   </template>
 
-  {% for name, field in gallery_cls.item_types.items %}
-    <template class="gallery__{{ name }}-item-template">
+  {% for name, field in collection_cls.item_types.items %}
+    <template class="collection__{{ name }}-item-template">
       {% include field.model.TEMPLATE_NAME %}
     </template>
   {% endfor %}

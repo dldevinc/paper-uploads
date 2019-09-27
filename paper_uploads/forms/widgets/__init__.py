@@ -1,3 +1,3 @@
 from .file import FileWidget
 from .image import ImageWidget
-from .gallery import CollectionWidget
+from .collection import CollectionWidget

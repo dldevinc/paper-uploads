@@ -5,7 +5,7 @@ const whenDomReady = window.paperAdmin.whenDomReady;
 const emitters = window.paperAdmin.emitters;
 
 // CSS
-import "../css/widget_image.scss";
+import "../css/image_widget.scss";
 
 
 function initWidget(element) {
