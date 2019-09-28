@@ -2,12 +2,12 @@ from typing import Dict, Any
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
-from .base import UploadedFileBase, SlaveModelMixin
+from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
 from ..storage import upload_storage
 from ..conf import settings
 
 
-class UploadedFile(UploadedFileBase, SlaveModelMixin):
+class UploadedFile(ProxyFileAttributesMixin, SlaveModelMixin, UploadedFileBase):
     file = models.FileField(_('file'), max_length=255,
         upload_to=settings.FILES_UPLOAD_TO, storage=upload_storage)
     display_name = models.CharField(_('display name'), max_length=255, blank=True)

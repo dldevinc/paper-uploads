@@ -16,7 +16,7 @@ from django.contrib.staticfiles.storage import staticfiles_storage
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from polymorphic.models import PolymorphicModel
 from variations.variation import Variation
-from .base import SlaveModelMixin
+from .base import SlaveModelMixin, ProxyFileAttributesMixin
 from .file import UploadedFileBase
 from .image import UploadedImageBase, VariationalFileField
 from .fields import CollectionItemTypeField
@@ -156,7 +156,7 @@ class CollectionItemBase(PolymorphicModel):
             self.save()
 
 
-class FileItemBase(CollectionItemBase, UploadedFileBase):
+class FileItemBase(ProxyFileAttributesMixin, CollectionItemBase, UploadedFileBase):
     TEMPLATE_NAME = 'paper_uploads/collection_item/file.html'
 
     file = models.FileField(_('file'), max_length=255, storage=upload_storage,
@@ -184,7 +184,7 @@ class FileItemBase(CollectionItemBase, UploadedFileBase):
         }
 
 
-class ImageItemBase(CollectionItemBase, UploadedImageBase):
+class ImageItemBase(ProxyFileAttributesMixin, CollectionItemBase, UploadedImageBase):
     TEMPLATE_NAME = 'paper_uploads/collection_item/image.html'
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
 
@@ -273,9 +273,6 @@ class CollectionMetaclass(ModelBase):
 
 
 class ItemTypesDescriptor:
-    def __init__(self, name):
-        self.name = name
-
     def __get__(self, instance, owner):
         if owner is None:
             owner = type(instance)
@@ -298,7 +295,7 @@ class ContentItemRelation(GenericRelation):
 
 
 class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
-    item_types = ItemTypesDescriptor(name='item_types')
+    item_types = ItemTypesDescriptor()
     items = ContentItemRelation(CollectionItemBase, for_concrete_model=False)
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
 

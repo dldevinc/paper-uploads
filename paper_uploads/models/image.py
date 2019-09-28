@@ -11,9 +11,9 @@ from django.template.defaultfilters import filesizeformat
 from django.core.exceptions import ValidationError, SuspiciousFileOperation
 from variations.variation import Variation
 from variations.utils import prepare_image
-from .base import UploadedFileBase, SlaveModelMixin
+from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
 from ..storage import upload_storage
-from ..conf import settings, PROXY_FILE_ATTRIBUTES
+from ..conf import settings
 from .. import utils
 from .. import tasks
 
@@ -128,15 +128,21 @@ class UploadedImageBase(UploadedFileBase):
     class Meta(UploadedFileBase.Meta):
         abstract = True
 
+    def __init__(self, *args, **kwargs):
+        self._variation_attached = False
+        super().__init__(*args, **kwargs)
+
     def __getattr__(self, item):
-        if item in PROXY_FILE_ATTRIBUTES:
-            return getattr(self.file, item)
-        if not item.startswith('_'):
+        if not item.startswith('_') and not self._variation_attached:
+            self.attach_variations()
+            self._variation_attached = True
             if item in self.get_variations():
-                return self.get_variation_file(item)
-        raise AttributeError(
-            "'%s' object has no attribute '%s'" % (self.__class__.__name__, item)
-        )
+                return getattr(self, item)
+        return super().__getattr__(item)
+
+    def attach_variations(self):
+        for name, vfile in self.get_variation_files():
+            setattr(self, name, vfile)
 
     def pre_save_new_file(self):
         file_closed = self.file.closed
@@ -188,7 +194,7 @@ class UploadedImageBase(UploadedFileBase):
         if not self.file:
             return
 
-        variation_cache_name = '_file_{}'.format(variation_name)
+        variation_cache_name = '_{}_variation'.format(variation_name)
         variation_cache = getattr(self, variation_cache_name, None)
         if variation_cache is None:
             variation_cache = VariationFile(
@@ -296,7 +302,7 @@ class VariationalFileField(models.FileField):
         return name
 
 
-class UploadedImage(UploadedImageBase, SlaveModelMixin):
+class UploadedImage(ProxyFileAttributesMixin, SlaveModelMixin, UploadedImageBase):
     file = VariationalFileField(_('file'), max_length=255, upload_to=settings.IMAGES_UPLOAD_TO, storage=upload_storage)
 
     class Meta(UploadedImageBase.Meta):

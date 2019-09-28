@@ -25,7 +25,7 @@ class Permissions(models.Model):
 
 
 class UploadedFileBase(models.Model):
-    file = models.FileField(_('file'), max_length=255, storage=upload_storage)
+    file = models.FileField(_('file'), max_length=255, storage=upload_storage)  # Example field. Should be overriden
     name = models.CharField(_('file name'), max_length=255, editable=False)
     extension = models.CharField(_('file extension'), max_length=32, editable=False, help_text=_('Lowercase string without leading dot'))
     size = models.PositiveIntegerField(_('file size'), default=0, editable=False)
@@ -50,9 +50,7 @@ class UploadedFileBase(models.Model):
         )
 
     def __getattr__(self, item):
-        """ Перенос часто используемых методов файла на уровень модели """
-        if item in PROXY_FILE_ATTRIBUTES:
-            return getattr(self.file, item)
+        # для вызова через super() в классах-потомках
         raise AttributeError(
             "'%s' object has no attribute '%s'" % (self.__class__.__name__, item)
         )
@@ -201,3 +199,14 @@ class SlaveModelMixin(models.Model):
         см. https://docs.fineuploader.com/branch/master/api/options.html#validation
         """
         return {}
+
+
+class ProxyFileAttributesMixin:
+    FILE_FILED = 'file'
+
+    def __getattr__(self, item):
+        """ Перенос часто используемых методов файла на уровень модели """
+        if item in PROXY_FILE_ATTRIBUTES:
+            file_field = getattr(self, self.FILE_FILED)
+            return getattr(file_field, item)
+        return super().__getattr__(item)
