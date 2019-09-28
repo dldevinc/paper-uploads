@@ -1,11 +1,11 @@
 from pilkit import processors
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from paper_uploads.models import collection
-from paper_uploads.models.fields import FileField, ImageField, CollectionField, CollectionItemTypeField
+from paper_uploads.models import *
+from paper_uploads.validators import *
 
 
-class PageGallery(collection.ImageCollection):
+class PageGallery(ImageCollection):
     VARIATIONS = dict(
         wide_raw=dict(
             size=(1600, 0),
@@ -32,10 +32,10 @@ class PageGallery(collection.ImageCollection):
     )
 
 
-class PageFilesGallery(collection.Collection):
-    svg = CollectionItemTypeField(collection.SVGItem)
-    image = CollectionItemTypeField(collection.ImageItem)
-    file = CollectionItemTypeField(collection.FileItem)
+class PageFilesGallery(Collection):
+    svg = CollectionItemTypeField(SVGItem)
+    image = CollectionItemTypeField(ImageItem)
+    file = CollectionItemTypeField(FileItem)
 
 
 class Page(models.Model):
@@ -67,6 +67,26 @@ class Page(models.Model):
     )
     files = CollectionField(PageFilesGallery, verbose_name=_('file gallery'))
     gallery = CollectionField(PageGallery, verbose_name=_('image gallery'))
+
+    ext_file = FileField(_('Extension'), blank=True, validators=[
+        ExtensionValidator(['jpg', 'jpeg'])
+    ], help_text=_('Only `jpg` and `jpeg` extensions allowed'))
+    mime_file = FileField(_('Mimetype'), blank=True, validators=[
+        MimetypeValidator(['image/jpeg', 'image/png', 'text/plain'])
+    ], help_text=_('Only `image/jpeg`, `image/png` and `text/plain` mimetypes allowed'))
+    size_file = FileField(_('Size'), blank=True, validators=[
+        SizeValidator(128 * 1024)
+    ], help_text=_('Up to 128Kb file size allowed'))
+    min_image = ImageField(_('Min image'), blank=True, validators=[
+        ImageMinSizeValidator(1400, 0)
+    ], help_text=_('Minimum width is 1400px'))
+    max_image = ImageField(_('Max image'), blank=True, validators=[
+        ImageMaxSizeValidator(1024, 640)
+    ], help_text=_('Maximum image is 1024x640px'))
+    png_gallery = CollectionField(PageGallery, verbose_name=_('PNG gallery'), validators=[
+        ExtensionValidator(['png'])
+    ])
+
     order = models.PositiveIntegerField(_('order'), default=0, editable=False)
 
     class Meta:
