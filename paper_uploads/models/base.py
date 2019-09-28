@@ -111,7 +111,12 @@ class UploadedFileBase(models.Model):
             self.name = filename
         self.extension = ext.lstrip('.').lower()
         self.size = self.file.size
+
+        # обновляем дату загрузки если хэш изменился
+        current_hash_value = self.hash
         self.update_hash(commit=False)
+        if current_hash_value and current_hash_value != self.hash:
+            self.uploaded_at = now()
 
     def post_save_new_file(self):
         """
@@ -126,8 +131,6 @@ class UploadedFileBase(models.Model):
         self.file.delete(save=False)
 
     def update_hash(self, commit: bool = True):
-        current_hash_value = self.hash
-
         # keep file state
         file_closed = self.file.closed
         sha1 = hashlib.sha1()
@@ -138,11 +141,7 @@ class UploadedFileBase(models.Model):
         else:
             self.file.seek(0)
 
-        # обновляем дату загрузки если хэш изменился
         self.hash = sha1.hexdigest()
-        if current_hash_value and current_hash_value != self.hash:
-            self.uploaded_at = now()
-
         if commit:
             self.save(update_fields=['hash'])
 
