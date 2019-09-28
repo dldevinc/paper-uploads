@@ -17,6 +17,8 @@ from ..conf import settings, PROXY_FILE_ATTRIBUTES
 from .. import utils
 from .. import tasks
 
+__all__ = ['UploadedImageBase', 'UploadedImage']
+
 
 class VariationFile(File):
     def __init__(self, instance, variation_name):

@@ -24,6 +24,11 @@ from ..storage import upload_storage
 from .. import tasks
 from .. import utils
 
+__all__ = [
+    'CollectionItemBase', 'FileItemBase', 'ImageItemBase', 'CollectionBase',
+    'FileItem', 'ImageItem', 'SVGItem', 'Collection', 'ImageCollection'
+]
+
 
 class CollectionItemBase(PolymorphicModel):
     # Флаг для индикации базового класса элемента коллекции (см. метод checks).
