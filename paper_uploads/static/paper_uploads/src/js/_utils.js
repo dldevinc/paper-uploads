@@ -34,6 +34,7 @@ function showError(error) {
     console.debug(`Show error: ${error}`);
     setTimeout(function() {
         bootbox.alert({
+            title: 'Error',
             message: formatErrors(error)
         });
     });
@@ -62,6 +63,7 @@ function showCollectedErrors() {
 
     setTimeout(function() {
         bootbox.alert({
+            title: 'Error',
             message: formatErrors(_errors)
         });
 
