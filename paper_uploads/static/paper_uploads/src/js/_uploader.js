@@ -55,16 +55,11 @@ Uploader.prototype._makeUploader = function() {
         },
         validation: Object.assign({
             stopOnFirstInvalidFile: false,
-        }, _this._opts.validation),
+            acceptFiles: _this._opts.validation.acceptFiles || null,
+            allowedExtensions: _this._opts.validation.allowedExtensions || []
+        }),
         messages: {
             typeError: "`{file}` has an invalid extension. Valid extension(s): {extensions}.",
-            sizeError: "`{file}` is too large, maximum file size is {sizeLimit}.",
-            minSizeError: "`{file}` is too small, minimum file size is {minSizeLimit}.",
-            emptyError: "`{file}` is empty, please select files again without it.",
-            maxHeightImageError: "`{file}` is too tall.",
-            maxWidthImageError: "`{file}` is too wide.",
-            minHeightImageError: "`{file}` is not tall enough.",
-            minWidthImageError: "`{file}` is not wide enough.",
         },
         callbacks: {
             onSubmit: function(id) {
@@ -94,6 +89,23 @@ Uploader.prototype._makeUploader = function() {
 
                 const validationOptions = _this._opts.validation;
                 if (isFile(file)) {
+                    // check size
+                    if (validationOptions.sizeLimit && (file.size > validationOptions.sizeLimit)) {
+                        const sizeSymbols = ['B', 'KB', 'MB', 'GB', 'TB'];
+
+                        let i = 0;
+                        let bytes = validationOptions.sizeLimit;
+                        while (bytes > 1023) {
+                            bytes = bytes / 1024;
+                            i++;
+                        }
+
+                        const sizeLimit = bytes + sizeSymbols[i];
+                        const reason = `\`${file.name}\` is too large, maximum file size is ${sizeLimit}`;
+                        _this.trigger('error', [id, reason]);
+                        return false;
+                    }
+
                     // check mimetypes
                     const allowedMimeTypes = validationOptions.acceptFiles;
                     if (allowedMimeTypes && allowedMimeTypes.length) {
@@ -107,7 +119,7 @@ Uploader.prototype._makeUploader = function() {
                         }
 
                         if (!allowed) {
-                            const reason = `\'${file.name}\' has an invalid mimetype '${file.type}'`;
+                            const reason = `\`${file.name}\` has an invalid mimetype '${file.type}'`;
                             _this.trigger('error', [id, reason]);
                             return false;
                         }
