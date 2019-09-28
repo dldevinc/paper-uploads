@@ -125,6 +125,13 @@ class TestCollection(TestCase):
         self.assertIn('admin_preview_webp', variations)
         self.assertIn('admin_preview_webp_2x', variations)
 
+    def test_variation_attrs(self):
+        variations = dict(self.image_item.get_variation_files())
+        self.assertEqual(getattr(self.image_item, 'admin_preview'), variations['admin_preview'])
+        self.assertEqual(getattr(self.image_item, 'admin_preview_2x'), variations['admin_preview_2x'])
+        self.assertEqual(getattr(self.image_item, 'admin_preview_webp'), variations['admin_preview_webp'])
+        self.assertEqual(getattr(self.image_item, 'admin_preview_webp_2x'), variations['admin_preview_webp_2x'])
+
     def test_get_collection_class(self):
         self.assertIs(self.svg_item.get_collection_class(), PageFilesGallery)
         self.assertIs(self.image_item.get_collection_class(), PageFilesGallery)

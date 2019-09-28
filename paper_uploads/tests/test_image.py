@@ -79,7 +79,7 @@ class TestSlaveUploadedImage(TestCase):
     def setUp(self) -> None:
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as fp:
             self.object = UploadedImage(
-                file=File(fp, name='Image.Jpeg'),
+                file=File(fp, name='TestImage.Jpeg'),
                 owner_app_label='app',
                 owner_model_name='page',
                 owner_fieldname='image_ext'
@@ -101,15 +101,21 @@ class TestSlaveUploadedImage(TestCase):
         self.assertIn('tablet', variations)
         self.assertIn('admin', variations)
 
+    def test_variation_attrs(self):
+        variations = dict(self.object.get_variation_files())
+        self.assertEqual(getattr(self.object, 'desktop'), variations['desktop'])
+        self.assertEqual(getattr(self.object, 'tablet'), variations['tablet'])
+        self.assertEqual(getattr(self.object, 'admin'), variations['admin'])
+
     def test_get_invalid_variation_file(self):
         with self.assertRaises(KeyError):
             self.object.get_variation_file('nonexist')
 
     def test_get_variation_files(self):
         expected = {
-            'admin': 'Image.admin.jpg',
-            'desktop': 'Image.desktop.jpg',
-            'tablet': 'Image.tablet.jpg',
+            'admin': 'TestImage.admin.jpg',
+            'desktop': 'TestImage.desktop.jpg',
+            'tablet': 'TestImage.tablet.jpg',
         }
         self.assertDictEqual({
             name: os.path.basename(file.name)
