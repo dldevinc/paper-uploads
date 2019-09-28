@@ -26,7 +26,7 @@ class Permissions(models.Model):
 
 class UploadedFileBase(models.Model):
     file = models.FileField(_('file'), max_length=255, storage=upload_storage)
-    name = models.CharField(_('file name'), max_length=255, blank=True)
+    name = models.CharField(_('file name'), max_length=255, editable=False)
     extension = models.CharField(_('file extension'), max_length=32, editable=False, help_text=_('Lowercase string without leading dot'))
     size = models.PositiveIntegerField(_('file size'), default=0, editable=False)
     hash = models.CharField(_('file hash'), max_length=40, editable=False,
@@ -107,7 +107,8 @@ class UploadedFileBase(models.Model):
         """
         basename = posixpath.basename(self.file.name)
         filename, ext = posixpath.splitext(basename)
-        self.name = filename
+        if not self.name:
+            self.name = filename
         self.extension = ext.lower()[1:]
         self.size = self.file.size
         self.update_hash(commit=False)
