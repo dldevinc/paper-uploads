@@ -47,7 +47,7 @@ Uploader.prototype._makeUploader = function() {
         },
         chunking: {
             enabled: true,
-            partSize: 1024 * 1024
+            partSize: 4 * 1024 * 1024
         },
         text: {
             fileInputTitle: ''
