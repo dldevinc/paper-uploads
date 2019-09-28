@@ -10,6 +10,7 @@ from django.db.models import functions
 from django.db.models.base import ModelBase
 from django.utils.translation import gettext_lazy as _
 from django.utils.module_loading import import_string
+from django.contrib.staticfiles.finders import find
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -379,7 +380,7 @@ class FileItem(FileItemBase):
         icon_path_template = 'paper_uploads/dist/image/{}.svg'
         extension = FILE_ICON_OVERRIDES.get(self.extension, self.extension)
         icon_path = icon_path_template.format(extension)
-        if not staticfiles_storage.exists(icon_path):
+        if find(icon_path) is None:
             icon_path = icon_path_template.format(FILE_ICON_DEFAULT)
         return staticfiles_storage.url(icon_path)
 
