@@ -60,27 +60,51 @@ PAPER_UPLOADS = {
 ```
 
 ## FileField
-Поле для загрузки файла. Никаких ограничений на загружаемые файлы 
-по-умолчанию нет. Но их можно добавить с помощью [валидаторов](#Validation).
+Поле для загрузки файла.
+
+Никаких ограничений на загружаемые файлы по-умолчанию нет. 
+Но их можно добавить с помощью [валидаторов](#Validation).
 
 ```python
 from django.db import models
-from paper_uploads.models.fields import FileField
-from paper_uploads.validators import SizeValidator
+from django.utils.translation import ugettext_lazy as _
+from paper_uploads.models import *
+from paper_uploads.validators import *
 
 
 class Page(models.Model):
     file = FileField(_('file'), blank=True, validators=[
-        SizeValidator(10*1024*1024)    # limit to 10Mb    
+        SizeValidator(10*1024*1024)    # up to 10Mb    
     ])
 ```
+
+При загрузке файла создается экземпляр модели `UploadedFile`. Помимо самого
+файла, хранящегося в поле `file`, предоставляются следующие поля:
+* `name` - имя файла без расширения и суффикса, добавляемого `FileStorage`.
+* `display_name`- имя файла для вывода на сайте.
+* `extension` - расширение файла с нижнем регистре.
+* `size` - размер файла в байтах.
+* `hash` - SHA-1 хэш содержимого файла.
+* `created_at` - дата создания экземпляра модели.
+* `uploaded_at` - дата загрузки файла.
+* `modified_at` - дата изменения модели.
+
+Модели, унаследованные от `UploadedFileBase`, проксируют некоторые свойства 
+`FileField` на уровень модели:
+* `url`
+* `path`
+* `open`
+* `read`
+* `close`
+* `closed`
+
+Таким образом, вместо `Page.file.file.url` можно использовать `Page.file.url`.
 
 ## ImageField
 Поле для загрузки изображений. 
 
-Поддерживает нарезку на неограниченное 
-количество вариаций (опционально). Настройки вариаций идентичны 
-настройкам модуля [variations](https://github.com/dldevinc/variations).
+Поддерживает нарезку на неограниченное количество вариаций (опционально). 
+Настройки вариаций идентичны настройкам модуля [variations](https://github.com/dldevinc/variations).
 
 Исходное загруженное изображение сохраняется в файловой системе без
 изменений. При добавлении новых вариаций или изменении существующих, 
@@ -89,7 +113,8 @@ class Page(models.Model):
 ```python
 from pilkit import processors
 from django.db import models
-from paper_uploads.models.fields import ImageField
+from django.utils.translation import ugettext_lazy as _
+from paper_uploads.models import *
 
 
 class Page(models.Model):
@@ -118,6 +143,25 @@ class Page(models.Model):
     )
 ```
 
+При загрузке изображения создается экземпляр модели `UploadedImage`. Помимо 
+исходного изображения, хранящегося в поле `file`, предоставляются следующие поля:
+* `name` - имя файла без расширения и суффикса, добавляемого `FileStorage`.
+* `extension` - расширение файла с нижнем регистре.
+* `size` - размер файла в байтах.
+* `hash` - SHA-1 хэш содержимого файла.
+* `alt` - текст аттрибута `alt` для тэга `<img>`.
+* `title` - текст аттрибута `title` для тэга `<img>`.
+* `width` - ширина исходного изображения в пикселях.
+* `height` - высота исходного изображения в пикселях.
+* `created_at` - дата создания экземпляра модели.
+* `uploaded_at` - дата загрузки файла.
+* `modified_at` - дата изменения модели.
+
+К вариациям можно обращаться прямо из экземпляра `UploadedImage`:
+```python
+print(page.image_ext.desktop.url)
+```
+
 ## CollectionField
 Коллекция - это модель, группирующая экземпляры других моделей.
 В частности, с помощью коллекции можно создать галерею изображений
@@ -135,14 +179,13 @@ class Page(models.Model):
 `CollectionItemTypeField` со ссылкой на модель элемента.
 
 ```python
-from paper_uploads.models import collection
-from paper_uploads.models.fields import CollectionItemTypeField
+from paper_uploads.models import *
 
 
-class PageFiles(collection.Collection):
-    svg = CollectionItemTypeField(collection.SVGItem)
-    image = CollectionItemTypeField(collection.ImageItem)
-    file = CollectionItemTypeField(collection.FileItem)
+class PageFiles(Collection):
+    svg = CollectionItemTypeField(SVGItem)
+    image = CollectionItemTypeField(ImageItem)
+    file = CollectionItemTypeField(FileItem)
 ``` 
 
 Порядок подключения классов элементов имеет значение: при загрузке
@@ -167,16 +210,15 @@ class PageFiles(collection.Collection):
 
 ```python
 from django.db import models
-from paper_uploads.models import collection
-from paper_uploads.models.fields import CollectionField, CollectionItemTypeField
+from paper_uploads.models import *
 
 
-class PageFiles(collection.Collection):
-    svg = CollectionItemTypeField(collection.SVGItem)
-    file = CollectionItemTypeField(collection.FileItem)
+class PageFiles(Collection):
+    svg = CollectionItemTypeField(SVGItem)
+    file = CollectionItemTypeField(FileItem)
 
 
-class PageImages(collection.ImageCollection):
+class PageImages(ImageCollection):
     VARIATIONS = dict(
         wide=dict(
             size=(1600, 0),
@@ -197,8 +239,8 @@ class PageImages(collection.ImageCollection):
 
 
 class Page(models.Model):
-    files = CollectionField(PageFiles, verbose_name=_('files'))
-    images = CollectionField(PageImages, verbose_name=_('images'))
+    files = CollectionField(PageFiles)
+    images = CollectionField(PageImages)
 ```
 
 ---
@@ -221,7 +263,8 @@ MyCollection._base_manager.all()
 ## Programmatically upload files
 ```python
 from django.core.files import File
-from paper_uploads.models import UploadedFile, ImageItem
+from paper_uploads.models import *
+
 
 # file / image
 with open('file.doc', 'rb') as fp:
@@ -229,6 +272,7 @@ with open('file.doc', 'rb') as fp:
         file=File(fp, name='file.doc'),
     )
     file.save()
+
 
 # gallery
 gallery = PageGallery.objects.create()
@@ -239,19 +283,6 @@ with open('image.jpg', 'rb') as fp:
     item.attach_to(gallery)
     item.save()
 ```
-
-## Appearance
-Модели файлов проксируют некоторые свойства файла на уровень
-модели:
-* `url`
-* `path`
-* `open`
-* `read`
-* `close`
-* `closed`
-
-Таким образом, вместо `Page.image.file.url` можно 
-использовать `Page.image.url`.
 
 ## Management Commands
 #### check_uploads
@@ -269,7 +300,7 @@ with open('image.jpg', 'rb') as fp:
 При указании ключа `--fix-missing` все отстутствующие 
 вариации изображений будут автоматически перенарезаны из исходников.
 
-```python
+```shell
 python3 manage.py check_uploads --fix-missing
 ```
 
@@ -285,7 +316,7 @@ python3 manage.py check_uploads --fix-missing
 последние 30 минут. Указать свой интервал фильтрации
 (в минутах) можно через ключ `--since`.  
 
-```python
+```shell
 python3 manage.py clean_uploads --since=10
 ```
 
@@ -296,21 +327,21 @@ python3 manage.py clean_uploads --since=10
 указать модель в виде строки вида `AppLabel.ModelName` и имя поля 
 в параметре `--field`
 
-```python
+```shell
 python3 manage.py recreate_variations 'page.Page' --field=image 
 ```
 
 Для перенарезки всех изображений галереи достаточно указать
 только модель.
 
-```python
+```shell
 python3 manage.py recreate_variations 'page.PageGallery'
 ```
 
 Если нужно перенарезать не все вариации, а только некоторые,
 то их можно перечислить в параметре `--variations`.
 
-```python
+```shell
 python3 manage.py recreate_variations 'page.PageGallery' --variations big small
 ```
 
@@ -322,9 +353,9 @@ python3 manage.py recreate_variations 'page.PageGallery' --variations big small
 
 ```python
 from django.db import models
-from paper_uploads.models import Collection, FileItem
-from paper_uploads.models.fields import ImageField, CollectionItemTypeField 
-from paper_uploads.validators import SizeValidator, ImageMaxSizeValidator
+from django.utils.translation import ugettext_lazy as _
+from paper_uploads.models import * 
+from paper_uploads.validators import *
 
 class Page(models.Model):
     image = ImageField(_('image'), blank=True, validators=[
