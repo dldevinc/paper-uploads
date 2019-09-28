@@ -109,7 +109,7 @@ class UploadedFileBase(models.Model):
         filename, ext = posixpath.splitext(basename)
         if not self.name:
             self.name = filename
-        self.extension = ext.lower()[1:]
+        self.extension = ext.lstrip('.').lower()
         self.size = self.file.size
         self.update_hash(commit=False)
 
