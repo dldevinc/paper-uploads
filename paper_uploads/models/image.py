@@ -143,7 +143,7 @@ class UploadedImageBase(UploadedFileBase):
         try:
             image = Image.open(self.file)
         except OSError:
-            raise ValidationError('%s is not an image' % os.path.basename(self.file.name))
+            raise ValidationError('`%s` is not an image' % os.path.basename(self.file.name))
 
         self.width, self.height = image.size
 

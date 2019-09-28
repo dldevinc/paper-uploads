@@ -16,7 +16,7 @@ __all__ = [
 
 @deconstructible
 class ExtensionValidator:
-    message = _("%(name)s has an invalid extension. Valid extension(s): %(allowed)s")
+    message = _("`%(name)s` has an invalid extension. Valid extension(s): %(allowed)s")
     code = 'invalid_extension'
 
     def __init__(self, allowed: Sequence[str], message=None):
@@ -37,7 +37,7 @@ class ExtensionValidator:
 
 @deconstructible
 class MimetypeValidator:
-    message = _("%(name)s has an invalid mimetype '%(mimetype)s'")
+    message = _("`%(name)s` has an invalid mimetype '%(mimetype)s'")
     code = 'invalid_mimetype'
 
     def __init__(self, allowed: Sequence[str], message=None):
@@ -60,7 +60,7 @@ class MimetypeValidator:
 
 @deconstructible
 class SizeValidator:
-    message = _("%(name)s is too large. Maximum file size is %(limit_value)s.")
+    message = _("`%(name)s` is too large. Maximum file size is %(limit_value)s.")
     code = 'size_limit'
 
     def __init__(self, limit_value: int, message=None):
@@ -81,9 +81,9 @@ class SizeValidator:
 @deconstructible
 class ImageMinSizeValidator:
     error_messages = {
-        'min_width': _('%(name)s is not wide enough. Minimum width is %(width_limit)s pixels.'),
-        'min_height': _('%(name)s is not tall enough. Minimum width is %(height_limit)s pixels.'),
-        'min_size': _('%(name)s is too small. Image should be at least %(width_limit)sx%(height_limit)s pixels.'),
+        'min_width': _('`%(name)s` is not wide enough. Minimum width is %(width_limit)s pixels.'),
+        'min_height': _('`%(name)s` is not tall enough. Minimum width is %(height_limit)s pixels.'),
+        'min_size': _('`%(name)s` is too small. Image should be at least %(width_limit)sx%(height_limit)s pixels.'),
     }
 
     def __init__(self, width: int = 0, height: int = 0):
@@ -96,7 +96,7 @@ class ImageMinSizeValidator:
             img = Image.open(file)
             image_size = img.size
         except Exception:
-            raise ValidationError('%s is not an image' % os.path.basename(file.name))
+            raise ValidationError('`%s` is not an image' % os.path.basename(file.name))
         finally:
             if closed:
                 file.close()
@@ -126,9 +126,9 @@ class ImageMinSizeValidator:
 @deconstructible
 class ImageMaxSizeValidator:
     error_messages = {
-        'max_width': _('%(name)s is too wide. Maximum width is %(width_limit)s pixels.'),
-        'max_height': _('%(name)s is too tall. Maximum width is %(height_limit)s pixels.'),
-        'max_size': _('%(name)s is too big. Image should be at most %(width_limit)sx%(height_limit)s pixels.'),
+        'max_width': _('`%(name)s` is too wide. Maximum width is %(width_limit)s pixels.'),
+        'max_height': _('`%(name)s` is too tall. Maximum width is %(height_limit)s pixels.'),
+        'max_size': _('`%(name)s` is too big. Image should be at most %(width_limit)sx%(height_limit)s pixels.'),
     }
 
     def __init__(self, width: int = 0, height: int = 0):

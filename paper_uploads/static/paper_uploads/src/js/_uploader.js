@@ -56,10 +56,14 @@ Uploader.prototype._makeUploader = function() {
             stopOnFirstInvalidFile: false,
         }, _this._opts.validation),
         messages: {
-            maxHeightImageError: "{file} is too tall.",
-            maxWidthImageError: "{file} is too wide.",
-            minHeightImageError: "{file} is not tall enough.",
-            minWidthImageError: "{file} is not wide enough.",
+            typeError: "`{file}` has an invalid extension. Valid extension(s): {extensions}.",
+            sizeError: "`{file}` is too large, maximum file size is {sizeLimit}.",
+            minSizeError: "`{file}` is too small, minimum file size is {minSizeLimit}.",
+            emptyError: "`{file}` is empty, please select files again without it.",
+            maxHeightImageError: "`{file}` is too tall.",
+            maxWidthImageError: "`{file}` is too wide.",
+            minHeightImageError: "`{file}` is not tall enough.",
+            minWidthImageError: "`{file}` is not wide enough.",
         },
         callbacks: {
             onSubmit: function(id) {
@@ -108,22 +112,22 @@ Uploader.prototype._makeUploader = function() {
                         }
                     }).then(function(size) {
                         if (validationOptions.minImageWidth && (size.width < validationOptions.minImageWidth)) {
-                            const reason = `${file.name} is not wide enough. Minimum width is ${validationOptions.minImageWidth}px`;
+                            const reason = `\`${file.name}\` is not wide enough. Minimum width is ${validationOptions.minImageWidth}px`;
                             _this.trigger('error', [id, reason]);
                             throw new Error(reason);
                         }
                         if (validationOptions.minImageHeight && (size.height < validationOptions.minImageHeight)) {
-                            const reason = `${file.name} is not tall enough. Minimum height is ${validationOptions.minImageHeight}px`;
+                            const reason = `\`${file.name}\` is not tall enough. Minimum height is ${validationOptions.minImageHeight}px`;
                             _this.trigger('error', [id, reason]);
                             throw new Error(reason);
                         }
                         if (validationOptions.maxImageWidth && (size.width > validationOptions.maxImageWidth)) {
-                            const reason = `${file.name} is too wide. Maximum width is ${validationOptions.maxImageWidth}px`;
+                            const reason = `\`${file.name}\` is too wide. Maximum width is ${validationOptions.maxImageWidth}px`;
                             _this.trigger('error', [id, reason]);
                             throw new Error(reason);
                         }
                         if (validationOptions.maxImageHeight && (size.height > validationOptions.maxImageHeight)) {
-                            const reason = `${file.name} is too tall. Maximum height is ${validationOptions.maxImageHeight}px`;
+                            const reason = `\`${file.name}\` is too tall. Maximum height is ${validationOptions.maxImageHeight}px`;
                             _this.trigger('error', [id, reason]);
                             throw new Error(reason);
                         }
