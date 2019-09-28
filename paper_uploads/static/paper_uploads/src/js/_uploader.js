@@ -50,7 +50,7 @@ Uploader.prototype._makeUploader = function() {
             partSize: 1024 * 1024
         },
         text: {
-            fileInputTitle: 'Select file'
+            fileInputTitle: ''
         },
         validation: Object.assign({
             stopOnFirstInvalidFile: false,
