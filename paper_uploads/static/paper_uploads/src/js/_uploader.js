@@ -1,4 +1,5 @@
 import {FineUploaderBasic, DragAndDrop, isFile} from "fine-uploader";
+import match from 'mime-match';
 
 // PaperAdmin API
 const EventEmitter = window.paperAdmin.EventEmitter;
@@ -90,48 +91,70 @@ Uploader.prototype._makeUploader = function() {
                     }
                 }
 
-                // check image size
+
                 const validationOptions = _this._opts.validation;
-                if (validationOptions.image && isFile(file)) {
-                    return new Promise(function(resolve, reject) {
-                        const image = new Image();
-                        const url = window.URL && window.URL.createObjectURL ? window.URL : window.webkitURL && window.webkitURL.createObjectURL ? window.webkitURL : null;
-                        if (url) {
-                            image.onerror = function() {
-                                reject("Cannot determine dimensions for image. May be too large.");
-                            };
-                            image.onload = function() {
-                                resolve({
-                                    width: this.width,
-                                    height: this.height
-                                });
-                            };
-                            image.src = url.createObjectURL(file);
-                        } else {
-                            reject("No createObjectURL function available to generate image URL!");
+                if (isFile(file)) {
+                    // check mimetypes
+                    const allowedMimeTypes = validationOptions.acceptFiles;
+                    if (allowedMimeTypes && allowedMimeTypes.length) {
+                        let allowed = false;
+                        if (Array.isArray(allowedMimeTypes)) {
+                            allowed = allowedMimeTypes.some(function(template) {
+                                return match(file.type, template);
+                            });
+                        } else if (typeof allowedMimeTypes === 'string') {
+                            allowed = match(file.type, allowedMimeTypes);
                         }
-                    }).then(function(size) {
-                        if (validationOptions.minImageWidth && (size.width < validationOptions.minImageWidth)) {
-                            const reason = `\`${file.name}\` is not wide enough. Minimum width is ${validationOptions.minImageWidth}px`;
+
+                        if (!allowed) {
+                            const reason = `\'${file.name}\' has an invalid mimetype '${file.type}'`;
                             _this.trigger('error', [id, reason]);
-                            throw new Error(reason);
+                            return false;
                         }
-                        if (validationOptions.minImageHeight && (size.height < validationOptions.minImageHeight)) {
-                            const reason = `\`${file.name}\` is not tall enough. Minimum height is ${validationOptions.minImageHeight}px`;
-                            _this.trigger('error', [id, reason]);
-                            throw new Error(reason);
-                        }
-                        if (validationOptions.maxImageWidth && (size.width > validationOptions.maxImageWidth)) {
-                            const reason = `\`${file.name}\` is too wide. Maximum width is ${validationOptions.maxImageWidth}px`;
-                            _this.trigger('error', [id, reason]);
-                            throw new Error(reason);
-                        }
-                        if (validationOptions.maxImageHeight && (size.height > validationOptions.maxImageHeight)) {
-                            const reason = `\`${file.name}\` is too tall. Maximum height is ${validationOptions.maxImageHeight}px`;
-                            _this.trigger('error', [id, reason]);
-                            throw new Error(reason);
-                        }
-                    });
+                    }
+
+                    // check image size
+                    if (validationOptions.image) {
+                        return new Promise(function(resolve, reject) {
+                            const image = new Image();
+                            const url = window.URL && window.URL.createObjectURL ? window.URL : window.webkitURL && window.webkitURL.createObjectURL ? window.webkitURL : null;
+                            if (url) {
+                                image.onerror = function() {
+                                    reject("Cannot determine dimensions for image. May be too large.");
+                                };
+                                image.onload = function() {
+                                    resolve({
+                                        width: this.width,
+                                        height: this.height
+                                    });
+                                };
+                                image.src = url.createObjectURL(file);
+                            } else {
+                                reject("No createObjectURL function available to generate image URL!");
+                            }
+                        }).then(function(size) {
+                            if (validationOptions.minImageWidth && (size.width < validationOptions.minImageWidth)) {
+                                const reason = `\`${file.name}\` is not wide enough. Minimum width is ${validationOptions.minImageWidth}px`;
+                                _this.trigger('error', [id, reason]);
+                                throw new Error(reason);
+                            }
+                            if (validationOptions.minImageHeight && (size.height < validationOptions.minImageHeight)) {
+                                const reason = `\`${file.name}\` is not tall enough. Minimum height is ${validationOptions.minImageHeight}px`;
+                                _this.trigger('error', [id, reason]);
+                                throw new Error(reason);
+                            }
+                            if (validationOptions.maxImageWidth && (size.width > validationOptions.maxImageWidth)) {
+                                const reason = `\`${file.name}\` is too wide. Maximum width is ${validationOptions.maxImageWidth}px`;
+                                _this.trigger('error', [id, reason]);
+                                throw new Error(reason);
+                            }
+                            if (validationOptions.maxImageHeight && (size.height > validationOptions.maxImageHeight)) {
+                                const reason = `\`${file.name}\` is too tall. Maximum height is ${validationOptions.maxImageHeight}px`;
+                                _this.trigger('error', [id, reason]);
+                                throw new Error(reason);
+                            }
+                        });
+                    }
                 }
             },
             onSubmitted: function(id) {
