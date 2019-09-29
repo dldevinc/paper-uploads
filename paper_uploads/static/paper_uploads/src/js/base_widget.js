@@ -10,6 +10,7 @@ const bootbox = window.paperAdmin.bootbox;
 const preloader = window.paperAdmin.preloader;
 const formUtils = window.paperAdmin.formUtils;
 
+// TODO: прерывание загрузки
 
 /**
  * @fires upload:submit
@@ -143,8 +144,6 @@ BaseWidget.prototype.initUploader = function() {
         _this.empty = false;
         _this.instanceId = response.instance_id;
         _this.trigger('upload:created');
-
-        _this.element.classList.remove('loading');
 
         const fileName = _this.element.querySelector('.file-name');
         fileName && (fileName.textContent = response.name);

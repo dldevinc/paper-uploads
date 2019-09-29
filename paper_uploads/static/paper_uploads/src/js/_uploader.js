@@ -69,10 +69,9 @@ Uploader.prototype._makeUploader = function() {
                 const uploader = this;
                 const file = uploader.getFile(id);
 
-                if (!_this._opts.multiple) {
-                    if (is_loading) {
-                        return false;
-                    }
+                if (is_loading && !_this._opts.multiple) {
+                    return false
+                } else {
                     is_loading = true;
                 }
 
@@ -88,7 +87,6 @@ Uploader.prototype._makeUploader = function() {
                         }
                     }
                 }
-
 
                 const validationOptions = _this._opts.validation;
                 if (isFile(file)) {
@@ -174,9 +172,7 @@ Uploader.prototype._makeUploader = function() {
                 }
             },
             onAllComplete: function(succeeded, failed) {
-                if (!_this._opts.multiple) {
-                    is_loading = false;
-                }
+                is_loading = false;
                 _this.trigger('all_complete', [succeeded, failed]);
             },
             onError: function(id, name, reason, xhr) {
