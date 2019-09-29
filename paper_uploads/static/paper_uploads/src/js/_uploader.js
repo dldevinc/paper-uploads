@@ -1,4 +1,5 @@
-import {FineUploaderBasic, DragAndDrop, isFile} from "fine-uploader";
+import {FineUploaderBasic, isFile} from "./fine-uploader/fine-uploader.core";
+import {DragAndDrop} from "./fine-uploader/dnd";
 import match from 'mime-match';
 
 // PaperAdmin API
@@ -48,18 +49,20 @@ Uploader.prototype._makeUploader = function() {
         },
         chunking: {
             enabled: true,
-            partSize: 4 * 1024 * 1024
+            partSize: 1024 * 1024
         },
         text: {
             fileInputTitle: ''
         },
-        validation: Object.assign({
+        validation: {
             stopOnFirstInvalidFile: false,
+            sizeLimit: _this._opts.validation.sizeLimit || 0,
             acceptFiles: _this._opts.validation.acceptFiles || null,
             allowedExtensions: _this._opts.validation.allowedExtensions || []
-        }),
+        },
         messages: {
             typeError: "`{file}` has an invalid extension. Valid extension(s): {extensions}.",
+            sizeError: "`{file}` is too large, maximum file size is {sizeLimit}.",
         },
         callbacks: {
             onSubmit: function(id) {
@@ -89,23 +92,6 @@ Uploader.prototype._makeUploader = function() {
 
                 const validationOptions = _this._opts.validation;
                 if (isFile(file)) {
-                    // check size
-                    if (validationOptions.sizeLimit && (file.size > validationOptions.sizeLimit)) {
-                        const sizeSymbols = ['B', 'KB', 'MB', 'GB', 'TB'];
-
-                        let i = 0;
-                        let bytes = validationOptions.sizeLimit;
-                        while (bytes > 1023) {
-                            bytes = bytes / 1024;
-                            i++;
-                        }
-
-                        const sizeLimit = bytes + sizeSymbols[i];
-                        const reason = `\`${file.name}\` is too large, maximum file size is ${sizeLimit}`;
-                        _this.trigger('error', [id, reason]);
-                        return false;
-                    }
-
                     // check mimetypes
                     const allowedMimeTypes = validationOptions.acceptFiles;
                     if (allowedMimeTypes && allowedMimeTypes.length) {
