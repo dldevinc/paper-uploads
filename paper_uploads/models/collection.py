@@ -465,7 +465,7 @@ class Collection(CollectionBase):
     objects = CollectionManager()
 
     class Meta:
-        proxy = False   # явно указываем, что это не проски-модель
+        proxy = False   # явно указываем, что это не прокси-модель
         default_manager_name = 'default_mgr'
 
     def save(self, *args, **kwargs):
@@ -474,6 +474,15 @@ class Collection(CollectionBase):
                 for_concrete_model=False
             )
         super().save(*args, **kwargs)
+
+    def detect_file_type(self, file: IO) -> str:
+        """
+        Определение класса элемента, которому нужно отнести загружаемый файл.
+        """
+        for item_type, field in self.item_types.items():
+            if isinstance(field.model, CollectionFileItemMixin):
+                if field.model.file_supported(file):
+                    return item_type
 
 
 class ImageCollection(Collection):
@@ -488,3 +497,6 @@ class ImageCollection(Collection):
             **super().get_validation(),
             'acceptFiles': 'image/*',
         }
+
+    def detect_file_type(self, file: IO) -> str:
+        return 'image'

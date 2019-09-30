@@ -8,19 +8,12 @@ from django.utils.module_loading import import_string
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
-from ..models.collection import CollectionItemBase, CollectionFileItemMixin, CollectionBase
+from ..models.collection import CollectionItemBase, CollectionBase
 from ..utils import run_validators
 from ..logging import logger
 from .. import exceptions
 from .. import signals
 from . import helpers
-
-
-def detect_file_type(collection_cls, file):
-    for item_type, field in collection_cls.item_types.items():
-        if isinstance(field.model, CollectionFileItemMixin):
-            if field.model.file_supported(file):
-                return item_type
 
 
 @csrf_exempt
@@ -85,11 +78,6 @@ def upload_item(request):
         logger.exception('Error')
         return helpers.error_response('Invalid content type')
 
-    # Определение типа элемента галереи
-    item_type = detect_file_type(collection_cls, file)
-    if item_type is None:
-        return helpers.error_response('Unsupported file')
-
     # Получение объекта галереи
     collection_id = request.POST.get('collectionId')
     try:
@@ -103,6 +91,11 @@ def upload_item(request):
     except MultipleObjectsReturned:
         logger.exception('Error')
         return helpers.error_response('Multiple objects returned')
+
+    # Определение типа элемента галереи
+    item_type = collection.detect_file_type(file)
+    if item_type is None:
+        return helpers.error_response('Unsupported file')
 
     try:
         with transaction.atomic():
