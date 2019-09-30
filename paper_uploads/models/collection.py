@@ -67,7 +67,7 @@ class CollectionItemBase(PolymorphicModel):
         if cls.change_form_class is None:
             errors.append(
                 checks.Error(
-                    "{} requires a definition of 'change_form_class'".format(cls(__name__)),
+                    "{} requires a definition of 'change_form_class'".format(cls.__name__),
                     obj=cls,
                 )
             )
@@ -96,7 +96,7 @@ class CollectionItemBase(PolymorphicModel):
         if cls.admin_template_name is None:
             errors.append(
                 checks.Error(
-                    "{} requires a definition of 'admin_template_name'".format(cls(__name__)),
+                    "{} requires a definition of 'admin_template_name'".format(cls.__name__),
                     obj=cls,
                 )
             )
@@ -149,7 +149,7 @@ class CollectionItemBase(PolymorphicModel):
             self.save()
 
 
-class CollectionFileItemBase(CollectionItemBase):
+class CollectionFileItemMixin:
     @classmethod
     def file_supported(cls, file: IO) -> bool:
         """
@@ -159,7 +159,7 @@ class CollectionFileItemBase(CollectionItemBase):
         raise NotImplementedError
 
 
-class FileItemBase(CollectionFileItemBase, ProxyFileAttributesMixin, CollectionItemBase, UploadedFileBase):
+class FileItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, CollectionItemBase, UploadedFileBase):
     admin_template_name = 'paper_uploads/collection_item/file.html'
 
     file = models.FileField(_('file'), max_length=255, storage=upload_storage,
@@ -187,7 +187,7 @@ class FileItemBase(CollectionFileItemBase, ProxyFileAttributesMixin, CollectionI
         }
 
 
-class ImageItemBase(CollectionFileItemBase, ProxyFileAttributesMixin, CollectionItemBase, UploadedImageBase):
+class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, CollectionItemBase, UploadedImageBase):
     admin_template_name = 'paper_uploads/collection_item/image.html'
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
 
@@ -417,7 +417,7 @@ class SVGItem(FileItemBase):
             postprocess_options = collection_field.settings.get('postprocess')
         else:
             postprocess_options = None
-        # TODO: явный запрет постобработки
+        # TODO: добавить обработку явного запрета постобработки
         utils.postprocess_svg(self.file.name, postprocess_options)
 
 
