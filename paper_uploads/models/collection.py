@@ -212,7 +212,7 @@ class ImageItemBase(CollectionFileItemBase, ProxyFileAttributesMixin, Collection
         """
         if not hasattr(self, '_variations_cache'):
             item_type_field = self.get_collection_field()
-            variations = item_type_field.extra.get('variations')
+            variations = item_type_field.settings.get('variations')
             if variations is None:
                 collection_cls = self.get_collection_class()
                 variations = getattr(collection_cls, 'VARIATIONS', None)
@@ -414,7 +414,7 @@ class SVGItem(FileItemBase):
         # postprocess svg
         collection_field = self.get_collection_field()
         if collection_field is not None:
-            postprocess_options = collection_field.extra.get('postprocess')
+            postprocess_options = collection_field.settings.get('postprocess')
         else:
             postprocess_options = None
         # TODO: явный запрет постобработки

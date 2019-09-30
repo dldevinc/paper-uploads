@@ -48,7 +48,7 @@ class CollectionItemTypeField:
     """
     default_validators = []  # Default set of validators
 
-    def __init__(self, to, name=None, validators=(), **kwargs):
+    def __init__(self, to, name=None, validators=(), settings=None):
         self.name = name
 
         try:
@@ -62,8 +62,8 @@ class CollectionItemTypeField:
             )
 
         self.model = to
+        self.settings = settings or {}
         self._validators = list(validators)
-        self.extra = kwargs.copy()
 
     def check(self, **kwargs):
         return [
