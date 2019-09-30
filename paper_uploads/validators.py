@@ -20,7 +20,7 @@ class ExtensionValidator:
     code = 'invalid_extension'
 
     def __init__(self, allowed: Sequence[str], message=None):
-        self.allowed = tuple(ext.lower() for ext in allowed)
+        self.allowed = tuple(ext.lstrip('.').lower() for ext in allowed)
         if message:
             self.message = message
 
