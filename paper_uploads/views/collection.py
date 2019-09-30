@@ -236,7 +236,7 @@ class ChangeView(PermissionRequiredMixin, FormView):
     instance = None
 
     def get_form_class(self):
-        return import_string(self.instance.FORM_CLASS)
+        return import_string(self.instance.change_form_class)
 
     def get_instance(self):
         content_type_id = self.request.GET.get('paperCollectionContentType')

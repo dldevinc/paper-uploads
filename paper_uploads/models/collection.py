@@ -35,7 +35,7 @@ class CollectionItemBase(PolymorphicModel):
     # Флаг для индикации базового класса элемента коллекции (см. метод checks).
     __BaseCollectionItem = True
 
-    FORM_CLASS = None
+    change_form_class = None
     TEMPLATE_NAME = None
 
     content_type = models.ForeignKey(ContentType, null=True, on_delete=models.CASCADE)
@@ -63,22 +63,22 @@ class CollectionItemBase(PolymorphicModel):
             return []
 
         errors = []
-        if cls.FORM_CLASS is None:
+        if cls.change_form_class is None:
             errors.append(
                 checks.Error(
-                    "must define a FORM_CLASS attribute",
+                    "{} requires a definition of 'change_form_class'".format(cls(__name__)),
                     obj=cls,
                 )
             )
         else:
             try:
-                import_string(cls.FORM_CLASS)
+                import_string(cls.change_form_class)
             except ImportError:
                 errors.append(
                     checks.Error(
-                        "The value of FORM_CLASS refers to '%s', which does "
+                        "The value of 'change_form_class' refers to '%s', which does "
                         "not exists" % (
-                            cls.FORM_CLASS
+                            cls.change_form_class
                         ),
                         obj=cls,
                     )
@@ -351,7 +351,7 @@ class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
 
 
 class FileItem(FileItemBase):
-    FORM_CLASS = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
+    change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
 
     preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
 
@@ -383,7 +383,7 @@ class FileItem(FileItemBase):
 
 
 class SVGItem(FileItemBase):
-    FORM_CLASS = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
+    change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     TEMPLATE_NAME = 'paper_uploads/collection_item/svg.html'
 
     class Meta(CollectionItemBase.Meta):
@@ -419,7 +419,7 @@ class SVGItem(FileItemBase):
 
 
 class ImageItem(ImageItemBase):
-    FORM_CLASS = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
+    change_form_class = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
 
     def as_dict(self) -> Dict[str, Any]:
         return {
