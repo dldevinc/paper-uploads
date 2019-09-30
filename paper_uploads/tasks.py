@@ -21,7 +21,7 @@ def _get_instance(app_label: str, model_name: str, object_id: int, using: str = 
             # delay recheck if transaction not commited yet
             attempts += 1
             if attempts > MAX_DB_ATTEMPTS:
-                logger.exception('Not found %s' % object_id)
+                logger.exception('Not found instance #%s' % object_id)
                 raise
             else:
                 time.sleep(1)

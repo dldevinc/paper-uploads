@@ -32,15 +32,16 @@ __all__ = [
 
 
 class CollectionItemBase(PolymorphicModel):
-    # Флаг для индикации базового класса элемента коллекции (см. метод checks).
+    # Флаг для индикации базового класса элемента коллекции.
+    # См. метод _check_form_class()
     __BaseCollectionItem = True
 
     change_form_class = None
     admin_template_name = None
 
     content_type = models.ForeignKey(ContentType, null=True, on_delete=models.CASCADE)
-    object_id = models.IntegerField()
-    collection = GenericForeignKey(for_concrete_model=False)
+    collection_id = models.IntegerField()
+    collection = GenericForeignKey(fk_field='collection_id', for_concrete_model=False)
 
     item_type = models.CharField(_('type'), max_length=32, db_index=True, editable=False)
     order = models.IntegerField(_('order'), default=0, editable=False)
@@ -126,7 +127,7 @@ class CollectionItemBase(PolymorphicModel):
         """
         return {
             'id': self.pk,
-            'collectionId': self.object_id,
+            'collectionId': self.collection_id,
             'item_type': self.item_type,
         }
 
@@ -134,7 +135,7 @@ class CollectionItemBase(PolymorphicModel):
     def check_file(cls, file: IO) -> bool:
         """
         Проверка загруженного файла на принадлежность текущему типу элемента галереи.
-        Если укзанный файл поддерживается, метод должен вернуть True.
+        Должен вернуть True, если файл может быть представлен текущим классом.
         """
         raise NotImplementedError
 
@@ -144,7 +145,7 @@ class CollectionItemBase(PolymorphicModel):
         Используется в случае динамического создания элементов колелкции.
         """
         self.content_type = ContentType.objects.get_for_model(collection, for_concrete_model=False)
-        self.object_id = collection.pk
+        self.collection_id = collection.pk
         for name, field in collection.item_types.items():
             if field.model is type(self):
                 self.item_type = name
@@ -296,7 +297,7 @@ class ContentItemRelation(GenericRelation):
 
 class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
     item_types = ItemTypesDescriptor()
-    items = ContentItemRelation(CollectionItemBase, for_concrete_model=False)
+    items = ContentItemRelation(CollectionItemBase, object_id_field='collection_id', for_concrete_model=False)
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
 
     class Meta:

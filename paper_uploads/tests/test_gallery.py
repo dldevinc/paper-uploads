@@ -195,7 +195,7 @@ class TestCollection(TestCase):
 
     def test_item_collection_id(self):
         for item in self.collection.items.all():
-            self.assertEqual(item.object_id, self.collection.pk)
+            self.assertEqual(item.collection_id, self.collection.pk)
             self.assertEqual(item.collection, self.collection)
 
     def test_invalid_get_items(self):
@@ -319,7 +319,7 @@ class TestImageCollection(TestCase):
 
     def test_item_collection_id(self):
         for item in self.collection.items.all():
-            self.assertEqual(item.object_id, self.collection.pk)
+            self.assertEqual(item.collection_id, self.collection.pk)
             self.assertEqual(item.collection, self.collection)
 
     def test_invalid_get_items(self):

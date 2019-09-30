@@ -117,7 +117,7 @@ def upload_item(request):
             item_type_field = collection_cls.item_types[item_type]
             instance = item_type_field.model(
                 content_type_id=content_type_id,
-                object_id=collection.pk,
+                collection_id=collection.pk,
                 item_type=item_type,
                 file=file,
                 name=filename,

@@ -203,7 +203,7 @@ class Command(BaseCommand):
                     item.item_type,
                     collection_cls._meta.app_label,
                     collection_cls._meta.model_name,
-                    item.object_id,
+                    item.collection_id,
                 )
             else:
                 item_model = collection_cls.item_types[item.item_type].model
