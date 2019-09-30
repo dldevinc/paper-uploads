@@ -103,8 +103,9 @@ class Page(models.Model):
 ## ImageField
 Поле для загрузки изображений. 
 
-Поддерживает нарезку на неограниченное количество вариаций (опционально). 
-Настройки вариаций идентичны настройкам модуля [variations](https://github.com/dldevinc/variations).
+Поддерживает нарезку на неограниченное количество вариаций. 
+Настройки вариаций задаются словарем `variations`. Доступные параметры
+можно посмотреть в модуле [variations](https://github.com/dldevinc/variations).
 
 Исходное загруженное изображение сохраняется в файловой системе без
 изменений. При добавлении новых вариаций или изменении существующих, 
@@ -118,8 +119,8 @@ from paper_uploads.models import *
 
 
 class Page(models.Model):
-    image = ImageField(_('simple image'), blank=True)
-    image_ext = ImageField(_('image with variations'), blank=True,
+    image = ImageField(_('single image'), blank=True)
+    varsatile_image = ImageField(_('image with variations'), blank=True,
         variations=dict(
             desktop=dict(
                 size=(1600, 0),
@@ -159,7 +160,7 @@ class Page(models.Model):
 
 К вариациям можно обращаться прямо из экземпляра `UploadedImage`:
 ```python
-print(page.image_ext.desktop.url)
+page.image_ext.desktop.url
 ```
 
 ## CollectionField
@@ -168,15 +169,9 @@ print(page.image_ext.desktop.url)
 или список файлов.
 
 Для создания коллекции необходимо создать класс, унаследованый 
-от `Collection`.
-
-**Note**: Для коллекций, предназначенных исключительно для изображений, 
-доступна модель для наследования [ImageCollection](#ImageCollection).
-
-Для каждой модели коллекции можно указать свой перечень классов
-элементов, которые могут быть добавлены в эту коллекцию. Объявление 
-допустимого класса элемента совершается путем добавления псевдополя
-`CollectionItemTypeField` со ссылкой на модель элемента.
+от `Collection` и объявить модели элементов, которые могут входить
+в коллекции этого типа. Синтаксис объявления классов подобен добавлению 
+полей:
 
 ```python
 from paper_uploads.models import *
@@ -189,36 +184,36 @@ class PageFiles(Collection):
 ``` 
 
 Порядок подключения классов элементов имеет значение: при загрузке
-файла через админку, его класс определется первым классом,
-чей метод `check_file` вернет `True`. Поэтому элементы следует
-объявлять в порядке от более конкретных к более общим.
+файла заранее неизвестно, какому классу элемента коллекции он должен
+принадлежать. Чтобы определить этот класс, для всех подключенных классов
+элементов вызывается метод `check_file`. Порядок вызова определяется
+порядком подключения в модели коллекции (сверху вниз).
 
-**Note**: Менять имена полей `CollectionItemTypeField` нельзя, т.к при 
-добавлении нового элемента это имя заносится в БД.
-
----
-
-Модели элементов наследуются от `CollectionItemBase`.
+**Note**: Менять имена, под которыми подключены классы элементов, 
+нужно осторожно: это имя заносится в БД для каждого загруженного файла 
+(в поле `item_type`).
 
 ---
+
+Классы элементов наследуются от `CollectionItemBase`. В состав библиотеки
+входят следующие готовые классы элементов:
+* `FileItem`. Может хранить любой файл. Из-за этого при подключении
+к коллекции этот тип должен быть подключен последним.
+* `SVGItem`. Функционально иденичен `FileItem`, но в админке вместо
+абстрактной иконки показывается само SVG-изображение.
+* `ImageItem`. Для хранения изображения с возможностью нарезки на вариации.
 
 ### ImageCollection
 
 Для коллекций, предназначенных исключительно для изображений, 
-"из коробки" доступна модель для наследования `ImageCollection`,
-с предустановленным фильтром mimetype на этапе выбора файла.
+"из коробки" доступна модель для наследования `ImageCollection`.
 
 ```python
 from django.db import models
 from paper_uploads.models import *
 
 
-class PageFiles(Collection):
-    svg = CollectionItemTypeField(SVGItem)
-    file = CollectionItemTypeField(FileItem)
-
-
-class PageImages(ImageCollection):
+class PageGallery(ImageCollection):
     VARIATIONS = dict(
         wide=dict(
             size=(1600, 0),
@@ -239,18 +234,16 @@ class PageImages(ImageCollection):
 
 
 class Page(models.Model):
-    files = CollectionField(PageFiles)
-    images = CollectionField(PageImages)
+    gallery = CollectionField(PageGallery)
 ```
 
 ---
 
 Наследование от `Collection` на самом деле создает
-[proxy-модель](https://docs.djangoproject.com/en/2.2/topics/db/models/#proxy-models),
-чтобы не плодить множество однотипных таблиц в БД. Благодаря 
-переопределенному менеджеру `objects` в классе `Collection`, запросы 
-через этот менеджер будут затрагивать только коллекции того же класса, 
-от имени которого вызываются.
+[proxy-модель](https://docs.djangoproject.com/en/2.2/topics/db/models/#proxy-models).
+Это позволяет не создавать для каждой коллекции отдельную таблицу в БД,
+а переопределенный менеджер `objects` в классе `Collection` позволяет 
+прозрачно работать с коллекциями требуемого класса.
 
 ```python
 # Вернет только экземпляры класса MyCollection
@@ -346,8 +339,9 @@ python3 manage.py recreate_variations 'page.PageGallery' --variations big small
 ```
 
 ## Validation
-* `SizeLimitValidator` - устанавливает максимально допустимый
-размер загружаемого файла в байтах.
+* `SizeValidator` - задает максимально допустимый размер файла в байтах.
+* `ExtensionValidator` - задает перечень допустимых расширений файлов.
+* `MimetypeValidator` - задает перечень допустимых значений mimetype.
 * `ImageMinSizeValidator` - устанавливает минимальный размер загружаемых изображений.
 * `ImageMaxSizeValidator` - устанавливает максимальный размер загружаемых изображений.
 
