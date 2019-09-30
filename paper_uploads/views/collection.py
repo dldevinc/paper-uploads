@@ -8,7 +8,7 @@ from django.utils.module_loading import import_string
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
-from ..models import CollectionItemBase, CollectionBase
+from ..models.collection import CollectionItemBase, CollectionFileItemBase, CollectionBase
 from ..utils import run_validators
 from ..logging import logger
 from .. import exceptions
@@ -17,10 +17,10 @@ from . import helpers
 
 
 def detect_file_type(collection_cls, file):
-    for item_type, item_type_field in collection_cls.item_types.items():
-        if item_type_field.model.check_file(file):
-            return item_type
-    return None
+    for item_type, field in collection_cls.item_types.items():
+        if isinstance(field.model, CollectionFileItemBase):
+            if field.model.file_supported(file):
+                return item_type
 
 
 @csrf_exempt

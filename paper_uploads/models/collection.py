@@ -131,18 +131,10 @@ class CollectionItemBase(PolymorphicModel):
             'item_type': self.item_type,
         }
 
-    @classmethod
-    def check_file(cls, file: IO) -> bool:
-        """
-        Проверка загруженного файла на принадлежность текущему типу элемента галереи.
-        Должен вернуть True, если файл может быть представлен текущим классом.
-        """
-        raise NotImplementedError
-
     def attach_to(self, collection: 'CollectionBase', commit: bool = True):
         """
         Подключение элемента к коллекции.
-        Используется в случае динамического создания элементов колелкции.
+        Используется в случае динамического создания элементов коллекции.
         """
         self.content_type = ContentType.objects.get_for_model(collection, for_concrete_model=False)
         self.collection_id = collection.pk
@@ -157,7 +149,17 @@ class CollectionItemBase(PolymorphicModel):
             self.save()
 
 
-class FileItemBase(ProxyFileAttributesMixin, CollectionItemBase, UploadedFileBase):
+class CollectionFileItemBase(CollectionItemBase):
+    @classmethod
+    def file_supported(cls, file: IO) -> bool:
+        """
+        Проверка загруженного файла на принадлежность текущему типу элемента галереи.
+        Должен вернуть True, если файл может быть представлен текущим классом.
+        """
+        raise NotImplementedError
+
+
+class FileItemBase(CollectionFileItemBase, ProxyFileAttributesMixin, CollectionItemBase, UploadedFileBase):
     admin_template_name = 'paper_uploads/collection_item/file.html'
 
     file = models.FileField(_('file'), max_length=255, storage=upload_storage,
@@ -185,7 +187,7 @@ class FileItemBase(ProxyFileAttributesMixin, CollectionItemBase, UploadedFileBas
         }
 
 
-class ImageItemBase(ProxyFileAttributesMixin, CollectionItemBase, UploadedImageBase):
+class ImageItemBase(CollectionFileItemBase, ProxyFileAttributesMixin, CollectionItemBase, UploadedImageBase):
     admin_template_name = 'paper_uploads/collection_item/image.html'
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
 
@@ -357,7 +359,7 @@ class FileItem(FileItemBase):
     preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
 
     @classmethod
-    def check_file(cls, file: IO) -> bool:
+    def file_supported(cls, file: IO) -> bool:
         return True
 
     def as_dict(self) -> Dict[str, Any]:
@@ -392,7 +394,7 @@ class SVGItem(FileItemBase):
         verbose_name_plural = _('SVG-files')
 
     @classmethod
-    def check_file(cls, file: IO) -> bool:
+    def file_supported(cls, file: IO) -> bool:
         filename, ext = posixpath.splitext(file.name)
         return ext.lower() == '.svg'
 
@@ -435,7 +437,7 @@ class ImageItem(ImageItemBase):
         }
 
     @classmethod
-    def check_file(cls, file: IO) -> bool:
+    def file_supported(cls, file: IO) -> bool:
         mimetype = magic.from_buffer(file.read(1024), mime=True)
         file.seek(0)    # correct file position after mimetype detection
         basetype, subtype = mimetype.split('/', 1)
