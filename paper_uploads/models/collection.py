@@ -36,7 +36,7 @@ class CollectionItemBase(PolymorphicModel):
     __BaseCollectionItem = True
 
     change_form_class = None
-    TEMPLATE_NAME = None
+    admin_template_name = None
 
     content_type = models.ForeignKey(ContentType, null=True, on_delete=models.CASCADE)
     object_id = models.IntegerField()
@@ -92,10 +92,10 @@ class CollectionItemBase(PolymorphicModel):
             return []
 
         errors = []
-        if cls.TEMPLATE_NAME is None:
+        if cls.admin_template_name is None:
             errors.append(
                 checks.Error(
-                    "must define a TEMPLATE_NAME attribute",
+                    "{} requires a definition of 'admin_template_name'".format(cls(__name__)),
                     obj=cls,
                 )
             )
@@ -157,7 +157,7 @@ class CollectionItemBase(PolymorphicModel):
 
 
 class FileItemBase(ProxyFileAttributesMixin, CollectionItemBase, UploadedFileBase):
-    TEMPLATE_NAME = 'paper_uploads/collection_item/file.html'
+    admin_template_name = 'paper_uploads/collection_item/file.html'
 
     file = models.FileField(_('file'), max_length=255, storage=upload_storage,
         upload_to=settings.COLLECTION_FILES_UPLOAD_TO)
@@ -185,7 +185,7 @@ class FileItemBase(ProxyFileAttributesMixin, CollectionItemBase, UploadedFileBas
 
 
 class ImageItemBase(ProxyFileAttributesMixin, CollectionItemBase, UploadedImageBase):
-    TEMPLATE_NAME = 'paper_uploads/collection_item/image.html'
+    admin_template_name = 'paper_uploads/collection_item/image.html'
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
 
     file = VariationalFileField(_('file'), max_length=255, storage=upload_storage,
@@ -384,7 +384,7 @@ class FileItem(FileItemBase):
 
 class SVGItem(FileItemBase):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
-    TEMPLATE_NAME = 'paper_uploads/collection_item/svg.html'
+    admin_template_name = 'paper_uploads/collection_item/svg.html'
 
     class Meta(CollectionItemBase.Meta):
         verbose_name = _('SVG-file')

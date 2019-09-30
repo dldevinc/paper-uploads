@@ -18,7 +18,7 @@
   <div class="collection__items">
     {% if widget.value %}
       {% for item in instance.get_items %}
-        {% include item.TEMPLATE_NAME %}
+        {% include item.admin_template_name %}
       {% endfor %}
     {% endif %}
   </div>
@@ -59,7 +59,7 @@
 
   {% for name, field in collection_cls.item_types.items %}
     <template class="collection__{{ name }}-item-template">
-      {% include field.model.TEMPLATE_NAME %}
+      {% include field.model.admin_template_name %}
     </template>
   {% endfor %}
 </div>
