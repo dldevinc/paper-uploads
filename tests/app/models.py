@@ -99,6 +99,7 @@ class Page(models.Model):
 
 
 class Document(models.Model):
+    page = models.ForeignKey(Page, null=True, blank=True, on_delete=models.CASCADE)
     title = models.CharField(_('title'), max_length=255)
     image = ImageField(_('simple image'), blank=True)
     files = CollectionField(PageFilesGallery, verbose_name=_('files'))

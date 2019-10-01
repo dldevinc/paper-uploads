@@ -28,7 +28,8 @@ class DocumentAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             'fields': (
-                'title', 'image', 'files'
+                'page', 'title', 'image', 'files'
             ),
         }),
     )
+    autocomplete_fields = ['page']
