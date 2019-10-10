@@ -480,7 +480,7 @@ class Collection(CollectionBase):
         Определение класса элемента, которому нужно отнести загружаемый файл.
         """
         for item_type, field in self.item_types.items():
-            if isinstance(field.model, CollectionFileItemMixin):
+            if issubclass(field.model, CollectionFileItemMixin):
                 if field.model.file_supported(file):
                     return item_type
 
