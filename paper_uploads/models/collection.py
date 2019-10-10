@@ -212,8 +212,9 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
         """
         if not hasattr(self, '_variations_cache'):
             item_type_field = self.get_collection_field()
-            variations = item_type_field.settings.get('variations')
-            if variations is None:
+            if 'variations' in item_type_field.settings:
+                variations = item_type_field.settings['variations']
+            else:
                 collection_cls = self.get_collection_class()
                 variations = getattr(collection_cls, 'VARIATIONS', None)
 
