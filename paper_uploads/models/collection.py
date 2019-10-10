@@ -39,7 +39,7 @@ class CollectionItemBase(PolymorphicModel):
     change_form_class = None
     admin_template_name = None
 
-    content_type = models.ForeignKey(ContentType, null=True, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     collection_id = models.IntegerField()
     collection = GenericForeignKey(fk_field='collection_id', for_concrete_model=False)
 
