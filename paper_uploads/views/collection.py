@@ -92,6 +92,14 @@ def upload_item(request):
         logger.exception('Error')
         return helpers.error_response('Multiple objects returned')
 
+    if collection is None:
+        # Создание галереи
+        collection = collection_cls(
+            owner_app_label=request.POST.get('paperOwnerAppLabel'),
+            owner_model_name=request.POST.get('paperOwnerModelName'),
+            owner_fieldname=request.POST.get('paperOwnerFieldname')
+        )
+
     # Определение типа элемента галереи
     item_type = collection.detect_file_type(file)
     if item_type is None:
@@ -99,13 +107,7 @@ def upload_item(request):
 
     try:
         with transaction.atomic():
-            if collection is None:
-                # Создание галереи
-                collection = collection_cls._meta.default_manager.create(
-                    owner_app_label=request.POST.get('paperOwnerAppLabel'),
-                    owner_model_name=request.POST.get('paperOwnerModelName'),
-                    owner_fieldname=request.POST.get('paperOwnerFieldname')
-                )
+            collection.save()
 
             item_type_field = collection_cls.item_types[item_type]
             instance = item_type_field.model(
@@ -131,10 +133,8 @@ def upload_item(request):
             message = type(e).__name__
         return helpers.error_response(message)
 
-    collection.refresh_from_db(fields=['cover_id'])
     return helpers.success_response({
         **instance.as_dict(),
-        'cover': collection.cover_id,
     })
 
 
@@ -173,10 +173,7 @@ def delete_item(request):
         return helpers.error_response('Multiple objects returned')
     else:
         instance.delete()
-        instance.collection.refresh_from_db(fields=['cover_id'])
-        return helpers.success_response({
-            'cover': instance.collection.cover_id,
-        })
+        return helpers.success_response()
 
 
 @csrf_exempt

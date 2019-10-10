@@ -48,7 +48,6 @@ function Collection(element, options) {
         changeItemButton: '.collection__item-change-button',
         deleteItemButton: '.collection__item-delete-button',
         itemSelectorTemplate: '.collection__{}-item-template',
-        itemCoverClass: 'collection__item--cover',
 
         urls: {
             deleteCollection: '',
@@ -208,16 +207,6 @@ Collection.prototype.initUploader = function() {
         }
 
         preloader.remove();
-
-        // set cover class
-        const currentCover = _this.itemContainer.querySelector(`.${_this._opts.itemCoverClass}`);
-        if (response.cover) {
-            const newCover = _this.itemContainer.querySelector(`${_this._opts.item}[data-pk="${response.cover}"]`);
-            if (newCover !== currentCover) {
-                currentCover && currentCover.classList.remove(_this._opts.itemCoverClass);
-                newCover && newCover.classList.add(_this._opts.itemCoverClass);
-            }
-        }
     }).on('cancel', function(id) {
         const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
         _this.trigger('collection:cancel_item', [preloader, id]);
@@ -344,16 +333,6 @@ Collection.prototype._deleteItem = function(item) {
             const error = new Error('Invalid request');
             error.response = response;
             throw error
-        }
-
-        // set cover class
-        const currentCover = _this.itemContainer.querySelector(`.${_this._opts.itemCoverClass}`);
-        if (response.cover) {
-            const newCover = _this.itemContainer.querySelector(`${_this._opts.item}[data-pk="${response.cover}"]`);
-            if (newCover !== currentCover) {
-                currentCover && currentCover.classList.remove(_this._opts.itemCoverClass);
-                newCover && newCover.classList.add(_this._opts.itemCoverClass);
-            }
         }
 
         preloader.hide();

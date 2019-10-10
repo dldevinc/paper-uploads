@@ -323,6 +323,9 @@ class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
             raise ValueError('Unsupported collection item type: %s' % item_type)
         return self.items.filter(item_type=item_type).order_by('order')
 
+    def detect_file_type(self, file: IO) -> str:
+        raise NotImplementedError
+
     def _recut_sync(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS):
         recutable_items = tuple(
             name
@@ -456,9 +459,6 @@ class CollectionManager(models.Manager):
 
 
 class Collection(CollectionBase):
-    # поле, ссылающееся на одно из изображений коллекции (для экономии SQL-запросов)
-    cover = models.ForeignKey(ImageItem, verbose_name=_('cover image'),
-        null=True, editable=False, on_delete=models.SET_NULL)
     collection_content_type = models.ForeignKey(ContentType, null=True, on_delete=models.SET_NULL, editable=False)
 
     default_mgr = models.Manager()     # fix migrations manager

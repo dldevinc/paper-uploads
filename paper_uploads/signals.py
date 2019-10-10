@@ -1,34 +1,10 @@
 from django.dispatch import receiver
 from django.db import migrations, transaction
-from django.db.models.signals import post_save, post_delete, Signal
-from .models import UploadedFileBase, ImageItemBase
+from django.db.models.signals import post_delete, Signal
+from .models import UploadedFileBase
 from .models.fields.base import FileFieldBase
 
 collection_reordered = Signal(providing_args=["instance"])
-
-
-def update_collection_cover(collection, skip_if=None):
-    if collection.cover_id in {None, skip_if}:
-        type(collection)._base_manager.filter(pk=collection.pk).update(
-            cover=collection.get_items('image').exclude(pk=skip_if).first()
-        )
-
-
-@receiver(post_save)
-def set_cover_on_save(sender, instance, **kwargs):
-    if isinstance(instance, ImageItemBase):
-        if instance.collection is not None:
-            update_collection_cover(instance.collection)
-
-
-@receiver(post_delete)
-def set_cover_on_delete(sender, instance, **kwargs):
-    if isinstance(instance, ImageItemBase):
-        if 'collection' not in instance.__dict__:
-            # fix __getattr__ recursion
-            return
-        if instance.collection is not None:
-            update_collection_cover(instance.collection, skip_if=instance.pk)
 
 
 @receiver(post_delete)

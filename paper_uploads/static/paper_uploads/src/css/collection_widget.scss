@@ -128,22 +128,6 @@
   }
 }
 
-.collection__item--cover {
-  position: relative;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -4px;
-    width: 13px;
-    height: 5px;
-    z-index: 1;
-    cursor: default;
-    background-color: orange;
-    transform: rotate(-45deg);
-  }
-}
 
 .collection__item--checked {
   box-shadow: 0 0 3px 1px #007bff;
