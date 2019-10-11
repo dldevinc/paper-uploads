@@ -27,7 +27,7 @@ class Permissions(models.Model):
 class UploadedFileBase(models.Model):
     file = models.FileField(_('file'), max_length=255, storage=upload_storage)  # Example field. Should be overriden
     name = models.CharField(_('file name'), max_length=255, editable=False)
-    extension = models.CharField(_('file extension'), max_length=32, editable=False, help_text=_('Lowercase string without leading dot'))
+    extension = models.CharField(_('file extension'), max_length=32, editable=False, help_text=_('Lowercase, without leading dot'))
     size = models.PositiveIntegerField(_('file size'), default=0, editable=False)
     hash = models.CharField(_('file hash'), max_length=40, editable=False,
         help_text=_('SHA-1 hash of the file contents')
