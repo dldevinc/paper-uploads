@@ -163,14 +163,14 @@ class Page(models.Model):
 page.image_ext.desktop.url
 ```
 
-## CollectionField
+## Collections
 Коллекция - это модель, группирующая экземпляры других моделей (элементов 
 коллекции). В частности, с помощью коллекции можно создать галерею 
 изображений или список файлов.
 
 Для создания коллекции необходимо создать класс, унаследованый 
 от `Collection` и объявить модели элементов, которые могут входить
-в коллекцию. Синтаксис объявления классов подобен добавлению полей:
+в коллекцию. Синтаксис объявления элементов подобен добавлению полей:
 
 ```python
 from paper_uploads.models import *
@@ -178,25 +178,26 @@ from paper_uploads.models import *
 
 class PageFiles(Collection):
     svg = CollectionItemTypeField(SVGItem)
-    image = CollectionItemTypeField(ImageItem, settings={
-        'variations': dict(
-            mobile=dict(
-                size=(640, 0),
-                clip=False            
-            )        
-        )       
-    })
+    image = CollectionItemTypeField(ImageItem)
     file = CollectionItemTypeField(FileItem)
 ``` 
 
-Порядок подключения классов элементов имеет значение: первый класс,
-чей метод `file_supported()` вернет `True`, определит класс файла.
-Поэтому `FileItem` должен указываться последним, т.к. он принимает
-любые файлы.
+Псевдо-поле `CollectionItemTypeField` подключает модель
+элемента к коллекции под заданным именем, которое сохраняется 
+в базу данных (в поле `item_type`) вместе с загруженным файлом. 
+При изменении имен, под которыми поключены элементы, или при 
+добавлении новых элементов к существующим коллекциям, разработчик 
+должен убедиться в том, что БД останется в согласованном состоянии.
 
-**Note**: Менять имена, под которыми подключены классы элементов,
-нужно осторожно: это имя заносится в БД для каждого загруженного
-файла (в поле `item_type`).
+Вместе с моделью элемента, в поле `CollectionItemTypeField`
+можно передать [валидаторы](#Validators) и дополнительные параметры 
+(в словаре `options`), которые могут быть использованы для
+более детальной настройки элемента коллекции.
+
+Порядок подключения элементов к коллекции имеет значение: первый 
+класс элемента, чей метод `file_supported()` вернет `True`, 
+определит модель загружаемого файла. Поэтому `FileItem` должен 
+указываться последним, т.к. он принимает любые файлы.
 
 Полученную коллекцию можно подключать к моделям с помощью 
 `CollectionField`:
@@ -237,13 +238,13 @@ class Page(models.Model):
         image = CollectionItemTypeField(ImageItem)
     ```
    
-2) ключ `variations` словаря `settings` поля `CollectionItemTypeField`:
+2) ключ `variations` словаря `options` поля `CollectionItemTypeField`:
 
     ```python
     from paper_uploads.models import *
     
     class PageGallery(Collection):
-        image = CollectionItemTypeField(ImageItem, settings={
+        image = CollectionItemTypeField(ImageItem, options={
             'variations': dict(
                 mobile=dict(
                     size=(640, 0),
@@ -253,10 +254,10 @@ class Page(models.Model):
         })
     ```
 
-Вариации, указанные в коллекции, используются всеми классами 
-`ImageItemBase`, в которых не указаны собственные вариации.
-Если вариации указаны двумя способами сразу - будут использованы
-вариации поля `CollectionItemTypeField`.
+Вариации, указанные первым способом (через `VARIATIONS` коллекции), 
+используются всеми классами элементов-изображений по умолчанию.
+Но, если конкретный элемент коллекции объявляет свои собственные 
+вариации (вторым методом), то использовать он будет именно их.
 
 ### ImageCollection
 
@@ -439,19 +440,6 @@ class PageGallery(Collection):
 ## Settings
 Все настройки указываются в словаре `PAPER_UPLOADS`.
 
-| Option | Description |
-| --- | --- |
-| STORAGE | Путь к классу [хранилища Django](https://docs.djangoproject.com/en/2.2/ref/files/storage/) |
-| STORAGE_OPTIONS | Параметры инициализации хранилища |
-| FILES_UPLOAD_TO | Путь к папке, в которую загружаются файлы из FileField. По умолчанию, `files/%Y-%m-%d` |
-| IMAGES_UPLOAD_TO | Путь к папке, в которую загружаются файлы ImageField. По умолчанию, `images/%Y-%m-%d` |
-| COLLECTION_FILES_UPLOAD_TO | Путь к папке, в которую загружаются файлы коллекций. По умолчанию, `gallery/files/%Y-%m-%d` |
-| COLLECTION_IMAGES_UPLOAD_TO | Путь к папке, в которую загружаются картинки коллекций. По умолчанию, `gallery/images/%Y-%m-%d` |
-| RQ_ENABLED | Включает нарезку картинок на вариации через отложенные задачи. Требует наличие установленного пакета [django-rq](https://github.com/rq/django-rq) |
-| RQ_QUEUE_NAME | Название очереди, в которую помещаются задачи по нарезке картинок. По умолчанию, `default` |
-| DEFAULT_FACE_DETECTION | Включает механизм `face-detection` для всех вариаций. По умолчанию, `False` |
-| POSTPROCESS | Словарь, задающий команды, запускаемые после загрузки файла. Для каждого формата файла можно указать свою команду. |
-
 ```python
 PAPER_UPLOADS = {
     'RQ_ENABLED': True,
@@ -471,3 +459,85 @@ PAPER_UPLOADS = {
     }
 }
 ```
+
+### STORAGE
+Путь к классу [хранилища Django](https://docs.djangoproject.com/en/2.2/ref/files/storage/).
+
+Значение по умолчанию: `django.core.files.storage.FileSystemStorage`
+
+### STORAGE_OPTIONS
+Параметры инициализации хранилища.
+
+Значение по умолчанию: `{}`
+
+### FILES_UPLOAD_TO
+Путь к папке, в которую загружаются файлы из FileField.
+Может содержать параметры для даты и времени (см. [upload_to](https://docs.djangoproject.com/en/2.2/ref/models/fields/#django.db.models.FileField.upload_to)). 
+
+Значение по умолчанию: `files/%Y-%m-%d`
+
+### IMAGES_UPLOAD_TO
+Путь к папке, в которую загружаются файлы из ImageField.
+
+Значение по умолчанию: `images/%Y-%m-%d`
+
+### COLLECTION_FILES_UPLOAD_TO
+Путь к папке, в которую загружаются файлы коллекций.
+
+Значение по умолчанию: `collections/files/%Y-%m-%d`
+
+### COLLECTION_IMAGES_UPLOAD_TO
+Путь к папке, в которую загружаются изображения коллекций.
+
+Значение по умолчанию: `collections/images/%Y-%m-%d`
+
+### COLLECTION_ITEM_PREVIEW_WIDTH, COLLECTION_ITEM_PREVIEW_HEIGTH
+Размеры превью элементов коллекций в админке.
+
+Значение по умолчанию: `144` x `108`
+
+### COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
+Вариации, добавляемые к каждому классу изображений коллекций
+для отображения превью в админке. Размеры файлов должны
+совпадать с `COLLECTION_ITEM_PREVIEW_WIDTH` и 
+`COLLECTION_ITEM_PREVIEW_HEIGTH`.
+
+### DEFAULT_FACE_DETECTION
+Включает механизм центрирования по лицам при обрезке изображений
+для всех вариаций по умолчанию. Должна быть установлена библиотека
+[face_recognition](https://github.com/ageitgey/face_recognition):
+
+```shell script
+pip install face_recognition
+```
+
+Для конкретных вариаций можно разрешить или запретить центрирование
+с помощью параметра вариации `face_detection`.
+
+Значение по умолчанию: `False`
+
+### RQ_ENABLED
+Включает нарезку картинок на вариации через отложенные задачи.
+Требует наличие установленного пакета [django-rq](https://github.com/rq/django-rq).
+
+Значение по умолчанию: `False`
+
+### RQ_QUEUE_NAME
+Название очереди, в которую помещаются задачи по нарезке картинок. 
+
+Значение по умолчанию: `default`
+
+### POSTPROCESS
+Словарь, задающий shell-команды, запускаемые после загрузки 
+изображений. Для каждого формата изображения можно указать 
+свою команду.
+
+Ключами словаря являются названия выходных форматов изображений
+в верхнем регистре. Например: `JPEG`, `PNG`, `GIF`, `WEBP`.
+Перечень допустимых форматов ограничен поддрживаемыми форматами 
+библиотеки [Pillow](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html)).
+
+Для оптимизации SVG можно использовать ключ `SVG`, специально
+добавленный, в дополнение к изображениям.
+
+Значение по умолчанию: `{}`

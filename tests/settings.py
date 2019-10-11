@@ -167,7 +167,7 @@ PAPER_UPLOADS = {
         },
         'SVG': {
             'COMMAND': 'svgo',
-            'ARGUMENTS': '--precision=4 {file}',
+            'ARGUMENTS': '--precision=5 {file}',
         },
     }
 }

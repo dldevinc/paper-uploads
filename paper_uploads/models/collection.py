@@ -416,13 +416,14 @@ class SVGItem(FileItemBase):
         super().post_save_new_file()
 
         # postprocess svg
+        command = {}
         collection_field = self.get_collection_field()
         if collection_field is not None:
-            postprocess_options = collection_field.options.get('postprocess')
-        else:
-            postprocess_options = None
-        # TODO: добавить обработку явного запрета постобработки
-        utils.postprocess_svg(self.file.name, postprocess_options)
+            command = collection_field.options.get('postprocess', {})
+            if command is None:
+                # обработка явным образом запрещена
+                return
+        utils.postprocess_svg(self.file.name, command)
 
 
 class ImageItem(ImageItemBase):
