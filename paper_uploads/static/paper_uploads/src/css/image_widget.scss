@@ -25,22 +25,24 @@
     transition: opacity 0.2s 0s;
   }
 
-  &.empty,
-  &.loading {
+  &.empty {
     .form-control {
       border-top-right-radius: 0.25rem;
       border-bottom-right-radius: 0.25rem;
-    }
-
-    .input-group-append {
-      display: none;
     }
   }
 
   &.loading {
     .form-control {
       background-color: #f5f5f5;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
       transition: background-color 0s;
+    }
+
+    .file-name,
+    .file-info {
+      display: none;
     }
 
     .progress {
@@ -49,3 +51,34 @@
     }
   }
 }
+
+.image-uploader__ready-buttons,
+.image-uploader__loading-buttons {
+  display: flex;
+
+  .input-group-text {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+
+    &:not(:last-child) {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+  }
+}
+
+// скрытие всех кнопок на пустом виджете
+.image-uploader.empty:not(.loading) .input-group-append {
+  display: none;
+}
+
+// скрытие кнопок отмены загрузки при любых состояниях, кроме загрузки
+.image-uploader:not(.loading) .image-uploader__loading-buttons {
+  display: none;
+}
+
+// скрытие тулбара при состоянии загрузки
+.image-uploader.loading .image-uploader__ready-buttons {
+  display: none;
+}
+

@@ -17,6 +17,7 @@ function initWidget(element) {
     new BaseWidget(element, {
         input: '.file-uploader__input',
         uploadButton: '.file-uploader__upload-button',
+        cancelButton: '.file-uploader__cancel-button',
         changeButton: '.file-uploader__change-button',
         deleteButton: '.file-uploader__delete-button',
         link: '.file-uploader__link',

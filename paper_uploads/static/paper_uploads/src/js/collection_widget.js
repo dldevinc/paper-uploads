@@ -46,6 +46,7 @@ function Collection(element, options) {
         itemCheckbox: '.collection__item-checkbox',
         itemName: '.collection__item-name',
         changeItemButton: '.collection__item-change-button',
+        cancelItemButton: '.collection__item-cancel-button',
         deleteItemButton: '.collection__item-delete-button',
         itemSelectorTemplate: '.collection__{}-item-template',
 
@@ -284,15 +285,6 @@ Collection.prototype.cleanItems = function() {
 };
 
 Collection.prototype._deleteItem = function(item) {
-    if (item.matches(this._opts.preloaderItem)) {
-        // если файл еще не загружен - отменяем загрузку
-        if (!item.classList.contains('processing')) {
-            const queueId = parseInt(item.dataset.queueId);
-            this.uploader.uploader.cancel(queueId);
-        }
-        return
-    }
-
     if (isNaN(this.collectionId)) {
         return
     }
@@ -598,7 +590,19 @@ Collection.prototype.addListeners = function() {
         });
     });
 
-    // отмена загрузки / удаление элемента
+    // отмена загрузки
+    this.element.addEventListener('click', function(event) {
+        if (!event.target.closest(_this._opts.cancelItemButton)) {
+            return
+        }
+
+        event.preventDefault();
+        const item = event.target.closest(_this._opts.item);
+        const queueId = parseInt(item.dataset.queueId);
+        _this.uploader.uploader.cancel(queueId);
+    });
+
+    // удаление элемента
     this.element.addEventListener('click', function(event) {
         if (!event.target.closest(_this._opts.deleteItemButton)) {
             return

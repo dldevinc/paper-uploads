@@ -30,6 +30,7 @@ function BaseWidget(element, options) {
     this._opts = deepmerge({
         input: '',
         uploadButton: '',
+        cancelButton: '',
         changeButton: '',
         deleteButton: '',
 
@@ -52,6 +53,11 @@ function BaseWidget(element, options) {
     this.uploadButton = this.element.querySelector(this._opts.uploadButton);
     if (!this.uploadButton) {
         throw new Error(`Not found element "${this._opts.uploadButton}"`);
+    }
+
+    this.cancelButton = this.element.querySelector(this._opts.cancelButton);
+    if (!this.cancelButton) {
+        throw new Error(`Not found element "${this._opts.cancelButton}"`);
     }
 
     this.changeButton = this.element.querySelector(this._opts.changeButton);
@@ -190,7 +196,6 @@ BaseWidget.prototype._change = function($dialog) {
             error.response = response;
             throw error;
         }
-
         return response.json();
     }).then(function(response) {
         if (response.errors && response.errors.length) {
@@ -285,6 +290,13 @@ BaseWidget.prototype._delete = function() {
 
 BaseWidget.prototype.addListeners = function() {
     const _this = this;
+
+    // отмена загрузки
+    this.cancelButton.addEventListener('click', function(event) {
+        event.preventDefault();
+        _this.loading = false;
+        _this.uploader.uploader.cancelAll();
+    });
 
     // удаление файла
     this.deleteButton.addEventListener('click', function(event) {

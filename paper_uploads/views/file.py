@@ -28,6 +28,8 @@ def upload(request):
         file = helpers.read_file(request)
     except exceptions.ContinueUpload:
         return helpers.success_response()
+    except exceptions.UncompleteUpload:
+        return helpers.error_response()
     except exceptions.InvalidUUID:
         logger.exception('Error')
         return helpers.error_response('Invalid UUID')

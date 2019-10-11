@@ -585,7 +585,7 @@
         };
         qq.Error.prototype = new Error();
     })();
-    qq.version = "6.0.1";
+    qq.version = "6.0.2";
     qq.supportedFeatures = function() {
         "use strict";
         var supportsUploading, supportsUploadingBlobs, supportsFileDrop, supportsAjaxFileUploading, supportsFolderDrop, supportsChunking, supportsResume, supportsUploadViaPaste, supportsUploadCors, supportsDeleteFileXdr, supportsDeleteFileCorsXhr, supportsDeleteFileCors, supportsFolderSelection, supportsImagePreviews, supportsUploadProgress;
@@ -1983,7 +1983,7 @@
                 var self = this, notFinished = this._getNotFinished();
                 if (status === qq.status.UPLOAD_SUCCESSFUL) {
                     this._succeededSinceLastAllComplete.push(id);
-                } else if (status === qq.status.UPLOAD_FAILED || status === qq.status.REJECTED) {
+                } else if (status === qq.status.UPLOAD_FAILED || status === qq.status.REJECTED || status === qq.status.CANCELED) {
                     this._failedSinceLastAllComplete.push(id);
                 }
                 if (notFinished === 0 && (this._succeededSinceLastAllComplete.length || this._failedSinceLastAllComplete.length)) {

@@ -122,6 +122,10 @@
       background-position: center;
     }
 
+    .collection__item-cancel-button {
+      visibility: hidden;
+    }
+
     .progress-bar {
       opacity: 0;
     }
