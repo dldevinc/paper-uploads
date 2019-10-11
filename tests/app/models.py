@@ -34,7 +34,7 @@ class PageGallery(ImageCollection):
 
 class PageFilesGallery(Collection):
     svg = CollectionItemTypeField(SVGItem)
-    image = CollectionItemTypeField(ImageItem, settings={
+    image = CollectionItemTypeField(ImageItem, options={
         'variations': dict(
             mobile=dict(
                 size=(640, 0),
