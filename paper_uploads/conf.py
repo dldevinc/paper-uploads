@@ -8,12 +8,12 @@ DEFAULTS = {
 
     'FILES_UPLOAD_TO': 'files/%Y-%m-%d',
     'IMAGES_UPLOAD_TO': 'images/%Y-%m-%d',
-    'GALLERY_FILES_UPLOAD_TO': 'gallery/files/%Y-%m-%d',
-    'GALLERY_IMAGES_UPLOAD_TO': 'gallery/images/%Y-%m-%d',
+    'COLLECTION_FILES_UPLOAD_TO': 'collections/files/%Y-%m-%d',
+    'COLLECTION_IMAGES_UPLOAD_TO': 'collections/images/%Y-%m-%d',
 
-    'GALLERY_ITEM_PREVIEW_WIDTH': 144,
-    'GALLERY_ITEM_PREVIEW_HEIGTH': 108,
-    'GALLERY_IMAGE_ITEM_PREVIEW_VARIATIONS': dict(
+    'COLLECTION_ITEM_PREVIEW_WIDTH': 144,
+    'COLLECTION_ITEM_PREVIEW_HEIGTH': 108,
+    'COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS': dict(
         admin_preview=dict(
             size=(144, 108),
             format='jpeg',
@@ -25,7 +25,7 @@ DEFAULTS = {
             size=(288, 216),
             format='jpeg',
             jpeg=dict(
-                quality=84
+                quality=85
             ),
         ),
         admin_preview_webp=dict(
@@ -64,32 +64,22 @@ PROXY_FILE_ATTRIBUTES = {
 }
 
 # Иконки для файлов в галерее
-FILE_ICONS = {
-    '7z': '7z',
-    'ai': 'ai',
-    'avi': 'avi',
-    'csv': 'csv',
-    'doc': 'doc',
-    'docx': 'doc',
-    'flac': 'flac',
-    'json': 'json',
-    'mp3': 'mp3',
-    'mp4': 'mp4',
-    'pdf': 'pdf',
-    'ppt': 'ppt',
-    'psd': 'psd',
-    'rar': 'rar',
-    'rtf': 'rtf',
-    'svg': 'svg',
-    'tar': 'tar',
-    'txt': 'txt',
-    'wav': 'wav',
-    'wma': 'wma',
-    'xls': 'xls',
-    'zip': 'zip',
-    'xml': 'xml',
-}
 FILE_ICON_DEFAULT = 'unknown'
+FILE_ICON_OVERRIDES = {
+    '3gp': 'video',
+    'aac': 'audio',
+    'docx': 'doc',
+    'flac': 'audio',
+    'flv': 'video',
+    'gz': 'archive',
+    'm4v': 'video',
+    'mov': 'video',
+    'ogv': 'video',
+    'xlsx': 'xls',
+    'xz': 'archive',
+    'wav': 'audio',
+    'wma': 'audio',
+}
 
 
 def perform_import(val, setting_name):

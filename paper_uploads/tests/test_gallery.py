@@ -2,53 +2,55 @@ import os
 from pathlib import Path
 from django.test import TestCase
 from django.core.files import File
-from ..models import GallerySVGItem, GalleryImageItem, GalleryFileItem
+from ..models import SVGItem, ImageItem, FileItem
+from ..models.fields import CollectionField
 from ..conf import PROXY_FILE_ATTRIBUTES
-from tests.app.models import PageGallery, PageFilesGallery
+from .. import validators
+from tests.app.models import Page, PageGallery, PageFilesGallery
 
 TESTS_PATH = Path(__file__).parent / 'samples'
 
 
-class TestGallery(TestCase):
+class TestCollection(TestCase):
     def setUp(self) -> None:
-        self.gallery = PageFilesGallery.objects.create()
+        self.collection = PageFilesGallery.objects.create()
 
         with open(TESTS_PATH / 'cartman.svg', 'rb') as fp:
-            self.svg_item = GallerySVGItem(
+            self.svg_item = SVGItem(
                 file=File(fp, name='cartman.Svg'),
             )
-            self.svg_item.attach_to(self.gallery)
+            self.svg_item.attach_to(self.collection)
             self.svg_item.full_clean()
             self.svg_item.save()
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as fp:
-            self.image_item = GalleryImageItem(
+            self.image_item = ImageItem(
                 file=File(fp, name='Image.Jpeg'),
                 alt='Alternate text',
                 title='Image title',
             )
-            self.image_item.attach_to(self.gallery)
+            self.image_item.attach_to(self.collection)
             self.image_item.full_clean()
             self.image_item.save()
 
         with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as fp:
-            self.file_item = GalleryFileItem(
+            self.file_item = FileItem(
                 file=File(fp, name='Doc.PDF'),
             )
-            self.file_item.attach_to(self.gallery)
+            self.file_item.attach_to(self.collection)
             self.file_item.full_clean()
             self.file_item.save()
 
         with open(TESTS_PATH / 'audio.ogg', 'rb') as fp:
-            self.audio_item = GalleryFileItem(
+            self.audio_item = FileItem(
                 file=File(fp, name='audio.ogg'),
             )
-            self.audio_item.attach_to(self.gallery)
+            self.audio_item.attach_to(self.collection)
             self.audio_item.full_clean()
             self.audio_item.save()
 
     def tearDown(self) -> None:
-        self.gallery.delete()
+        self.collection.delete()
 
     def test_name(self):
         self.assertEqual(self.svg_item.name, 'cartman')
@@ -108,13 +110,13 @@ class TestGallery(TestCase):
         self.assertEqual(self.image_item.cropregion, '')
 
     def test_owner_model(self):
-        self.assertIsNone(self.gallery.get_owner_model())
+        self.assertIsNone(self.collection.get_owner_model())
 
     def test_owner_field(self):
-        self.assertIsNone(self.gallery.get_owner_field())
+        self.assertIsNone(self.collection.get_owner_field())
 
     def test_validation(self):
-        self.assertEqual(self.gallery.get_validation(), {})
+        self.assertEqual(self.collection.get_validation(), {})
 
     def test_get_variations(self):
         variations = self.image_item.get_variations()
@@ -123,17 +125,24 @@ class TestGallery(TestCase):
         self.assertIn('admin_preview_webp', variations)
         self.assertIn('admin_preview_webp_2x', variations)
 
-    def test_get_gallery_class(self):
-        self.assertIs(self.svg_item.get_gallery_class(), PageFilesGallery)
-        self.assertIs(self.image_item.get_gallery_class(), PageFilesGallery)
-        self.assertIs(self.file_item.get_gallery_class(), PageFilesGallery)
-        self.assertIs(self.audio_item.get_gallery_class(), PageFilesGallery)
+    def test_variation_attrs(self):
+        variations = dict(self.image_item.get_variation_files())
+        self.assertEqual(getattr(self.image_item, 'admin_preview'), variations['admin_preview'])
+        self.assertEqual(getattr(self.image_item, 'admin_preview_2x'), variations['admin_preview_2x'])
+        self.assertEqual(getattr(self.image_item, 'admin_preview_webp'), variations['admin_preview_webp'])
+        self.assertEqual(getattr(self.image_item, 'admin_preview_webp_2x'), variations['admin_preview_webp_2x'])
 
-    def test_get_gallery_field(self):
-        self.assertIs(self.svg_item.get_gallery_field(), PageFilesGallery.item_types['svg'])
-        self.assertIs(self.image_item.get_gallery_field(), PageFilesGallery.item_types['image'])
-        self.assertIs(self.file_item.get_gallery_field(), PageFilesGallery.item_types['file'])
-        self.assertIs(self.audio_item.get_gallery_field(), PageFilesGallery.item_types['file'])
+    def test_get_collection_class(self):
+        self.assertIs(self.svg_item.get_collection_class(), PageFilesGallery)
+        self.assertIs(self.image_item.get_collection_class(), PageFilesGallery)
+        self.assertIs(self.file_item.get_collection_class(), PageFilesGallery)
+        self.assertIs(self.audio_item.get_collection_class(), PageFilesGallery)
+
+    def test_get_collection_field(self):
+        self.assertIs(self.svg_item.get_collection_field(), PageFilesGallery.item_types['svg'])
+        self.assertIs(self.image_item.get_collection_field(), PageFilesGallery.item_types['image'])
+        self.assertIs(self.file_item.get_collection_field(), PageFilesGallery.item_types['file'])
+        self.assertIs(self.audio_item.get_collection_field(), PageFilesGallery.item_types['file'])
 
     def test_display_name(self):
         self.assertEqual(self.svg_item.display_name, 'cartman')
@@ -164,7 +173,7 @@ class TestGallery(TestCase):
                     getattr(self.audio_item.file, name),
                 )
 
-    def test_proxy_gallery(self):
+    def test_proxy_collection(self):
         self.assertTrue(PageFilesGallery._meta.proxy)
 
     def test_item_types(self):
@@ -173,42 +182,47 @@ class TestGallery(TestCase):
             ['svg', 'image', 'file']
         )
 
-    def test_gallery_manager(self):
-        self.assertNotIn(self.gallery.pk, PageGallery.objects.values('pk'))
+    def test_collection_manager(self):
+        self.assertNotIn(self.collection.pk, PageGallery.objects.values('pk'))
 
     def test_get_items(self):
-        self.assertIs(self.gallery.get_items('svg').count(), 1)
-        self.assertIs(self.gallery.get_items('image').count(), 1)
-        self.assertIs(self.gallery.get_items('file').count(), 2)
+        self.assertIs(self.collection.get_items('svg').count(), 1)
+        self.assertIs(self.collection.get_items('image').count(), 1)
+        self.assertIs(self.collection.get_items('file').count(), 2)
 
     def test_get_items_total(self):
-        self.assertIs(self.gallery.get_items().count(), 4)
+        self.assertIs(self.collection.get_items().count(), 4)
+
+    def test_item_collection_id(self):
+        for item in self.collection.items.all():
+            self.assertEqual(item.collection_id, self.collection.pk)
+            self.assertEqual(item.collection, self.collection)
 
     def test_invalid_get_items(self):
         with self.assertRaises(ValueError):
-            self.gallery.get_items('something')
+            self.collection.get_items('something')
 
     def test_file_preview(self):
         self.assertEqual(self.file_item.preview, '/static/paper_uploads/dist/image/pdf.svg')
         self.assertEqual(self.audio_item.preview, '/static/paper_uploads/dist/image/unknown.svg')
 
 
-class TestImageGallery(TestCase):
+class TestImageCollection(TestCase):
     def setUp(self) -> None:
-        self.gallery = PageGallery.objects.create()
+        self.collection = PageGallery.objects.create()
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as fp:
-            self.image_item = GalleryImageItem(
+            self.image_item = ImageItem(
                 file=File(fp, name='Image.Jpeg'),
                 alt='Alternate text',
                 title='Image title',
             )
-            self.image_item.attach_to(self.gallery)
+            self.image_item.attach_to(self.collection)
             self.image_item.full_clean()
             self.image_item.save()
 
     def tearDown(self) -> None:
-        self.gallery.delete()
+        self.collection.delete()
 
     def test_name(self):
         self.assertEqual(self.image_item.name, 'Image')
@@ -247,13 +261,13 @@ class TestImageGallery(TestCase):
         self.assertEqual(self.image_item.cropregion, '')
 
     def test_owner_model(self):
-        self.assertIsNone(self.gallery.get_owner_model())
+        self.assertIsNone(self.collection.get_owner_model())
 
     def test_owner_field(self):
-        self.assertIsNone(self.gallery.get_owner_field())
+        self.assertIsNone(self.collection.get_owner_field())
 
     def test_validation(self):
-        self.assertIn('acceptFiles', self.gallery.get_validation())
+        self.assertIn('acceptFiles', self.collection.get_validation())
 
     def test_get_variations(self):
         variations_ext = self.image_item.get_variations()
@@ -267,11 +281,11 @@ class TestImageGallery(TestCase):
         self.assertIn('admin_preview_webp', variations_ext)
         self.assertIn('admin_preview_webp_2x', variations_ext)
 
-    def test_get_gallery_class(self):
-        self.assertIs(self.image_item.get_gallery_class(), PageGallery)
+    def test_get_collection_class(self):
+        self.assertIs(self.image_item.get_collection_class(), PageGallery)
 
-    def test_get_gallery_field(self):
-        self.assertIs(self.image_item.get_gallery_field(), PageGallery.item_types['image'])
+    def test_get_collection_field(self):
+        self.assertIs(self.image_item.get_collection_field(), PageGallery.item_types['image'])
 
     def test_get_invalid_variation_file(self):
         with self.assertRaises(KeyError):
@@ -285,7 +299,7 @@ class TestImageGallery(TestCase):
                     getattr(self.image_item.file, name),
                 )
 
-    def test_proxy_gallery(self):
+    def test_proxy_collection(self):
         self.assertTrue(PageGallery._meta.proxy)
 
     def test_item_types(self):
@@ -294,15 +308,43 @@ class TestImageGallery(TestCase):
             ['image']
         )
 
-    def test_gallery_manager(self):
-        self.assertNotIn(self.gallery.pk, PageFilesGallery.objects.values('pk'))
+    def test_collection_manager(self):
+        self.assertNotIn(self.collection.pk, PageFilesGallery.objects.values('pk'))
 
     def test_get_items(self):
-        self.assertIs(self.gallery.get_items('image').count(), 1)
+        self.assertIs(self.collection.get_items('image').count(), 1)
 
     def test_get_items_total(self):
-        self.assertIs(self.gallery.get_items().count(), 1)
+        self.assertIs(self.collection.get_items().count(), 1)
+
+    def test_item_collection_id(self):
+        for item in self.collection.items.all():
+            self.assertEqual(item.collection_id, self.collection.pk)
+            self.assertEqual(item.collection, self.collection)
 
     def test_invalid_get_items(self):
         with self.assertRaises(ValueError):
-            self.gallery.get_items('something')
+            self.collection.get_items('something')
+
+
+class TestCollectionField(TestCase):
+    def setUp(self) -> None:
+        self.field = CollectionField(PageGallery, validators=[
+            validators.SizeValidator(32 * 1024 * 1024),
+            validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
+        ])
+        self.field.contribute_to_class(Page, 'gallery')
+
+    def test_validation(self):
+        self.assertDictEqual(self.field.get_validation(), {
+            'sizeLimit': 32 * 1024 * 1024,
+            'allowedExtensions': ('svg', 'bmp', 'jpeg'),
+        })
+
+    def test_widget_validation(self):
+        formfield = self.field.formfield()
+        self.assertDictEqual(formfield.widget.get_validation(), {
+            'sizeLimit': 32 * 1024 * 1024,
+            'allowedExtensions': ('svg', 'bmp', 'jpeg'),
+            'acceptFiles': 'image/*'
+        })

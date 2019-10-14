@@ -26,6 +26,10 @@ class ContinueUpload(Exception):
     pass
 
 
+class UncompleteUpload(Exception):
+    pass
+
+
 class AjaxFormError(Exception):
     def __init__(self, message):
         self.message = message

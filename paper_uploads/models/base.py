@@ -25,9 +25,9 @@ class Permissions(models.Model):
 
 
 class UploadedFileBase(models.Model):
-    file = models.FileField(_('file'), max_length=255, storage=upload_storage)
-    name = models.CharField(_('file name'), max_length=255, blank=True)
-    extension = models.CharField(_('file extension'), max_length=32, editable=False, help_text=_('Lowercase string without leading dot'))
+    file = models.FileField(_('file'), max_length=255, storage=upload_storage)  # Example field. Should be overriden
+    name = models.CharField(_('file name'), max_length=255, editable=False)
+    extension = models.CharField(_('file extension'), max_length=32, editable=False, help_text=_('Lowercase, without leading dot'))
     size = models.PositiveIntegerField(_('file size'), default=0, editable=False)
     hash = models.CharField(_('file hash'), max_length=40, editable=False,
         help_text=_('SHA-1 hash of the file contents')
@@ -50,9 +50,7 @@ class UploadedFileBase(models.Model):
         )
 
     def __getattr__(self, item):
-        """ Перенос часто используемых методов файла на уровень модели """
-        if item in PROXY_FILE_ATTRIBUTES:
-            return getattr(self.file, item)
+        # для вызова через super() в классах-потомках
         raise AttributeError(
             "'%s' object has no attribute '%s'" % (self.__class__.__name__, item)
         )
@@ -85,7 +83,7 @@ class UploadedFileBase(models.Model):
             if not self.pk:
                 is_new_file = True
             else:
-                original = type(self)._meta.base_manager.filter(pk=self.pk).only('file').get()
+                original = type(self)._base_manager.filter(pk=self.pk).only('file').get()
                 is_new_file = original.file != self.file
 
         if is_new_file:
@@ -107,10 +105,16 @@ class UploadedFileBase(models.Model):
         """
         basename = posixpath.basename(self.file.name)
         filename, ext = posixpath.splitext(basename)
-        self.name = filename
-        self.extension = ext.lower()[1:]
+        if not self.name:
+            self.name = filename
+        self.extension = ext.lstrip('.').lower()
         self.size = self.file.size
+
+        # обновляем дату загрузки если хэш изменился
+        current_hash_value = self.hash
         self.update_hash(commit=False)
+        if current_hash_value and current_hash_value != self.hash:
+            self.uploaded_at = now()
 
     def post_save_new_file(self):
         """
@@ -125,8 +129,6 @@ class UploadedFileBase(models.Model):
         self.file.delete(save=False)
 
     def update_hash(self, commit: bool = True):
-        current_hash_value = self.hash
-
         # keep file state
         file_closed = self.file.closed
         sha1 = hashlib.sha1()
@@ -137,11 +139,7 @@ class UploadedFileBase(models.Model):
         else:
             self.file.seek(0)
 
-        # обновляем дату загрузки если хэш изменился
         self.hash = sha1.hexdigest()
-        if current_hash_value and current_hash_value != self.hash:
-            self.uploaded_at = now()
-
         if commit:
             self.save(update_fields=['hash'])
 
@@ -199,8 +197,16 @@ class SlaveModelMixin(models.Model):
         """
         Возвращает конфигурацию валидации загружаемых файлов FineUploader.
         см. https://docs.fineuploader.com/branch/master/api/options.html#validation
-        Из-за чересчур прямолинейной реализации валидации FineUploder, валидация
-        переделана вручную. Формат конфигурации сохранен, но реализованы не все
-        параметры, входящие в комплект FineUploader.
         """
         return {}
+
+
+class ProxyFileAttributesMixin:
+    FILE_FILED = 'file'
+
+    def __getattr__(self, item):
+        """ Перенос часто используемых методов файла на уровень модели """
+        if item in PROXY_FILE_ATTRIBUTES:
+            file_field = getattr(self, self.FILE_FILED)
+            return getattr(file_field, item)
+        return super().__getattr__(item)

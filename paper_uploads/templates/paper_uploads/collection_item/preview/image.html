@@ -1,0 +1,10 @@
+<picture>
+  <source type="image/webp"
+          srcset="{% if item %}{{ item.admin_preview_webp_2x.url }} 2x, {{ item.admin_preview_webp.url }} 1x{% endif %}">
+  <source srcset="{% if item %}{{ item.admin_preview_2x.url }} 2x, {{ item.admin_preview.url }} 1x{% endif %}">
+  <img class="collection__item-image"
+       src="{% if item %}{{ item.admin_preview.url }}{% endif %}"
+       width="{{ preview_width }}"
+       height="{{ preview_height }}"
+       alt="{% if item %}{{ item.alt }}{% endif %}">
+</picture>

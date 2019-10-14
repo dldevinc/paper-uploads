@@ -17,12 +17,12 @@ DESCRIPTION = 'A django app that provides suggestions while you type into the fi
 URL = 'https://github.com/dldevinc/paper-uploads'
 EMAIL = 'x896321475@gmail.com'
 AUTHOR = 'Mihail Mishakin'
-VERSION = '0.0.3'
+VERSION = '0.1.0'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
     'django>2.1,<3.0',
-    'variations>0.0,<0.1',
+    'variations>=0.0.10,<0.1',
     'filetype>1.0',
     'python-magic>0.4,<0.5',
     'django-polymorphic>2.1,<2.2',

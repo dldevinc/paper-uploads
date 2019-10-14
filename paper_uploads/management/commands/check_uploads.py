@@ -2,7 +2,7 @@ from django.apps import apps
 from django.db import DEFAULT_DB_ALIAS
 from django.core.management import BaseCommand
 from ...models.base import SlaveModelMixin
-from ...models import UploadedImageBase, Gallery, GalleryItemBase
+from ...models import UploadedFileBase, UploadedImageBase, Collection, CollectionItemBase
 
 
 class Command(BaseCommand):
@@ -20,42 +20,78 @@ class Command(BaseCommand):
             help='Recreate all missing variation files from source.',
         )
 
+    def check_exists(self):
+        for model in apps.get_models():
+            if not issubclass(model, UploadedFileBase):
+                continue
+
+            total = model._base_manager.using(self.database).count()
+            if not total:
+                continue
+
+            for index, instance in enumerate(model._base_manager.using(self.database).iterator(), start=1):
+                if self.verbosity >= 2:
+                    self.stdout.write('\r' + (' ' * 80), ending='\r')
+
+                invalid = False
+                message = "Errors were found in '{}.{}' #{instance.pk} ({instance}):".format(
+                    model._meta.app_label,
+                    model._meta.model_name,
+                    instance=instance
+                )
+
+                if not instance.file.storage.exists(instance.file.name):
+                    invalid = True
+                    message += "\n  Not found source file"
+
+                if invalid:
+                    self.stdout.write(self.style.ERROR(message))
+
+                if self.verbosity >= 2:
+                    self.stdout.write(self.style.SUCCESS(
+                        "Check file existence of '{}.{}' ({}/{}) ...\r".format(
+                            model._meta.app_label,
+                            model._meta.model_name,
+                            index,
+                            total
+                        )
+                    ), ending='')
+
+            if self.verbosity >= 2:
+                self.stdout.write('')
+
     def check_variations(self):
         for model in apps.get_models():
             if not issubclass(model, UploadedImageBase):
                 continue
 
-            total = model._meta.base_manager.using(self.database).count()
+            total = model._base_manager.using(self.database).count()
             if not total:
                 continue
 
-            for index, instance in enumerate(model._meta.base_manager.using(self.database).iterator(), start=1):
-                self.stdout.write('\r' + (' ' * 80), ending='\r')
+            for index, instance in enumerate(model._base_manager.using(self.database).iterator(), start=1):
+                if self.verbosity >= 2:
+                    self.stdout.write('\r' + (' ' * 80), ending='\r')
 
                 invalid = False
-                message = "Errors were found in '{}.{}' #{}:".format(
+                message = "Errors were found in '{}.{}' #{instance.pk} ({instance}):".format(
                     model._meta.app_label,
                     model._meta.model_name,
-                    instance.pk
+                    instance=instance
                 )
 
-                missed_original = not instance.file.storage.exists(instance.file.name)
                 missed_variations = []
                 for name, file in instance.get_variation_files():
                     if not file.exists():
                         missed_variations.append(name)
 
-                if missed_original:
-                    invalid = True
-                    message += "\n  Not found source file"
-
-                recreatable = self.options['fix_missing'] and not missed_original
                 if missed_variations:
                     invalid = True
+                    recreatable = self.options['fix_missing'] and instance.file.storage.exists(instance.file.name)
                     for vname in missed_variations:
                         message += "\n  Not found variation '{}'".format(vname)
                         if recreatable:
-                            message += " (recreated)"
+                            message += self.style.SUCCESS(" (recreated)")
 
                     if recreatable:
                         instance.recut(names=missed_variations)
@@ -63,16 +99,18 @@ class Command(BaseCommand):
                 if invalid:
                     self.stdout.write(self.style.ERROR(message))
 
-                self.stdout.write(self.style.SUCCESS(
-                    "Check files of '{}.{}' ({}/{}) ...\r".format(
-                        model._meta.app_label,
-                        model._meta.model_name,
-                        index,
-                        total
-                    )
-                ), ending='')
+                if self.verbosity >= 2:
+                    self.stdout.write(self.style.SUCCESS(
+                        "Check variation existence of '{}.{}' ({}/{}) ...\r".format(
+                            model._meta.app_label,
+                            model._meta.model_name,
+                            index,
+                            total
+                        )
+                    ), ending='')
 
-            self.stdout.write('')
+            if self.verbosity >= 2:
+                self.stdout.write('')
 
     def check_owners(self):
         for model in apps.get_models():
@@ -82,22 +120,23 @@ class Command(BaseCommand):
             if model._meta.proxy:
                 continue
 
-            total = model._meta.base_manager.using(self.database).count()
+            total = model._base_manager.using(self.database).count()
             if not total:
                 continue
 
-            for index, instance in enumerate(model._meta.base_manager.using(self.database).iterator(), start=1):
-                self.stdout.write('\r' + (' ' * 80), ending='\r')
+            for index, instance in enumerate(model._base_manager.using(self.database).iterator(), start=1):
+                if self.verbosity >= 2:
+                    self.stdout.write('\r' + (' ' * 80), ending='\r')
 
                 real_model = model
-                if isinstance(instance, Gallery):
-                    real_model = instance.gallery_content_type.model_class()
+                if isinstance(instance, Collection):
+                    real_model = instance.collection_content_type.model_class()
 
                 invalid = False
-                message = "Errors were found in '{}.{}' #{}:".format(
+                message = "Errors were found in '{}.{}' #{instance.pk} ({instance}):".format(
                     real_model._meta.app_label,
                     real_model._meta.model_name,
-                    instance.pk
+                    instance=instance
                 )
 
                 owner_model = instance.get_owner_model()
@@ -118,7 +157,7 @@ class Command(BaseCommand):
                         )
                     else:
                         try:
-                            owner_model._meta.base_manager.get(
+                            owner_model._base_manager.get(
                                 (instance.owner_fieldname, instance.pk)
                             )
                         except owner_model.DoesNotExist:
@@ -131,60 +170,65 @@ class Command(BaseCommand):
                 if invalid:
                     self.stdout.write(self.style.ERROR(message))
 
-                self.stdout.write(self.style.SUCCESS(
-                    "Check owner of '{}.{}' ({}/{}) ...\r".format(
-                        model._meta.app_label,
-                        model._meta.model_name,
-                        index,
-                        total
-                    )
-                ), ending='')
+                if self.verbosity >= 2:
+                    self.stdout.write(self.style.SUCCESS(
+                        "Check owner of '{}.{}' ({}/{}) ...\r".format(
+                            model._meta.app_label,
+                            model._meta.model_name,
+                            index,
+                            total
+                        )
+                    ), ending='')
 
-            self.stdout.write('')
+            if self.verbosity >= 2:
+                self.stdout.write('')
 
     def check_item_types(self):
-        total = GalleryItemBase.objects.using(self.database).count()
-        for index, item in enumerate(GalleryItemBase.objects.using(self.database).iterator(), start=1):
-            self.stdout.write('\r' + (' ' * 80), ending='\r')
+        total = CollectionItemBase.objects.using(self.database).count()
+        for index, item in enumerate(CollectionItemBase.objects.using(self.database).iterator(), start=1):
+            if self.verbosity >= 2:
+                self.stdout.write('\r' + (' ' * 80), ending='\r')
 
             invalid = False
-            message = "Errors were found in '{}.{}' #{}:".format(
+            message = "Errors were found in '{}.{}' #{item.pk} ({item}):".format(
                 item._meta.app_label,
                 item._meta.model_name,
-                item.pk
+                item=item
             )
 
-            gallery_cls = item.get_gallery_class()
-            if item.item_type not in gallery_cls.item_types:
+            collection_cls = item.get_collection_class()
+            if item.item_type not in collection_cls.item_types:
                 invalid = True
-                message += "\n  Item type '{}' is not defined in gallery '{}.{}' #{}".format(
+                message += "\n  Item type '{}' is not defined in collection '{}.{}' #{}".format(
                     item.item_type,
-                    gallery_cls._meta.app_label,
-                    gallery_cls._meta.model_name,
-                    item.object_id,
+                    collection_cls._meta.app_label,
+                    collection_cls._meta.model_name,
+                    item.collection_id,
                 )
             else:
-                item_model = gallery_cls.item_types[item.item_type].model
+                item_model = collection_cls.item_types[item.item_type].model
                 if item_model is not type(item):
                     invalid = True
                     message += "\n  Item class '{}.{}' is different from the '{}.{}'".format(
                         item._meta.app_label,
                         item._meta.model_name,
-                        gallery_cls._meta.app_label,
-                        gallery_cls._meta.model_name,
+                        collection_cls._meta.app_label,
+                        collection_cls._meta.model_name,
                     )
 
             if invalid:
                 self.stdout.write(self.style.ERROR(message))
 
-            self.stdout.write(self.style.SUCCESS(
-                "Check item_type of gallery items ({}/{}) ...\r".format(
-                    index,
-                    total
-                )
-            ), ending='')
+            if self.verbosity >= 2:
+                self.stdout.write(self.style.SUCCESS(
+                    "Check item_type of collection items ({}/{}) ...\r".format(
+                        index,
+                        total
+                    )
+                ), ending='')
 
-        self.stdout.write('')
+        if self.verbosity >= 2:
+            self.stdout.write('')
 
     def handle(self, *args, **options):
         self.options = options
@@ -193,4 +237,5 @@ class Command(BaseCommand):
 
         self.check_item_types()
         self.check_owners()
+        self.check_exists()
         self.check_variations()

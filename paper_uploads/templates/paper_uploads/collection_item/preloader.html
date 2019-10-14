@@ -1,0 +1,23 @@
+<div class="collection__item collection__item--preloader" style="width: {{ preview_width }}px">
+  <div class="collection__item-caption">
+    <div class="collection__item-name text-muted"></div>
+  </div>
+
+  <div class="collection__item-preview" style="width: {{ preview_width }}px; height: {{ preview_height }}px">
+    <div class="progress">
+      <div class="progress-bar"
+           role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+      </div>
+    </div>
+  </div>
+
+  <div class="collection__item-toolbar">
+    <div class="tool-items d-flex align-items-center">
+      <button type="button" class="collection__item-cancel-button tool-item text-danger ml-auto" tabindex="-1"
+              data-toggle="tooltip" data-placement="top" data-trigger="hover"
+              data-html="true" title="{{ _('Cancel upload') }}">
+        <i class="fa fa-fw fa-times"></i>
+      </button>
+    </div>
+  </div>
+</div>

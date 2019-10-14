@@ -1,0 +1,9 @@
+Pillow==6.1.0
+ipython==7.7.0
+-e git://github.com/dldevinc/paper-admin@v0.0.6#egg=paper-admin
+variations==0.0.10
+filetype==1.0.5
+python-magic==0.4.15
+django-polymorphic==2.1.2
+django-rq==2.1.0
+face_recognition==1.2.3

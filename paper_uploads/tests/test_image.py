@@ -4,12 +4,14 @@ from django.test import TestCase
 from django.core.files import File
 from tests.app.models import Page
 from ..models import UploadedImage
+from ..models.fields import ImageField
 from ..conf import PROXY_FILE_ATTRIBUTES
+from .. import validators
 
 TESTS_PATH = Path(__file__).parent / 'samples'
 
 
-class TestImageField(TestCase):
+class TestUploadedImage(TestCase):
     def setUp(self) -> None:
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as fp:
             self.object = UploadedImage(
@@ -73,11 +75,11 @@ class TestImageField(TestCase):
                 )
 
 
-class TestSlaveImageField(TestCase):
+class TestSlaveUploadedImage(TestCase):
     def setUp(self) -> None:
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as fp:
             self.object = UploadedImage(
-                file=File(fp, name='Image.Jpeg'),
+                file=File(fp, name='TestImage.Jpeg'),
                 owner_app_label='app',
                 owner_model_name='page',
                 owner_fieldname='image_ext'
@@ -99,15 +101,21 @@ class TestSlaveImageField(TestCase):
         self.assertIn('tablet', variations)
         self.assertIn('admin', variations)
 
+    def test_variation_attrs(self):
+        variations = dict(self.object.get_variation_files())
+        self.assertEqual(getattr(self.object, 'desktop'), variations['desktop'])
+        self.assertEqual(getattr(self.object, 'tablet'), variations['tablet'])
+        self.assertEqual(getattr(self.object, 'admin'), variations['admin'])
+
     def test_get_invalid_variation_file(self):
         with self.assertRaises(KeyError):
             self.object.get_variation_file('nonexist')
 
     def test_get_variation_files(self):
         expected = {
-            'admin': 'Image.admin.jpg',
-            'desktop': 'Image.desktop.jpg',
-            'tablet': 'Image.tablet.jpg',
+            'admin': 'TestImage.admin.jpg',
+            'desktop': 'TestImage.desktop.jpg',
+            'tablet': 'TestImage.tablet.jpg',
         }
         self.assertDictEqual({
             name: os.path.basename(file.name)
@@ -126,3 +134,38 @@ class TestSlaveImageField(TestCase):
                     self.object.get_draft_size(input_size),
                     output_size
                 )
+
+
+class TestImageField(TestCase):
+    def setUp(self) -> None:
+        self.field = ImageField(validators=[
+            validators.SizeValidator(32 * 1024 * 1024),
+            validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
+            validators.MimetypeValidator(['image/jpeg', 'image/bmp', 'image/Png']),
+            validators.ImageMinSizeValidator(640, 480),
+            validators.ImageMaxSizeValidator(1920, 1440),
+        ])
+        self.field.contribute_to_class(Page, 'image')
+
+    def test_validation(self):
+        self.assertDictEqual(self.field.get_validation(), {
+            'sizeLimit': 32 * 1024 * 1024,
+            'allowedExtensions': ('svg', 'bmp', 'jpeg'),
+            'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png'),
+            'minImageWidth': 640,
+            'minImageHeight': 480,
+            'maxImageWidth': 1920,
+            'maxImageHeight': 1440,
+        })
+
+    def test_widget_validation(self):
+        formfield = self.field.formfield()
+        self.assertDictEqual(formfield.widget.get_validation(), {
+            'sizeLimit': 32 * 1024 * 1024,
+            'allowedExtensions': ('svg', 'bmp', 'jpeg'),
+            'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png'),
+            'minImageWidth': 640,
+            'minImageHeight': 480,
+            'maxImageWidth': 1920,
+            'maxImageHeight': 1440,
+        })

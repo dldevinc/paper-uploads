@@ -1,3 +1,7 @@
 from .file import FileField
 from .image import ImageField
-from .gallery import GalleryField, GalleryItemTypeField
+from .collection import CollectionField, CollectionItemTypeField
+
+__all__ = [
+    'FileField', 'ImageField', 'CollectionField', 'CollectionItemTypeField'
+]

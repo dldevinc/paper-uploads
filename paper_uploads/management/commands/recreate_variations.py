@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
-from ...models import UploadedImageBase, Gallery
+from ...models import UploadedImageBase, Collection
 
 
 class Command(BaseCommand):
@@ -42,20 +42,20 @@ class Command(BaseCommand):
             field = None
 
         variations = options['variations']
-        if issubclass(model, Gallery):
-            # recut gallery
+        if issubclass(model, Collection) and hasattr(model, 'VARIATIONS'):
+            # recut collection
             if variations:
                 for name in variations:
                     if name not in model.VARIATIONS:
                         raise TypeError("The requested variation '%s' does not exist" % name)
 
             total = model.objects.using(self.database).count()
-            for index, gallery in enumerate(model.objects.using(self.database).iterator(), start=1):     # use objects manager!
+            for index, collection in enumerate(model.objects.using(self.database).iterator(), start=1):     # use objects manager!
                 if self.verbosity >= 1:
                     self.stdout.write(self.style.SUCCESS(
-                        "Recreate variations '{}' #{} ({}/{}) ... ".format(options['model'], gallery.pk, index, total)
+                        "Recreate variations '{}' #{} ({}/{}) ... ".format(options['model'], collection.pk, index, total)
                     ))
-                gallery.recut(names=variations, using=self.database)
+                collection.recut(names=variations, using=self.database)
         elif field is not None:
             # recut model field
             if variations:
@@ -63,7 +63,7 @@ class Command(BaseCommand):
                     if name not in field.variations:
                         raise TypeError("variation '%s' is undefined" % name)
 
-            instances = model._meta.base_manager.using(self.database).exclude((fieldname, None))
+            instances = model._base_manager.using(self.database).exclude((fieldname, None))
             total = instances.count()
             for index, instance in enumerate(instances, start=1):
                 if self.verbosity >= 1:
@@ -74,4 +74,4 @@ class Command(BaseCommand):
                 field.recut(names=variations)
             self.stdout.write('')
         else:
-            raise RuntimeError('a field name must be specified for non-gallery models')
+            raise RuntimeError('a field name must be specified for non-collection models')

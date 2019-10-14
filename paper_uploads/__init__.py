@@ -5,9 +5,9 @@
 
     Каждый загруженный файл представлен моделью, унаследованной от UploadedFileBase.
     Связь любой модели с файлом осуществляется через поля:
-        1) FileField    - загрузка файла
-        2) ImageField   - загрузка картинки с возможностью нарезки на множество размеров
-        3) GalleryField - загрузка множества картинок и/или файлов
+        1) FileField        - загрузка файла
+        2) ImageField       - загрузка картинки с возможностью нарезки на множество размеров
+        3) CollectionField  - загрузка множества картинок и/или файлов
     Все поля являются производными от OneToOneField.
     * Информацию по нарезке картинок смотри в variations.
 
@@ -20,12 +20,8 @@
         closed
     Таким образом, вместо `Article.image.file.url` можно использовать `Article.image.url`.
 
-    Каждая галерея имеет поле `cover`, ссылающееся на первую картинку из галереи.
-    Это сделано для экономии SQL-запросов при выборке множества объектов, имеющих
-    галереи. Например, при выводе списка продуктов магазина.
-
-    Есть два класса галереи: Gallery и ImageGallery. ImageGallery позволяет
-    загружать только изображения, тогда как в Gallery помимо изображений можно
+    Есть два класса галереи: Collection и ImageCollection. ImageCollection позволяет
+    загружать только изображения, тогда как в Collection помимо изображений можно
     добавлять SVG и любые другие файлы.
 
     Зависит от:
@@ -75,27 +71,27 @@
         default         images/%Y-%m-%d
         description     Путь к папке, в которую загружаются файлы ImageField
 
-    GALLERY_FILES_UPLOAD_TO
+    COLLECTION_FILES_UPLOAD_TO
         type            str
-        default         gallery/files/%Y-%m-%d
+        default         collections/files/%Y-%m-%d
         description     Путь к папке, в которую загружаются файлы галереи
 
-    GALLERY_IMAGES_UPLOAD_TO
+    COLLECTION_IMAGES_UPLOAD_TO
         type            str
-        default         gallery/images/%Y-%m-%d
+        default         collections/images/%Y-%m-%d
         description     Путь к папке, в которую загружаются картинки галереи
 
-    GALLERY_ITEM_PREVIEW_WIDTH
+    COLLECTION_ITEM_PREVIEW_WIDTH
         type            int
         default         144
         description     Ширина превью элемента галереи в виджете админки
 
-    GALLERY_ITEM_PREVIEW_HEIGHT
+    COLLECTION_ITEM_PREVIEW_HEIGHT
         type            int
         default         108
         description     Высота превью элемента галереи в виджете админки
 
-    GALLERY_IMAGE_ITEM_PREVIEW_VARIATIONS
+    COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
         type            dict
         default         ...
         description     Вариации для превью картинок галереи
@@ -148,10 +144,10 @@
     ------
     # models.py
         from pilkit import processors
-        from paper_uploads.models import ImageGallery
-        from paper_uploads.models.fields import FileField, ImageField, GalleryField
+        from paper_uploads.models import ImageCollection
+        from paper_uploads.models.fields import FileField, ImageField, CollectionField
 
-        class ArticleGallery(ImageGallery):
+        class ArticleGallery(ImageCollection):
             VARIATIONS = dict(
                 wide=dict(
                     size=(1600, 0),
@@ -195,7 +191,7 @@
                     )
                 )
             )
-            gallery = GalleryField(ArticleGallery, verbose_name=_('gallery'))
+            gallery = CollectionField(ArticleGallery, verbose_name=_('gallery'))
 
     # shell
         > article.file.url

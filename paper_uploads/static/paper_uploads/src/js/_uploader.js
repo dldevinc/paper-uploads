@@ -1,4 +1,5 @@
-import {FineUploaderBasic, DragAndDrop, isFile} from "fine-uploader";
+import {FineUploaderBasic, isFile} from "./fine-uploader/fine-uploader.core";
+import {DragAndDrop} from "./fine-uploader/dnd";
 import match from 'mime-match';
 
 // PaperAdmin API
@@ -51,20 +52,26 @@ Uploader.prototype._makeUploader = function() {
             partSize: 1024 * 1024
         },
         text: {
-            fileInputTitle: 'Select file'
+            fileInputTitle: ''
         },
-        validation: (_this._opts.validation && _this._opts.validation.acceptFiles) ? {
-            acceptFiles: _this._opts.validation.acceptFiles
-        } : {},
+        validation: {
+            stopOnFirstInvalidFile: false,
+            sizeLimit: _this._opts.validation.sizeLimit || 0,
+            acceptFiles: _this._opts.validation.acceptFiles || null,
+            allowedExtensions: _this._opts.validation.allowedExtensions || []
+        },
+        messages: {
+            typeError: "`{file}` has an invalid extension. Valid extension(s): {extensions}.",
+            sizeError: "`{file}` is too large, maximum file size is {sizeLimit}.",
+        },
         callbacks: {
             onSubmit: function(id) {
                 const uploader = this;
                 const file = uploader.getFile(id);
 
-                if (!_this._opts.multiple) {
-                    if (is_loading) {
-                        return false;
-                    }
+                if (is_loading && !_this._opts.multiple) {
+                    return false
+                } else {
                     is_loading = true;
                 }
 
@@ -75,17 +82,14 @@ Uploader.prototype._makeUploader = function() {
                         try {
                             filter.call(uploader, id, file);
                         } catch (error) {
-                            _this.trigger('reject', [id, file, error.message]);
+                            _this.trigger('error', [id, error.message]);
                             return false;
                         }
                     }
                 }
 
-                // ручная проверка файлов, т.к. встроенная валидация вызывает onError
-                // без кода ошибки. Отличить одну ошибку от другой не представляется
-                // возможным. Но это необходимо для вызова reject.
                 const validationOptions = _this._opts.validation;
-                if (validationOptions) {
+                if (isFile(file)) {
                     // check mimetypes
                     const allowedMimeTypes = validationOptions.acceptFiles;
                     if (allowedMimeTypes && allowedMimeTypes.length) {
@@ -99,36 +103,20 @@ Uploader.prototype._makeUploader = function() {
                         }
 
                         if (!allowed) {
-                            const reason = `Unsupported MIME type: ${file.type}`;
-                            _this.trigger('reject', [id, file, reason]);
+                            const reason = `\`${file.name}\` has an invalid mimetype '${file.type}'`;
+                            _this.trigger('error', [id, reason]);
                             return false;
                         }
                     }
 
-                    // check min size
-                    if (validationOptions.minSizeLimit && (file.size < validationOptions.minSizeLimit)) {
-                        const sizeLimit = uploader._formatSize(validationOptions.minSizeLimit);
-                        const reason = `File is too small. Minimum file size is <strong>${sizeLimit}</strong>`;
-                        _this.trigger('reject', [id, file, reason]);
-                        return false;
-                    }
-
-                    // check max size
-                    if (validationOptions.sizeLimit && (file.size > validationOptions.sizeLimit)) {
-                        const sizeLimit = uploader._formatSize(validationOptions.sizeLimit);
-                        const reason = `File is too large. Maximum file size is <strong>${sizeLimit}</strong>`;
-                        _this.trigger('reject', [id, file, reason]);
-                        return false;
-                    }
-
                     // check image size
-                    if (validationOptions.image && isFile(file)) {
+                    if (validationOptions.image) {
                         return new Promise(function(resolve, reject) {
                             const image = new Image();
                             const url = window.URL && window.URL.createObjectURL ? window.URL : window.webkitURL && window.webkitURL.createObjectURL ? window.webkitURL : null;
                             if (url) {
                                 image.onerror = function() {
-                                    reject("Cannot determine dimensions for image.  May be too large.");
+                                    reject("Cannot determine dimensions for image. May be too large.");
                                 };
                                 image.onload = function() {
                                     resolve({
@@ -141,24 +129,24 @@ Uploader.prototype._makeUploader = function() {
                                 reject("No createObjectURL function available to generate image URL!");
                             }
                         }).then(function(size) {
-                            if (validationOptions.image.minWidth && (size.width < validationOptions.image.minWidth)) {
-                                const reason = `Image is not wide enough. Minimum width is <strong>${validationOptions.image.minWidth}px</strong>`;
-                                _this.trigger('reject', [id, file, reason]);
+                            if (validationOptions.minImageWidth && (size.width < validationOptions.minImageWidth)) {
+                                const reason = `\`${file.name}\` is not wide enough. Minimum width is ${validationOptions.minImageWidth}px`;
+                                _this.trigger('error', [id, reason]);
                                 throw new Error(reason);
                             }
-                            if (validationOptions.image.minHeight && (size.height < validationOptions.image.minHeight)) {
-                                const reason = `Image is not tall enough. Minimum height is <strong>${validationOptions.image.minHeight}px</strong>`;
-                                _this.trigger('reject', [id, file, reason]);
+                            if (validationOptions.minImageHeight && (size.height < validationOptions.minImageHeight)) {
+                                const reason = `\`${file.name}\` is not tall enough. Minimum height is ${validationOptions.minImageHeight}px`;
+                                _this.trigger('error', [id, reason]);
                                 throw new Error(reason);
                             }
-                            if (validationOptions.image.maxWidth && (size.width > validationOptions.image.maxWidth)) {
-                                const reason = `Image is too wide. Maximum width is <strong>${validationOptions.image.maxWidth}px</strong>`;
-                                _this.trigger('reject', [id, file, reason]);
+                            if (validationOptions.maxImageWidth && (size.width > validationOptions.maxImageWidth)) {
+                                const reason = `\`${file.name}\` is too wide. Maximum width is ${validationOptions.maxImageWidth}px`;
+                                _this.trigger('error', [id, reason]);
                                 throw new Error(reason);
                             }
-                            if (validationOptions.image.maxHeight && (size.height > validationOptions.image.maxHeight)) {
-                                const reason = `Image is too tall. Maximum height is <strong>${validationOptions.image.maxHeight}px</strong>`;
-                                _this.trigger('reject', [id, file, reason]);
+                            if (validationOptions.maxImageHeight && (size.height > validationOptions.maxImageHeight)) {
+                                const reason = `\`${file.name}\` is too tall. Maximum height is ${validationOptions.maxImageHeight}px`;
+                                _this.trigger('error', [id, reason]);
                                 throw new Error(reason);
                             }
                         });
@@ -184,9 +172,7 @@ Uploader.prototype._makeUploader = function() {
                 }
             },
             onAllComplete: function(succeeded, failed) {
-                if (!_this._opts.multiple) {
-                    is_loading = false;
-                }
+                is_loading = false;
                 _this.trigger('all_complete', [succeeded, failed]);
             },
             onError: function(id, name, reason, xhr) {

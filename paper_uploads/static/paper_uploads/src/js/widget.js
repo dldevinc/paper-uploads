@@ -1,7 +1,6 @@
-import "./_uploader";
 import "./file_widget";
 import "./image_widget";
-import "./gallery_widget";
+import "./collection_widget";
 
 // Images
 function importAll(r) {

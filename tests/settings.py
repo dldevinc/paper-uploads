@@ -155,7 +155,6 @@ RQ_QUEUES = {
 #  Paper Uploads
 # ===============
 PAPER_UPLOADS = {
-    'STORAGE': 'django.core.files.storage.FileSystemStorage',
     # 'RQ_ENABLED': True,
     'POSTPROCESS': {
         'JPEG': {
@@ -168,7 +167,7 @@ PAPER_UPLOADS = {
         },
         'SVG': {
             'COMMAND': 'svgo',
-            'ARGUMENTS': '--precision=4 {file}',
+            'ARGUMENTS': '--precision=5 {file}',
         },
     }
 }

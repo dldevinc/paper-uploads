@@ -38,26 +38,50 @@
     </div>
 
     <div class="input-group-append">
-      <a {% if instance %}href="{{ instance.file.url }}"{% endif %} class="image-uploader__link input-group-text text-info"
-         target="_blank" tabindex="-1"
-         data-toggle="tooltip" data-placement="top" data-trigger="hover"
-         data-html="true" title="{{ _('View file') }}">
-        <i class="fa fa-fw fa-eye"></i>
-      </a>
+      <div class="image-uploader__ready-buttons">
+        <a {% if instance %}href="{{ instance.file.url }}"{% endif %}
+           target="_blank" tabindex="-1"
+           class="image-uploader__link input-group-text text-info"
+           data-toggle="tooltip" data-placement="top" data-trigger="hover"
+           data-html="true" title="{{ _('View file') }}">
+          <i class="fa fa-fw fa-eye"></i>
+        </a>
 
-      <button type="button" class="image-uploader__change-button input-group-text text-info" tabindex="-1"
-         data-toggle="tooltip" data-placement="top" data-trigger="hover"
-         data-html="true" title="{{ _('Edit file') }}">
-        <i class="fa fa-fw fa-pencil"></i>
-      </button>
+        <button type="button" tabindex="-1"
+                class="image-uploader__change-button input-group-text text-info"
+                data-toggle="tooltip" data-placement="top" data-trigger="hover"
+                data-html="true" title="{{ _('Edit file') }}">
+          <i class="fa fa-fw fa-pencil"></i>
+        </button>
 
-      <button type="button" class="image-uploader__delete-button input-group-text text-danger" tabindex="-1"
-              data-toggle="tooltip" data-placement="top" data-trigger="hover"
-              data-html="true" title="{{ _('Delete file') }}">
-        <i class="fa fa-fw fa-trash"></i>
-      </button>
+        <button type="button" tabindex="-1"
+                class="image-uploader__delete-button input-group-text text-danger"
+                data-toggle="tooltip" data-placement="top" data-trigger="hover"
+                data-html="true" title="{{ _('Delete file') }}">
+          <i class="fa fa-fw fa-trash"></i>
+        </button>
+      </div>
+      <div class="image-uploader__loading-buttons">
+        <button type="button" tabindex="-1"
+                class="image-uploader__cancel-button input-group-text text-danger"
+                data-toggle="tooltip" data-placement="top" data-trigger="hover"
+                data-html="true" title="{{ _('Cancel upload') }}">
+          <i class="fa fa-fw fa-times"></i>
+        </button>
+      </div>
     </div>
   </div>
+
+  {% if validation_lines %}
+    <div class="image-uploader__limitations small text-muted mt-2">
+      <span>{{ _('Please consider the following limitations') }}:</span>
+      <ul class="pl-3 mb-0">
+        {% for rule, limit in validation_lines %}
+          <li>{{ rule }}: <em>{{ limit }}</em></li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
 
   <div class="dropzone-overlay">
     <div class="dropzone-hint">

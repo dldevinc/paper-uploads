@@ -48,43 +48,43 @@ def get_variation_filename(filename: str, variation_name: str, variation: Variat
     return variation.replace_extension(path)
 
 
-def _postprocess_file(path: str, options: Dict[str, str]):
+def _postprocess_file(path: str, command: Dict[str, str]):
     """
     Запуск консольной команды для постобработки файла.
     """
-    options = {
+    command = {
         key.lower(): value
-        for key, value in options.items()
+        for key, value in command.items()
     }
 
-    command = options.get('command')
-    if not command:
+    executable = command.get('command')
+    if not executable:
         return
 
-    command_path = shutil.which(command)
-    if command_path is None:
-        logger.warning("Command '{}' not found".format(command))
+    executable_path = shutil.which(executable)
+    if executable_path is None:
+        logger.warning("Command '{}' not found".format(executable))
         return
 
-    arguments = options['arguments'].format(
+    arguments = command.get('arguments', '').format(
         file=path
     )
     process = subprocess.Popen(
-        '{} {}'.format(command_path, arguments),
+        '{} {}'.format(executable_path, arguments),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         shell=True
     )
     out, err = process.communicate()
     logger.debug('Command: {} {}\nStdout: {}\nStderr: {}'.format(
-        command_path,
+        executable_path,
         arguments,
         out.decode() if out is not None else '',
         err.decode() if err is not None else '',
     ))
 
 
-def postprocess_variation(source_filename: str, variation_name: str, variation: Variation, options: Dict[str, str] = None):
+def postprocess_variation(source_filename: str, variation_name: str, variation: Variation, command: Dict[str, str] = None):
     """
     Постобработка файла вариации изображения.
     """
@@ -95,18 +95,18 @@ def postprocess_variation(source_filename: str, variation_name: str, variation: 
         return
 
     output_format = variation.output_format(variation_path)
-    variation_options = variation.extra_context.get(output_format.lower(), {}).get('postprocess', {})
-    if variation_options is None:
+    variation_command = variation.extra_context.get(output_format.lower(), {}).get('postprocess', {})
+    if variation_command is None:
         # обработка явным образом запрещена
         return
 
-    global_options = getattr(settings, 'POSTPROCESS', {}).get(output_format, {})
-    postprocess_options = options or variation_options or global_options
-    if postprocess_options:
-        _postprocess_file(full_path, postprocess_options)
+    global_command = getattr(settings, 'POSTPROCESS', {}).get(output_format, {})
+    command = command or variation_command or global_command
+    if command:
+        _postprocess_file(full_path, command)
 
 
-def postprocess_svg(source_filename: str, options: Dict[str, str] = None):
+def postprocess_svg(source_filename: str, command: Dict[str, str] = None):
     """
     Постобработка SVG-файла.
     """
@@ -115,8 +115,7 @@ def postprocess_svg(source_filename: str, options: Dict[str, str] = None):
         logger.warning('File not found: {}'.format(full_path))
         return
 
-    global_options = getattr(settings, 'POSTPROCESS', {}).get('SVG', {})
-
-    postprocess_options = options or global_options
-    if postprocess_options:
-        _postprocess_file(full_path, postprocess_options)
+    global_command = getattr(settings, 'POSTPROCESS', {}).get('SVG', {})
+    command = command or global_command
+    if command:
+        _postprocess_file(full_path, command)

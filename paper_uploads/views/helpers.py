@@ -17,10 +17,15 @@ def success_response(data: Optional[Dict[str, Any]] = None) -> JsonResponse:
     return JsonResponse(data)
 
 
-def error_response(errors: Union[str, Iterable[str]], prevent_retry: bool = True) -> JsonResponse:
+def error_response(errors: Union[str, Iterable[str]] = '', prevent_retry: bool = True) -> JsonResponse:
+    if not errors:
+        errors = []
+    elif not isinstance(errors, (list, tuple)):
+        errors = [errors]
+
     data = {
         'success': False,
-        'errors': errors if isinstance(errors, (list, tuple)) else [errors],
+        'errors': errors,
         'preventRetry': prevent_retry
     }
     return JsonResponse(data)
@@ -56,15 +61,19 @@ def read_file(request) -> IO:
     except (ValueError, TypeError):
         raise exceptions.InvalidChunking
 
-    file = request.FILES.get('qqfile')
-
     try:
         uid = uuid.UUID(request.POST.get('qquuid'))
     except (AttributeError, ValueError):
         raise exceptions.InvalidUUID
 
+    tempfilepath = os.path.join(tempfile.gettempdir(), str(uid))
+    file = request.FILES.get('qqfile')
+    if file is None:    # бывает при отмене загрузки на медленном интернете
+        if os.path.isfile(tempfilepath):
+            os.unlink(tempfilepath)
+        raise exceptions.UncompleteUpload
+
     if total_chunks > 1:
-        tempfilepath = os.path.join(tempfile.gettempdir(), str(uid))
         with open(tempfilepath, 'a+b') as fp:
             shutil.copyfileobj(file, fp, 1024 * 1024)
 

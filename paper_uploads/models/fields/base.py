@@ -1,6 +1,8 @@
+from typing import Dict, Any
 from django.db import models
 from django.core import checks
 from django.db.models.signals import post_delete
+from ... import validators
 
 
 class FileFieldBase(models.OneToOneField):
@@ -44,6 +46,15 @@ class FileFieldBase(models.OneToOneField):
             del kwargs['related_name']
         return name, path, args, kwargs
 
+    def formfield(self, **kwargs):
+        return super().formfield(**{
+            'owner_app_label': self.opts.app_label.lower(),
+            'owner_model_name': self.opts.model_name.lower(),
+            'owner_fieldname': self.name,
+            'validation': self.get_validation(),
+            **kwargs
+        })
+
     def contribute_to_class(self, cls, *args, **kwargs):
         super().contribute_to_class(cls, *args, **kwargs)
         if not cls._meta.abstract:
@@ -56,3 +67,34 @@ class FileFieldBase(models.OneToOneField):
         uploaded = getattr(kwargs['instance'], self.name)
         if uploaded:
             uploaded.delete()
+
+    def run_validators(self, value):
+        """
+        Отключение валидаторов для файловых полей, т.к. нам нужно валидировать
+        не ID OneToOneField, а загружаемые файлы.
+        """
+        return
+
+    def get_validation(self) -> Dict[str, Any]:
+        """
+        Возвращает конфигурацию валидации загружаемых файлов FineUploader.
+        см. https://docs.fineuploader.com/branch/master/api/options.html#validation
+
+        image.minWidth и т.п. не используются из-за недостатка кастомизации
+        текста о ошибках.
+        """
+        validation = {}
+        for v in self.validators:
+            if isinstance(v, validators.ExtensionValidator):
+                validation['allowedExtensions'] = v.allowed
+            elif isinstance(v, validators.MimetypeValidator):
+                validation['acceptFiles'] = v.allowed
+            elif isinstance(v, validators.SizeValidator):
+                validation['sizeLimit'] = v.limit_value
+            elif isinstance(v, validators.ImageMinSizeValidator):
+                validation['minImageWidth'] = v.width_limit
+                validation['minImageHeight'] = v.height_limit
+            elif isinstance(v, validators.ImageMaxSizeValidator):
+                validation['maxImageWidth'] = v.width_limit
+                validation['maxImageHeight'] = v.height_limit
+        return validation

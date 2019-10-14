@@ -1,19 +1,23 @@
+import os
 import base64
 import filetype
 from PIL import Image
-from typing import Dict, Iterator, Tuple, Iterable, Optional, Any
+from typing import Dict, Iterator, Tuple, Iterable, Optional, Any, Sequence
 from django.db import models
 from django.core.files import File
-from django.core.exceptions import ValidationError
+from django.utils.crypto import get_random_string
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
+from django.core.exceptions import ValidationError, SuspiciousFileOperation
 from variations.variation import Variation
 from variations.utils import prepare_image
-from .base import UploadedFileBase, SlaveModelMixin
+from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
 from ..storage import upload_storage
-from ..conf import settings, PROXY_FILE_ATTRIBUTES
+from ..conf import settings
 from .. import utils
 from .. import tasks
+
+__all__ = ['UploadedImageBase', 'UploadedImage']
 
 
 class VariationFile(File):
@@ -124,22 +128,28 @@ class UploadedImageBase(UploadedFileBase):
     class Meta(UploadedFileBase.Meta):
         abstract = True
 
+    def __init__(self, *args, **kwargs):
+        self._variation_attached = False
+        super().__init__(*args, **kwargs)
+
     def __getattr__(self, item):
-        if item in PROXY_FILE_ATTRIBUTES:
-            return getattr(self.file, item)
-        if not item.startswith('_'):
+        if not item.startswith('_') and not self._variation_attached:
+            self.attach_variations()
+            self._variation_attached = True
             if item in self.get_variations():
-                return self.get_variation_file(item)
-        raise AttributeError(
-            "'%s' object has no attribute '%s'" % (self.__class__.__name__, item)
-        )
+                return getattr(self, item)
+        return super().__getattr__(item)
+
+    def attach_variations(self):
+        for name, vfile in self.get_variation_files():
+            setattr(self, name, vfile)
 
     def pre_save_new_file(self):
         file_closed = self.file.closed
         try:
             image = Image.open(self.file)
         except OSError:
-            raise ValidationError('Not an Image')
+            raise ValidationError('`%s` is not an image' % os.path.basename(self.file.name))
 
         self.width, self.height = image.size
 
@@ -184,7 +194,7 @@ class UploadedImageBase(UploadedFileBase):
         if not self.file:
             return
 
-        variation_cache_name = '_file_{}'.format(variation_name)
+        variation_cache_name = '_{}_variation'.format(variation_name)
         variation_cache = getattr(self, variation_cache_name, None)
         if variation_cache is None:
             variation_cache = VariationFile(
@@ -194,7 +204,7 @@ class UploadedImageBase(UploadedFileBase):
             setattr(self, variation_cache_name, variation_cache)
         return variation_cache
 
-    def get_draft_size(self, source_size: Iterable[int]) -> Tuple[int, int]:
+    def get_draft_size(self, source_size: Sequence[int]) -> Tuple[int, int]:
         """
         Вычисление максимально возможных значений ширины и высоты для всех
         вариаций, чтобы передать их в Image.draft().
@@ -249,12 +259,58 @@ class UploadedImageBase(UploadedFileBase):
             self._recut_sync(names)
 
 
-class UploadedImage(UploadedImageBase, SlaveModelMixin):
-    file = models.FileField(_('file'), max_length=255, upload_to=settings.IMAGES_UPLOAD_TO, storage=upload_storage)
+class VariationalFileField(models.FileField):
+    """
+    Из-за того, что вариация может самостоятельно установить свой формат,
+    возможна ситуация, когда вариации одного изображения перезапишут вариации
+    другого. Например, когда загружаются файлы, отличающиеся только расширением.
+    Поэтому мы проверяем все имена будующих вариаций на существование, чтобы
+    не допустить перезапись.
+    """
+    def variation_collapse(self, instance, name):
+        if self.storage.exists(name):
+            return True
+
+        for vname, variation in instance.get_variations().items():
+            variation_filename = utils.get_variation_filename(name, vname, variation)
+            if self.storage.exists(variation_filename):
+                return True
+        return False
+
+    def generate_filename(self, instance, filename):
+        name = super().generate_filename(instance, filename)
+
+        max_length = self.max_length
+        dir_name, file_name = os.path.split(name)
+        file_root, file_ext = os.path.splitext(file_name)
+        while self.variation_collapse(instance, name) or (max_length and len(name) > max_length):
+            name = os.path.join(dir_name, "%s_%s%s" % (file_root, get_random_string(7), file_ext))
+            if max_length is None:
+                continue
+            # Truncate file_root if max_length exceeded.
+            truncation = len(name) - max_length
+            if truncation > 0:
+                file_root = file_root[:-truncation]
+                # Entire file_root was truncated in attempt to find an available filename.
+                if not file_root:
+                    raise SuspiciousFileOperation(
+                        'Storage can not find an available filename for "%s". '
+                        'Please make sure that the corresponding file field '
+                        'allows sufficient "max_length".' % name
+                    )
+                name = os.path.join(dir_name, "%s_%s%s" % (file_root, get_random_string(7), file_ext))
+        return name
+
+
+class UploadedImage(ProxyFileAttributesMixin, SlaveModelMixin, UploadedImageBase):
+    file = VariationalFileField(_('file'), max_length=255, upload_to=settings.IMAGES_UPLOAD_TO, storage=upload_storage)
 
     class Meta(UploadedImageBase.Meta):
         verbose_name = _('image')
         verbose_name_plural = _('images')
+
+    def __str__(self):
+        return self.file.name
 
     def get_variations(self) -> Dict[str, Variation]:
         if not hasattr(self, '_variations_cache'):
@@ -269,7 +325,7 @@ class UploadedImage(UploadedImageBase, SlaveModelMixin):
     def get_validation(cls) -> Dict[str, Any]:
         return {
             **super().get_validation(),
-            'acceptFiles': 'image/*',
+            'acceptFiles': ['image/*'],
         }
 
     def as_dict(self) -> Dict[str, Any]:
