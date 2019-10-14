@@ -14,8 +14,13 @@ __all__ = [
 ]
 
 
+class HelpTextValidatorMixin:
+    def get_help_text(self):
+        raise NotImplementedError
+
+
 @deconstructible
-class ExtensionValidator:
+class ExtensionValidator(HelpTextValidatorMixin):
     message = _("`%(name)s` has an invalid extension. Valid extension(s): %(allowed)s")
     code = 'invalid_extension'
 
@@ -34,9 +39,12 @@ class ExtensionValidator:
         if ext not in self.allowed:
             raise ValidationError(self.message, code=self.code, params=params)
 
+    def get_help_text(self):
+        return _('Allowed extensions: {}'.format(", ".join(self.allowed)))
+
 
 @deconstructible
-class MimetypeValidator:
+class MimetypeValidator(HelpTextValidatorMixin):
     message = _("`%(name)s` has an invalid mimetype '%(mimetype)s'")
     code = 'invalid_mimetype'
 
@@ -57,9 +65,12 @@ class MimetypeValidator:
         if not (mimetype in self.allowed or '{}/*'.format(basetype) in self.allowed):
             raise ValidationError(self.message, code=self.code, params=params)
 
+    def get_help_text(self):
+        return _('Allowed MIME types: {}'.format(", ".join(self.allowed)))
+
 
 @deconstructible
-class SizeValidator:
+class SizeValidator(HelpTextValidatorMixin):
     message = _("`%(name)s` is too large. Maximum file size is %(limit_value)s.")
     code = 'size_limit'
 
@@ -77,9 +88,12 @@ class SizeValidator:
         if file.size > self.limit_value:
             raise ValidationError(self.message, code=self.code, params=params)
 
+    def get_help_text(self):
+        return _('Maximum file size: {}'.format(filesizeformat(self.limit_value)))
+
 
 @deconstructible
-class ImageMinSizeValidator:
+class ImageMinSizeValidator(HelpTextValidatorMixin):
     error_messages = {
         'min_width': _('`%(name)s` is not wide enough. Minimum width is %(width_limit)s pixels.'),
         'min_height': _('`%(name)s` is not tall enough. Minimum height is %(height_limit)s pixels.'),
@@ -122,9 +136,18 @@ class ImageMinSizeValidator:
 
         raise ValidationError(self.error_messages[code], code=code, params=params)
 
+    def get_help_text(self):
+        if self.width_limit:
+            if self.height_limit:
+                return _('Minimum image size: {}x{}'.format(self.width_limit, self.height_limit))
+            else:
+                return _('Minimum image width: {} pixels'.format(self.width_limit))
+        elif self.height_limit:
+            return _('Minimum image height: {} pixels'.format(self.height_limit))
+
 
 @deconstructible
-class ImageMaxSizeValidator:
+class ImageMaxSizeValidator(HelpTextValidatorMixin):
     error_messages = {
         'max_width': _('`%(name)s` is too wide. Maximum width is %(width_limit)s pixels.'),
         'max_height': _('`%(name)s` is too tall. Maximum height is %(height_limit)s pixels.'),
@@ -164,3 +187,12 @@ class ImageMaxSizeValidator:
             return
 
         raise ValidationError(self.error_messages[code], code=code, params=params)
+
+    def get_help_text(self):
+        if self.width_limit:
+            if self.height_limit:
+                return _('Maximum image size: {}x{}'.format(self.width_limit, self.height_limit))
+            else:
+                return _('Maximum image width: {} pixels'.format(self.width_limit))
+        elif self.height_limit:
+            return _('Maximum image height: {} pixels'.format(self.height_limit))

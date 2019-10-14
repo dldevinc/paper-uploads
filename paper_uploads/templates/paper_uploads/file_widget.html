@@ -72,6 +72,17 @@
     </div>
   </div>
 
+  {% if validation_lines %}
+    <div class="image-uploader__limitations small text-muted mt-2">
+      <span>{{ _('Please consider the following limitations') }}:</span>
+      <ul class="pl-3 mb-0">
+        {% for rule, limit in validation_lines %}
+          <li>{{ rule }}: <em>{{ limit }}</em></li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
   <div class="dropzone-overlay">
     <div class="dropzone-hint">
       <i class="fa fa-fw fa-upload"></i>
