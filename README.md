@@ -371,28 +371,26 @@ python3 manage.py clean_uploads --since=10
 ```
 
 #### recreate_variations
-Перенарезает вариации для указанных моделей / полей.
+Перенарезает вариации для указанных моделей.
 
-Для перенарезки вариаций для какого-либо поля модели, необходимо
-указать модель в виде строки вида `AppLabel.ModelName` и имя поля 
-в параметре `--field`
-
+Рекоммендуется запускать в интерактивном режиме:
 ```shell
-python3 manage.py recreate_variations 'page.Page' --field=image 
+python3 manage.py recreate_variations --interactive
 ```
 
-Для перенарезки всех изображений галереи достаточно указать
-только модель.
+Возможен вызов и в неинтерактивном режиме. Для этого
+необходимо указать модель в виде строки вида 
+`AppLabel.ModelName` и имя поля, ссылающегося на изображение.
 
 ```shell
-python3 manage.py recreate_variations 'page.PageGallery'
+python3 manage.py recreate_variations 'app.Page' 'image'
 ```
 
 Если нужно перенарезать не все вариации, а только некоторые,
 то их можно перечислить в параметре `--variations`.
 
 ```shell
-python3 manage.py recreate_variations 'page.PageGallery' --variations big small
+python3 manage.py recreate_variations 'app.Page' 'image' --variations big small
 ```
 
 Также, изображения можно перенарезать через код, для конкретных
