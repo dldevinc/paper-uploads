@@ -211,17 +211,21 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
         К найденному словарю примешиваются вариации для админки.
         """
         if not hasattr(self, '_variations_cache'):
+            collection_cls = self.get_collection_class()
             item_type_field = self.get_collection_field()
-            if 'variations' in item_type_field.options:
-                variations = item_type_field.options['variations']
-            else:
-                collection_cls = self.get_collection_class()
-                variations = getattr(collection_cls, 'VARIATIONS', None)
-
-            variations = (variations or {}).copy()
-            variations.update(self.PREVIEW_VARIATIONS)
+            variations = self._get_variations(item_type_field, collection_cls)
             self._variations_cache = utils.build_variations(variations)
         return self._variations_cache
+
+    @classmethod
+    def _get_variations(cls, field, collection_cls) -> Dict[str, Variation]:
+        if 'variations' in field.options:
+            variations = field.options['variations']
+        else:
+            variations = getattr(collection_cls, 'VARIATIONS', None)
+        variations = (variations or {}).copy()
+        variations.update(cls.PREVIEW_VARIATIONS)
+        return variations
 
     def as_dict(self) -> Dict[str, Any]:
         return {
