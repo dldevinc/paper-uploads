@@ -41,7 +41,6 @@ INSTALLED_APPS = [
 ]
 
 PAPER_UPLOADS = {
-    'RQ_ENABLED': True,
     'POSTPROCESS': {
         'JPEG': {
             'COMMAND': 'jpeg-recompress',
@@ -434,6 +433,73 @@ class PageGallery(Collection):
         SizeValidator(10 * 1024 * 1024), 
     ])
 ```
+
+## Postprocessing
+
+Для каждого формата изображения можно указать команду, которая
+будет выполнена для вариации сразу после её создания. Это
+позволяет произвести оптимизации, которые выходят за рамки 
+библиотеки `PIL`. 
+
+Команды постобработки могут быть указаны глобально - в словаре
+`POSTPROCESS` настроек библиотеки. Ключом является название 
+формата, как это принято в `PIL` (поэтому, в частности, 
+нужно писать `JPEG`, а не `JPG`). В качестве значения используется
+словарь, в котором *должен* присутствовать ключ `command`
+(в любом регистре), ссылающийся на исполняемый файл.
+
+```python
+PAPER_UPLOADS = {
+    'POSTPROCESS': {
+        'JPEG': {
+            'COMMAND': 'jpeg-recompress',
+            'ARGUMENTS': '--quality high --method smallfry {file} {file}',
+        },
+        'PNG': {
+            'COMMAND': 'pngquant',
+            'ARGUMENTS': '--force --skip-if-larger --output {file} {file}'
+        },
+    }
+}
+```
+
+Опционально, в ключе `arguments` (в любом регистре) можно указать 
+аргументы, передающиеся исполняемому файлу. В строке агрументов 
+можно использовать шаблонную переменную `{file}`, которая будет
+заменена на абсолютный путь к файлу вариации.
+
+Помимо этого есть возможность переопределить команду постобработки 
+(или запретить её) в конкретной вариации. Для того, чтобы отменить
+постобработку, можно передать параметр `postprocess` со значением 
+`False`.
+
+Пример: отмена постобработки для всех форматов вариации, кроме 
+JPEG. Для JPEG будет использована команда `echo`:
+```python
+from django.db import models
+from paper_uploads.models import *
+
+
+class Page(models.Model):
+    image = ImageField(_('image'), blank=True,
+        variations=dict(
+            desktop=dict(
+                size=(1600, 0),
+                postprocess=False,  # disable any postprocessing ...
+                jpeg=dict(
+                    quality=92,
+                    postprocess={   # ... except for JPEG
+                        'command': 'echo',
+                        'arguments': '"{file}"'
+                    }       
+                ),
+            )
+        )
+    )
+```
+
+**NOTE**: не путайте настройки постобработки файла `postprocess`
+с `pilkit`-процессорами, указываемыми в параметре `postprocessors`.
 
 ## Settings
 Все настройки указываются в словаре `PAPER_UPLOADS`.

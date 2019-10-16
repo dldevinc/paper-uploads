@@ -3,8 +3,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
 from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
-from ..storage import upload_storage
 from ..conf import settings
+from ..storage import upload_storage
 
 
 class UploadedFile(ProxyFileAttributesMixin, SlaveModelMixin, UploadedFileBase):

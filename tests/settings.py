@@ -169,5 +169,6 @@ PAPER_UPLOADS = {
             'COMMAND': 'svgo',
             'ARGUMENTS': '--precision=5 {file}',
         },
+        'WEBP': False
     }
 }

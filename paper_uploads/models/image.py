@@ -12,9 +12,10 @@ from django.core.exceptions import ValidationError, SuspiciousFileOperation
 from variations.variation import Variation
 from variations.utils import prepare_image
 from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
-from ..storage import upload_storage
 from ..conf import settings
-from .. import utils
+from ..storage import upload_storage
+from ..utils import get_variation_filename
+from ..postprocess import postprocess_variation
 from .. import tasks
 
 __all__ = ['UploadedImageBase', 'UploadedImage']
@@ -25,7 +26,7 @@ class VariationFile(File):
         self.instance = instance
         self.variation_name = variation_name
         self.storage = instance.file.storage
-        filename = utils.get_variation_filename(instance.file.name, variation_name, self.variation)
+        filename = get_variation_filename(instance.file.name, variation_name, self.variation)
         super().__init__(None, filename)
 
     def _get_file(self):
@@ -236,10 +237,10 @@ class UploadedImageBase(UploadedFileBase):
                     continue
 
                 image = variation.process(img)
-                variation_path = utils.get_variation_filename(self.file.name, name, variation)
+                variation_path = get_variation_filename(self.file.name, name, variation)
                 with self.file.storage.open(variation_path, 'wb+') as fp:
                     variation.save(image, fp)
-                    utils.postprocess_variation(self.file.name, name, variation)
+                    postprocess_variation(self.file.name, name, variation)
 
     def _recut_async(self, names: Iterable[str] = ()):
         from django_rq.queues import get_queue
@@ -272,7 +273,7 @@ class VariationalFileField(models.FileField):
             return True
 
         for vname, variation in instance.get_variations().items():
-            variation_filename = utils.get_variation_filename(name, vname, variation)
+            variation_filename = get_variation_filename(name, vname, variation)
             if self.storage.exists(variation_filename):
                 return True
         return False

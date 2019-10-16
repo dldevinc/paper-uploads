@@ -23,7 +23,8 @@ from .fields import CollectionItemTypeField
 from ..conf import settings, FILE_ICON_OVERRIDES, FILE_ICON_DEFAULT
 from ..storage import upload_storage
 from .. import tasks
-from .. import utils
+from ..helpers import build_variations
+from ..postprocess import postprocess_svg
 
 __all__ = [
     'CollectionItemBase', 'FileItemBase', 'ImageItemBase', 'CollectionBase',
@@ -214,7 +215,7 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
             collection_cls = self.get_collection_class()
             item_type_field = self.get_collection_field()
             variations = self._get_variations(item_type_field, collection_cls)
-            self._variations_cache = utils.build_variations(variations)
+            self._variations_cache = build_variations(variations)
         return self._variations_cache
 
     @classmethod
@@ -427,7 +428,7 @@ class SVGItem(FileItemBase):
             if command is None:
                 # обработка явным образом запрещена
                 return
-        utils.postprocess_svg(self.file.name, command)
+        postprocess_svg(self.file.name, command)
 
 
 class ImageItem(ImageItemBase):
