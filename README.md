@@ -5,8 +5,8 @@
 Предоставляет поля для асинхронной загрузки файлов.
 
 ## Requirements
-* Python (3.5, 3.6, 3.7)
-* Django (2.1, 2.2)
+* Python 3.6+
+* Django 2.1+
 * [paper-admin](https://github.com/dldevinc/paper-admin)
 * [variations](https://github.com/dldevinc/variations)
 
