@@ -65,13 +65,13 @@ class TestCollection(TestCase):
         self.assertEqual(self.audio_item.extension, 'ogg')
 
     def test_file_size(self):
-        self.assertEqual(self.svg_item.size, 1183)
+        self.assertEqual(self.svg_item.size, 1022)
         self.assertEqual(self.image_item.size, 214779)
         self.assertEqual(self.file_item.size, 9678)
         self.assertEqual(self.audio_item.size, 105243)
 
     def test_file_hash(self):
-        self.assertEqual(self.svg_item.hash, '0de603d9b61a3af301f23a0f233113119f5368f5')
+        self.assertEqual(self.svg_item.hash, 'f98668ff3534d61cfcef507478abfe7b4c1dbb8a')
         self.assertEqual(self.image_item.hash, '8af6d51189e57d1e6ae4188a5a1fcaea4da39b7b')
         self.assertEqual(self.file_item.hash, 'bebc2ddd2a8b8270b359990580ff346d14c021fa')
         self.assertEqual(self.audio_item.hash, '4fccac8855634c2dccbd806aa7fc4ac3879e5a35')

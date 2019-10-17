@@ -1,8 +1,12 @@
+from pathlib import Path
 from django.test import TestCase
+from django.core.files import File
 from variations.variation import Variation
 from ..exceptions import PostprocessProhibited
 from .. import postprocess
 from ..models import *
+
+TESTS_PATH = Path(__file__).parent / 'samples'
 
 
 class TestCollection(Collection):
@@ -125,3 +129,21 @@ class TestGetOptions(TestCase):
         image_field = TestCollection.item_types['svg']
         with self.assertRaises(PostprocessProhibited):
             postprocess.get_options('jpeg', field=image_field)
+
+
+class TestFilePostprocess(TestCase):
+    def setUp(self) -> None:
+        with open(TESTS_PATH / 'cartman.svg', 'rb') as fp:
+            self.object = UploadedFile(
+                file=File(fp, name='cartman.svg'),
+            )
+            self.object.save()
+
+    def tearDown(self) -> None:
+        self.object.delete()
+
+    def test_file_size(self):
+        self.assertEqual(self.object.size, 1022)
+
+    def test_file_hash(self):
+        self.assertEqual(self.object.hash, 'f98668ff3534d61cfcef507478abfe7b4c1dbb8a')
