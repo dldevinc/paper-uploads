@@ -44,11 +44,10 @@ DEFAULTS = {
         ),
     ),
 
-    'DEFAULT_FACE_DETECTION': False,
-
     'RQ_ENABLED': False,
     'RQ_QUEUE_NAME': 'default',
 
+    'VARIATION_DEFAULTS': {},
     'POSTPROCESS': {},
 }
 
@@ -119,22 +118,33 @@ class Settings:
         self.import_strings = import_strings or IMPORT_STRINGS
 
     def __getattr__(self, name):
+        value = self._get_value(name)
+        method_name = 'prepare_{}'.format(name.lower())
+        prepare_method = getattr(self, method_name, None)
+        if prepare_method is not None:
+            value = prepare_method(value)
+        self.__dict__[name] = value
+        return value
+
+    def _get_value(self, name):
         if name not in self.defaults:
             raise AttributeError("Invalid setting: '%s'" % name)
 
         try:
             # Check if present in user settings
-            val = self.user_settings[name]
+            value = self.user_settings[name]
         except KeyError:
             # Fall back to defaults
-            val = self.defaults[name]
+            value = self.defaults[name]
 
         # Coerce import strings into classes
         if name in self.import_strings:
-            val = perform_import(val, name)
+            return perform_import(value, name)
+        return value
 
-        self.__dict__[name] = val
-        return val
+    def prepare_postprocess(self, value):
+        from .utils import lowercase_copy
+        return lowercase_copy(value)
 
 
 settings = Settings(

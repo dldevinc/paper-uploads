@@ -23,7 +23,8 @@ from .fields import CollectionItemTypeField
 from ..conf import settings, FILE_ICON_OVERRIDES, FILE_ICON_DEFAULT
 from ..storage import upload_storage
 from .. import tasks
-from .. import utils
+from ..helpers import build_variations
+from ..postprocess import postprocess_uploaded_file
 
 __all__ = [
     'CollectionItemBase', 'FileItemBase', 'ImageItemBase', 'CollectionBase',
@@ -39,9 +40,10 @@ class CollectionItemBase(PolymorphicModel):
     change_form_class = None
     admin_template_name = None
 
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    collection_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     collection_id = models.IntegerField()
-    collection = GenericForeignKey(fk_field='collection_id', for_concrete_model=False)
+    collection = GenericForeignKey(ct_field='collection_content_type',
+        fk_field='collection_id', for_concrete_model=False)
 
     item_type = models.CharField(_('type'), max_length=32, db_index=True, editable=False)
     order = models.IntegerField(_('order'), default=0, editable=False)
@@ -112,9 +114,9 @@ class CollectionItemBase(PolymorphicModel):
         super().save(*args, **kwargs)
 
     def get_collection_class(self) -> Type['CollectionBase']:
-        return self.content_type.model_class()
+        return self.collection_content_type.model_class()
 
-    def get_collection_field(self) -> CollectionItemTypeField:
+    def get_itemtype_field(self) -> CollectionItemTypeField:
         collection_cls = self.get_collection_class()
         for name, field in collection_cls.item_types.items():
             if field.model is type(self):
@@ -136,7 +138,8 @@ class CollectionItemBase(PolymorphicModel):
         Подключение элемента к коллекции.
         Используется в случае динамического создания элементов коллекции.
         """
-        self.content_type = ContentType.objects.get_for_model(collection, for_concrete_model=False)
+        self.collection_content_type = ContentType.objects.get_for_model(
+            collection, for_concrete_model=False)
         self.collection_id = collection.pk
         for name, field in collection.item_types.items():
             if field.model is type(self):
@@ -179,12 +182,47 @@ class FileItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collection
         if not self.pk and not self.display_name:
             self.display_name = self.name
 
+    def post_save_new_file(self):
+        super().post_save_new_file()
+        self._postprocess()
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
             'name': self.canonical_name,
             'url': self.file.url,
         }
+
+    def _postprocess_sync(self):
+        itemtype_field = self.get_itemtype_field()
+        if itemtype_field is None:
+            return
+
+        postprocess_uploaded_file(self.file.name, itemtype_field)
+
+        current_hash_value = self.hash
+        self.update_hash(commit=False)
+        if current_hash_value and current_hash_value != self.hash:
+            self.size = self.file.size
+            self.update_hash(commit=False)
+            self.modified_at = now()
+            self.save(update_fields=['size', 'hash', 'modified_at'])
+
+    def _postprocess_async(self):
+        from django_rq.queues import get_queue
+        queue = get_queue(settings.RQ_QUEUE_NAME)
+        queue.enqueue_call(tasks.postprocess_file, kwargs={
+            'app_label': self._meta.app_label,
+            'model_name': self._meta.model_name,
+            'object_id': self.pk,
+            'using': self._state.db,
+        })
+
+    def _postprocess(self):
+        if settings.RQ_ENABLED:
+            self._postprocess_async()
+        else:
+            self._postprocess_sync()
 
 
 class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, CollectionItemBase, UploadedImageBase):
@@ -212,9 +250,9 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
         """
         if not hasattr(self, '_variations_cache'):
             collection_cls = self.get_collection_class()
-            item_type_field = self.get_collection_field()
-            variations = self._get_variations(item_type_field, collection_cls)
-            self._variations_cache = utils.build_variations(variations)
+            itemtype_field = self.get_itemtype_field()
+            variations = self._get_variations(itemtype_field, collection_cls)
+            self._variations_cache = build_variations(variations)
         return self._variations_cache
 
     @classmethod
@@ -227,29 +265,42 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
         variations.update(cls.PREVIEW_VARIATIONS)
         return variations
 
-    def as_dict(self) -> Dict[str, Any]:
-        return {
-            **super().as_dict(),
-            'name': self.canonical_name,
-            'url': self.file.url,
-        }
-
     def post_save_new_file(self):
         """
         При отложенной нарезке превью для админки режутся сразу,
         а остальное - потом.
         """
         super(UploadedImageBase, self).post_save_new_file()
+
+        # postprocess
+        postprocess_options = None
+        itemtype_field = self.get_itemtype_field()
+        if itemtype_field is not None:
+            postprocess_options = itemtype_field.postprocess
+
         if settings.RQ_ENABLED:
             preview_variations = tuple(self.PREVIEW_VARIATIONS.keys())
-            self._recut_sync(names=preview_variations)
-            self.recut(names=tuple(
-                name
-                for name in self.get_variations()
-                if name not in preview_variations
-            ))
+            self._recut_sync(
+                names=preview_variations,
+                postprocess=postprocess_options
+            )
+            self.recut(
+                names=tuple(
+                    name
+                    for name in self.get_variations()
+                    if name not in preview_variations
+                ),
+                postprocess=postprocess_options
+            )
         else:
-            self.recut()
+            self.recut(postprocess=postprocess_options)
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            **super().as_dict(),
+            'name': self.canonical_name,
+            'url': self.file.url,
+        }
 
 
 class CollectionMetaclass(ModelBase):
@@ -304,7 +355,9 @@ class ContentItemRelation(GenericRelation):
 
 class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
     item_types = ItemTypesDescriptor()
-    items = ContentItemRelation(CollectionItemBase, object_id_field='collection_id', for_concrete_model=False)
+    items = ContentItemRelation(CollectionItemBase,
+        content_type_field='collection_content_type',
+        object_id_field='collection_id', for_concrete_model=False)
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
 
     class Meta:
@@ -331,16 +384,18 @@ class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
     def detect_file_type(self, file: IO) -> str:
         raise NotImplementedError
 
-    def _recut_sync(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS):
+    def _recut_sync(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS,
+            postprocess: Dict[str, str] = None):
         recutable_items = tuple(
             name
             for name, field in self.item_types.items()
             if hasattr(field.model, 'recut')
         )
         for item in self.items.using(using).filter(item_type__in=recutable_items):
-            item._recut_sync(names)
+            item._recut_sync(names, postprocess=postprocess)
 
-    def _recut_async(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS):
+    def _recut_async(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS,
+            postprocess: Dict[str, str] = None):
         from django_rq.queues import get_queue
         queue = get_queue(settings.RQ_QUEUE_NAME)
         queue.enqueue_call(tasks.recut_collection, kwargs={
@@ -349,13 +404,15 @@ class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
             'object_id': self.pk,
             'names': names,
             'using': using,
+            'postprocess': postprocess
         })
 
-    def recut(self, names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS):
+    def recut(self, names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS,
+            postprocess: Dict[str, str] = None):
         if settings.RQ_ENABLED:
-            self._recut_async(names, using=using)
+            self._recut_async(names, using=using, postprocess=postprocess)
         else:
-            self._recut_sync(names, using=using)
+            self._recut_sync(names, using=using, postprocess=postprocess)
 
 
 # ==============================================================================
@@ -370,6 +427,10 @@ class FileItem(FileItemBase):
     def file_supported(cls, file: IO) -> bool:
         return True
 
+    def pre_save_new_file(self):
+        super().pre_save_new_file()
+        self.preview = self.get_preview_url()
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
@@ -379,10 +440,6 @@ class FileItem(FileItemBase):
                 'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
             })
         }
-
-    def pre_save_new_file(self):
-        super().pre_save_new_file()
-        self.preview = self.get_preview_url()
 
     def get_preview_url(self):
         icon_path_template = 'paper_uploads/dist/image/{}.svg'
@@ -415,19 +472,6 @@ class SVGItem(FileItemBase):
                 'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
             })
         }
-
-    def post_save_new_file(self):
-        super().post_save_new_file()
-
-        # postprocess svg
-        command = {}
-        collection_field = self.get_collection_field()
-        if collection_field is not None:
-            command = collection_field.options.get('postprocess', {})
-            if command is None:
-                # обработка явным образом запрещена
-                return
-        utils.postprocess_svg(self.file.name, command)
 
 
 class ImageItem(ImageItemBase):

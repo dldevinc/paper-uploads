@@ -30,6 +30,10 @@ class UncompleteUpload(Exception):
     pass
 
 
+class PostprocessProhibited(Exception):
+    pass
+
+
 class AjaxFormError(Exception):
     def __init__(self, message):
         self.message = message

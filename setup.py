@@ -17,7 +17,7 @@ DESCRIPTION = 'A django app that provides suggestions while you type into the fi
 URL = 'https://github.com/dldevinc/paper-uploads'
 EMAIL = 'x896321475@gmail.com'
 AUTHOR = 'Mihail Mishakin'
-VERSION = '0.1.1'
+VERSION = '0.1.2'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
@@ -143,7 +143,6 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Framework :: Django :: 2.1',

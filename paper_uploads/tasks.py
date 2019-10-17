@@ -1,5 +1,5 @@
 import time
-from typing import Iterable
+from typing import Iterable, Dict
 from django.apps import apps
 from django.db import DEFAULT_DB_ALIAS
 from django.core.exceptions import ObjectDoesNotExist
@@ -18,20 +18,30 @@ def _get_instance(app_label: str, model_name: str, object_id: int, using: str = 
         try:
             return model_class._base_manager.using(using).get(pk=object_id)
         except ObjectDoesNotExist:
-            # delay recheck if transaction not commited yet
+            # delay recheck if transaction not committed yet
             attempts += 1
             if attempts > MAX_DB_ATTEMPTS:
-                logger.exception('Not found instance #%s' % object_id)
+                logger.exception('Instance #%s not found' % object_id)
                 raise
             else:
                 time.sleep(1)
 
 
-def recut_image(app_label: str, model_name: str, object_id: int, names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS):
+def postprocess_file(app_label: str, model_name: str, object_id: int,
+        using: str = DEFAULT_DB_ALIAS):
     instance = _get_instance(app_label, model_name, object_id, using=using)
-    instance._recut_sync(names)
+    instance._postprocess_sync()
 
 
-def recut_collection(app_label: str, model_name: str, object_id: int, names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS):
+def recut_image(app_label: str, model_name: str, object_id: int,
+        names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS,
+        postprocess: Dict[str, str] = None):
     instance = _get_instance(app_label, model_name, object_id, using=using)
-    instance._recut_sync(names, using=using)
+    instance._recut_sync(names, postprocess=postprocess)
+
+
+def recut_collection(app_label: str, model_name: str, object_id: int,
+        names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS,
+        postprocess: Dict[str, str] = None):
+    collection = _get_instance(app_label, model_name, object_id, using=using)
+    collection._recut_sync(names, using=using, postprocess=postprocess)

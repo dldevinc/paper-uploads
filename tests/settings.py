@@ -156,18 +156,29 @@ RQ_QUEUES = {
 # ===============
 PAPER_UPLOADS = {
     # 'RQ_ENABLED': True,
+    'VARIATION_DEFAULTS': {
+        'face_detection': True,
+        'jpeg': dict(
+            quality=80,
+            progressive=True,
+        ),
+        'webp': dict(
+            quality=75,
+        )
+    },
     'POSTPROCESS': {
-        'JPEG': {
-            'COMMAND': 'jpeg-recompress',
-            'ARGUMENTS': '--strip --quality medium --method smallfry {file} {file}',
+        'jpeg': {
+            'command': 'jpeg-recompress',
+            'arguments': '--strip --quality medium "{file}" "{file}"',
         },
-        'PNG': {
-            'COMMAND': 'pngquant',
-            'ARGUMENTS': '--force --skip-if-larger --output {file} {file}'
+        'png': {
+            'command': 'pngquant',
+            'arguments': '--force --skip-if-larger --output "{file}" "{file}"'
         },
-        'SVG': {
-            'COMMAND': 'svgo',
-            'ARGUMENTS': '--precision=5 {file}',
+        'svg': {
+            'command': 'svgo',
+            'arguments': '--precision=5 "{file}"',
         },
+        'webp': False
     }
 }

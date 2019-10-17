@@ -12,9 +12,10 @@ from django.core.exceptions import ValidationError, SuspiciousFileOperation
 from variations.variation import Variation
 from variations.utils import prepare_image
 from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
-from ..storage import upload_storage
 from ..conf import settings
-from .. import utils
+from ..storage import upload_storage
+from ..utils import get_variation_filename
+from ..postprocess import postprocess_variation
 from .. import tasks
 
 __all__ = ['UploadedImageBase', 'UploadedImage']
@@ -25,7 +26,7 @@ class VariationFile(File):
         self.instance = instance
         self.variation_name = variation_name
         self.storage = instance.file.storage
-        filename = utils.get_variation_filename(instance.file.name, variation_name, self.variation)
+        filename = get_variation_filename(instance.file.name, variation_name, self.variation)
         super().__init__(None, filename)
 
     def _get_file(self):
@@ -120,7 +121,7 @@ class UploadedImageBase(UploadedFileBase):
     alt = models.CharField(_('alternate text'), max_length=255, blank=True,
         help_text=_('This text will be used by screen readers, search engines, or when the image cannot be loaded'))
     title = models.CharField(_('title'), max_length=255, blank=True,
-        help_text=_('The title is used as a tooltip when the user hovers the mouse over the image'))
+        help_text=_('The title is being used as a tooltip when the user hovers the mouse over the image'))
     width = models.PositiveSmallIntegerField(_('width'), default=0, editable=False)
     height = models.PositiveSmallIntegerField(_('height'), default=0, editable=False)
     cropregion = models.CharField(_('crop region'), max_length=24, blank=True, editable=False)
@@ -218,7 +219,7 @@ class UploadedImageBase(UploadedFileBase):
         if max_width and max_height:
             return max_width, max_height
 
-    def _recut_sync(self, names: Iterable[str] = ()):
+    def _recut_sync(self, names: Iterable[str] = (), postprocess: Dict[str, str] = None):
         """
         Перенарезка указанных вариаций.
         Если конкретные вариации не указаны, перенарезаны будут все.
@@ -236,12 +237,17 @@ class UploadedImageBase(UploadedFileBase):
                     continue
 
                 image = variation.process(img)
-                variation_path = utils.get_variation_filename(self.file.name, name, variation)
+                variation_path = get_variation_filename(self.file.name, name, variation)
                 with self.file.storage.open(variation_path, 'wb+') as fp:
                     variation.save(image, fp)
-                    utils.postprocess_variation(self.file.name, name, variation)
+                    postprocess_variation(
+                        self.file.name,
+                        name,
+                        variation,
+                        options=postprocess
+                    )
 
-    def _recut_async(self, names: Iterable[str] = ()):
+    def _recut_async(self, names: Iterable[str] = (), postprocess: Dict[str, str] = None):
         from django_rq.queues import get_queue
         queue = get_queue(settings.RQ_QUEUE_NAME)
         queue.enqueue_call(tasks.recut_image, kwargs={
@@ -250,13 +256,14 @@ class UploadedImageBase(UploadedFileBase):
             'object_id': self.pk,
             'names': names,
             'using': self._state.db,
+            'postprocess': postprocess
         })
 
-    def recut(self, names: Iterable[str] = None):
+    def recut(self, names: Iterable[str] = None, postprocess: Dict[str, str] = None):
         if settings.RQ_ENABLED:
-            self._recut_async(names)
+            self._recut_async(names, postprocess)
         else:
-            self._recut_sync(names)
+            self._recut_sync(names, postprocess)
 
 
 class VariationalFileField(models.FileField):
@@ -264,7 +271,7 @@ class VariationalFileField(models.FileField):
     Из-за того, что вариация может самостоятельно установить свой формат,
     возможна ситуация, когда вариации одного изображения перезапишут вариации
     другого. Например, когда загружаются файлы, отличающиеся только расширением.
-    Поэтому мы проверяем все имена будующих вариаций на существование, чтобы
+    Поэтому мы проверяем все имена будущих вариаций на существование, чтобы
     не допустить перезапись.
     """
     def variation_collapse(self, instance, name):
@@ -272,7 +279,7 @@ class VariationalFileField(models.FileField):
             return True
 
         for vname, variation in instance.get_variations().items():
-            variation_filename = utils.get_variation_filename(name, vname, variation)
+            variation_filename = get_variation_filename(name, vname, variation)
             if self.storage.exists(variation_filename):
                 return True
         return False
@@ -291,11 +298,10 @@ class VariationalFileField(models.FileField):
             truncation = len(name) - max_length
             if truncation > 0:
                 file_root = file_root[:-truncation]
-                # Entire file_root was truncated in attempt to find an available filename.
                 if not file_root:
                     raise SuspiciousFileOperation(
-                        'Storage can not find an available filename for "%s". '
-                        'Please make sure that the corresponding file field '
+                        'Storage cannot find an available filename for "%s". '
+                        'Please make sure the corresponding file field '
                         'allows sufficient "max_length".' % name
                     )
                 name = os.path.join(dir_name, "%s_%s%s" % (file_root, get_random_string(7), file_ext))

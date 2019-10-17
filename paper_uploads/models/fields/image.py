@@ -1,14 +1,14 @@
 from django.core import checks
 from .base import FileFieldBase
 from ..image import UploadedImage
+from ...helpers import build_variations
 from ... import forms
-from ... import utils
 
 
 class ImageField(FileFieldBase):
     def __init__(self, *args, variations=None, **kwargs):
         kwargs.setdefault('to', UploadedImage)
-        self.variations = utils.build_variations(variations)
+        self.variations = build_variations(variations or {})
         super().__init__(*args, **kwargs)
 
     def check(self, **kwargs):
