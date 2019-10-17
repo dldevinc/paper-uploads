@@ -169,15 +169,15 @@ PAPER_UPLOADS = {
     'POSTPROCESS': {
         'jpeg': {
             'command': 'jpeg-recompress',
-            'arguments': '--strip --quality medium --method smallfry {file} {file}',
+            'arguments': '--strip --quality medium --method smallfry "{file}" "{file}"',
         },
         'png': {
             'command': 'pngquant',
-            'arguments': '--force --skip-if-larger --output {file} {file}'
+            'arguments': '--force --skip-if-larger --output "{file}" "{file}"'
         },
         'svg': {
             'command': 'svgo',
-            'arguments': '--precision=5 {file}',
+            'arguments': '--precision=5 "{file}"',
         },
         'webp': False
     }

@@ -10,21 +10,21 @@ class TestGetOptions(TestCase):
             postprocess.get_options('jpeg'),
             {
                 'command': 'jpeg-recompress',
-                'arguments': '--strip --quality medium --method smallfry {file} {file}',
+                'arguments': '--strip --quality medium --method smallfry "{file}" "{file}"',
             }
         )
         self.assertDictEqual(
             postprocess.get_options('png'),
             {
                 'command': 'pngquant',
-                'arguments': '--force --skip-if-larger --output {file} {file}'
+                'arguments': '--force --skip-if-larger --output "{file}" "{file}"'
             }
         )
         self.assertDictEqual(
             postprocess.get_options('svg'),
             {
                 'command': 'svgo',
-                'arguments': '--precision=5 {file}',
+                'arguments': '--precision=5 "{file}"',
             }
         )
 
@@ -40,7 +40,7 @@ class TestGetOptions(TestCase):
                 postprocess.get_options(format),
                 {
                     'command': 'jpeg-recompress',
-                    'arguments': '--strip --quality medium --method smallfry {file} {file}',
+                    'arguments': '--strip --quality medium --method smallfry "{file}" "{file}"',
                 }
             )
 
