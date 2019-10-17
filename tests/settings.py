@@ -157,6 +157,7 @@ RQ_QUEUES = {
 PAPER_UPLOADS = {
     # 'RQ_ENABLED': True,
     'VARIATION_DEFAULTS': {
+        'face_detection': True,
         'jpeg': dict(
             quality=80,
             progressive=True,
