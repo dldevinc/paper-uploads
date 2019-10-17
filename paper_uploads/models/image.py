@@ -219,7 +219,7 @@ class UploadedImageBase(UploadedFileBase):
         if max_width and max_height:
             return max_width, max_height
 
-    def _recut_sync(self, names: Iterable[str] = ()):
+    def _recut_sync(self, names: Iterable[str] = (), postprocess: Dict[str, str] = None):
         """
         Перенарезка указанных вариаций.
         Если конкретные вариации не указаны, перенарезаны будут все.
@@ -240,9 +240,14 @@ class UploadedImageBase(UploadedFileBase):
                 variation_path = get_variation_filename(self.file.name, name, variation)
                 with self.file.storage.open(variation_path, 'wb+') as fp:
                     variation.save(image, fp)
-                    postprocess_variation(self.file.name, name, variation)
+                    postprocess_variation(
+                        self.file.name,
+                        name,
+                        variation,
+                        options=postprocess
+                    )
 
-    def _recut_async(self, names: Iterable[str] = ()):
+    def _recut_async(self, names: Iterable[str] = (), postprocess: Dict[str, str] = None):
         from django_rq.queues import get_queue
         queue = get_queue(settings.RQ_QUEUE_NAME)
         queue.enqueue_call(tasks.recut_image, kwargs={
@@ -251,13 +256,14 @@ class UploadedImageBase(UploadedFileBase):
             'object_id': self.pk,
             'names': names,
             'using': self._state.db,
+            'postprocess': postprocess
         })
 
-    def recut(self, names: Iterable[str] = None):
+    def recut(self, names: Iterable[str] = None, postprocess: Dict[str, str] = None):
         if settings.RQ_ENABLED:
-            self._recut_async(names)
+            self._recut_async(names, postprocess)
         else:
-            self._recut_sync(names)
+            self._recut_sync(names, postprocess)
 
 
 class VariationalFileField(models.FileField):

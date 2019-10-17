@@ -237,11 +237,13 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
         if settings.RQ_ENABLED:
             preview_variations = tuple(self.PREVIEW_VARIATIONS.keys())
             self._recut_sync(names=preview_variations)
-            self.recut(names=tuple(
-                name
-                for name in self.get_variations()
-                if name not in preview_variations
-            ))
+            self.recut(
+                names=tuple(
+                    name
+                    for name in self.get_variations()
+                    if name not in preview_variations
+                )
+            )
         else:
             self.recut()
 
@@ -332,16 +334,18 @@ class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
     def detect_file_type(self, file: IO) -> str:
         raise NotImplementedError
 
-    def _recut_sync(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS):
+    def _recut_sync(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS,
+            postprocess: Dict[str, str] = None):
         recutable_items = tuple(
             name
             for name, field in self.item_types.items()
             if hasattr(field.model, 'recut')
         )
         for item in self.items.using(using).filter(item_type__in=recutable_items):
-            item._recut_sync(names)
+            item._recut_sync(names, postprocess=postprocess)
 
-    def _recut_async(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS):
+    def _recut_async(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS,
+            postprocess: Dict[str, str] = None):
         from django_rq.queues import get_queue
         queue = get_queue(settings.RQ_QUEUE_NAME)
         queue.enqueue_call(tasks.recut_collection, kwargs={
@@ -350,13 +354,15 @@ class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
             'object_id': self.pk,
             'names': names,
             'using': using,
+            'postprocess': postprocess
         })
 
-    def recut(self, names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS):
+    def recut(self, names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS,
+            postprocess: Dict[str, str] = None):
         if settings.RQ_ENABLED:
-            self._recut_async(names, using=using)
+            self._recut_async(names, using=using, postprocess=postprocess)
         else:
-            self._recut_sync(names, using=using)
+            self._recut_sync(names, using=using, postprocess=postprocess)
 
 
 # ==============================================================================
