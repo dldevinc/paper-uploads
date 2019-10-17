@@ -52,7 +52,7 @@ class TestGetOptions(TestCase):
             )
         )
         with self.assertRaises(PostprocessProhibited):
-            postprocess.get_options('jpeg', variation)
+            postprocess.get_options('jpeg', variation=variation)
 
     def test_variation_level_disabling(self):
         variation = Variation(
@@ -60,9 +60,9 @@ class TestGetOptions(TestCase):
             postprocess=False
         )
         with self.assertRaises(PostprocessProhibited):
-            postprocess.get_options('jpeg', variation)
+            postprocess.get_options('jpeg', variation=variation)
         with self.assertRaises(PostprocessProhibited):
-            postprocess.get_options('png', variation)
+            postprocess.get_options('png', variation=variation)
 
     def test_global_level_disabling(self):
         with self.assertRaises(PostprocessProhibited):
@@ -83,13 +83,13 @@ class TestGetOptions(TestCase):
             ),
         )
         self.assertDictEqual(
-            postprocess.get_options('jpeg', variation),
+            postprocess.get_options('jpeg', variation=variation),
             {
                 'command': 'echo',
             }
         )
         self.assertDictEqual(
-            postprocess.get_options('webp', variation),
+            postprocess.get_options('webp', variation=variation),
             {
                 'command': 'man',
             }

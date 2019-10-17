@@ -1,7 +1,7 @@
 import os
 import shutil
 import subprocess
-from typing import Dict
+from typing import Dict, Any
 from variations.variation import Variation
 from .conf import settings
 from .logging import logger
@@ -10,7 +10,7 @@ from .exceptions import PostprocessProhibited
 from .utils import lowercase_copy, get_variation_filename
 
 
-def get_options(format: str, variation: Variation = None) -> Dict[str, str]:
+def get_options(format: str, field: Any = None, variation: Variation = None) -> Dict[str, str]:
     """
     Получение настроек постобработки для заданного формата.
     Если постобработка запрещена, выбрасывает исключение PostprocessProhibited.
@@ -18,7 +18,8 @@ def get_options(format: str, variation: Variation = None) -> Dict[str, str]:
     Порядок проверки:
     1) опция `postprocess` для конкретного формата вариации
     2) опция `postprocess` вариации
-    3) настройка `PAPER_UPLOADS['POSTPROCESS']`
+    3) поле (FileField или CollectionItemTypeField)
+    4) настройка `PAPER_UPLOADS['POSTPROCESS']`
     """
     format = format.lower()
     if variation is not None:
@@ -33,6 +34,13 @@ def get_options(format: str, variation: Variation = None) -> Dict[str, str]:
             raise PostprocessProhibited
         elif variation_options:
             return lowercase_copy(variation_options)
+
+    if field is not None:
+        field_options = getattr(field, 'postprocess', None)
+        if field_options is False:
+            raise PostprocessProhibited
+        elif field_options:
+            return lowercase_copy(field_options)
 
     global_options = getattr(settings, 'POSTPROCESS', {})
     if global_options is False:
@@ -92,7 +100,7 @@ def postprocess_variation(source_filename: str, variation_name: str, variation: 
     output_format = variation.output_format(variation_path)
 
     try:
-        postprocess_options = get_options(output_format, variation)
+        postprocess_options = get_options(output_format, variation=variation)
     except PostprocessProhibited:
         return
 
