@@ -49,17 +49,17 @@ PAPER_UPLOADS = {
         )
     },
     'POSTPROCESS': {
-        'JPEG': {
-            'COMMAND': 'jpeg-recompress',
-            'ARGUMENTS': '--quality high --method smallfry {file} {file}',
+        'jpeg': {
+            'command': 'jpeg-recompress',
+            'arguments': '--quality high --method smallfry {file} {file}',
         },
-        'PNG': {
-            'COMMAND': 'pngquant',
-            'ARGUMENTS': '--force --skip-if-larger --output {file} {file}'
+        'png': {
+            'command': 'pngquant',
+            'arguments': '--force --skip-if-larger --output {file} {file}'
         },
-        'SVG': {
-            'COMMAND': 'svgo',
-            'ARGUMENTS': '--precision=4 {file}',
+        'svg': {
+            'command': 'svgo',
+            'arguments': '--precision=4 {file}',
         },   
     }
 }
@@ -299,9 +299,10 @@ class PageGallery(ImageCollection):
 
 Наследование от `Collection` на самом деле создает
 [proxy-модель](https://docs.djangoproject.com/en/2.2/topics/db/models/#proxy-models).
-Это позволяет не создавать для каждой коллекции отдельную таблицу в БД.
-А переопределенный менеджер `objects` в классе `Collection` позволяет 
-прозрачно работать с коллекциями требуемого класса.
+Это позволяет не создавать для каждой коллекции отдельную 
+таблицу в БД. А переопределенный менеджер `objects` в классе 
+`Collection` позволяет прозрачно работать с коллекциями 
+требуемого класса.
 
 ```python
 # Вернет только экземпляры класса MyCollection
@@ -451,27 +452,27 @@ class PageGallery(Collection):
 Команды постобработки могут быть указаны глобально - в словаре
 `POSTPROCESS` настроек библиотеки. Ключом является название 
 формата, как это принято в `PIL` (поэтому, в частности, 
-нужно писать `JPEG`, а не `JPG`). В качестве значения используется
-словарь, в котором *должен* присутствовать ключ `command`
-(в любом регистре), ссылающийся на исполняемый файл.
+нужно писать `jpeg`, а не `jpg`). В качестве значения используется
+словарь, в котором *должен* присутствовать ключ `command`, 
+ссылающийся на исполняемый файл.
 
 ```python
 PAPER_UPLOADS = {
     'POSTPROCESS': {
-        'JPEG': {
-            'COMMAND': 'jpeg-recompress',
-            'ARGUMENTS': '--quality high --method smallfry {file} {file}',
+        'jpeg': {
+            'command': 'jpeg-recompress',
+            'arguments': '--quality high --method smallfry {file} {file}',
         },
-        'PNG': {
-            'COMMAND': 'pngquant',
-            'ARGUMENTS': '--force --skip-if-larger --output {file} {file}'
+        'png': {
+            'command': 'pngquant',
+            'arguments': '--force --skip-if-larger --output {file} {file}'
         },
     }
 }
 ```
 
-Опционально, в ключе `arguments` (в любом регистре) можно указать 
-аргументы, передающиеся исполняемому файлу. В строке агрументов 
+Опционально, в ключе `arguments` можно указать аргументы, 
+передающиеся исполняемому файлу. В строке агрументов 
 можно использовать шаблонную переменную `{file}`, которая будет
 заменена на абсолютный путь к файлу вариации.
 
@@ -524,17 +525,17 @@ PAPER_UPLOADS = {
         )
     },
     'POSTPROCESS': {
-        'JPEG': {
-            'COMMAND': 'jpeg-recompress',
-            'ARGUMENTS': '--quality high --method smallfry {file} {file}',
+        'jpeg': {
+            'command': 'jpeg-recompress',
+            'arguments': '--quality high --method smallfry {file} {file}',
         },
-        'PNG': {
-            'COMMAND': 'pngquant',
-            'ARGUMENTS': '--force --skip-if-larger --output {file} {file}'
+        'png': {
+            'command': 'pngquant',
+            'arguments': '--force --skip-if-larger --output {file} {file}'
         },
-        'SVG': {
-            'COMMAND': 'svgo',
-            'ARGUMENTS': '--precision=4 {file}',
+        'svg': {
+            'command': 'svgo',
+            'arguments': '--precision=4 {file}',
         },   
     }
 }
@@ -606,13 +607,14 @@ PAPER_UPLOADS = {
 изображений. Для каждого формата изображения можно указать 
 свою команду.
 
-Ключами словаря являются названия выходных форматов изображений
-в верхнем регистре. Например: `JPEG`, `PNG`, `GIF`, `WEBP`.
-Перечень допустимых форматов ограничен поддрживаемыми форматами 
+Ключами словаря являются названия выходных форматов изображений.
+Например: `jpeg`, `png`, `gif`, `webp`.
+Перечень допустимых форматов ограничен поддерживаемыми форматами 
 библиотеки [Pillow](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html)).
 
-Для оптимизации SVG можно воспользоваться специальным ключом `SVG`.
-Он будет работать только для SVG-изображений, загруженных в коллекции.
-Для SVG-файлов из `FileField` он работать не будет.
+Для оптимизации SVG можно воспользоваться специальным 
+ключом `svg`. Он будет работать только для SVG-изображений, 
+загруженных в коллекции. Для SVG-файлов из `FileField` он 
+работать не будет.
 
 Значение по умолчанию: `{}`

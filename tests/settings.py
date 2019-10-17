@@ -166,18 +166,18 @@ PAPER_UPLOADS = {
         )
     },
     'POSTPROCESS': {
-        'JPEG': {
-            'COMMAND': 'jpeg-recompress',
-            'ARGUMENTS': '--strip --quality medium --method smallfry {file} {file}',
+        'jpeg': {
+            'command': 'jpeg-recompress',
+            'arguments': '--strip --quality medium --method smallfry {file} {file}',
         },
-        'PNG': {
-            'COMMAND': 'pngquant',
-            'ARGUMENTS': '--force --skip-if-larger --output {file} {file}'
+        'png': {
+            'command': 'pngquant',
+            'arguments': '--force --skip-if-larger --output {file} {file}'
         },
-        'SVG': {
-            'COMMAND': 'svgo',
-            'ARGUMENTS': '--precision=5 {file}',
+        'svg': {
+            'command': 'svgo',
+            'arguments': '--precision=5 {file}',
         },
-        'WEBP': False
+        'webp': False
     }
 }
