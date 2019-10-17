@@ -228,13 +228,6 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
         variations.update(cls.PREVIEW_VARIATIONS)
         return variations
 
-    def as_dict(self) -> Dict[str, Any]:
-        return {
-            **super().as_dict(),
-            'name': self.canonical_name,
-            'url': self.file.url,
-        }
-
     def post_save_new_file(self):
         """
         При отложенной нарезке превью для админки режутся сразу,
@@ -251,6 +244,13 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
             ))
         else:
             self.recut()
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            **super().as_dict(),
+            'name': self.canonical_name,
+            'url': self.file.url,
+        }
 
 
 class CollectionMetaclass(ModelBase):
@@ -371,6 +371,10 @@ class FileItem(FileItemBase):
     def file_supported(cls, file: IO) -> bool:
         return True
 
+    def pre_save_new_file(self):
+        super().pre_save_new_file()
+        self.preview = self.get_preview_url()
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
@@ -380,10 +384,6 @@ class FileItem(FileItemBase):
                 'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
             })
         }
-
-    def pre_save_new_file(self):
-        super().pre_save_new_file()
-        self.preview = self.get_preview_url()
 
     def get_preview_url(self):
         icon_path_template = 'paper_uploads/dist/image/{}.svg'
