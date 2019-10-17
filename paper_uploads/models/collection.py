@@ -115,7 +115,7 @@ class CollectionItemBase(PolymorphicModel):
     def get_collection_class(self) -> Type['CollectionBase']:
         return self.content_type.model_class()
 
-    def get_collection_field(self) -> CollectionItemTypeField:
+    def get_itemtype_field(self) -> CollectionItemTypeField:
         collection_cls = self.get_collection_class()
         for name, field in collection_cls.item_types.items():
             if field.model is type(self):
@@ -184,7 +184,7 @@ class FileItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collection
         super().post_save_new_file()
 
         # postprocess
-        itemtype_field = self.get_collection_field()
+        itemtype_field = self.get_itemtype_field()
         if itemtype_field is not None:
             postprocess_uploaded_file(self.file.name, options=itemtype_field.postprocess)
 
@@ -221,8 +221,8 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
         """
         if not hasattr(self, '_variations_cache'):
             collection_cls = self.get_collection_class()
-            item_type_field = self.get_collection_field()
-            variations = self._get_variations(item_type_field, collection_cls)
+            itemtype_field = self.get_itemtype_field()
+            variations = self._get_variations(itemtype_field, collection_cls)
             self._variations_cache = build_variations(variations)
         return self._variations_cache
 
@@ -245,7 +245,7 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
 
         # postprocess
         postprocess_options = None
-        itemtype_field = self.get_collection_field()
+        itemtype_field = self.get_itemtype_field()
         if itemtype_field is not None:
             postprocess_options = itemtype_field.postprocess
 

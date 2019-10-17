@@ -75,7 +75,7 @@ def get_regular_field(model: Type[models.Model], fieldname: str) -> Field:
     return model._meta.get_field(fieldname)
 
 
-def get_collection_field(model: Type[Collection], fieldname: str) -> CollectionItemTypeField:
+def get_itemtype_field(model: Type[Collection], fieldname: str) -> CollectionItemTypeField:
     return model.item_types[fieldname]
 
 
@@ -136,7 +136,7 @@ class Command(BaseCommand):
         elif fieldname is None:
             raise RuntimeError('the following arguments are required: field')
         if is_gallery(model):
-            field = get_collection_field(model, fieldname)
+            field = get_itemtype_field(model, fieldname)
         else:
             field = get_regular_field(model, fieldname)
 

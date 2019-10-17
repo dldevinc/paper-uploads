@@ -138,11 +138,11 @@ class TestCollection(TestCase):
         self.assertIs(self.file_item.get_collection_class(), PageFilesGallery)
         self.assertIs(self.audio_item.get_collection_class(), PageFilesGallery)
 
-    def test_get_collection_field(self):
-        self.assertIs(self.svg_item.get_collection_field(), PageFilesGallery.item_types['svg'])
-        self.assertIs(self.image_item.get_collection_field(), PageFilesGallery.item_types['image'])
-        self.assertIs(self.file_item.get_collection_field(), PageFilesGallery.item_types['file'])
-        self.assertIs(self.audio_item.get_collection_field(), PageFilesGallery.item_types['file'])
+    def test_get_itemtype_field(self):
+        self.assertIs(self.svg_item.get_itemtype_field(), PageFilesGallery.item_types['svg'])
+        self.assertIs(self.image_item.get_itemtype_field(), PageFilesGallery.item_types['image'])
+        self.assertIs(self.file_item.get_itemtype_field(), PageFilesGallery.item_types['file'])
+        self.assertIs(self.audio_item.get_itemtype_field(), PageFilesGallery.item_types['file'])
 
     def test_display_name(self):
         self.assertEqual(self.svg_item.display_name, 'cartman')
@@ -284,8 +284,8 @@ class TestImageCollection(TestCase):
     def test_get_collection_class(self):
         self.assertIs(self.image_item.get_collection_class(), PageGallery)
 
-    def test_get_collection_field(self):
-        self.assertIs(self.image_item.get_collection_field(), PageGallery.item_types['image'])
+    def test_get_itemtype_field(self):
+        self.assertIs(self.image_item.get_itemtype_field(), PageGallery.item_types['image'])
 
     def test_get_invalid_variation_file(self):
         with self.assertRaises(KeyError):
