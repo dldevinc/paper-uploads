@@ -24,7 +24,7 @@ from ..conf import settings, FILE_ICON_OVERRIDES, FILE_ICON_DEFAULT
 from ..storage import upload_storage
 from .. import tasks
 from ..helpers import build_variations
-from ..postprocess import postprocess_svg
+from ..postprocess import postprocess_uploaded_file
 
 __all__ = [
     'CollectionItemBase', 'FileItemBase', 'ImageItemBase', 'CollectionBase',
@@ -180,6 +180,14 @@ class FileItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collection
         if not self.pk and not self.display_name:
             self.display_name = self.name
 
+    def post_save_new_file(self):
+        super().post_save_new_file()
+
+        # postprocess
+        itemtype_field = self.get_collection_field()
+        if itemtype_field is not None:
+            postprocess_uploaded_file(self.file.name, options=itemtype_field.postprocess)
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
@@ -234,18 +242,29 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
         а остальное - потом.
         """
         super(UploadedImageBase, self).post_save_new_file()
+
+        # postprocess
+        postprocess_options = None
+        itemtype_field = self.get_collection_field()
+        if itemtype_field is not None:
+            postprocess_options = itemtype_field.postprocess
+
         if settings.RQ_ENABLED:
             preview_variations = tuple(self.PREVIEW_VARIATIONS.keys())
-            self._recut_sync(names=preview_variations)
+            self._recut_sync(
+                names=preview_variations,
+                postprocess=postprocess_options
+            )
             self.recut(
                 names=tuple(
                     name
                     for name in self.get_variations()
                     if name not in preview_variations
-                )
+                ),
+                postprocess=postprocess_options
             )
         else:
-            self.recut()
+            self.recut(postprocess=postprocess_options)
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -422,19 +441,6 @@ class SVGItem(FileItemBase):
                 'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
             })
         }
-
-    def post_save_new_file(self):
-        super().post_save_new_file()
-
-        # postprocess svg
-        command = {}
-        collection_field = self.get_collection_field()
-        if collection_field is not None:
-            command = collection_field.options.get('postprocess', {})
-            if command is None:
-                # обработка явным образом запрещена
-                return
-        postprocess_svg(self.file.name, command)
 
 
 class ImageItem(ImageItemBase):

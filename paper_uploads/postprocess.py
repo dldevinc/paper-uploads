@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+from PIL import Image
 from typing import Dict, Any
 from variations.variation import Variation
 from .conf import settings
@@ -91,6 +92,9 @@ def postprocess_variation(source_filename: str, variation_name: str, variation: 
     """
     Постобработка файла вариации изображения.
     """
+    if options is False:
+        return
+
     variation_path = get_variation_filename(source_filename, variation_name, variation)
     full_path = upload_storage.path(variation_path)
     if not os.path.exists(full_path):
@@ -109,20 +113,32 @@ def postprocess_variation(source_filename: str, variation_name: str, variation: 
     _postprocess_file(full_path, postprocess_options)
 
 
-def postprocess_svg(source_filename: str, options: Dict[str, str] = None):
+def postprocess_uploaded_file(source_filename: str, field: Any = None,
+        options: Dict[str, str] = None):
     """
-    Постобработка SVG-файла.
+    Постобработка загруженного файла.
     """
+    if options is False:
+        return
+
     full_path = upload_storage.path(source_filename)
     if not os.path.exists(full_path):
         logger.warning('File not found: {}'.format(full_path))
         return
 
+    _, ext = os.path.splitext(source_filename)
+    ext = ext.lower()
+    if ext in Image.EXTENSION.keys():
+        # файл является изображением - их не трогаем
+        return
+
     try:
-        postprocess_options = get_options('svg')
+        postprocess_options = get_options(ext.lstrip('.'), field=field)
     except PostprocessProhibited:
         return
 
+    if field is not None and field.postprocess:
+        postprocess_options.update(lowercase_copy(field.postprocess))
     if options:
         postprocess_options.update(options)
     _postprocess_file(full_path, postprocess_options)

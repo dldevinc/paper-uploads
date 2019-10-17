@@ -2,6 +2,23 @@ from django.test import TestCase
 from variations.variation import Variation
 from ..exceptions import PostprocessProhibited
 from .. import postprocess
+from ..models import *
+
+
+class TestCollection(Collection):
+    svg = CollectionItemTypeField(SVGItem, postprocess=False)
+    image = CollectionItemTypeField(ImageItem, postprocess=False, options={
+        'variations': dict(
+            mobile=dict(
+                size=(640, 0),
+                clip=False,
+                postprocess={
+                    'command': 'echo'
+                }
+            )
+        )
+    })
+    file = CollectionItemTypeField(FileItem)
 
 
 class TestGetOptions(TestCase):
@@ -94,3 +111,17 @@ class TestGetOptions(TestCase):
                 'command': 'man',
             }
         )
+
+    def test_collection_postrocess(self):
+        svg_field = TestCollection.item_types['svg']
+        with self.assertRaises(PostprocessProhibited):
+            postprocess.get_options('svg', field=svg_field)
+
+    def test_collection_image_postrocess_issue(self):
+        """
+        Для картинок приоритет значения в поля окажется выше,
+        чем значения в вариации.
+        """
+        image_field = TestCollection.item_types['svg']
+        with self.assertRaises(PostprocessProhibited):
+            postprocess.get_options('jpeg', field=image_field)

@@ -5,6 +5,7 @@ from django.template.defaultfilters import filesizeformat
 from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
 from ..conf import settings
 from ..storage import upload_storage
+from ..postprocess import postprocess_uploaded_file
 
 
 class UploadedFile(ProxyFileAttributesMixin, SlaveModelMixin, UploadedFileBase):
@@ -23,6 +24,11 @@ class UploadedFile(ProxyFileAttributesMixin, SlaveModelMixin, UploadedFileBase):
         super().pre_save_new_file()
         if not self.pk and not self.display_name:
             self.display_name = self.name
+
+    def post_save_new_file(self):
+        super().post_save_new_file()
+        owner_field = self.get_owner_field()
+        postprocess_uploaded_file(self.file.name, owner_field)
 
     def as_dict(self) -> Dict[str, Any]:
         return {
