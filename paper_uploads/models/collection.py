@@ -184,11 +184,7 @@ class FileItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collection
 
     def post_save_new_file(self):
         super().post_save_new_file()
-
-        # postprocess
-        itemtype_field = self.get_itemtype_field()
-        if itemtype_field is not None:
-            postprocess_uploaded_file(self.file.name, options=itemtype_field.postprocess)
+        self._postprocess()
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -196,6 +192,37 @@ class FileItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collection
             'name': self.canonical_name,
             'url': self.file.url,
         }
+
+    def _postprocess_sync(self):
+        itemtype_field = self.get_itemtype_field()
+        if itemtype_field is None:
+            return
+
+        postprocess_uploaded_file(self.file.name, itemtype_field)
+
+        current_hash_value = self.hash
+        self.update_hash(commit=False)
+        if current_hash_value and current_hash_value != self.hash:
+            self.size = self.file.size
+            self.update_hash(commit=False)
+            self.modified_at = now()
+            self.save(update_fields=['size', 'hash', 'modified_at'])
+
+    def _postprocess_async(self):
+        from django_rq.queues import get_queue
+        queue = get_queue(settings.RQ_QUEUE_NAME)
+        queue.enqueue_call(tasks.postprocess_file, kwargs={
+            'app_label': self._meta.app_label,
+            'model_name': self._meta.model_name,
+            'object_id': self.pk,
+            'using': self._state.db,
+        })
+
+    def _postprocess(self):
+        if settings.RQ_ENABLED:
+            self._postprocess_async()
+        else:
+            self._postprocess_sync()
 
 
 class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, CollectionItemBase, UploadedImageBase):
