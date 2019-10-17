@@ -51,7 +51,7 @@ PAPER_UPLOADS = {
     'POSTPROCESS': {
         'jpeg': {
             'command': 'jpeg-recompress',
-            'arguments': '--quality high --method smallfry "{file}" "{file}"',
+            'arguments': '--quality high "{file}" "{file}"',
         },
         'png': {
             'command': 'pngquant',
@@ -487,7 +487,7 @@ PAPER_UPLOADS = {
     'POSTPROCESS': {
         'jpeg': {
             'command': 'jpeg-recompress',
-            'arguments': '--quality high --method smallfry "{file}" "{file}"',
+            'arguments': '--quality high "{file}" "{file}"',
         },
         'png': {
             'command': 'pngquant',
@@ -606,7 +606,7 @@ PAPER_UPLOADS = {
     'POSTPROCESS': {
         'jpeg': {
             'command': 'jpeg-recompress',
-            'arguments': '--quality high --method smallfry "{file}" "{file}"',
+            'arguments': '--quality high "{file}" "{file}"',
         },
         'png': {
             'command': 'pngquant',

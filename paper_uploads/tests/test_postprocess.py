@@ -27,7 +27,7 @@ class TestGetOptions(TestCase):
             postprocess.get_options('jpeg'),
             {
                 'command': 'jpeg-recompress',
-                'arguments': '--strip --quality medium --method smallfry "{file}" "{file}"',
+                'arguments': '--strip --quality medium "{file}" "{file}"',
             }
         )
         self.assertDictEqual(
@@ -57,7 +57,7 @@ class TestGetOptions(TestCase):
                 postprocess.get_options(format),
                 {
                     'command': 'jpeg-recompress',
-                    'arguments': '--strip --quality medium --method smallfry "{file}" "{file}"',
+                    'arguments': '--strip --quality medium "{file}" "{file}"',
                 }
             )
 

@@ -169,7 +169,7 @@ PAPER_UPLOADS = {
     'POSTPROCESS': {
         'jpeg': {
             'command': 'jpeg-recompress',
-            'arguments': '--strip --quality medium --method smallfry "{file}" "{file}"',
+            'arguments': '--strip --quality medium "{file}" "{file}"',
         },
         'png': {
             'command': 'pngquant',
