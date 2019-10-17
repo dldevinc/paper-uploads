@@ -39,6 +39,15 @@ INSTALLED_APPS = [
 ]
 
 PAPER_UPLOADS = {
+    'VARIATION_DEFAULTS': {
+        'jpeg': dict(
+            quality=80,
+            progressive=True,
+        ),
+        'webp': dict(
+            quality=75,
+        )
+    },
     'POSTPROCESS': {
         'JPEG': {
             'COMMAND': 'jpeg-recompress',
@@ -505,6 +514,15 @@ class Page(models.Model):
 ```python
 PAPER_UPLOADS = {
     'RQ_ENABLED': True,
+    'VARIATION_DEFAULTS': {
+        'jpeg': dict(
+            quality=80,
+            progressive=True,
+        ),
+        'webp': dict(
+            quality=75,
+        )
+    },
     'POSTPROCESS': {
         'JPEG': {
             'COMMAND': 'jpeg-recompress',
@@ -564,20 +582,6 @@ PAPER_UPLOADS = {
 совпадать с `COLLECTION_ITEM_PREVIEW_WIDTH` и 
 `COLLECTION_ITEM_PREVIEW_HEIGTH`.
 
-### DEFAULT_FACE_DETECTION
-Включает механизм центрирования по лицам при обрезке изображений
-для всех вариаций по умолчанию. Должна быть установлена библиотека
-[face_recognition](https://github.com/ageitgey/face_recognition):
-
-```shell script
-pip install face_recognition
-```
-
-Для конкретных вариаций можно разрешить или запретить центрирование
-с помощью параметра вариации `face_detection`.
-
-Значение по умолчанию: `False`
-
 ### RQ_ENABLED
 Включает нарезку картинок на вариации через отложенные задачи.
 Требует наличие установленного пакета [django-rq](https://github.com/rq/django-rq).
@@ -588,6 +592,14 @@ pip install face_recognition
 Название очереди, в которую помещаются задачи по нарезке картинок. 
 
 Значение по умолчанию: `default`
+
+### VARIATION_DEFAULTS
+Параметры вариаций по умолчанию.
+
+Параметры, указанные в этом словаре, будут применены к каждой 
+вариации, если только вариация их явно не переопределяет.
+
+Значение по умолчанию: `{}`
 
 ### POSTPROCESS
 Словарь, задающий shell-команды, запускаемые после загрузки 

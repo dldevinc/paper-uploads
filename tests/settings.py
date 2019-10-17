@@ -156,6 +156,15 @@ RQ_QUEUES = {
 # ===============
 PAPER_UPLOADS = {
     # 'RQ_ENABLED': True,
+    'VARIATION_DEFAULTS': {
+        'jpeg': dict(
+            quality=80,
+            progressive=True,
+        ),
+        'webp': dict(
+            quality=75,
+        )
+    },
     'POSTPROCESS': {
         'JPEG': {
             'COMMAND': 'jpeg-recompress',

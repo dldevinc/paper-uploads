@@ -44,11 +44,10 @@ DEFAULTS = {
         ),
     ),
 
-    'DEFAULT_FACE_DETECTION': False,
-
     'RQ_ENABLED': False,
     'RQ_QUEUE_NAME': 'default',
 
+    'VARIATION_DEFAULTS': {},
     'POSTPROCESS': {},
 }
 

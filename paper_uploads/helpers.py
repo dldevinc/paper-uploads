@@ -1,6 +1,7 @@
 from typing import Dict, Any
 from variations.variation import Variation
 from .conf import settings
+from .utils import lowercase_copy
 
 
 def build_variations(options: Dict[str, Any]) -> Dict[str, Variation]:
@@ -9,7 +10,7 @@ def build_variations(options: Dict[str, Any]) -> Dict[str, Variation]:
     """
     variations = {}
     for key, config in (options or {}).items():
-        if settings.DEFAULT_FACE_DETECTION:
-            config.setdefault('face_detection', True)
-        variations[key] = Variation(**config)
+        new_config = lowercase_copy(settings.VARIATION_DEFAULTS)
+        new_config.update(config)
+        variations[key] = Variation(**new_config)
     return variations
