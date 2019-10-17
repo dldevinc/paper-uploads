@@ -8,7 +8,7 @@ from ... import forms
 class ImageField(FileFieldBase):
     def __init__(self, *args, variations=None, **kwargs):
         kwargs.setdefault('to', UploadedImage)
-        self.variations = build_variations(variations)
+        self.variations = build_variations(variations or {})
         super().__init__(*args, **kwargs)
 
     def check(self, **kwargs):
