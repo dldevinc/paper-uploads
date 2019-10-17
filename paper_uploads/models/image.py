@@ -121,7 +121,7 @@ class UploadedImageBase(UploadedFileBase):
     alt = models.CharField(_('alternate text'), max_length=255, blank=True,
         help_text=_('This text will be used by screen readers, search engines, or when the image cannot be loaded'))
     title = models.CharField(_('title'), max_length=255, blank=True,
-        help_text=_('The title is used as a tooltip when the user hovers the mouse over the image'))
+        help_text=_('The title is being used as a tooltip when the user hovers the mouse over the image'))
     width = models.PositiveSmallIntegerField(_('width'), default=0, editable=False)
     height = models.PositiveSmallIntegerField(_('height'), default=0, editable=False)
     cropregion = models.CharField(_('crop region'), max_length=24, blank=True, editable=False)
@@ -271,7 +271,7 @@ class VariationalFileField(models.FileField):
     Из-за того, что вариация может самостоятельно установить свой формат,
     возможна ситуация, когда вариации одного изображения перезапишут вариации
     другого. Например, когда загружаются файлы, отличающиеся только расширением.
-    Поэтому мы проверяем все имена будующих вариаций на существование, чтобы
+    Поэтому мы проверяем все имена будущих вариаций на существование, чтобы
     не допустить перезапись.
     """
     def variation_collapse(self, instance, name):
@@ -298,11 +298,10 @@ class VariationalFileField(models.FileField):
             truncation = len(name) - max_length
             if truncation > 0:
                 file_root = file_root[:-truncation]
-                # Entire file_root was truncated in attempt to find an available filename.
                 if not file_root:
                     raise SuspiciousFileOperation(
-                        'Storage can not find an available filename for "%s". '
-                        'Please make sure that the corresponding file field '
+                        'Storage cannot find an available filename for "%s". '
+                        'Please make sure the corresponding file field '
                         'allows sufficient "max_length".' % name
                     )
                 name = os.path.join(dir_name, "%s_%s%s" % (file_root, get_random_string(7), file_ext))

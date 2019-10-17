@@ -18,10 +18,10 @@ def _get_instance(app_label: str, model_name: str, object_id: int, using: str = 
         try:
             return model_class._base_manager.using(using).get(pk=object_id)
         except ObjectDoesNotExist:
-            # delay recheck if transaction not commited yet
+            # delay recheck if transaction not committed yet
             attempts += 1
             if attempts > MAX_DB_ATTEMPTS:
-                logger.exception('Not found instance #%s' % object_id)
+                logger.exception('Instance #%s not found' % object_id)
                 raise
             else:
                 time.sleep(1)
