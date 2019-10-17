@@ -40,9 +40,10 @@ class CollectionItemBase(PolymorphicModel):
     change_form_class = None
     admin_template_name = None
 
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    collection_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     collection_id = models.IntegerField()
-    collection = GenericForeignKey(fk_field='collection_id', for_concrete_model=False)
+    collection = GenericForeignKey(ct_field='collection_content_type',
+        fk_field='collection_id', for_concrete_model=False)
 
     item_type = models.CharField(_('type'), max_length=32, db_index=True, editable=False)
     order = models.IntegerField(_('order'), default=0, editable=False)
@@ -113,7 +114,7 @@ class CollectionItemBase(PolymorphicModel):
         super().save(*args, **kwargs)
 
     def get_collection_class(self) -> Type['CollectionBase']:
-        return self.content_type.model_class()
+        return self.collection_content_type.model_class()
 
     def get_itemtype_field(self) -> CollectionItemTypeField:
         collection_cls = self.get_collection_class()
@@ -137,7 +138,8 @@ class CollectionItemBase(PolymorphicModel):
         Подключение элемента к коллекции.
         Используется в случае динамического создания элементов коллекции.
         """
-        self.content_type = ContentType.objects.get_for_model(collection, for_concrete_model=False)
+        self.collection_content_type = ContentType.objects.get_for_model(
+            collection, for_concrete_model=False)
         self.collection_id = collection.pk
         for name, field in collection.item_types.items():
             if field.model is type(self):
@@ -326,7 +328,9 @@ class ContentItemRelation(GenericRelation):
 
 class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
     item_types = ItemTypesDescriptor()
-    items = ContentItemRelation(CollectionItemBase, object_id_field='collection_id', for_concrete_model=False)
+    items = ContentItemRelation(CollectionItemBase,
+        content_type_field='collection_content_type',
+        object_id_field='collection_id', for_concrete_model=False)
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
 
     class Meta:
