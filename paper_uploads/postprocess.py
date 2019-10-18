@@ -57,14 +57,14 @@ def get_options(format: str, field: Any = None, variation: PaperVariation = None
         variation_options = variation.get_postprocess_options(format)
         if variation_options is False:
             raise PostprocessProhibited
-        elif variation_options:
+        elif variation_options is not None:
             return lowercase_copy(variation_options)
 
     if field is not None:
         field_options = getattr(field, 'postprocess', None)
         if field_options is False:
             raise PostprocessProhibited
-        elif field_options:
+        elif field_options is not None:
             return lowercase_copy(field_options)
 
     global_options = getattr(settings, 'POSTPROCESS', {})
@@ -74,7 +74,7 @@ def get_options(format: str, field: Any = None, variation: PaperVariation = None
     global_format_options = global_options.get(format, {})
     if global_format_options is False:
         raise PostprocessProhibited
-    elif global_format_options:
+    elif global_format_options is not None:
         return lowercase_copy(global_format_options)
 
     return {}
