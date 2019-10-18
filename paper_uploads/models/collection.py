@@ -273,10 +273,8 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
         super(UploadedImageBase, self).post_save_new_file()
 
         # postprocess
-        postprocess_options = None
         itemtype_field = self.get_itemtype_field()
-        if itemtype_field is not None:
-            postprocess_options = itemtype_field.postprocess
+        postprocess_options = itemtype_field.postprocess
 
         if settings.RQ_ENABLED:
             preview_variations = tuple(self.PREVIEW_VARIATIONS.keys())
