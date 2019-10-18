@@ -4,10 +4,10 @@ from django.db import models
 from django.core import checks
 from django.utils.crypto import get_random_string
 from django.core.exceptions import SuspiciousFileOperation
-from .base import FileFieldBase
 from ...utils import get_variation_filename
 from ...helpers import build_variations
 from ... import forms
+from .base import FileFieldBase
 
 
 class VariationalFileField(models.FileField):

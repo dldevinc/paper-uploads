@@ -9,14 +9,14 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
 from variations.utils import prepare_image
-from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
 from ..conf import settings
 from ..storage import upload_storage
 from ..utils import get_variation_filename
 from ..postprocess import postprocess_variation
 from ..variations import PaperVariation
-from .fields.image import VariationalFileField
 from .. import tasks
+from .fields.image import VariationalFileField
+from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
 
 __all__ = ['UploadedImageBase', 'UploadedImage']
 

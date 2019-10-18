@@ -8,9 +8,9 @@ from django.core import checks
 from django.utils.timezone import now
 from django.core.exceptions import FieldDoesNotExist
 from django.utils.translation import gettext_lazy as _
-from ..storage import upload_storage
 from ..conf import PROXY_FILE_ATTRIBUTES
 from ..logging import logger
+from ..storage import upload_storage
 
 
 class Permissions(models.Model):

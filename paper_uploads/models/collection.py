@@ -15,16 +15,16 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from polymorphic.models import PolymorphicModel
+from ..conf import settings, FILE_ICON_OVERRIDES, FILE_ICON_DEFAULT
+from ..storage import upload_storage
+from ..variations import PaperVariation
+from ..postprocess import postprocess_uploaded_file
+from ..helpers import build_variations
+from .. import tasks
 from .base import SlaveModelMixin, ProxyFileAttributesMixin
 from .file import UploadedFileBase
 from .image import UploadedImageBase, VariationalFileField
 from .fields import CollectionItemTypeField
-from ..conf import settings, FILE_ICON_OVERRIDES, FILE_ICON_DEFAULT
-from ..storage import upload_storage
-from .. import tasks
-from ..helpers import build_variations
-from ..postprocess import postprocess_uploaded_file
-from ..variations import PaperVariation
 
 __all__ = [
     'CollectionItemBase', 'FileItemBase', 'ImageItemBase', 'CollectionBase',

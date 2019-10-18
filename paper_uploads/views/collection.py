@@ -8,11 +8,11 @@ from django.utils.module_loading import import_string
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
-from ..models.collection import CollectionItemBase, CollectionBase
-from ..utils import run_validators
 from ..logging import logger
-from .. import exceptions
 from .. import signals
+from .. import exceptions
+from ..utils import run_validators
+from ..models.collection import CollectionItemBase, CollectionBase
 from . import helpers
 
 
