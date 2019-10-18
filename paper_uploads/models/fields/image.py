@@ -4,7 +4,6 @@ from django.db import models
 from django.core import checks
 from django.utils.crypto import get_random_string
 from django.core.exceptions import SuspiciousFileOperation
-from ...utils import get_variation_filename
 from ...helpers import build_variations
 from ... import forms
 from .base import FileFieldBase
@@ -22,8 +21,8 @@ class VariationalFileField(models.FileField):
         if self.storage.exists(name):
             return True
 
-        for vname, variation in instance.get_variations().items():
-            variation_filename = get_variation_filename(name, vname, variation)
+        for variation in instance.get_variations().values():
+            variation_filename = variation.get_output_filename(name)
             if self.storage.exists(variation_filename):
                 return True
         return False

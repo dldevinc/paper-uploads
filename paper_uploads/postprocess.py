@@ -7,7 +7,7 @@ from .conf import settings
 from .logging import logger
 from .storage import upload_storage
 from .exceptions import PostprocessProhibited
-from .utils import lowercase_copy, get_variation_filename
+from .utils import lowercase_copy
 from .variations import PaperVariation
 
 
@@ -87,7 +87,7 @@ def _postprocess_file(path: str, options: Dict[str, str]):
     ))
 
 
-def postprocess_variation(source_filename: str, variation_name: str, variation: PaperVariation,
+def postprocess_variation(source_filename: str, variation: PaperVariation,
         options: Dict[str, str] = None):
     """
     Постобработка файла вариации изображения.
@@ -95,13 +95,13 @@ def postprocess_variation(source_filename: str, variation_name: str, variation: 
     if options is False:
         return
 
-    variation_path = get_variation_filename(source_filename, variation_name, variation)
-    full_path = upload_storage.path(variation_path)
-    if not os.path.exists(full_path):
+    variation_filename = variation.get_output_filename(source_filename)
+    variation_path = upload_storage.path(variation_filename)
+    if not os.path.exists(variation_path):
         logger.warning('File not found: {}'.format(variation_path))
         return
 
-    output_format = variation.output_format(variation_path)
+    output_format = variation.output_format(variation_filename)
 
     try:
         postprocess_options = get_options(output_format, variation=variation)
@@ -110,7 +110,7 @@ def postprocess_variation(source_filename: str, variation_name: str, variation: 
 
     if options:
         postprocess_options.update(options)
-    _postprocess_file(full_path, postprocess_options)
+    _postprocess_file(variation_path, postprocess_options)
 
 
 def postprocess_uploaded_file(source_filename: str, field: Any = None,

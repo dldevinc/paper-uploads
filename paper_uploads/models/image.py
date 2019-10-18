@@ -11,7 +11,6 @@ from django.template.defaultfilters import filesizeformat
 from variations.utils import prepare_image
 from ..conf import settings
 from ..storage import upload_storage
-from ..utils import get_variation_filename
 from ..postprocess import postprocess_variation
 from ..variations import PaperVariation
 from .. import tasks
@@ -26,7 +25,7 @@ class VariationFile(File):
         self.instance = instance
         self.variation_name = variation_name
         self.storage = instance.file.storage
-        filename = get_variation_filename(instance.file.name, variation_name, self.variation)
+        filename = self.variation.get_output_filename(instance.file.name)
         super().__init__(None, filename)
 
     def _get_file(self):
@@ -237,12 +236,11 @@ class UploadedImageBase(UploadedFileBase):
                     continue
 
                 image = variation.process(img)
-                variation_path = get_variation_filename(self.file.name, name, variation)
-                with self.file.storage.open(variation_path, 'wb+') as fp:
+                variation_filename = variation.get_output_filename(self.file.name)
+                with self.file.storage.open(variation_filename, 'wb+') as fp:
                     variation.save(image, fp)
                 postprocess_variation(
                     self.file.name,
-                    name,
                     variation,
                     options=postprocess
                 )
