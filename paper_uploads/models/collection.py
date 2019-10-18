@@ -106,7 +106,7 @@ class CollectionItemBase(PolymorphicModel):
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.order:
-            # добаление новых элементов в конец
+            # добавление новых элементов в конец
             max_order = self.collection.items.aggregate(
                 order=functions.Coalesce(models.Max('order'), 0)
             )['order']
@@ -268,7 +268,7 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
     def post_save_new_file(self):
         """
         При отложенной нарезке превью для админки режутся сразу,
-        а остальное - потом.
+        а остальное — потом.
         """
         super(UploadedImageBase, self).post_save_new_file()
 
@@ -303,8 +303,7 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
 
 class CollectionMetaclass(ModelBase):
     """
-    Хак, создающий прокси-модели вместо наследования, если явно не указано
-    обратное.
+    Хак, создающий прокси-модели вместо наследования, если явно не указано обратное.
     """
     def __new__(mcs, name, bases, attrs, **kwargs):
         new_attrs = {
@@ -499,7 +498,7 @@ class CollectionManager(models.Manager):
     """
     Из-за того, что все галереи являются прокси-моделями, запросы от имени
     любого из классов галереи затрагивает абсолютно все объекты галереи.
-    С помощью этого менеджера можно работать только с галерями текущего типа.
+    С помощью этого менеджера можно работать только с галереями текущего типа.
     """
     def get_queryset(self):
         collection_ct = ContentType.objects.get_for_model(self.model, for_concrete_model=False)
