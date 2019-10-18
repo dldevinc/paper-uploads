@@ -1,4 +1,5 @@
 import os
+from typing import Dict, Any
 from django.db import models
 from django.core import checks
 from django.utils.crypto import get_random_string
@@ -52,7 +53,7 @@ class VariationalFileField(models.FileField):
 
 
 class ImageField(FileFieldBase):
-    def __init__(self, *args, variations=None, **kwargs):
+    def __init__(self, *args, variations: Dict[str, Any] = None, **kwargs):
         kwargs.setdefault('to', 'paper_uploads.UploadedImage')
         self.variations = build_variations(variations or {})
         super().__init__(*args, **kwargs)
