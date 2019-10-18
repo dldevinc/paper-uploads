@@ -18,7 +18,7 @@ from polymorphic.models import PolymorphicModel
 from ..conf import settings, FILE_ICON_OVERRIDES, FILE_ICON_DEFAULT
 from ..storage import upload_storage
 from ..variations import PaperVariation
-from ..postprocess import postprocess_common_file
+from ..postprocess import postprocess_common_file, postprocess_variation
 from ..helpers import build_variations
 from .. import tasks
 from .base import SlaveModelMixin, ProxyFileAttributesMixin
@@ -198,7 +198,7 @@ class FileItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collection
         if itemtype_field is None:
             return
 
-        postprocess_common_file(self.file.name, itemtype_field)
+        postprocess_common_file(self.file.name, field=itemtype_field)
 
         current_hash_value = self.hash
         self.update_hash(commit=False)
@@ -290,6 +290,17 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
             'name': self.canonical_name,
             'url': self.file.url,
         }
+
+    def _postprocess_sync(self, names: Iterable[str] = None):
+        itemtype_field = self.get_itemtype_field()
+        if itemtype_field is None:
+            return
+
+        for name, variation in self.get_variations().items():
+            if names and name not in names:
+                continue
+            variation_filename = variation.get_output_filename(self.file.name)
+            postprocess_variation(variation_filename, variation, field=itemtype_field)
 
 
 class CollectionMetaclass(ModelBase):

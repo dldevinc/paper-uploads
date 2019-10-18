@@ -239,7 +239,9 @@ class UploadedImageBase(UploadedFileBase):
                 variation_filename = variation.get_output_filename(self.file.name)
                 with self.file.storage.open(variation_filename, 'wb+') as fp:
                     variation.save(image, fp)
-                postprocess_variation(self.file.name, variation)
+
+        # постобработка вызывается строго после того, как созданы файлы вариаций
+        self._postprocess(names)
 
     def _recut_async(self, names: Iterable[str] = ()):
         from django_rq.queues import get_queue
@@ -257,6 +259,30 @@ class UploadedImageBase(UploadedFileBase):
             self._recut_async(names)
         else:
             self._recut_sync(names)
+
+    def _postprocess_sync(self, names: Iterable[str] = None):
+        for name, variation in self.get_variations().items():
+            if names and name not in names:
+                continue
+            variation_filename = variation.get_output_filename(self.file.name)
+            postprocess_variation(variation_filename, variation)
+
+    def _postprocess_async(self, names: Iterable[str] = None):
+        from django_rq.queues import get_queue
+        queue = get_queue(settings.RQ_QUEUE_NAME)
+        queue.enqueue_call(tasks.postprocess_file, kwargs={
+            'app_label': self._meta.app_label,
+            'model_name': self._meta.model_name,
+            'object_id': self.pk,
+            'using': self._state.db,
+            'names': names
+        })
+
+    def _postprocess(self, names: Iterable[str] = None):
+        if settings.RQ_ENABLED:
+            self._postprocess_async(names)
+        else:
+            self._postprocess_sync(names)
 
 
 class UploadedImage(ProxyFileAttributesMixin, SlaveModelMixin, UploadedImageBase):

@@ -42,78 +42,101 @@ def _run(path: str, options: Dict[str, str]):
     ))
 
 
-def get_options(format: str, field: Any = None, variation: PaperVariation = None) -> Dict[str, str]:
+def get_postprocess_variation_options(format: str, variation: PaperVariation, field: Any = None) -> Dict[str, str]:
     """
-    Получение настроек постобработки для заданного формата.
+    Получение настроек постобработки изображения для заданного формата.
     Если постобработка запрещена, выбрасывает исключение PostprocessProhibited.
-
-    Порядок проверки:
-    1) параметр `postprocess` вариации
-    2) параметр `postprocess` поля (FileField или CollectionItemTypeField)
-    3) настройки PAPER_UPLOADS['POSTPROCESS']
     """
     format = format.lower()
-    if variation is not None:
-        variation_options = variation.get_postprocess_options(format)
-        if variation_options is False:
-            raise PostprocessProhibited
-        elif variation_options is not None:
-            return lowercase_copy(variation_options)
+
+    variation_options = variation.get_postprocess_options(format)
+    if variation_options is False:
+        raise PostprocessProhibited
+    elif variation_options is not None:
+        return lowercase_copy(variation_options)
 
     if field is not None:
         field_options = getattr(field, 'postprocess', None)
         if field_options is False:
             raise PostprocessProhibited
         elif field_options is not None:
-            return lowercase_copy(field_options)
+            field_format_options = field_options.get(format)
+            if field_format_options is False:
+                raise PostprocessProhibited
+            elif field_format_options is not None:
+                return lowercase_copy(field_format_options)
 
     global_options = getattr(settings, 'POSTPROCESS', {})
     if global_options is False:
         raise PostprocessProhibited
+    elif global_options is not None:
+        global_format_options = global_options.get(format)
+        if global_format_options is False:
+            raise PostprocessProhibited
+        elif global_format_options is not None:
+            return lowercase_copy(global_format_options)
 
-    global_format_options = global_options.get(format, {})
-    if global_format_options is False:
-        raise PostprocessProhibited
-    elif global_format_options is not None:
-        return lowercase_copy(global_format_options)
-
-    return {}
+    raise PostprocessProhibited
 
 
-def postprocess_variation(source_filename: str, variation: PaperVariation,
-        options: Dict[str, str] = None):
+def postprocess_variation(variation_filename: str, variation: PaperVariation,
+        field: Any = None):
     """
-    Постобработка файла вариации изображения.
+    Постобработка загруженного изображения.
     """
-    if options is False:
-        return
-
-    variation_filename = variation.get_output_filename(source_filename)
     variation_path = upload_storage.path(variation_filename)
     if not os.path.exists(variation_path):
         logger.warning('File not found: {}'.format(variation_path))
         return
 
-    output_format = variation.output_format(variation_filename)
+    output_format = variation.output_format(variation_path)
 
     try:
-        postprocess_options = get_options(output_format, variation=variation)
+        postprocess_options = get_postprocess_variation_options(
+            output_format,
+            variation,
+            field=field
+        )
     except PostprocessProhibited:
         return
-
-    if options:
-        postprocess_options.update(options)
     _run(variation_path, postprocess_options)
 
 
-def postprocess_common_file(source_filename: str, field: Any = None,
-        options: Dict[str, str] = None):
+def get_postprocess_common_options(format: str, field: Any = None) -> Dict[str, str]:
+    """
+    Получение настроек постобработки файла для заданного формата.
+    Если постобработка запрещена, выбрасывает исключение PostprocessProhibited.
+    """
+    format = format.lower()
+
+    if field is not None:
+        field_options = getattr(field, 'postprocess', None)
+        if field_options is False:
+            raise PostprocessProhibited
+        elif field_options is not None:
+            field_format_options = field_options.get(format)
+            if field_format_options is False:
+                raise PostprocessProhibited
+            elif field_format_options is not None:
+                return lowercase_copy(field_format_options)
+
+    global_options = getattr(settings, 'POSTPROCESS', {})
+    if global_options is False:
+        raise PostprocessProhibited
+    elif global_options is not None:
+        global_format_options = global_options.get(format)
+        if global_format_options is False:
+            raise PostprocessProhibited
+        elif global_format_options is not None:
+            return lowercase_copy(global_format_options)
+
+    raise PostprocessProhibited
+
+
+def postprocess_common_file(source_filename: str, field: Any = None):
     """
     Постобработка загруженного файла.
     """
-    if options is False:
-        return
-
     source_path = upload_storage.path(source_filename)
     if not os.path.exists(source_path):
         logger.warning('File not found: {}'.format(source_path))
@@ -126,12 +149,7 @@ def postprocess_common_file(source_filename: str, field: Any = None,
         return
 
     try:
-        postprocess_options = get_options(ext.lstrip('.'), field=field)
+        postprocess_options = get_postprocess_common_options(ext.lstrip('.'), field=field)
     except PostprocessProhibited:
         return
-
-    if field is not None and field.postprocess:
-        postprocess_options.update(lowercase_copy(field.postprocess))
-    if options:
-        postprocess_options.update(options)
     _run(source_path, postprocess_options)

@@ -33,6 +33,12 @@ def postprocess_file(app_label: str, model_name: str, object_id: int,
     instance._postprocess_sync()
 
 
+def postprocess_image(app_label: str, model_name: str, object_id: int,
+        names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS):
+    instance = _get_instance(app_label, model_name, object_id, using=using)
+    instance._postprocess_sync(names)
+
+
 def recut_image(app_label: str, model_name: str, object_id: int,
         names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS):
     instance = _get_instance(app_label, model_name, object_id, using=using)

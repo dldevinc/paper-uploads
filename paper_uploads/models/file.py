@@ -43,7 +43,7 @@ class UploadedFile(ProxyFileAttributesMixin, SlaveModelMixin, UploadedFileBase):
 
     def _postprocess_sync(self):
         owner_field = self.get_owner_field()
-        postprocess_common_file(self.file.name, owner_field)
+        postprocess_common_file(self.file.name, field=owner_field)
 
         current_hash_value = self.hash
         self.update_hash(commit=False)

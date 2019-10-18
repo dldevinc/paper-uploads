@@ -114,3 +114,66 @@ class Document(models.Model):
     class Meta:
         verbose_name = _('document')
         verbose_name_plural = _('documents')
+
+
+# =====================
+# Коллекции для тестов
+# =====================
+
+class TestCollection(Collection):
+    image = CollectionItemTypeField(ImageItem, options={
+        'variations': dict(
+            mobile=dict(
+                size=(640, 0),
+                jpeg=dict(
+                    quality=88
+                )
+            )
+        )
+    })
+
+
+class TestCollectionBlocked(Collection):
+    image = CollectionItemTypeField(ImageItem, postprocess=False, options={
+        'variations': dict(
+            mobile=dict(
+                size=(640, 0),
+                jpeg=dict(
+                    quality=88
+                ),
+                postprocess=dict(
+                    webp={
+                        'command': 'echo'
+                    }
+                )
+            )
+        )
+    })
+
+
+class TestCollectionOverride(Collection):
+    image = CollectionItemTypeField(
+        ImageItem,
+        postprocess=dict(
+            jpeg=False,
+            png={
+                'command': 'echo'
+            },
+            webp=False
+        ),
+        options={
+            'variations': dict(
+                mobile=dict(
+                    size=(640, 0),
+                    jpeg=dict(
+                        quality=88
+                    ),
+                    postprocess=dict(
+                        webp={
+                            'command': 'man'
+                        }
+                    )
+                )
+            )
+        }
+    )
