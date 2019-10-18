@@ -83,7 +83,7 @@ def get_allowed_variations(model: Type[Union[models.Model, Collection]], field: 
     if is_gallery(model):
         if not is_image_item(field):
             raise TypeError("field '%s' refers to the non-image model" % field.name)
-        return list(field.model._get_variations(field, model).keys())
+        return list(field.model._get_variation_configs(field, model).keys())
     else:
         if not is_image(field):
             raise TypeError("field '%s' refers to the non-image model" % field.name)

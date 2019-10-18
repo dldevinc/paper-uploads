@@ -251,12 +251,12 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
         if not hasattr(self, '_variations_cache'):
             collection_cls = self.get_collection_class()
             itemtype_field = self.get_itemtype_field()
-            variations = self._get_variations(itemtype_field, collection_cls)
-            self._variations_cache = build_variations(variations)
+            variation_configs = self._get_variation_configs(itemtype_field, collection_cls)
+            self._variations_cache = build_variations(variation_configs)
         return self._variations_cache
 
     @classmethod
-    def _get_variations(cls, field, collection_cls) -> Dict[str, Variation]:
+    def _get_variation_configs(cls, field, collection_cls) -> Dict[str, Any]:
         if 'variations' in field.options:
             variations = field.options['variations']
         else:
