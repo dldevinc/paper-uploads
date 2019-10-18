@@ -11,6 +11,37 @@ from .utils import lowercase_copy
 from .variations import PaperVariation
 
 
+def _run(path: str, options: Dict[str, str]):
+    """
+    Запуск консольной команды над файлом.
+    """
+    executable = options.get('command')
+    if not executable:
+        return
+
+    executable_path = shutil.which(executable)
+    if executable_path is None:
+        logger.warning("Command '{}' not found".format(executable))
+        return
+
+    arguments = options.get('arguments', '').format(
+        file=path
+    )
+    process = subprocess.Popen(
+        '{} {}'.format(executable_path, arguments),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        shell=True
+    )
+    out, err = process.communicate()
+    logger.debug('Command: {} {}\nStdout: {}\nStderr: {}'.format(
+        executable_path,
+        arguments,
+        out.decode() if out is not None else '',
+        err.decode() if err is not None else '',
+    ))
+
+
 def get_options(format: str, field: Any = None, variation: PaperVariation = None) -> Dict[str, str]:
     """
     Получение настроек постобработки для заданного формата.
@@ -56,37 +87,6 @@ def get_options(format: str, field: Any = None, variation: PaperVariation = None
     return {}
 
 
-def _postprocess_file(path: str, options: Dict[str, str]):
-    """
-    Запуск консольной команды для постобработки файла.
-    """
-    executable = options.get('command')
-    if not executable:
-        return
-
-    executable_path = shutil.which(executable)
-    if executable_path is None:
-        logger.warning("Command '{}' not found".format(executable))
-        return
-
-    arguments = options.get('arguments', '').format(
-        file=path
-    )
-    process = subprocess.Popen(
-        '{} {}'.format(executable_path, arguments),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        shell=True
-    )
-    out, err = process.communicate()
-    logger.debug('Command: {} {}\nStdout: {}\nStderr: {}'.format(
-        executable_path,
-        arguments,
-        out.decode() if out is not None else '',
-        err.decode() if err is not None else '',
-    ))
-
-
 def postprocess_variation(source_filename: str, variation: PaperVariation,
         options: Dict[str, str] = None):
     """
@@ -110,7 +110,7 @@ def postprocess_variation(source_filename: str, variation: PaperVariation,
 
     if options:
         postprocess_options.update(options)
-    _postprocess_file(variation_path, postprocess_options)
+    _run(variation_path, postprocess_options)
 
 
 def postprocess_uploaded_file(source_filename: str, field: Any = None,
@@ -141,4 +141,4 @@ def postprocess_uploaded_file(source_filename: str, field: Any = None,
         postprocess_options.update(lowercase_copy(field.postprocess))
     if options:
         postprocess_options.update(options)
-    _postprocess_file(full_path, postprocess_options)
+    _run(full_path, postprocess_options)
