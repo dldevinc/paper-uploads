@@ -519,18 +519,19 @@ class Page(models.Model):
     )
 ```
 
-Или переопределить постобработку для определенного формата:
+Или переопределить постобработку для каждого формата отдельно:
 ```python
 class Page(models.Model):
     image = ImageField(_('image'), blank=True,
         variations=dict(
             desktop=dict(
                 # ...
-                jpeg=dict(
-                    postprocess={
+                postprocess=dict(
+                    jpeg=False,     # disable
+                    webp={          # override
                         'command': 'echo',
-                        'arguments': '"{file}"'                
-                    },                
+                        'arguments': '"{file}"',
+                    }                
                 )
             )
         )
@@ -540,10 +541,18 @@ class Page(models.Model):
 **NOTE**: не путайте настройки постобработки `postprocess`
 с `pilkit`-процессорами, указываемыми в параметре `postprocessors`.
 
-Несмотря на то, что в коллекции можно указать `postprocess` у
-псевдо-поля `CollectionItemTypeField`, делать это для 
-элементов-изображений не рекомендуется. Потому что приоритет этого 
-значения будет наивысшим: выше, чем у параметров вариаций.
+В коллекциях переопределить команду можно через 
+псевдо-поле `CollectionItemTypeField`:
+```python
+class PageFiles(Collection):
+    image = CollectionItemTypeField(ImageItem, postprocess={
+        'jpeg': {
+            'command': 'jpegtran',     
+            'arguments': '"{file}"', 
+        }              
+    })
+    file = CollectionItemTypeField(FileItem)
+```
 
 ### Common postprocessing
 

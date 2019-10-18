@@ -48,20 +48,13 @@ def get_options(format: str, field: Any = None, variation: PaperVariation = None
     Если постобработка запрещена, выбрасывает исключение PostprocessProhibited.
 
     Порядок проверки:
-    1) опция `postprocess` для конкретного формата вариации
-    2) опция `postprocess` вариации
-    3) поле (FileField или CollectionItemTypeField)
-    4) настройка `PAPER_UPLOADS['POSTPROCESS']`
+    1) параметр `postprocess` вариации
+    2) параметр `postprocess` поля (FileField или CollectionItemTypeField)
+    3) настройки PAPER_UPLOADS['POSTPROCESS']
     """
     format = format.lower()
     if variation is not None:
-        variation_format_options = variation.extra_context.get(format, {}).get('postprocess', {})
-        if variation_format_options is False:
-            raise PostprocessProhibited
-        elif variation_format_options:
-            return lowercase_copy(variation_format_options)
-
-        variation_options = variation.extra_context.get('postprocess', {})
+        variation_options = variation.get_postprocess_options(format)
         if variation_options is False:
             raise PostprocessProhibited
         elif variation_options:
