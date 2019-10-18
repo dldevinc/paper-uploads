@@ -1,5 +1,5 @@
 import time
-from typing import Iterable, Dict
+from typing import Iterable
 from django.apps import apps
 from django.db import DEFAULT_DB_ALIAS
 from django.core.exceptions import ObjectDoesNotExist
@@ -34,14 +34,12 @@ def postprocess_file(app_label: str, model_name: str, object_id: int,
 
 
 def recut_image(app_label: str, model_name: str, object_id: int,
-        names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS,
-        postprocess: Dict[str, str] = None):
+        names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS):
     instance = _get_instance(app_label, model_name, object_id, using=using)
-    instance._recut_sync(names, postprocess=postprocess)
+    instance._recut_sync(names)
 
 
 def recut_collection(app_label: str, model_name: str, object_id: int,
-        names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS,
-        postprocess: Dict[str, str] = None):
+        names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS):
     collection = _get_instance(app_label, model_name, object_id, using=using)
-    collection._recut_sync(names, using=using, postprocess=postprocess)
+    collection._recut_sync(names, using=using)
