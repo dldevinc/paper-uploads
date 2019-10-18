@@ -8,13 +8,13 @@ from django.core.files import File
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
-from variations.variation import Variation
 from variations.utils import prepare_image
 from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
 from ..conf import settings
 from ..storage import upload_storage
 from ..utils import get_variation_filename
 from ..postprocess import postprocess_variation
+from ..variations import PaperVariation
 from .fields.image import VariationalFileField
 from .. import tasks
 
@@ -43,7 +43,7 @@ class VariationFile(File):
     file = property(_get_file, _set_file, _del_file)
 
     @property
-    def variation(self) -> Variation:
+    def variation(self) -> PaperVariation:
         variations = self.instance.get_variations()
         return variations[self.variation_name]
 
@@ -175,7 +175,7 @@ class UploadedImageBase(UploadedFileBase):
             file.delete()
         super().post_delete_callback()
 
-    def get_variations(self) -> Dict[str, Variation]:
+    def get_variations(self) -> Dict[str, PaperVariation]:
         """
         Получение объектов вариаций
         """
@@ -276,7 +276,7 @@ class UploadedImage(ProxyFileAttributesMixin, SlaveModelMixin, UploadedImageBase
     def __str__(self):
         return self.file.name
 
-    def get_variations(self) -> Dict[str, Variation]:
+    def get_variations(self) -> Dict[str, PaperVariation]:
         if not hasattr(self, '_variations_cache'):
             owner_field = self.get_owner_field()
             if owner_field is not None:

@@ -15,7 +15,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from polymorphic.models import PolymorphicModel
-from variations.variation import Variation
 from .base import SlaveModelMixin, ProxyFileAttributesMixin
 from .file import UploadedFileBase
 from .image import UploadedImageBase, VariationalFileField
@@ -25,6 +24,7 @@ from ..storage import upload_storage
 from .. import tasks
 from ..helpers import build_variations
 from ..postprocess import postprocess_uploaded_file
+from ..variations import PaperVariation
 
 __all__ = [
     'CollectionItemBase', 'FileItemBase', 'ImageItemBase', 'CollectionBase',
@@ -240,7 +240,7 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
     def __str__(self):
         return self.file.name
 
-    def get_variations(self) -> Dict[str, Variation]:
+    def get_variations(self) -> Dict[str, PaperVariation]:
         """
         Перебираем возможные места вероятного определения вариаций и берем
         первое непустое значение. Порядок проверки:

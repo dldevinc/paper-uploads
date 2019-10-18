@@ -2,7 +2,7 @@ import posixpath
 from typing import IO, Dict, Any, Iterable, Union
 from django.core import exceptions
 from django.core.files import File
-from variations.variation import Variation
+from .variations import PaperVariation
 
 
 def run_validators(value: Union[IO, File], validators: Iterable[Any]):
@@ -17,7 +17,7 @@ def run_validators(value: Union[IO, File], validators: Iterable[Any]):
         raise exceptions.ValidationError(errors)
 
 
-def get_variation_filename(filename: str, variation_name: str, variation: Variation) -> str:
+def get_variation_filename(filename: str, variation_name: str, variation: PaperVariation) -> str:
     """
     Конструирует имя файла для вариации по имени файла исходника.
     Имя файла может включать путь — он остается неизменным.

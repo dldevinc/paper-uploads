@@ -3,15 +3,15 @@ import shutil
 import subprocess
 from PIL import Image
 from typing import Dict, Any
-from variations.variation import Variation
 from .conf import settings
 from .logging import logger
 from .storage import upload_storage
 from .exceptions import PostprocessProhibited
 from .utils import lowercase_copy, get_variation_filename
+from .variations import PaperVariation
 
 
-def get_options(format: str, field: Any = None, variation: Variation = None) -> Dict[str, str]:
+def get_options(format: str, field: Any = None, variation: PaperVariation = None) -> Dict[str, str]:
     """
     Получение настроек постобработки для заданного формата.
     Если постобработка запрещена, выбрасывает исключение PostprocessProhibited.
@@ -87,7 +87,7 @@ def _postprocess_file(path: str, options: Dict[str, str]):
     ))
 
 
-def postprocess_variation(source_filename: str, variation_name: str, variation: Variation,
+def postprocess_variation(source_filename: str, variation_name: str, variation: PaperVariation,
         options: Dict[str, str] = None):
     """
     Постобработка файла вариации изображения.

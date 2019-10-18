@@ -1,9 +1,9 @@
 from pathlib import Path
 from django.test import TestCase
 from django.core.files import File
-from variations.variation import Variation
 from ..exceptions import PostprocessProhibited
 from .. import postprocess
+from ..variations import PaperVariation
 from ..models import *
 
 TESTS_PATH = Path(__file__).parent / 'samples'
@@ -66,17 +66,17 @@ class TestGetOptions(TestCase):
             )
 
     def test_format_level_disabling(self):
-        variation = Variation(
+        variation = PaperVariation(
             size=(0, 0),
-            jpeg=dict(
-                postprocess=False
+            postprocess=dict(
+                jpeg=False
             )
         )
         with self.assertRaises(PostprocessProhibited):
             postprocess.get_options('jpeg', variation=variation)
 
     def test_variation_level_disabling(self):
-        variation = Variation(
+        variation = PaperVariation(
             size=(0, 0),
             postprocess=False
         )
@@ -90,18 +90,16 @@ class TestGetOptions(TestCase):
             postprocess.get_options('webp')
 
     def test_format_level_override(self):
-        variation = Variation(
+        variation = PaperVariation(
             size=(0, 0),
-            jpeg=dict(
-                postprocess={
+            postprocess=dict(
+                jpeg={
                     'command': 'echo'
-                }
-            ),
-            webp=dict(
-                postprocess={
+                },
+                webp={
                     'command': 'man'
                 }
-            ),
+            )
         )
         self.assertDictEqual(
             postprocess.get_options('jpeg', variation=variation),
