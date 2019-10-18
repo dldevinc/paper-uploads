@@ -5,10 +5,9 @@ from PIL import Image
 from typing import Dict, Iterator, Tuple, Iterable, Optional, Any, Sequence
 from django.db import models
 from django.core.files import File
-from django.utils.crypto import get_random_string
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
-from django.core.exceptions import ValidationError, SuspiciousFileOperation
 from variations.variation import Variation
 from variations.utils import prepare_image
 from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
@@ -16,6 +15,7 @@ from ..conf import settings
 from ..storage import upload_storage
 from ..utils import get_variation_filename
 from ..postprocess import postprocess_variation
+from .fields.image import VariationalFileField
 from .. import tasks
 
 __all__ = ['UploadedImageBase', 'UploadedImage']
@@ -240,12 +240,12 @@ class UploadedImageBase(UploadedFileBase):
                 variation_path = get_variation_filename(self.file.name, name, variation)
                 with self.file.storage.open(variation_path, 'wb+') as fp:
                     variation.save(image, fp)
-                    postprocess_variation(
-                        self.file.name,
-                        name,
-                        variation,
-                        options=postprocess
-                    )
+                postprocess_variation(
+                    self.file.name,
+                    name,
+                    variation,
+                    options=postprocess
+                )
 
     def _recut_async(self, names: Iterable[str] = (), postprocess: Dict[str, str] = None):
         from django_rq.queues import get_queue
@@ -264,48 +264,6 @@ class UploadedImageBase(UploadedFileBase):
             self._recut_async(names, postprocess)
         else:
             self._recut_sync(names, postprocess)
-
-
-class VariationalFileField(models.FileField):
-    """
-    Из-за того, что вариация может самостоятельно установить свой формат,
-    возможна ситуация, когда вариации одного изображения перезапишут вариации
-    другого. Например, когда загружаются файлы, отличающиеся только расширением.
-    Поэтому мы проверяем все имена будущих вариаций на существование, чтобы
-    не допустить перезапись.
-    """
-    def variation_collapse(self, instance, name):
-        if self.storage.exists(name):
-            return True
-
-        for vname, variation in instance.get_variations().items():
-            variation_filename = get_variation_filename(name, vname, variation)
-            if self.storage.exists(variation_filename):
-                return True
-        return False
-
-    def generate_filename(self, instance, filename):
-        name = super().generate_filename(instance, filename)
-
-        max_length = self.max_length
-        dir_name, file_name = os.path.split(name)
-        file_root, file_ext = os.path.splitext(file_name)
-        while self.variation_collapse(instance, name) or (max_length and len(name) > max_length):
-            name = os.path.join(dir_name, "%s_%s%s" % (file_root, get_random_string(7), file_ext))
-            if max_length is None:
-                continue
-            # Truncate file_root if max_length exceeded.
-            truncation = len(name) - max_length
-            if truncation > 0:
-                file_root = file_root[:-truncation]
-                if not file_root:
-                    raise SuspiciousFileOperation(
-                        'Storage cannot find an available filename for "%s". '
-                        'Please make sure the corresponding file field '
-                        'allows sufficient "max_length".' % name
-                    )
-                name = os.path.join(dir_name, "%s_%s%s" % (file_root, get_random_string(7), file_ext))
-        return name
 
 
 class UploadedImage(ProxyFileAttributesMixin, SlaveModelMixin, UploadedImageBase):
