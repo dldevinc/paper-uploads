@@ -114,9 +114,9 @@ def postprocess_uploaded_file(source_filename: str, field: Any = None,
     if options is False:
         return
 
-    full_path = upload_storage.path(source_filename)
-    if not os.path.exists(full_path):
-        logger.warning('File not found: {}'.format(full_path))
+    source_path = upload_storage.path(source_filename)
+    if not os.path.exists(source_path):
+        logger.warning('File not found: {}'.format(source_path))
         return
 
     _, ext = os.path.splitext(source_filename)
@@ -134,4 +134,4 @@ def postprocess_uploaded_file(source_filename: str, field: Any = None,
         postprocess_options.update(lowercase_copy(field.postprocess))
     if options:
         postprocess_options.update(options)
-    _run(full_path, postprocess_options)
+    _run(source_path, postprocess_options)
