@@ -20,7 +20,7 @@ def run_validators(value: Union[IO, File], validators: Iterable[Any]):
 def get_variation_filename(filename: str, variation_name: str, variation: Variation) -> str:
     """
     Конструирует имя файла для вариации по имени файла исходника.
-    Имя файла может включать путь - он остается неизменным.
+    Имя файла может включать путь — он остается неизменным.
     """
     root, basename = posixpath.split(filename)
     filename, ext = posixpath.splitext(basename)

@@ -81,7 +81,7 @@ class FileFieldBase(models.OneToOneField):
         см. https://docs.fineuploader.com/branch/master/api/options.html#validation
 
         image.minWidth и т.п. не используются из-за недостатка кастомизации
-        текста о ошибках.
+        текста об ошибках.
         """
         validation = {}
         for v in self.validators:

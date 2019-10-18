@@ -129,7 +129,7 @@ def postprocess_uploaded_file(source_filename: str, field: Any = None,
     _, ext = os.path.splitext(source_filename)
     ext = ext.lower()
     if ext in Image.EXTENSION.keys():
-        # файл является изображением - их не трогаем
+        # файл является изображением — их не трогаем
         return
 
     try:
