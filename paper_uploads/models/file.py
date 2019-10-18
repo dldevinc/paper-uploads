@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
 from ..conf import settings
 from ..storage import upload_storage
-from ..postprocess import postprocess_uploaded_file
+from ..postprocess import postprocess_common_file
 from .. import tasks
 from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
 
@@ -43,7 +43,7 @@ class UploadedFile(ProxyFileAttributesMixin, SlaveModelMixin, UploadedFileBase):
 
     def _postprocess_sync(self):
         owner_field = self.get_owner_field()
-        postprocess_uploaded_file(self.file.name, owner_field)
+        postprocess_common_file(self.file.name, owner_field)
 
         current_hash_value = self.hash
         self.update_hash(commit=False)

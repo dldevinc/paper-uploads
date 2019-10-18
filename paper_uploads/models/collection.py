@@ -18,7 +18,7 @@ from polymorphic.models import PolymorphicModel
 from ..conf import settings, FILE_ICON_OVERRIDES, FILE_ICON_DEFAULT
 from ..storage import upload_storage
 from ..variations import PaperVariation
-from ..postprocess import postprocess_uploaded_file
+from ..postprocess import postprocess_common_file
 from ..helpers import build_variations
 from .. import tasks
 from .base import SlaveModelMixin, ProxyFileAttributesMixin
@@ -198,7 +198,7 @@ class FileItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collection
         if itemtype_field is None:
             return
 
-        postprocess_uploaded_file(self.file.name, itemtype_field)
+        postprocess_common_file(self.file.name, itemtype_field)
 
         current_hash_value = self.hash
         self.update_hash(commit=False)

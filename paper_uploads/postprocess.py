@@ -106,7 +106,7 @@ def postprocess_variation(source_filename: str, variation: PaperVariation,
     _run(variation_path, postprocess_options)
 
 
-def postprocess_uploaded_file(source_filename: str, field: Any = None,
+def postprocess_common_file(source_filename: str, field: Any = None,
         options: Dict[str, str] = None):
     """
     Постобработка загруженного файла.
