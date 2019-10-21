@@ -136,18 +136,19 @@ class Page(models.Model):
                 size=(1600, 0),
                 clip=False,
                 jpeg=dict(
-                    quality=92,
+                    quality=80,
+                    progressive=True
                 ),
-                postprocessors=[
-                    processors.ColorOverlay('#FF0000'),
-                ],
             ),
             tablet=dict(
                 size=(1024, 0),
                 clip=False,
+                jpeg=dict(
+                    quality=75,
+                ),
             ),
-            admin=dict(
-                size=(320, 0),
+            mobile=dict(
+                size=(640, 0),
                 clip=False,
             )
         )
@@ -595,6 +596,68 @@ class PageFiles(Collection):
         }              
     })
     file = CollectionItemTypeField(FileItem)
+```
+
+## Variation versions
+Допустим, у нас есть изображение, которое нужно отобразить в трех 
+вариантах: `desktop`, `tablet` и `mobile`. Если мы хотим поддерживать 
+Retina дисплеи, нам нужно добавить ещё, как минимум, две вариации 
+для размера `2x`. Если мы хотим ещё и использовать формат `WebP` с
+обратной совместимостью, то общее количество вариаций умножается на 2 
+и достигает 10.
+
+Поскольку Retina-вариации отличаются от обычных только увеличенным 
+на постоянный коэффициент размером, а `WebP`-вариации — принудительной 
+конвертацией в формат `WebP`, мы можем создавать эти вариации 
+автоматически из исходной. Для этого нужно указать версии вариации 
+в параметре `versions`:
+
+```python
+class Page(models.Model):
+    image = ImageField(_('image'), blank=True,
+        variations=dict(
+            desktop=dict(
+                # ...
+                versions={'webp', '2x', '3x'}
+            )
+        )
+    )
+```
+
+Приведенный выше код создаст следующие вариации:
+* `desktop` - оригинальная вариация
+* `desktop_webp` - `WebP`-версия оригинальной вариации
+* `desktop_2x` - Retina 2x
+* `desktop_webp_2x` - `WebP`-версия Retina 2x
+* `desktop_3x` - Retina 3x
+* `desktop_webp_3x` - `WebP`-версия Retina 3x
+
+**NOTE**: Суффикс Retina всегда следует после суффикса `WebP`.
+
+Поддерживаются следующие версии вариаций: `webp`, `2x`, `3x`, `4x`.
+Каждая дополнительная вариация является полноценной и обладает 
+точно такими же свойствами, что и любая другая вариации. 
+
+Если необходимо переопределить какие-то параметры дополнительной 
+вариации, то придётся объявлять вариацию явно — она всегда перезапишет 
+одноименную дополнительную вариацию.
+
+```python
+class Page(models.Model):
+    image = ImageField(_('image'), blank=True,
+        variations=dict(
+            desktop=dict(
+                size=(800, 600),
+                versions={'webp', '2x', '3x'}
+            ),
+            desktop_2x=dict(
+                size=(1600, 1200),
+                jpeg=dict(
+                    quality=72                
+                )      
+            )   
+        )
+    )
 ```
 
 ## Settings

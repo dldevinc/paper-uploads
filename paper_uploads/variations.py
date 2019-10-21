@@ -1,6 +1,8 @@
 import posixpath
-from typing import Union, Dict
+from typing import Union, Dict, Set, Iterable
 from variations.variation import Variation
+
+ALLOWED_VERSIONS = {'webp', '2x', '3x', '4x'}
 
 
 class PaperVariation(Variation):
@@ -8,9 +10,12 @@ class PaperVariation(Variation):
     Расширение возможностей вариации.
       * Хранение имени вариации
       * Хранение настроек постобработки
+      * Хранение перечня дополнительных версий вариации
     """
-    def __init__(self, *args, name: str = '', postprocess: Union[Dict, bool] = None, **kwargs):
+    def __init__(self, *args, name: str = '', postprocess: Union[Dict, bool] = None,
+            versions: Iterable[str] = None, **kwargs):
         self.name = name
+        self.versions = versions or set()
         self.postprocess = postprocess
         super().__init__(*args, **kwargs)
 
@@ -41,6 +46,17 @@ class PaperVariation(Variation):
             }
         else:
             raise TypeError(value)
+
+    @property
+    def versions(self) -> Set:
+        return self._versions
+
+    @versions.setter
+    def versions(self, value):
+        self._versions = set(v.lower() for v in value)
+        unknown_versions = self._versions.difference(ALLOWED_VERSIONS)
+        if unknown_versions:
+            raise ValueError('unknown versions: {}'.format(', '.join(unknown_versions)))
 
     def get_output_filename(self, input_filename: str) -> str:
         """
