@@ -145,7 +145,9 @@ Collection.prototype.initUploader = function() {
                 return _this.collectionId;
             }
         },
-    }).on('submit', function(id) {
+    }).on('submit', function() {
+
+    }).on('submitted', function(id) {
         const template = _this.element.querySelector(_this._opts.preloaderTemplate);
         const clone = document.importNode(template.content, true);
 

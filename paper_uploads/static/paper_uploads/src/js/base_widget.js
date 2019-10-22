@@ -10,10 +10,9 @@ const bootbox = window.paperAdmin.bootbox;
 const preloader = window.paperAdmin.preloader;
 const formUtils = window.paperAdmin.formUtils;
 
-// TODO: прерывание загрузки
-
 /**
  * @fires upload:submit
+ * @fires upload:submitted
  * @fires upload:upload
  * @fires upload:created
  * @fires upload:deleted
@@ -135,8 +134,8 @@ BaseWidget.prototype.initUploader = function() {
         button: this.uploadButton,
         dropzones: this.element.querySelectorAll('.dropzone-overlay'),
         validation: JSON.parse(this.element.dataset.validation),
-    }).on('submit', function(id) {
-        _this.trigger('upload:submit', [id]);
+    }).on('submitted', function(id) {
+        _this.trigger('upload:submitted', [id]);
     }).on('upload', function(id) {
         _this.loading = true;
 

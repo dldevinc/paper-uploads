@@ -6,6 +6,29 @@ import match from 'mime-match';
 const EventEmitter = window.paperAdmin.EventEmitter;
 
 
+/**
+ * Класс ошибки валидации файла при событии onSubmit()
+ * @constructor
+ */
+function ValidationError() {
+    Error.apply(this, arguments) ;
+    this.name = "ValidationError";
+    if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, ValidationError);
+    } else {
+        this.stack = (new Error()).stack;
+    }
+}
+
+ValidationError.prototype = Object.create(Error.prototype);
+
+
+/**
+ * Класс-обертка над загрузчиком Fine Uploader.
+ * @param element
+ * @param options
+ * @constructor
+ */
 function Uploader(element, options) {
     this._opts = Object.assign({
         url: '',
@@ -156,9 +179,19 @@ Uploader.prototype._makeUploader = function() {
                         });
                     }
                 }
+
+                try {
+                    _this.trigger('submit', [id]);
+                } catch (e) {
+                    if (e.name === 'ValidationError') {
+                        return false;
+                    } else {
+                        throw e;
+                    }
+                }
             },
             onSubmitted: function(id) {
-                _this.trigger('submit', [id]);
+                _this.trigger('submitted', [id]);
             },
             onUpload: function(id) {
                 _this.trigger('upload', [id]);
@@ -229,4 +262,4 @@ function getPaperParams(element) {
 }
 
 
-export {Uploader, getPaperParams};
+export {Uploader, ValidationError, getPaperParams};
