@@ -249,11 +249,15 @@ BaseWidget.prototype._delete = function() {
     data.append('instance_id', this.instanceId.toString());
 
     const _this = this;
-    fetch(this._opts.urls.delete, {
-        method: 'POST',
-        credentials: 'same-origin',
-        body: data
-    }).then(function(response) {
+    Promise.all([
+        preloader.show(),
+        fetch(this._opts.urls.delete, {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: data
+        })
+    ]).then(function(values) {
+        const response = values[1];
         if (!response.ok) {
             const error = new Error(`${response.status} ${response.statusText}`);
             error.response = response;
@@ -267,6 +271,7 @@ BaseWidget.prototype._delete = function() {
             throw error
         }
 
+        preloader.hide();
         _this.empty = true;
         _this.instanceId = '';
 
@@ -278,6 +283,7 @@ BaseWidget.prototype._delete = function() {
 
         _this.trigger('upload:deleted');
     }).catch(function(error) {
+        preloader.hide();
         if ((typeof error === 'object') && error.response && error.response.errors) {
             showError(error.response.errors);
         } else if (error instanceof Error) {
