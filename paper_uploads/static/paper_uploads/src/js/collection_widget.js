@@ -450,11 +450,15 @@ Collection.prototype._deleteCollection = function() {
     data.append('collectionId', this.collectionId.toString());
 
     const _this = this;
-    fetch(this._opts.urls.deleteCollection, {
-        method: 'POST',
-        credentials: 'same-origin',
-        body: data
-    }).then(function(response) {
+    Promise.all([
+        preloader.show(),
+        fetch(this._opts.urls.deleteCollection, {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: data
+        })
+    ]).then(function(values) {
+        const response = values[1];
         if (!response.ok) {
             const error = new Error(`${response.status} ${response.statusText}`);
             error.response = response;
@@ -468,6 +472,7 @@ Collection.prototype._deleteCollection = function() {
             throw error
         }
 
+        preloader.hide();
         let lastItem = null;
         Array.from(_this.itemContainer.children).forEach(function(item) {
             item.classList.add(_this._opts.itemRemovingState);
@@ -488,6 +493,7 @@ Collection.prototype._deleteCollection = function() {
             _this.trigger('collection:deleted');
         }
     }).catch(function(error) {
+        preloader.hide();
         if ((typeof error === 'object') && error.response && error.response.errors) {
             showError(error.response.errors);
         } else if (error instanceof Error) {
