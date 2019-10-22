@@ -94,9 +94,10 @@ def upload_item(request):
         logger.exception('Error')
         return helpers.error_response('Multiple objects returned')
 
-    if collection is None:
-        # Создание галереи
-        collection = collection_cls(
+    # Создание галереи
+    is_new_collection = collection is None
+    if is_new_collection:
+        collection = collection_cls.objects.create(
             owner_app_label=request.POST.get('paperOwnerAppLabel'),
             owner_model_name=request.POST.get('paperOwnerModelName'),
             owner_fieldname=request.POST.get('paperOwnerFieldname')
@@ -109,8 +110,6 @@ def upload_item(request):
 
     try:
         with transaction.atomic():
-            collection.save()
-
             item_type_field = collection_cls.item_types[item_type]
             instance = item_type_field.model(
                 collection_content_type_id=content_type_id,
@@ -124,10 +123,16 @@ def upload_item(request):
             run_validators(file, item_type_field.validators)
             instance.save()
     except ValidationError as e:
+        if is_new_collection:
+            collection.delete()
+
         messages = helpers.get_exception_messages(e)
         logger.debug(messages)
         return helpers.error_response(messages)
     except Exception as e:
+        if is_new_collection:
+            collection.delete()
+
         logger.exception('Error')
         if hasattr(e, 'args'):
             message = '{}: {}'.format(type(e).__name__, e.args[0])
