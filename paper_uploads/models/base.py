@@ -126,7 +126,12 @@ class UploadedFileBase(models.Model):
         """
         Метод выполняется после удаления экземпляра модели.
         """
-        self.file.delete(save=False)
+        try:
+            self.file.delete(save=False)
+        except Exception:
+            # Удаленные Storage могут кидать исключение при попытке удалить
+            # файл, которого уже нет.
+            logger.exception("Failed to delete a file `{}`".format(self.file.name))
 
     def update_hash(self, commit: bool = True):
         # keep file state

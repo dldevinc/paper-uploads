@@ -11,6 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
 from variations.utils import prepare_image
 from ..conf import settings
+from ..logging import logger
 from ..storage import upload_storage
 from ..postprocess import postprocess_variation
 from ..variations import PaperVariation
@@ -172,7 +173,12 @@ class UploadedImageBase(UploadedFileBase):
         При удалении экземпляра, автоматически удаляем все вариации.
         """
         for name, file in self.get_variation_files():
-            file.delete()
+            try:
+                file.delete()
+            except Exception:
+                # Удаленные Storage могут кидать исключение при попытке удалить
+                # файл, которого уже нет.
+                logger.exception("Failed to delete a file `{}`".format(self.file.name))
         super().post_delete_callback()
 
     def get_variations(self) -> Dict[str, PaperVariation]:
