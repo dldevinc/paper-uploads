@@ -1,4 +1,5 @@
-<div class="collection dropzone {% if not widget.value %}empty{% endif %}"
+<div class="collection dropzone {% if not widget.value %}collection--empty{% endif %}"
+     data-create-collection-url="{{ create_collection_url }}"
      data-delete-collection-url="{{ delete_collection_url }}"
      data-upload-item-url="{{ upload_item_url }}"
      data-change-item-url="{{ change_item_url }}"
@@ -23,21 +24,26 @@
     {% endif %}
   </div>
 
-  <button type="button" class="collection__upload-button btn btn-success"
+  <button type="button" class="collection__create-button btn btn-success" {% if widget.value %}disabled{% endif %}
+          data-toggle="tooltip" data-placement="top" data-trigger="hover"
+          data-html="true" title="{{ _('Create collection') }}">
+    <i class="fa fa-fw fa-plus"></i>
+    {{ _('Create collection') }}
+  </button>
+
+  <button type="button" class="collection__upload-button btn btn-success" {% if not widget.value %}disabled{% endif %}
           data-toggle="tooltip" data-placement="top" data-trigger="hover"
           data-html="true" title="{{ _('Select files') }}">
     <i class="fa fa-fw fa-folder-open"></i>
     {{ _('Select files') }}
   </button>
 
-  {% if not widget.required %}
-    <button type="button" class="collection__delete-button btn btn-danger" {% if not widget.value %}disabled{% endif %}
-            data-toggle="tooltip" data-placement="top" data-trigger="hover"
-            data-html="true" title="{{ _('Delete collection') }}">
-      <i class="fa fa-fw fa-trash"></i>
-      {{ _('Delete collection') }}
-    </button>
-  {% endif %}
+  <button type="button" class="collection__delete-button btn btn-danger" {% if not widget.value %}disabled{% endif %}
+          data-toggle="tooltip" data-placement="top" data-trigger="hover"
+          data-html="true" title="{{ _('Delete collection') }}">
+    <i class="fa fa-fw fa-trash"></i>
+    {{ _('Delete collection') }}
+  </button>
 
   <div class="collection__help-text">
     <small class="text-muted">

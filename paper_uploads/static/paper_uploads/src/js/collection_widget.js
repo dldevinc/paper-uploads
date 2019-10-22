@@ -1,7 +1,7 @@
 /* global gettext */
 
 import deepmerge from "deepmerge";
-import {Uploader, getPaperParams} from "./_uploader";
+import {Uploader, ValidationError, getPaperParams} from "./_uploader";
 import {showError, collectError, showCollectedErrors} from "./_utils";
 
 // PaperAdmin API
@@ -36,6 +36,7 @@ function Collection(element, options) {
         input: '.collection__input',
         itemContainer: '.collection__items',
         item: '.collection__item',
+        createButton: '.collection__create-button',
         uploadButton: '.collection__upload-button',
         deleteButton: '.collection__delete-button',
         preloaderItem: '.collection__item--preloader',
@@ -50,10 +51,12 @@ function Collection(element, options) {
         deleteItemButton: '.collection__item-delete-button',
         itemSelectorTemplate: '.collection__{}-item-template',
 
+        collectionEmptyState: 'collection--empty',
         itemCheckedState: 'collection__item--checked',
         itemRemovingState: 'collection__item--removing',
 
         urls: {
+            createCollection: '',
             deleteCollection: '',
             uploadItem: '',
             changeItem: '',
@@ -72,6 +75,11 @@ function Collection(element, options) {
     this.itemContainer = this.element.querySelector(this._opts.itemContainer);
     if (!this.itemContainer) {
         throw new Error(`Not found element "${this._opts.itemContainer}"`);
+    }
+
+    this.createButton = this.element.querySelector(this._opts.createButton);
+    if (!this.createButton) {
+        throw new Error(`Not found element "${this._opts.createButton}"`);
     }
 
     this.uploadButton = this.element.querySelector(this._opts.uploadButton);
@@ -94,27 +102,28 @@ Object.defineProperty(Collection.prototype, 'collectionId', {
         return parseInt(this.input.value);
     },
     set: function(value) {
-        this.input.value = parseInt(value) || '';
-    }
-});
-
-Object.defineProperty(Collection.prototype, 'empty', {
-    get: function() {
-        return Boolean(this._empty);
-    },
-    set: function(value) {
-        const newValue = Boolean(value);
-        if (newValue === Boolean(this._empty)) {
-            return
-        }
-        if (newValue) {
-            this.element.classList.add('empty');
+        const newValue = parseInt(value);
+        if (isNaN(newValue)) {
+            // удаление коллекции
+            this.input.value = '';
+            this.createButton.disabled = false;
+            this.uploadButton.disabled = true;
             this.deleteButton.disabled = true;
+            this.element.classList.add(this._opts.collectionEmptyState);
+
+            const uploadInput = this.uploadButton.querySelector('input[type="file"]');
+            uploadInput && (uploadInput.disabled = true);
         } else {
-            this.element.classList.remove('empty');
+            // создание коллекции
+            this.input.value = newValue;
+            this.createButton.disabled = true;
+            this.uploadButton.disabled = false;
             this.deleteButton.disabled = false;
+            this.element.classList.remove(this._opts.collectionEmptyState);
+
+            const uploadInput = this.uploadButton.querySelector('input[type="file"]');
+            uploadInput && (uploadInput.disabled = false);
         }
-        this._empty = newValue;
     }
 });
 
@@ -122,9 +131,9 @@ Object.defineProperty(Collection.prototype, 'empty', {
  * Инициализация галереи
  */
 Collection.prototype.init = function() {
-    this.empty = isNaN(this.collectionId);
     this.uploader = this.initUploader();
     this.sortable = this.initSortable();
+    this.collectionId = this.input.value;
     this.addListeners();
 };
 
@@ -146,7 +155,9 @@ Collection.prototype.initUploader = function() {
             }
         },
     }).on('submit', function() {
-
+        if (isNaN(_this.collectionId)) {
+            throw new ValidationError();
+        }
     }).on('submitted', function(id) {
         const template = _this.element.querySelector(_this._opts.preloaderTemplate);
         const clone = document.importNode(template.content, true);
@@ -177,8 +188,7 @@ Collection.prototype.initUploader = function() {
             preloader.classList.add('processing');
         }
     }).on('complete', function(id, response) {
-        if (_this.empty) {
-            _this.empty = false;
+        if (isNaN(_this.collectionId)) {
             _this.collectionId = response.collectionId;
             _this.trigger('collection:created');
         }
@@ -302,6 +312,64 @@ Collection.prototype.cleanItems = function() {
     }
 };
 
+/**
+ * Создание коллекции.
+ * @private
+ */
+Collection.prototype._createCollection = function() {
+    if (!isNaN(this.collectionId)) {
+        return
+    }
+
+    const data = new FormData();
+    const params = getPaperParams(this.element);
+    Object.keys(params).forEach(function(name) {
+        data.append(name, params[name]);
+    });
+
+    const _this = this;
+    Promise.all([
+        preloader.show(),
+        fetch(this._opts.urls.createCollection, {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: data
+        })
+    ]).then(function(values) {
+        const response = values[1];
+        if (!response.ok) {
+            const error = new Error(`${response.status} ${response.statusText}`);
+            error.response = response;
+            throw error;
+        }
+        return response.json();
+    }).then(function(response) {
+        if (response.errors && response.errors.length) {
+            const error = new Error('Invalid request');
+            error.response = response;
+            throw error
+        }
+
+        preloader.hide();
+        _this.collectionId = response.collection_id;
+        _this.trigger('collection:created');
+    }).catch(function(error) {
+        preloader.hide();
+        if ((typeof error === 'object') && error.response && error.response.errors) {
+            showError(error.response.errors);
+        } else if (error instanceof Error) {
+            showError(error.message);
+        } else {
+            showError(error);
+        }
+    });
+};
+
+/**
+ * Удаление элемента коллекции.
+ * @param item
+ * @private
+ */
 Collection.prototype._deleteItem = function(item) {
     if (isNaN(this.collectionId)) {
         return
@@ -485,13 +553,11 @@ Collection.prototype._deleteCollection = function() {
         if (lastItem) {
             lastItem.addEventListener('animationend', function() {
                 _this.cleanItems();
-                _this.empty = true;
                 _this.collectionId = '';
                 _this.trigger('collection:deleted');
             });
         } else {
             _this.cleanItems();
-            _this.empty = true;
             _this.collectionId = '';
             _this.trigger('collection:deleted');
         }
@@ -521,6 +587,16 @@ Collection.prototype._checkItem = function(item, state=true) {
 
 Collection.prototype.addListeners = function() {
     const _this = this;
+
+    // создание галереи
+    this.element.addEventListener('click', function(event) {
+        if (!event.target.closest(_this._opts.createButton)) {
+            return
+        }
+
+        event.preventDefault();
+        _this._createCollection();
+    });
 
     // удаление галереи
     this.element.addEventListener('click', function(event) {
@@ -780,6 +856,7 @@ function initWidget(element) {
 
     new Collection(element, {
         urls: {
+            createCollection: element.dataset.createCollectionUrl,
             deleteCollection: element.dataset.deleteCollectionUrl,
             uploadItem: element.dataset.uploadItemUrl,
             changeItem: element.dataset.changeItemUrl,

@@ -143,7 +143,7 @@ Uploader.prototype._makeUploader = function() {
                             const url = window.URL && window.URL.createObjectURL ? window.URL : window.webkitURL && window.webkitURL.createObjectURL ? window.webkitURL : null;
                             if (url) {
                                 image.onerror = function() {
-                                    reject("Cannot determine dimensions for image. May be too large.");
+                                    reject("Cannot determine dimensions for an image. May be too large.");
                                 };
                                 image.onload = function() {
                                     resolve({

@@ -80,6 +80,11 @@ class CollectionAdminBase(UploadedFileBase):
         info = self.model._meta.app_label, self.model._meta.model_name
         urlpatterns = [
             path(
+                'create/',
+                self.admin_site.admin_view(views.collection.create_collection),
+                name='%s_%s_create' % info
+            ),
+            path(
                 'delete/',
                 self.admin_site.admin_view(views.collection.delete_collection),
                 name='%s_%s_delete' % info

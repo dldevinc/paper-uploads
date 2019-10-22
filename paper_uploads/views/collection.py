@@ -48,6 +48,30 @@ def delete_collection(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+def create_collection(request):
+    if not request.user.has_perm('paper_uploads.upload'):
+        return helpers.error_response('Access denied')
+
+    # Определение модели галереи
+    content_type_id = request.POST.get('paperCollectionContentType')
+    try:
+        collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
+    except exceptions.InvalidContentType:
+        logger.exception('Error')
+        return helpers.error_response('Invalid content type')
+
+    collection = collection_cls.objects.create(
+        owner_app_label=request.POST.get('paperOwnerAppLabel'),
+        owner_model_name=request.POST.get('paperOwnerModelName'),
+        owner_fieldname=request.POST.get('paperOwnerFieldname')
+    )
+    return helpers.success_response({
+        'collection_id': collection.pk
+    })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
 def upload_item(request):
     if not request.user.has_perm('paper_uploads.upload'):
         return helpers.error_response('Access denied')
@@ -85,23 +109,14 @@ def upload_item(request):
     try:
         collection = helpers.get_instance(collection_cls, collection_id)
     except exceptions.InvalidObjectId:
-        # создадим новую галерею
-        collection = None
+        logger.exception('Error')
+        return helpers.error_response('Invalid collection ID')
     except ObjectDoesNotExist:
         logger.exception('Error')
         return helpers.error_response('Collection not found')
     except MultipleObjectsReturned:
         logger.exception('Error')
         return helpers.error_response('Multiple objects returned')
-
-    # Создание галереи
-    is_new_collection = collection is None
-    if is_new_collection:
-        collection = collection_cls.objects.create(
-            owner_app_label=request.POST.get('paperOwnerAppLabel'),
-            owner_model_name=request.POST.get('paperOwnerModelName'),
-            owner_fieldname=request.POST.get('paperOwnerFieldname')
-        )
 
     # Определение типа элемента галереи
     item_type = collection.detect_file_type(file)
@@ -122,16 +137,10 @@ def upload_item(request):
         run_validators(file, item_type_field.validators)
         instance.save()
     except ValidationError as e:
-        if is_new_collection:
-            collection.delete()
-
         messages = helpers.get_exception_messages(e)
         logger.debug(messages)
         return helpers.error_response(messages)
     except Exception as e:
-        if is_new_collection:
-            collection.delete()
-
         logger.exception('Error')
         if hasattr(e, 'args'):
             message = '{}: {}'.format(type(e).__name__, e.args[0])
