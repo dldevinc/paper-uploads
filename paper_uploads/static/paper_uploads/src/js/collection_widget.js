@@ -136,6 +136,7 @@ Collection.prototype.initUploader = function() {
     return new Uploader(this.element, {
         url: this._opts.urls.uploadItem,
         multiple: true,
+        maxConnections: 4,
         button: this.uploadButton,
         dropzones: this.element.querySelectorAll('.dropzone-overlay'),
         validation: JSON.parse(this.element.dataset.validation),

@@ -10,6 +10,7 @@ function Uploader(element, options) {
     this._opts = Object.assign({
         url: '',
         multiple: false,
+        maxConnections: 1,
         button: null,
         dropzones: null,
         extraData: null,
@@ -42,14 +43,17 @@ Uploader.prototype._makeUploader = function() {
     let uploader = new FineUploaderBasic({
         button: this._opts.button,
         multiple: this._opts.multiple,
-        maxConnections: 1,
+        maxConnections: this._opts.maxConnections,
         request: {
             endpoint: this._opts.url,
             params: this.getParams()
         },
         chunking: {
             enabled: true,
-            partSize: 1024 * 1024
+            partSize: 2 * 1024 * 1024,
+            concurrent: {
+                enabled: false
+            }
         },
         text: {
             fileInputTitle: ''
