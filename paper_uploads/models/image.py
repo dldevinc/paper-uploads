@@ -1,3 +1,4 @@
+import io
 import os
 import base64
 import filetype
@@ -237,8 +238,13 @@ class UploadedImageBase(UploadedFileBase):
 
                 image = variation.process(img)
                 variation_filename = variation.get_output_filename(self.file.name)
-                with self.file.storage.open(variation_filename, 'wb+') as fp:
-                    variation.save(image, fp)
+
+                # не все удаленные storage поддерживают запись в открытые файлы,
+                # поэтому используем метод save и буффер.
+                buffer = io.BytesIO()
+                variation.save(image, buffer)
+                buffer.seek(0)
+                self.file.storage.save(variation_filename, buffer)
 
         # постобработка вызывается строго после того, как созданы файлы вариаций
         self._postprocess(names)
