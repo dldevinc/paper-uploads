@@ -84,7 +84,13 @@ def postprocess_variation(variation_filename: str, variation: PaperVariation,
     """
     Постобработка загруженного изображения.
     """
-    variation_path = upload_storage.path(variation_filename)
+    try:
+        variation_path = upload_storage.path(variation_filename)
+    except NotImplementedError:
+        # Удаленные storages не поддерживают абсолютные пути.
+        # Для них нельзя запустить постобработку.
+        return
+
     if not os.path.exists(variation_path):
         logger.warning('File not found: {}'.format(variation_path))
         return
@@ -137,7 +143,13 @@ def postprocess_common_file(source_filename: str, field: Any = None):
     """
     Постобработка загруженного файла.
     """
-    source_path = upload_storage.path(source_filename)
+    try:
+        source_path = upload_storage.path(source_filename)
+    except NotImplementedError:
+        # Удаленные storages не поддерживают абсолютные пути.
+        # Для них нельзя запустить постобработку.
+        return
+
     if not os.path.exists(source_path):
         logger.warning('File not found: {}'.format(source_path))
         return
