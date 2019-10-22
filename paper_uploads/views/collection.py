@@ -109,19 +109,18 @@ def upload_item(request):
         return helpers.error_response('Unsupported file')
 
     try:
-        with transaction.atomic():
-            item_type_field = collection_cls.item_types[item_type]
-            instance = item_type_field.model(
-                collection_content_type_id=content_type_id,
-                collection_id=collection.pk,
-                item_type=item_type,
-                file=file,
-                name=filename,
-                size=file.size
-            )
-            instance.full_clean()
-            run_validators(file, item_type_field.validators)
-            instance.save()
+        item_type_field = collection_cls.item_types[item_type]
+        instance = item_type_field.model(
+            collection_content_type_id=content_type_id,
+            collection_id=collection.pk,
+            item_type=item_type,
+            file=file,
+            name=filename,
+            size=file.size
+        )
+        instance.full_clean()
+        run_validators(file, item_type_field.validators)
+        instance.save()
     except ValidationError as e:
         if is_new_collection:
             collection.delete()

@@ -1,5 +1,4 @@
 import posixpath
-from django.db import transaction
 from django.template import loader
 from django.core.files import File
 from django.views.generic import FormView
@@ -49,18 +48,17 @@ def upload(request):
         return helpers.error_response('Invalid content type')
 
     try:
-        with transaction.atomic():
-            instance = model_class(
-                file=file,
-                owner_app_label=request.POST.get('paperOwnerAppLabel'),
-                owner_model_name=request.POST.get('paperOwnerModelName'),
-                owner_fieldname=request.POST.get('paperOwnerFieldname')
-            )
-            instance.full_clean()
-            owner_field = instance.get_owner_field()
-            if owner_field is not None:
-                run_validators(file, owner_field.validators)
-            instance.save()
+        instance = model_class(
+            file=file,
+            owner_app_label=request.POST.get('paperOwnerAppLabel'),
+            owner_model_name=request.POST.get('paperOwnerModelName'),
+            owner_fieldname=request.POST.get('paperOwnerFieldname')
+        )
+        instance.full_clean()
+        owner_field = instance.get_owner_field()
+        if owner_field is not None:
+            run_validators(file, owner_field.validators)
+        instance.save()
     except ValidationError as e:
         messages = helpers.get_exception_messages(e)
         logger.debug(messages)
