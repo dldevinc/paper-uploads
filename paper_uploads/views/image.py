@@ -1,6 +1,4 @@
-import posixpath
 from django.template import loader
-from django.core.files import File
 from django.views.generic import FormView
 from django.views.decorators.csrf import csrf_exempt
 from django.template.defaultfilters import filesizeformat
@@ -21,9 +19,6 @@ def upload(request):
     if not request.user.has_perm('paper_uploads.upload'):
         return helpers.error_response('Access denied')
 
-    qqfilename = request.POST.get('qqfilename')
-    basename = posixpath.basename(qqfilename)
-
     try:
         file = helpers.read_file(request)
     except exceptions.ContinueUpload:
@@ -36,35 +31,35 @@ def upload(request):
     except exceptions.InvalidChunking:
         logger.exception('Error')
         return helpers.error_response('Invalid chunking', prevent_retry=False)
-    else:
-        if not isinstance(file, File):
-            file = File(file, name=basename)
-
-    # Определение модели файла
-    content_type_id = request.POST.get('paperContentType')
-    try:
-        model_class = helpers.get_model_class(content_type_id, base_class=UploadedImageBase)
-    except exceptions.InvalidContentType:
-        logger.exception('Error')
-        return helpers.error_response('Invalid content type')
-
-    instance = model_class(
-        file=file,
-        owner_app_label=request.POST.get('paperOwnerAppLabel'),
-        owner_model_name=request.POST.get('paperOwnerModelName'),
-        owner_fieldname=request.POST.get('paperOwnerFieldname')
-    )
-    owner_field = instance.get_owner_field()
 
     try:
-        instance.full_clean()
-        if owner_field is not None:
-            run_validators(file, owner_field.validators)
-        instance.save()
-    except ValidationError as e:
-        messages = helpers.get_exception_messages(e)
-        logger.debug(messages)
-        return helpers.error_response(messages)
+        # Определение модели файла
+        content_type_id = request.POST.get('paperContentType')
+        try:
+            model_class = helpers.get_model_class(content_type_id, base_class=UploadedImageBase)
+        except exceptions.InvalidContentType:
+            logger.exception('Error')
+            return helpers.error_response('Invalid content type')
+
+        instance = model_class(
+            file=file,
+            owner_app_label=request.POST.get('paperOwnerAppLabel'),
+            owner_model_name=request.POST.get('paperOwnerModelName'),
+            owner_fieldname=request.POST.get('paperOwnerFieldname')
+        )
+        owner_field = instance.get_owner_field()
+
+        try:
+            instance.full_clean()
+            if owner_field is not None:
+                run_validators(file, owner_field.validators)
+            instance.save()
+        except ValidationError as e:
+            messages = helpers.get_exception_messages(e)
+            logger.debug(messages)
+            return helpers.error_response(messages)
+    finally:
+        file.close()
     return helpers.success_response(instance.as_dict())
 
 

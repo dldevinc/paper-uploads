@@ -1,7 +1,6 @@
 import posixpath
 from django.db import transaction
 from django.template import loader
-from django.core.files import File
 from django.views.generic import FormView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.module_loading import import_string
@@ -92,62 +91,62 @@ def upload_item(request):
     except exceptions.InvalidChunking:
         logger.exception('Error')
         return helpers.error_response('Invalid chunking', prevent_retry=False)
-    else:
-        if not isinstance(file, File):
-            file = File(file, name=basename)
-
-    # Определение модели галереи
-    content_type_id = request.POST.get('paperCollectionContentType')
-    try:
-        collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
-    except exceptions.InvalidContentType:
-        logger.exception('Error')
-        return helpers.error_response('Invalid content type')
-
-    # Получение объекта галереи
-    collection_id = request.POST.get('collectionId')
-    try:
-        collection = helpers.get_instance(collection_cls, collection_id)
-    except exceptions.InvalidObjectId:
-        logger.exception('Error')
-        return helpers.error_response('Invalid collection ID')
-    except ObjectDoesNotExist:
-        logger.exception('Error')
-        return helpers.error_response('Collection not found')
-    except MultipleObjectsReturned:
-        logger.exception('Error')
-        return helpers.error_response('Multiple objects returned')
-
-    # Определение типа элемента галереи
-    item_type = collection.detect_file_type(file)
-    if item_type is None:
-        return helpers.error_response('Unsupported file')
-
-    item_type_field = collection_cls.item_types[item_type]
-    instance = item_type_field.model(
-        collection_content_type_id=content_type_id,
-        collection_id=collection.pk,
-        item_type=item_type,
-        file=file,
-        name=filename,
-        size=file.size
-    )
 
     try:
-        instance.full_clean()
-        run_validators(file, item_type_field.validators)
-        instance.save()
-    except ValidationError as e:
-        messages = helpers.get_exception_messages(e)
-        logger.debug(messages)
-        return helpers.error_response(messages)
-    except Exception as e:
-        logger.exception('Error')
-        if hasattr(e, 'args'):
-            message = '{}: {}'.format(type(e).__name__, e.args[0])
-        else:
-            message = type(e).__name__
-        return helpers.error_response(message)
+        # Определение модели галереи
+        content_type_id = request.POST.get('paperCollectionContentType')
+        try:
+            collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
+        except exceptions.InvalidContentType:
+            logger.exception('Error')
+            return helpers.error_response('Invalid content type')
+
+        # Получение объекта галереи
+        collection_id = request.POST.get('collectionId')
+        try:
+            collection = helpers.get_instance(collection_cls, collection_id)
+        except exceptions.InvalidObjectId:
+            logger.exception('Error')
+            return helpers.error_response('Invalid collection ID')
+        except ObjectDoesNotExist:
+            logger.exception('Error')
+            return helpers.error_response('Collection not found')
+        except MultipleObjectsReturned:
+            logger.exception('Error')
+            return helpers.error_response('Multiple objects returned')
+
+        # Определение типа элемента галереи
+        item_type = collection.detect_file_type(file)
+        if item_type is None:
+            return helpers.error_response('Unsupported file')
+
+        item_type_field = collection_cls.item_types[item_type]
+        instance = item_type_field.model(
+            collection_content_type_id=content_type_id,
+            collection_id=collection.pk,
+            item_type=item_type,
+            file=file,
+            name=filename,
+            size=file.size
+        )
+
+        try:
+            instance.full_clean()
+            run_validators(file, item_type_field.validators)
+            instance.save()
+        except ValidationError as e:
+            messages = helpers.get_exception_messages(e)
+            logger.debug(messages)
+            return helpers.error_response(messages)
+        except Exception as e:
+            logger.exception('Error')
+            if hasattr(e, 'args'):
+                message = '{}: {}'.format(type(e).__name__, e.args[0])
+            else:
+                message = type(e).__name__
+            return helpers.error_response(message)
+    finally:
+        file.close()
     return helpers.success_response({
         **instance.as_dict(),
     })
