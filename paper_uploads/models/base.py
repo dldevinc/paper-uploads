@@ -90,6 +90,10 @@ class UploadedFileBase(models.Model):
             self.pre_save_new_file()
         super().save(*args, **kwargs)
         if is_new_file:
+            # при использовании удаленных storage (типа DropBox), возникает
+            # исключение "cannot reopen file", т.к. метод open() объекта
+            # DropBoxFile ищет файл на локальном диске.
+            self.refresh_from_db()
             self.post_save_new_file()
 
     @property
