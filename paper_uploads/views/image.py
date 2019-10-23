@@ -48,15 +48,16 @@ def upload(request):
         logger.exception('Error')
         return helpers.error_response('Invalid content type')
 
+    instance = model_class(
+        file=file,
+        owner_app_label=request.POST.get('paperOwnerAppLabel'),
+        owner_model_name=request.POST.get('paperOwnerModelName'),
+        owner_fieldname=request.POST.get('paperOwnerFieldname')
+    )
+    owner_field = instance.get_owner_field()
+
     try:
-        instance = model_class(
-            file=file,
-            owner_app_label=request.POST.get('paperOwnerAppLabel'),
-            owner_model_name=request.POST.get('paperOwnerModelName'),
-            owner_fieldname=request.POST.get('paperOwnerFieldname')
-        )
         instance.full_clean()
-        owner_field = instance.get_owner_field()
         if owner_field is not None:
             run_validators(file, owner_field.validators)
         instance.save()

@@ -123,16 +123,17 @@ def upload_item(request):
     if item_type is None:
         return helpers.error_response('Unsupported file')
 
+    item_type_field = collection_cls.item_types[item_type]
+    instance = item_type_field.model(
+        collection_content_type_id=content_type_id,
+        collection_id=collection.pk,
+        item_type=item_type,
+        file=file,
+        name=filename,
+        size=file.size
+    )
+
     try:
-        item_type_field = collection_cls.item_types[item_type]
-        instance = item_type_field.model(
-            collection_content_type_id=content_type_id,
-            collection_id=collection.pk,
-            item_type=item_type,
-            file=file,
-            name=filename,
-            size=file.size
-        )
         instance.full_clean()
         run_validators(file, item_type_field.validators)
         instance.save()
@@ -147,7 +148,6 @@ def upload_item(request):
         else:
             message = type(e).__name__
         return helpers.error_response(message)
-
     return helpers.success_response({
         **instance.as_dict(),
     })
