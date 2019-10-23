@@ -14,7 +14,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--since', '-s', type=int, default=30,
+            '--max-age', type=int, default=30,
             help='Minimum instance age in minutes to look for'
         )
         parser.add_argument(
@@ -160,18 +160,18 @@ class Command(BaseCommand):
         self.database = options['database']
         self.interactive = options['interactive']
 
-        since = now() - timedelta(minutes=options['since'])
+        max_age = now() - timedelta(minutes=options['max_age'])
         self.clean_source_missing(UploadedFile._base_manager.using(self.database).all())
         self.clean_model(
             UploadedFile._base_manager.using(self.database).filter(
-                uploaded_at__lte=since
+                uploaded_at__lte=max_age
             )
         )
 
         self.clean_source_missing(UploadedImage._base_manager.using(self.database).all())
         self.clean_model(
             UploadedImage._base_manager.using(self.database).filter(
-                uploaded_at__lte=since
+                uploaded_at__lte=max_age
             )
         )
 
@@ -187,6 +187,6 @@ class Command(BaseCommand):
                 content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
                 collection_qs = model._base_manager.using(self.database).filter(
                     collection_content_type=content_type,
-                    created_at__lte=since
+                    created_at__lte=max_age
                 )
                 self.clean_model(collection_qs)

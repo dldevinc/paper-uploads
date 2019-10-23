@@ -383,10 +383,10 @@ python3 manage.py check_uploads --fix-missing
 Для того, чтобы такие файлы не удалялись, по-умолчанию
 установлен фильтр, отсеивающий все файлы, загруженные за 
 последние 30 минут. Указать свой интервал фильтрации
-(в минутах) можно через ключ `--since`.  
+(в минутах) можно через ключ `--max-age`.  
 
 ```shell
-python3 manage.py clean_uploads --since=10
+python3 manage.py clean_uploads --max-age=10
 ```
 
 #### recreate_variations
