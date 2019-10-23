@@ -1,6 +1,6 @@
 ipython==7.8.0
 filetype==1.0.5
-Pillow==6.2.0
+Pillow==6.2.1
 python-magic==0.4.15
 face_recognition==1.2.3
 django-polymorphic==2.1.2
