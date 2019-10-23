@@ -1,7 +1,6 @@
 from django.template import loader
 from django.views.generic import FormView
 from django.views.decorators.csrf import csrf_exempt
-from django.template.defaultfilters import filesizeformat
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
@@ -120,16 +119,7 @@ class ChangeView(PermissionRequiredMixin, FormView):
 
     def form_valid(self, form):
         form.save()
-        return helpers.success_response({
-            'instance_id': self.instance.pk,
-            'name': self.instance.name,
-            'url': self.instance.file.url,
-            'file_info': '({width}x{height}, {size})'.format(
-                width=self.instance.width,
-                height=self.instance.height,
-                size=filesizeformat(self.instance.size)
-            )
-        })
+        return helpers.success_response(self.instance.as_dict())
 
     def form_invalid(self, form):
         return helpers.success_response({
