@@ -3,6 +3,7 @@ import shutil
 import subprocess
 from PIL import Image
 from typing import Dict, Any
+from django.core.files.storage import FileSystemStorage
 from .conf import settings
 from .logging import logger
 from .storage import upload_storage
@@ -84,13 +85,11 @@ def postprocess_variation(variation_filename: str, variation: PaperVariation,
     """
     Постобработка загруженного изображения.
     """
-    try:
-        variation_path = upload_storage.path(variation_filename)
-    except NotImplementedError:
-        # Удаленные storages не поддерживают абсолютные пути.
-        # Для них нельзя запустить постобработку.
+    if not isinstance(upload_storage, FileSystemStorage):
+        # Постобработка доступна только для локального хранилища
         return
 
+    variation_path = upload_storage.path(variation_filename)
     if not os.path.exists(variation_path):
         logger.warning('File not found: {}'.format(variation_path))
         return
@@ -143,13 +142,11 @@ def postprocess_common_file(source_filename: str, field: Any = None):
     """
     Постобработка загруженного файла.
     """
-    try:
-        source_path = upload_storage.path(source_filename)
-    except NotImplementedError:
-        # Удаленные storages не поддерживают абсолютные пути.
-        # Для них нельзя запустить постобработку.
+    if not isinstance(upload_storage, FileSystemStorage):
+        # Постобработка доступна только для локального хранилища
         return
 
+    source_path = upload_storage.path(source_filename)
     if not os.path.exists(source_path):
         logger.warning('File not found: {}'.format(source_path))
         return
