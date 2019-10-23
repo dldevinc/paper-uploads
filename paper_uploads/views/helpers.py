@@ -66,7 +66,7 @@ def read_file(request) -> IO:
     except (AttributeError, ValueError):
         raise exceptions.InvalidUUID
 
-    tempfilepath = os.path.join(tempfile.gettempdir(), str(uid))
+    tempfilepath = os.path.join(tempfile.gettempdir(), 'upload_{}'.format(uid))
     file = request.FILES.get('qqfile')
     if file is None:    # бывает при отмене загрузки на медленном интернете
         if os.path.isfile(tempfilepath):
