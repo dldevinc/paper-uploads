@@ -18,6 +18,7 @@ from ..variations import PaperVariation
 from .. import tasks
 from .fields.image import VariationalFileField
 from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
+from .containers import FileFieldContainerMixin
 
 __all__ = ['UploadedImageBase', 'UploadedImage']
 
@@ -27,7 +28,7 @@ class VariationFile(File):
         self.instance = instance
         self.variation_name = variation_name
         self.storage = instance.file.storage
-        filename = self.variation.get_output_filename(instance.file.name)
+        filename = self.variation.get_output_filename(instance.get_file_name())
         super().__init__(None, filename)
 
     def _get_file(self):
@@ -151,7 +152,7 @@ class UploadedImageBase(UploadedFileBase):
         try:
             image = Image.open(self.file)
         except OSError:
-            raise ValidationError('`%s` is not an image' % os.path.basename(self.file.name))
+            raise ValidationError('`%s` is not an image' % os.path.basename(self.get_file_name()))
 
         self.width, self.height = image.size
 
@@ -178,7 +179,7 @@ class UploadedImageBase(UploadedFileBase):
             except Exception:
                 # Удаленные Storage могут кидать исключение при попытке удалить
                 # файл, которого уже нет.
-                logger.exception("Failed to delete a file `{}`".format(self.file.name))
+                logger.exception("Failed to delete a file `{}`".format(self.get_file_name()))
         super().post_delete_callback()
 
     def get_variations(self) -> Dict[str, PaperVariation]:
@@ -243,7 +244,7 @@ class UploadedImageBase(UploadedFileBase):
                     continue
 
                 image = variation.process(img)
-                variation_filename = variation.get_output_filename(self.file.name)
+                variation_filename = variation.get_output_filename(self.get_file_name())
 
                 # не все удаленные storage поддерживают запись в открытые файлы,
                 # поэтому используем метод save и буффер.
@@ -276,7 +277,7 @@ class UploadedImageBase(UploadedFileBase):
         for name, variation in self.get_variations().items():
             if names and name not in names:
                 continue
-            variation_filename = variation.get_output_filename(self.file.name)
+            variation_filename = variation.get_output_filename(self.get_file_name())
             postprocess_variation(variation_filename, variation)
 
     def _postprocess_async(self, names: Iterable[str] = None):
@@ -297,7 +298,7 @@ class UploadedImageBase(UploadedFileBase):
             self._postprocess_sync(names)
 
 
-class UploadedImage(ProxyFileAttributesMixin, SlaveModelMixin, UploadedImageBase):
+class UploadedImage(FileFieldContainerMixin, ProxyFileAttributesMixin, SlaveModelMixin, UploadedImageBase):
     file = VariationalFileField(_('file'), max_length=255, upload_to=settings.IMAGES_UPLOAD_TO, storage=upload_storage)
 
     class Meta(UploadedImageBase.Meta):
@@ -305,7 +306,7 @@ class UploadedImage(ProxyFileAttributesMixin, SlaveModelMixin, UploadedImageBase
         verbose_name_plural = _('images')
 
     def __str__(self):
-        return self.file.name
+        return self.get_file_name()
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         if not hasattr(self, '_variations_cache'):

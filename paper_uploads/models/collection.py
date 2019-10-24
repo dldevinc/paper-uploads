@@ -5,6 +5,7 @@ from typing import Dict, Type, Any, IO, Iterable
 from django.db import models, DEFAULT_DB_ALIAS
 from django.core import checks
 from django.template import loader
+from django.core.files import File
 from django.utils.timezone import now
 from django.db.models import functions
 from django.db.models.base import ModelBase
@@ -23,6 +24,7 @@ from ..helpers import build_variations
 from .. import tasks
 from .base import SlaveModelMixin, ProxyFileAttributesMixin
 from .file import UploadedFileBase
+from .containers import FileFieldContainerMixin
 from .image import UploadedImageBase, VariationalFileField
 from .fields import CollectionItemTypeField
 
@@ -162,7 +164,7 @@ class CollectionFileItemMixin:
         raise NotImplementedError
 
 
-class FileItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, CollectionItemBase, UploadedFileBase):
+class FileItemBase(CollectionFileItemMixin, FileFieldContainerMixin, ProxyFileAttributesMixin, CollectionItemBase, UploadedFileBase):
     admin_template_name = 'paper_uploads/collection_item/file.html'
 
     file = models.FileField(_('file'), max_length=255, storage=upload_storage,
@@ -175,7 +177,7 @@ class FileItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collection
         verbose_name_plural = _('files')
 
     def __str__(self):
-        return self.file.name
+        return self.get_file_name()
 
     def pre_save_new_file(self):
         super().pre_save_new_file()
@@ -190,7 +192,7 @@ class FileItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collection
         return {
             **super().as_dict(),
             'name': self.canonical_name,
-            'url': self.file.url,
+            'url': self.get_file_url(),
         }
 
     def _postprocess_sync(self):
@@ -198,15 +200,14 @@ class FileItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collection
         if itemtype_field is None:
             return
 
-        postprocess_common_file(self.file.name, field=itemtype_field)
+        postprocess_common_file(self.get_file_name(), field=itemtype_field)
 
-        current_hash_value = self.hash
-        self.update_hash(commit=False)
-        if current_hash_value and current_hash_value != self.hash:
-            self.size = self.file.size
-            self.update_hash(commit=False)
+        new_hash = self.get_file_hash()
+        if new_hash and new_hash != self.hash:
+            self.hash = new_hash
+            self.size = self.get_file_size()
             self.modified_at = now()
-            self.save(update_fields=['size', 'hash', 'modified_at'])
+            self.save(update_fields=['hash', 'size', 'modified_at'])
 
     def _postprocess_async(self):
         from django_rq.queues import get_queue
@@ -225,7 +226,7 @@ class FileItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collection
             self._postprocess_sync()
 
 
-class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, CollectionItemBase, UploadedImageBase):
+class ImageItemBase(CollectionFileItemMixin, FileFieldContainerMixin, ProxyFileAttributesMixin, CollectionItemBase, UploadedImageBase):
     admin_template_name = 'paper_uploads/collection_item/image.html'
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
 
@@ -238,7 +239,13 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
         verbose_name_plural = _('images')
 
     def __str__(self):
-        return self.file.name
+        return self.get_file_name()
+
+    def attach_file(self, file: File):
+        # fix recursion exception
+        if not self.collection_content_type:
+            raise RuntimeError('method must be called after `attach_to`')
+        super().attach_file(file)
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         """
@@ -288,7 +295,7 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
         return {
             **super().as_dict(),
             'name': self.canonical_name,
-            'url': self.file.url,
+            'url': self.get_file_url(),
         }
 
     def _postprocess_sync(self, names: Iterable[str] = None):
@@ -299,7 +306,7 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
         for name, variation in self.get_variations().items():
             if names and name not in names:
                 continue
-            variation_filename = variation.get_output_filename(self.file.name)
+            variation_filename = variation.get_output_filename(self.get_file_name())
             postprocess_variation(variation_filename, variation, field=itemtype_field)
 
 
@@ -476,7 +483,7 @@ class ImageItem(ImageItemBase):
         return {
             **super().as_dict(),
             'name': self.canonical_name,
-            'url': self.file.url,
+            'url': self.get_file_url(),
             'preview': loader.render_to_string('paper_uploads/collection_item/preview/image.html', {
                 'item': self,
                 'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,

@@ -125,20 +125,22 @@ def upload_item(request):
             collection_content_type_id=content_type_id,
             collection_id=collection.pk,
             item_type=item_type,
-            file=file,
             name=filename,
             size=file.size
         )
+        instance.attach_file(file)
 
         try:
             instance.full_clean()
             run_validators(file, item_type_field.validators)
             instance.save()
         except ValidationError as e:
+            instance.delete_file()
             messages = helpers.get_exception_messages(e)
             logger.debug(messages)
             return helpers.error_response(messages)
         except Exception as e:
+            instance.delete_file()
             logger.exception('Error')
             if hasattr(e, 'args'):
                 message = '{}: {}'.format(type(e).__name__, e.args[0])

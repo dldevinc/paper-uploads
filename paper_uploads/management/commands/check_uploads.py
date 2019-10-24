@@ -17,7 +17,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             '--fix-missing', action='store_true', default=False,
-            help='Recreate all missing variation files from source.',
+            help='Recreate all missing variation files from a source.',
         )
 
     def check_exists(self):
@@ -40,7 +40,7 @@ class Command(BaseCommand):
                     instance=instance
                 )
 
-                if not instance.file.storage.exists(instance.file.name):
+                if not instance.file_exists():
                     invalid = True
                     message += "\n  Not found source file"
 
@@ -87,7 +87,7 @@ class Command(BaseCommand):
 
                 if missed_variations:
                     invalid = True
-                    recreatable = self.options['fix_missing'] and instance.file.storage.exists(instance.file.name)
+                    recreatable = self.options['fix_missing'] and instance.file_exists()
                     for vname in missed_variations:
                         message += "\n  Not found variation '{}'".format(vname)
                         if recreatable:

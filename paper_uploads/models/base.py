@@ -1,16 +1,16 @@
-import hashlib
 import posixpath
 from typing import Dict, Type, Any, Optional
 from itertools import chain
 from django.apps import apps
 from django.db import models
 from django.core import checks
+from django.core.files import File
 from django.utils.timezone import now
 from django.core.exceptions import FieldDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from ..conf import PROXY_FILE_ATTRIBUTES
 from ..logging import logger
-from ..storage import upload_storage
+from .containers import ContainerMixinBase
 
 
 class Permissions(models.Model):
@@ -24,8 +24,8 @@ class Permissions(models.Model):
         )
 
 
-class UploadedFileBase(models.Model):
-    file = models.FileField(_('file'), max_length=255, storage=upload_storage)  # Example field. Should be overriden
+class UploadedFileBase(ContainerMixinBase, models.Model):
+    file = models.CharField(_('file'), max_length=255)  # Example field. Should be overriden
     name = models.CharField(_('file name'), max_length=255, editable=False)
     extension = models.CharField(_('file extension'), max_length=32, editable=False, help_text=_('Lowercase, without leading dot'))
     size = models.PositiveIntegerField(_('file size'), default=0, editable=False)
@@ -46,7 +46,7 @@ class UploadedFileBase(models.Model):
     def __repr__(self):
         return '{}({})'.format(
             type(self).__name__,
-            self.file.path
+            self.name
         )
 
     def __getattr__(self, item):
@@ -107,17 +107,19 @@ class UploadedFileBase(models.Model):
         """
         Метод выполняется перед сохранением модели, когда задан новый файл.
         """
-        basename = posixpath.basename(self.file.name)
+        basename = posixpath.basename(self.get_file_name())
         filename, ext = posixpath.splitext(basename)
         if not self.name:
             self.name = filename
         self.extension = ext.lstrip('.').lower()
-        self.size = self.file.size
+        self.size = self.get_file_size()
 
         # обновляем дату загрузки если хэш изменился
-        current_hash_value = self.hash
-        self.update_hash(commit=False)
-        if current_hash_value and current_hash_value != self.hash:
+        new_hash = self.get_file_hash()
+        if new_hash and new_hash != self.hash:
+            if self.hash:   # изменение файла
+                self.modified_at = now()
+            self.hash = new_hash
             self.uploaded_at = now()
 
     def post_save_new_file(self):
@@ -131,26 +133,11 @@ class UploadedFileBase(models.Model):
         Метод выполняется после удаления экземпляра модели.
         """
         try:
-            self.file.delete(save=False)
+            self.delete_file()
         except Exception:
-            # Удаленные Storage могут кидать исключение при попытке удалить
-            # файл, которого уже нет.
-            logger.exception("Failed to delete a file `{}`".format(self.file.name))
-
-    def update_hash(self, commit: bool = True):
-        # keep file state
-        file_closed = self.file.closed
-        sha1 = hashlib.sha1()
-        for chunk in self.file.open():
-            sha1.update(chunk)
-        if file_closed:
-            self.file.close()
-        else:
-            self.file.seek(0)
-
-        self.hash = sha1.hexdigest()
-        if commit:
-            self.save(update_fields=['hash'])
+            # Удаленные storage (например dropbox) могут кидать исключение
+            # при попытке удалить файл, которого нет на сервере.
+            logger.exception("Failed to delete a file `{}`".format(self.get_file_name()))
 
     def as_dict(self) -> Dict[str, Any]:
         """
@@ -162,7 +149,7 @@ class UploadedFileBase(models.Model):
             'name': self.name,
             'ext': self.extension,
             'size': self.size,
-            'url': self.file.url,
+            'url': self.get_file_url(),
         }
 
 

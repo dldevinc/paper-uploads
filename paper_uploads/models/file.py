@@ -8,9 +8,10 @@ from ..storage import upload_storage
 from ..postprocess import postprocess_common_file
 from .. import tasks
 from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
+from .containers import FileFieldContainerMixin
 
 
-class UploadedFile(ProxyFileAttributesMixin, SlaveModelMixin, UploadedFileBase):
+class UploadedFile(FileFieldContainerMixin, ProxyFileAttributesMixin, SlaveModelMixin, UploadedFileBase):
     file = models.FileField(_('file'), max_length=255,
         upload_to=settings.FILES_UPLOAD_TO, storage=upload_storage)
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
@@ -20,7 +21,7 @@ class UploadedFile(ProxyFileAttributesMixin, SlaveModelMixin, UploadedFileBase):
         verbose_name_plural = _('files')
 
     def __str__(self):
-        return self.file.name
+        return self.get_file_name()
 
     def pre_save_new_file(self):
         super().pre_save_new_file()
@@ -43,15 +44,14 @@ class UploadedFile(ProxyFileAttributesMixin, SlaveModelMixin, UploadedFileBase):
 
     def _postprocess_sync(self):
         owner_field = self.get_owner_field()
-        postprocess_common_file(self.file.name, field=owner_field)
+        postprocess_common_file(self.get_file_name(), field=owner_field)
 
-        current_hash_value = self.hash
-        self.update_hash(commit=False)
-        if current_hash_value and current_hash_value != self.hash:
-            self.size = self.file.size
-            self.update_hash(commit=False)
+        new_hash = self.get_file_hash()
+        if new_hash and new_hash != self.hash:
+            self.hash = new_hash
+            self.size = self.get_file_size()
             self.modified_at = now()
-            self.save(update_fields=['size', 'hash', 'modified_at'])
+            self.save(update_fields=['hash', 'size', 'modified_at'])
 
     def _postprocess_async(self):
         from django_rq.queues import get_queue

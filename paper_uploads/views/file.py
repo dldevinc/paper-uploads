@@ -41,11 +41,11 @@ def upload(request):
             return helpers.error_response('Invalid content type')
 
         instance = model_class(
-            file=file,
             owner_app_label=request.POST.get('paperOwnerAppLabel'),
             owner_model_name=request.POST.get('paperOwnerModelName'),
             owner_fieldname=request.POST.get('paperOwnerFieldname')
         )
+        instance.attach_file(file)
         owner_field = instance.get_owner_field()
 
         try:
@@ -54,6 +54,7 @@ def upload(request):
                 run_validators(file, owner_field.validators)
             instance.save()
         except ValidationError as e:
+            instance.delete_file()
             messages = helpers.get_exception_messages(e)
             logger.debug(messages)
             return helpers.error_response(messages)
