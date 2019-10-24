@@ -135,7 +135,7 @@ class CollectionItemBase(PolymorphicModel):
             'item_type': self.item_type,
         }
 
-    def attach_to(self, collection: 'CollectionBase', commit: bool = True):
+    def attach_to(self, collection: 'CollectionBase'):
         """
         Подключение элемента к коллекции.
         Используется в случае динамического создания элементов коллекции.
@@ -149,9 +149,6 @@ class CollectionItemBase(PolymorphicModel):
                 break
         else:
             raise ValueError('Unsupported collection item: %s' % type(self).__name__)
-
-        if commit:
-            self.save()
 
 
 class CollectionFileItemMixin:
