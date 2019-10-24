@@ -332,19 +332,17 @@ from paper_uploads.models import *
 
 # file / image
 with open('file.doc', 'rb') as fp:
-    file = UploadedFile(
-        file=File(fp, name='file.doc'),
-    )
+    file = UploadedFile()
+    file.attach_file(File(fp, name='file.doc'))
     file.save()
 
 
 # gallery
 gallery = PageGallery.objects.create()
 with open('image.jpg', 'rb') as fp:
-    item = ImageItem(
-        file=File(fp, name='image.jpg'),
-    )
+    item = ImageItem()
     item.attach_to(gallery)
+    item.attach_file(File(fp, name='image.jpg'))
     item.save()
 ```
 
