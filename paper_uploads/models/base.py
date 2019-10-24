@@ -123,17 +123,6 @@ class UploadedFileBase(ContainerMixinBase, models.Model):
         """
         pass
 
-    def post_delete_callback(self):
-        """
-        Метод выполняется после удаления экземпляра модели.
-        """
-        try:
-            self.delete_file()
-        except Exception:
-            # Удаленные storage (например dropbox) могут кидать исключение
-            # при попытке удалить файл, которого нет на сервере.
-            logger.exception("Failed to delete a file `{}`".format(self.get_file_name()))
-
     def as_dict(self) -> Dict[str, Any]:
         """
         Словарь, возвращаемый в виде JSON после загрузки файла.

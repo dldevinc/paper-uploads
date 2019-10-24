@@ -1,6 +1,7 @@
 from django.dispatch import receiver
 from django.db import migrations, transaction
 from django.db.models.signals import post_delete, Signal
+from .logging import logger
 from .models import UploadedFileBase
 from .models.fields.base import FileFieldBase
 
@@ -10,7 +11,12 @@ collection_reordered = Signal(providing_args=["instance"])
 @receiver(post_delete)
 def delete_uploaded_file(sender, instance, **kwargs):
     if isinstance(instance, UploadedFileBase):
-        instance.post_delete_callback()
+        try:
+            instance.delete_file()
+        except Exception:
+            # Удаленные storage (например dropbox) могут кидать исключение
+            # при попытке удалить файл, которого нет на сервере.
+            logger.exception("Failed to delete a file `{}`".format(instance.get_file_name()))
 
 
 class RenameFileField(migrations.RunPython):

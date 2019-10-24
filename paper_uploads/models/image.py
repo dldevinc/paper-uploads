@@ -165,10 +165,7 @@ class UploadedImageBase(UploadedFileBase):
         super().post_save_new_file()
         self.recut()
 
-    def post_delete_callback(self):
-        """
-        При удалении экземпляра, автоматически удаляем все вариации.
-        """
+    def _pre_delete_file(self):
         for name, file in self.get_variation_files():
             try:
                 file.delete()
@@ -176,7 +173,7 @@ class UploadedImageBase(UploadedFileBase):
                 # Удаленные Storage могут кидать исключение при попытке удалить
                 # файл, которого уже нет.
                 logger.exception("Failed to delete a file `{}`".format(self.get_file_name()))
-        super().post_delete_callback()
+        super()._pre_delete_file()
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         """
