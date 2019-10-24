@@ -179,10 +179,10 @@ class FileItemBase(CollectionFileItemMixin, FileFieldContainerMixin, ProxyFileAt
     def __str__(self):
         return self.get_file_name()
 
-    def pre_save_new_file(self):
-        super().pre_save_new_file()
+    def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:
             self.display_name = self.name
+        super().save(*args, **kwargs)
 
     def post_save_new_file(self):
         super().post_save_new_file()
@@ -429,9 +429,9 @@ class FileItem(FileItemBase):
     def file_supported(cls, file: IO) -> bool:
         return True
 
-    def pre_save_new_file(self):
-        super().pre_save_new_file()
+    def save(self, *args, **kwargs):
         self.preview = self.get_preview_url()
+        super().save(*args, **kwargs)
 
     def as_dict(self) -> Dict[str, Any]:
         return {

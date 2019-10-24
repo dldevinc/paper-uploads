@@ -143,24 +143,20 @@ class UploadedImageBase(UploadedFileBase):
                 return getattr(self, item)
         return super().__getattr__(item)
 
+    def attach_file(self, file: File):
+        try:
+            image = Image.open(file)
+        except OSError:
+            raise ValidationError('`%s` is not an image' % os.path.basename(file.name))
+        else:
+            self.width, self.height = image.size
+        finally:
+            file.seek(0)
+        super().attach_file(file)
+
     def attach_variations(self):
         for name, vfile in self.get_variation_files():
             setattr(self, name, vfile)
-
-    def pre_save_new_file(self):
-        file_closed = self.file.closed
-        try:
-            image = Image.open(self.file)
-        except OSError:
-            raise ValidationError('`%s` is not an image' % os.path.basename(self.get_file_name()))
-
-        self.width, self.height = image.size
-
-        # оставляем файл в первоначальном состоянии
-        if file_closed:
-            image.close()
-
-        super().pre_save_new_file()
 
     def post_save_new_file(self):
         """

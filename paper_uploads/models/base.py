@@ -86,8 +86,6 @@ class UploadedFileBase(ContainerMixinBase, models.Model):
                 original = type(self)._base_manager.filter(pk=self.pk).only('file').get()
                 is_new_file = original.file != self.file
 
-        if is_new_file:
-            self.pre_save_new_file()
         super().save(*args, **kwargs)
         if is_new_file:
             # при использовании удаленных storage (типа DropBox), возникает
@@ -103,24 +101,21 @@ class UploadedFileBase(ContainerMixinBase, models.Model):
         """
         return '{}.{}'.format(self.name, self.extension)
 
-    def pre_save_new_file(self):
-        """
-        Метод выполняется перед сохранением модели, когда задан новый файл.
-        """
+    def _post_attach_file(self):
+        super()._post_attach_file()
         basename = posixpath.basename(self.get_file_name())
-        filename, ext = posixpath.splitext(basename)
+        file_name, file_ext = posixpath.splitext(basename)
         if not self.name:
-            self.name = filename
-        self.extension = ext.lstrip('.').lower()
+            self.name = file_name
+        self.extension = file_ext.lstrip('.').lower()
         self.size = self.get_file_size()
 
-        # обновляем дату загрузки если хэш изменился
-        new_hash = self.get_file_hash()
-        if new_hash and new_hash != self.hash:
-            if self.hash:   # изменение файла
-                self.modified_at = now()
-            self.hash = new_hash
-            self.uploaded_at = now()
+        if self.hash:   # перезапись существующего файла
+            self.modified_at = now()
+
+        # обновляем дату загрузки
+        self.hash = self.get_file_hash()
+        self.uploaded_at = now()
 
     def post_save_new_file(self):
         """
