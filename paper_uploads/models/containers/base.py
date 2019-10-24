@@ -3,13 +3,13 @@ from django.core.files import File
 
 class ContainerMixinBase:
     def attach_file(self, file: File):
-        self._attach_file(file)
-        self._post_attach_file()
+        data = self._attach_file(file)
+        self._post_attach_file(data)
 
     def _attach_file(self, file: File):
         raise NotImplementedError
 
-    def _post_attach_file(self):
+    def _post_attach_file(self, data=None):
         pass
 
     def rename_file(self, new_name: str):

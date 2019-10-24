@@ -101,8 +101,8 @@ class UploadedFileBase(ContainerMixinBase, models.Model):
         """
         return '{}.{}'.format(self.name, self.extension)
 
-    def _post_attach_file(self):
-        super()._post_attach_file()
+    def _post_attach_file(self, data=None):
+        super()._post_attach_file(data)
         basename = posixpath.basename(self.get_file_name())
         file_name, file_ext = posixpath.splitext(basename)
         if not self.name:
