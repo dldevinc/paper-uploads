@@ -45,10 +45,10 @@ def upload(request):
             owner_model_name=request.POST.get('paperOwnerModelName'),
             owner_fieldname=request.POST.get('paperOwnerFieldname')
         )
-        instance.attach_file(file)
         owner_field = instance.get_owner_field()
 
         try:
+            instance.attach_file(file)
             instance.full_clean()
             if owner_field is not None:
                 run_validators(file, owner_field.validators)

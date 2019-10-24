@@ -128,9 +128,9 @@ def upload_item(request):
             name=filename,
             size=file.size
         )
-        instance.attach_file(file)
 
         try:
+            instance.attach_file(file)
             instance.full_clean()
             run_validators(file, item_type_field.validators)
             instance.save()
