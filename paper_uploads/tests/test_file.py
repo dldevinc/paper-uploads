@@ -13,9 +13,8 @@ TESTS_PATH = Path(__file__).parent / 'samples'
 class TestUploadedFile(TestCase):
     def setUp(self) -> None:
         with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as fp:
-            self.object = UploadedFile(
-                file=File(fp, name='Doc.PDF'),
-            )
+            self.object = UploadedFile()
+            self.object.attach_file(File(fp, name='Doc.PDF'))
             self.object.save()
 
     def tearDown(self) -> None:
@@ -56,11 +55,11 @@ class TestSlaveUploadedFile(TestCase):
     def setUp(self) -> None:
         with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as fp:
             self.object = UploadedFile(
-                file=File(fp, name='Doc.PDF'),
                 owner_app_label='app',
                 owner_model_name='page',
                 owner_fieldname='file'
             )
+            self.object.attach_file(File(fp, name='Doc.PDF'))
             self.object.save()
 
     def tearDown(self) -> None:

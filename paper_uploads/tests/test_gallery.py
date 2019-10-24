@@ -11,41 +11,50 @@ from tests.app.models import Page, PageGallery, PageFilesGallery
 TESTS_PATH = Path(__file__).parent / 'samples'
 
 
+class TestImageItemException(TestCase):
+    def test_exception(self):
+        self.collection = PageFilesGallery.objects.create()
+
+        with self.assertRaises(RuntimeError):
+            with open(TESTS_PATH / 'Image.Jpeg', 'rb') as fp:
+                self.image_item = ImageItem()
+                self.image_item.attach_file(File(fp, name='Image.Jpeg'))
+                self.image_item.attach_to(self.collection)
+                self.image_item.save()
+
+
 class TestCollection(TestCase):
     def setUp(self) -> None:
         self.collection = PageFilesGallery.objects.create()
 
         with open(TESTS_PATH / 'cartman.svg', 'rb') as fp:
-            self.svg_item = SVGItem(
-                file=File(fp, name='cartman.Svg'),
-            )
+            self.svg_item = SVGItem()
             self.svg_item.attach_to(self.collection)
+            self.svg_item.attach_file(File(fp, name='cartman.Svg'))
             self.svg_item.full_clean()
             self.svg_item.save()
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as fp:
             self.image_item = ImageItem(
-                file=File(fp, name='Image.Jpeg'),
                 alt='Alternate text',
                 title='Image title',
             )
             self.image_item.attach_to(self.collection)
+            self.image_item.attach_file(File(fp, name='Image.Jpeg'))
             self.image_item.full_clean()
             self.image_item.save()
 
         with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as fp:
-            self.file_item = FileItem(
-                file=File(fp, name='Doc.PDF'),
-            )
+            self.file_item = FileItem()
             self.file_item.attach_to(self.collection)
+            self.file_item.attach_file(File(fp, name='Doc.PDF'))
             self.file_item.full_clean()
             self.file_item.save()
 
         with open(TESTS_PATH / 'audio.ogg', 'rb') as fp:
-            self.audio_item = FileItem(
-                file=File(fp, name='audio.ogg'),
-            )
+            self.audio_item = FileItem()
             self.audio_item.attach_to(self.collection)
+            self.audio_item.attach_file(File(fp, name='audio.ogg'))
             self.audio_item.full_clean()
             self.audio_item.save()
 
@@ -213,11 +222,11 @@ class TestImageCollection(TestCase):
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as fp:
             self.image_item = ImageItem(
-                file=File(fp, name='Image.Jpeg'),
                 alt='Alternate text',
                 title='Image title',
             )
             self.image_item.attach_to(self.collection)
+            self.image_item.attach_file(File(fp, name='Image.Jpeg'))
             self.image_item.full_clean()
             self.image_item.save()
 

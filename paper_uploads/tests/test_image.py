@@ -15,10 +15,10 @@ class TestUploadedImage(TestCase):
     def setUp(self) -> None:
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as fp:
             self.object = UploadedImage(
-                file=File(fp, name='Image.Jpeg'),
                 alt='Alternate text',
                 title='Image title',
             )
+            self.object.attach_file(File(fp, name='Image.Jpeg'))
             self.object.save()
 
     def tearDown(self) -> None:
@@ -79,11 +79,11 @@ class TestSlaveUploadedImage(TestCase):
     def setUp(self) -> None:
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as fp:
             self.object = UploadedImage(
-                file=File(fp, name='TestImage.Jpeg'),
                 owner_app_label='app',
                 owner_model_name='page',
                 owner_fieldname='image_ext'
             )
+            self.object.attach_file(File(fp, name='TestImage.Jpeg'))
             self.object.save()
 
     def tearDown(self) -> None:
