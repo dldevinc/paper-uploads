@@ -18,6 +18,11 @@ class PageAdmin(SortableAdminMixin, admin.ModelAdmin):
                 'png_gallery'
             ),
         }),
+        (_('Cloudinary'), {
+            'fields': (
+                'cloud_file', 'cloud_image',
+            )
+        })
     )
     sortable = 'order'
     search_fields = ['header']
