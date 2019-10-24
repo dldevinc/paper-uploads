@@ -20,7 +20,7 @@ from .fields.image import VariationalFileField
 from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
 from .containers import FileFieldContainerMixin
 
-__all__ = ['UploadedImageBase', 'UploadedImage']
+__all__ = ['UploadedImageBase', 'VariationalImageBase', 'UploadedImage']
 
 
 class VariationFile(File):
@@ -131,6 +131,22 @@ class UploadedImageBase(UploadedFileBase):
     class Meta(UploadedFileBase.Meta):
         abstract = True
 
+    def attach_file(self, file: File):
+        try:
+            image = Image.open(file)
+        except OSError:
+            raise ValidationError('`%s` is not an image' % os.path.basename(file.name))
+        else:
+            self.width, self.height = image.size
+        finally:
+            file.seek(0)
+        super().attach_file(file)
+
+
+class VariationalImageBase(UploadedImageBase):
+    class Meta(UploadedImageBase.Meta):
+        abstract = True
+
     def __init__(self, *args, **kwargs):
         self._variation_attached = False
         super().__init__(*args, **kwargs)
@@ -143,28 +159,6 @@ class UploadedImageBase(UploadedFileBase):
                 return getattr(self, item)
         return super().__getattr__(item)
 
-    def attach_file(self, file: File):
-        try:
-            image = Image.open(file)
-        except OSError:
-            raise ValidationError('`%s` is not an image' % os.path.basename(file.name))
-        else:
-            self.width, self.height = image.size
-        finally:
-            file.seek(0)
-        super().attach_file(file)
-
-    def attach_variations(self):
-        for name, vfile in self.get_variation_files():
-            setattr(self, name, vfile)
-
-    def post_save_new_file(self):
-        """
-        При сохранении нового файла, автоматически создаем для него все вариации.
-        """
-        super().post_save_new_file()
-        self.recut()
-
     def _pre_delete_file(self):
         for name, file in self.get_variation_files():
             try:
@@ -174,6 +168,13 @@ class UploadedImageBase(UploadedFileBase):
                 # файл, которого уже нет.
                 logger.exception("Failed to delete a file `{}`".format(self.get_file_name()))
         super()._pre_delete_file()
+
+    def post_save_new_file(self):
+        """
+        При сохранении нового файла, автоматически создаем для него все вариации.
+        """
+        super().post_save_new_file()
+        self.recut()
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         """
@@ -205,6 +206,10 @@ class UploadedImageBase(UploadedFileBase):
             setattr(self, variation_cache_name, variation_cache)
         return variation_cache
 
+    def attach_variations(self):
+        for name, vfile in self.get_variation_files():
+            setattr(self, name, vfile)
+
     def get_draft_size(self, source_size: Sequence[int]) -> Tuple[int, int]:
         """
         Вычисление максимально возможных значений ширины и высоты для всех
@@ -229,7 +234,8 @@ class UploadedImageBase(UploadedFileBase):
 
         with self.file.open() as source:
             img = Image.open(source)
-            img = prepare_image(img,
+            img = prepare_image(
+                img,
                 draft_size=self.get_draft_size(img.size)
             )
             for name, variation in self.get_variations().items():
@@ -291,7 +297,7 @@ class UploadedImageBase(UploadedFileBase):
             self._postprocess_sync(names)
 
 
-class UploadedImage(FileFieldContainerMixin, ProxyFileAttributesMixin, SlaveModelMixin, UploadedImageBase):
+class UploadedImage(FileFieldContainerMixin, ProxyFileAttributesMixin, SlaveModelMixin, VariationalImageBase):
     file = VariationalFileField(_('file'), max_length=255, upload_to=settings.IMAGES_UPLOAD_TO, storage=upload_storage)
 
     class Meta(UploadedImageBase.Meta):

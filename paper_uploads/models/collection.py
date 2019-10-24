@@ -25,7 +25,7 @@ from .. import tasks
 from .base import SlaveModelMixin, ProxyFileAttributesMixin
 from .file import UploadedFileBase
 from .containers import FileFieldContainerMixin
-from .image import UploadedImageBase, VariationalFileField
+from .image import VariationalImageBase, VariationalFileField
 from .fields import CollectionItemTypeField
 
 __all__ = [
@@ -223,7 +223,7 @@ class FileItemBase(CollectionFileItemMixin, FileFieldContainerMixin, ProxyFileAt
             self._postprocess_sync()
 
 
-class ImageItemBase(CollectionFileItemMixin, FileFieldContainerMixin, ProxyFileAttributesMixin, CollectionItemBase, UploadedImageBase):
+class ImageItemBase(CollectionFileItemMixin, FileFieldContainerMixin, ProxyFileAttributesMixin, CollectionItemBase, VariationalImageBase):
     admin_template_name = 'paper_uploads/collection_item/image.html'
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
 
@@ -274,7 +274,7 @@ class ImageItemBase(CollectionFileItemMixin, FileFieldContainerMixin, ProxyFileA
         При отложенной нарезке превью для админки режутся сразу,
         а остальное — потом.
         """
-        super(UploadedImageBase, self).post_save_new_file()
+        super().post_save_new_file()
 
         # postprocess
         if settings.RQ_ENABLED:

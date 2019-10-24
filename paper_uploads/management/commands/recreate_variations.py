@@ -7,7 +7,7 @@ from django.db.models.fields import Field
 from django.core.management import BaseCommand
 from django.db.models.utils import make_model_tuple
 from paper_uploads.models import CollectionItemTypeField
-from ...models import UploadedImageBase, ImageItemBase, Collection
+from ...models import VariationalImageBase, ImageItemBase, Collection
 
 
 def is_gallery(model: Type[Union[models.Model, Collection]]) -> bool:
@@ -26,7 +26,7 @@ def is_image(field: Field) -> bool:
     """
     Возвращает True, если поле хранит изображение, которое можно перенарезать.
     """
-    return field.is_relation and issubclass(field.related_model, UploadedImageBase)
+    return field.is_relation and issubclass(field.related_model, VariationalImageBase)
 
 
 def is_image_item(field: CollectionItemTypeField) -> bool:
@@ -79,7 +79,7 @@ def get_itemtype_field(model: Type[Collection], fieldname: str) -> CollectionIte
     return model.item_types[fieldname]
 
 
-def get_allowed_variations(model: Type[Union[models.Model, Collection]], field: Union[UploadedImageBase, CollectionItemTypeField]) -> List[str]:
+def get_allowed_variations(model: Type[Union[models.Model, Collection]], field: Union[VariationalImageBase, CollectionItemTypeField]) -> List[str]:
     if is_gallery(model):
         if not is_image_item(field):
             raise TypeError("field '%s' refers to the non-image model" % field.name)

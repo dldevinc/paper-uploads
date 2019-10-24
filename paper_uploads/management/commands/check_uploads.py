@@ -2,7 +2,7 @@ from django.apps import apps
 from django.db import DEFAULT_DB_ALIAS
 from django.core.management import BaseCommand
 from ...models.base import SlaveModelMixin
-from ...models import UploadedFileBase, UploadedImageBase, Collection, CollectionItemBase
+from ...models import UploadedFileBase, VariationalImageBase, Collection, CollectionItemBase
 
 
 class Command(BaseCommand):
@@ -62,7 +62,7 @@ class Command(BaseCommand):
 
     def check_variations(self):
         for model in apps.get_models():
-            if not issubclass(model, UploadedImageBase):
+            if not issubclass(model, VariationalImageBase):
                 continue
 
             total = model._base_manager.using(self.database).count()
