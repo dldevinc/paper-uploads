@@ -7,7 +7,7 @@ class FileFieldContainerMixin(ContainerMixinBase):
     def _attach_file(self, file: File):
         self.file.save(file.name, file, save=False)
 
-    def rename_file(self, new_name):
+    def rename_file(self, new_name: str):
         name = '.'.join((new_name, self.extension))
         with self.file.open() as fp:
             self.file.save(name, fp, save=False)

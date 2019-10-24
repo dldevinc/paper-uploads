@@ -12,7 +12,7 @@ class ContainerMixinBase:
     def _post_attach_file(self):
         pass
 
-    def rename_file(self, new_name):
+    def rename_file(self, new_name: str):
         raise NotImplementedError
 
     def delete_file(self):
