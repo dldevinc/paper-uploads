@@ -259,22 +259,12 @@ class ImageItemBase(CollectionFileItemMixin, FileFieldContainerMixin, ProxyFileA
             self._variations_cache = build_variations(variation_configs)
         return self._variations_cache
 
-    @classmethod
-    def _get_variation_configs(cls, field, collection_cls) -> Dict[str, Any]:
-        if 'variations' in field.options:
-            variations = field.options['variations']
-        else:
-            variations = getattr(collection_cls, 'VARIATIONS', None)
-        variations = (variations or {}).copy()
-        variations.update(cls.PREVIEW_VARIATIONS)
-        return variations
-
     def post_save_new_file(self):
         """
         При отложенной нарезке превью для админки режутся сразу,
         а остальное — потом.
         """
-        super().post_save_new_file()
+        super(VariationalImageBase, self).post_save_new_file()
 
         # postprocess
         if settings.RQ_ENABLED:
@@ -305,6 +295,16 @@ class ImageItemBase(CollectionFileItemMixin, FileFieldContainerMixin, ProxyFileA
                 continue
             variation_filename = variation.get_output_filename(self.get_file_name())
             postprocess_variation(variation_filename, variation, field=itemtype_field)
+
+    @classmethod
+    def _get_variation_configs(cls, field, collection_cls) -> Dict[str, Any]:
+        if 'variations' in field.options:
+            variations = field.options['variations']
+        else:
+            variations = getattr(collection_cls, 'VARIATIONS', None)
+        variations = (variations or {}).copy()
+        variations.update(cls.PREVIEW_VARIATIONS)
+        return variations
 
 
 class CollectionMetaclass(ModelBase):
