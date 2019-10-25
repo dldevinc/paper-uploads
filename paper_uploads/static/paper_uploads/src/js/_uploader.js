@@ -36,7 +36,7 @@ function Uploader(element, options) {
         maxConnections: 1,
         button: null,
         dropzones: null,
-        extraData: null,
+        params: null,
         validation: {},
         filters: []
     }, options);
@@ -47,14 +47,26 @@ function Uploader(element, options) {
 
 Uploader.prototype = Object.create(EventEmitter.prototype);
 
-Uploader.prototype.getParams = function() {
-    if (typeof this._opts.extraData === 'function') {
-        return Object.assign(getPaperParams(this.element), this._opts.extraData.call(this));
-    } else if (typeof this._opts.extraData === 'object') {
-        return Object.assign(getPaperParams(this.element), this._opts.extraData);
+Uploader.prototype.getParams = function(id) {
+    if (typeof this._opts.params === 'function') {
+        return Object.assign(getPaperParams(this.element), this._opts.params.call(this, id));
+    } else if (typeof this._opts.params === 'object') {
+        return Object.assign(getPaperParams(this.element), this._opts.params);
     } else {
         return getPaperParams(this.element);
     }
+};
+
+Uploader.prototype.formatParams = function(params, id) {
+    const plain_params = {};
+    for (let [key, value] of Object.entries(params)) {
+        if (typeof value === 'function') {
+            plain_params[key] = value(id);
+        } else {
+            plain_params[key] = value;
+        }
+    }
+    return plain_params;
 };
 
 Uploader.prototype._makeUploader = function() {
@@ -68,8 +80,7 @@ Uploader.prototype._makeUploader = function() {
         multiple: this._opts.multiple,
         maxConnections: this._opts.maxConnections,
         request: {
-            endpoint: this._opts.url,
-            params: this.getParams()
+            endpoint: this._opts.url
         },
         chunking: {
             enabled: true,
@@ -192,6 +203,11 @@ Uploader.prototype._makeUploader = function() {
             },
             onSubmitted: function(id) {
                 _this.trigger('submitted', [id]);
+                let params = _this.getParams(id);
+                if (params) {
+                    params = _this.formatParams(params, id);
+                    this.setParams(params, id);
+                }
             },
             onUpload: function(id) {
                 _this.trigger('upload', [id]);

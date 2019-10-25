@@ -170,9 +170,13 @@ Collection.prototype.initUploader = function() {
         button: this.uploadButton,
         dropzones: this.element.querySelectorAll('.dropzone-overlay'),
         validation: JSON.parse(this.element.dataset.validation),
-        extraData: {
+        params: {
             collectionId: function() {
                 return _this.collectionId;
+            },
+            order: function(id) {
+                const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
+                return Array.from(_this.itemContainer.children).indexOf(preloader);
             }
         },
     }).on('submit', function() {
