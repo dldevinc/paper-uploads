@@ -107,12 +107,15 @@ class CollectionItemBase(PolymorphicModel):
         return errors
 
     def save(self, *args, **kwargs):
-        if not self.pk and not self.order:
-            # добавление новых элементов в конец
-            max_order = self.collection.items.aggregate(
-                order=functions.Coalesce(models.Max('order'), 0)
-            )['order']
-            self.order = max_order + 1
+        if not self.pk:
+            # попытка решить проблему того, что при создании коллекции,
+            # элементы отсортированы в порядке загрузки, а не в порядке
+            # добавления. Код ниже не решает проблему, но уменьшает её влияние.
+            if self.collection.items.filter(order=self.order).exists():
+                max_order = self.collection.items.aggregate(
+                    order=functions.Coalesce(models.Max('order'), 0)
+                )['order']
+                self.order = max_order + 1
         super().save(*args, **kwargs)
 
     def get_collection_class(self) -> Type['CollectionBase']:

@@ -130,6 +130,13 @@ def upload_item(request):
         )
 
         try:
+            order = int(request.POST.get('order'))
+        except (TypeError, ValueError):
+            pass
+        else:
+            instance.order = max(order, 0)
+
+        try:
             instance.attach_file(file)
             instance.full_clean()
             run_validators(file, item_type_field.validators)
