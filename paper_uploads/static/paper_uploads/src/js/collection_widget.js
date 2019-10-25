@@ -127,6 +127,26 @@ Object.defineProperty(Collection.prototype, 'collectionId', {
     }
 });
 
+Object.defineProperty(Collection.prototype, 'loading', {
+    get: function() {
+        return Boolean(this._loading);
+    },
+    set: function(value) {
+        const newValue = Boolean(value);
+        if (newValue === Boolean(this._loading)) {
+            return
+        }
+        if (newValue) {
+            this.element.classList.add('loading');
+            this.deleteButton.disabled = true;
+        } else {
+            this.element.classList.remove('loading');
+            this.deleteButton.disabled = false;
+        }
+        this._loading = newValue;
+    }
+});
+
 /**
  * Инициализация галереи
  */
@@ -134,6 +154,7 @@ Collection.prototype.init = function() {
     this.uploader = this.initUploader();
     this.sortable = this.initSortable();
     this.collectionId = this.input.value;
+    this.loading = false;
     this.addListeners();
 };
 
@@ -177,6 +198,8 @@ Collection.prototype.initUploader = function() {
 
         _this.trigger('collection:submit_item', [preloader, id]);
     }).on('upload', function(id) {
+        _this.loading = true;
+
         const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
         _this.trigger('collection:upload_item', [preloader, id]);
     }).on('progress', function(id, percentage) {
@@ -245,6 +268,7 @@ Collection.prototype.initUploader = function() {
             preloader.classList.add(_this._opts.itemRemovingState);
         }
     }).on('all_complete', function() {
+        _this.loading = false;
         showCollectedErrors();
     });
 };
@@ -520,6 +544,10 @@ Collection.prototype._deleteCollection = function() {
     });
     data.append('collectionId', this.collectionId.toString());
 
+    // отмена всех текущих загрузок. По идее, их и так быть не должно,
+    // т.к. кнопка блокируется.
+    this.uploader.uploader.cancelAll();
+
     const _this = this;
     Promise.all([
         preloader.show(),
@@ -543,7 +571,6 @@ Collection.prototype._deleteCollection = function() {
             throw error
         }
 
-        preloader.hide();
         let lastItem = null;
         Array.from(_this.itemContainer.children).forEach(function(item) {
             item.classList.add(_this._opts.itemRemovingState);
@@ -555,11 +582,13 @@ Collection.prototype._deleteCollection = function() {
                 _this.cleanItems();
                 _this.collectionId = '';
                 _this.trigger('collection:deleted');
+                preloader.hide();
             });
         } else {
             _this.cleanItems();
             _this.collectionId = '';
             _this.trigger('collection:deleted');
+            preloader.hide();
         }
     }).catch(function(error) {
         preloader.hide();
