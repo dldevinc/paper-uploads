@@ -71,13 +71,18 @@ FILE_ICON_OVERRIDES = {
     'flac': 'audio',
     'flv': 'video',
     'gz': 'archive',
+    'm4a': 'audio',
     'm4v': 'video',
+    'mkv': 'video',
     'mov': 'video',
+    'ogg': 'audio',
     'ogv': 'video',
     'xlsx': 'xls',
     'xz': 'archive',
     'wav': 'audio',
+    'webm': 'video',
     'wma': 'audio',
+    'wmv': 'video',
 }
 
 

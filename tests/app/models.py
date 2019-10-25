@@ -76,6 +76,7 @@ class Page(models.Model):
     files = CollectionField(PageFilesGallery, verbose_name=_('file gallery'))
     gallery = CollectionField(PageGallery, verbose_name=_('image gallery'))
     cloud_file = CloudinaryFileField(_('file'), blank=True)
+    cloud_video = CloudinaryMediaField(_('video'), blank=True)
     cloud_image = CloudinaryImageField(_('image'), blank=True)
 
     ext_file = FileField(_('Extension'), blank=True, validators=[

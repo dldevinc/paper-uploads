@@ -20,7 +20,7 @@ class PageAdmin(SortableAdminMixin, admin.ModelAdmin):
         }),
         (_('Cloudinary'), {
             'fields': (
-                'cloud_file', 'cloud_image',
+                'cloud_file', 'cloud_video', 'cloud_image',
             )
         })
     )
