@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from django.test import TestCase
 from django.core.files import File
+from django.utils.timezone import now
 from ..models import SVGItem, ImageItem, FileItem
 from ..models.fields import CollectionField
 from .. import validators
@@ -225,6 +226,54 @@ class TestCollection(TestCase):
     def test_file_preview(self):
         self.assertEqual(self.file_item.preview, '/static/paper_uploads/dist/image/pdf.svg')
         self.assertEqual(self.audio_item.preview, '/static/paper_uploads/dist/image/audio.svg')
+
+    def test_svg_item_as_dict(self):
+        self.assertDictContainsSubset(
+            {
+                'id': 1,
+                'collectionId': 1,
+                'item_type': 'svg',
+                'name': 'cartman.svg',
+                'url': '/media/collections/files/{}/cartman.Svg'.format(now().strftime('%Y-%m-%d')),
+            },
+            self.svg_item.as_dict(),
+        )
+
+    def test_image_item_as_dict(self):
+        self.assertDictContainsSubset(
+            {
+                'id': 2,
+                'collectionId': 1,
+                'item_type': 'image',
+                'name': 'Image.jpeg',
+                'url': '/media/collections/images/{}/Image.Jpeg'.format(now().strftime('%Y-%m-%d')),
+            },
+            self.image_item.as_dict(),
+        )
+
+    def test_file_item_as_dict(self):
+        self.assertDictContainsSubset(
+            {
+                'id': 3,
+                'collectionId': 1,
+                'item_type': 'file',
+                'name': 'Doc.pdf',
+                'url': '/media/collections/files/{}/Doc.PDF'.format(now().strftime('%Y-%m-%d')),
+            },
+            self.file_item.as_dict(),
+        )
+
+    def test_audio_item_as_dict(self):
+        self.assertDictContainsSubset(
+            {
+                'id': 4,
+                'collectionId': 1,
+                'item_type': 'file',
+                'name': 'audio.ogg',
+                'url': '/media/collections/files/{}/audio.ogg'.format(now().strftime('%Y-%m-%d')),
+            },
+            self.audio_item.as_dict(),
+        )
 
 
 class TestImageCollection(TestCase):
