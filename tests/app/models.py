@@ -3,7 +3,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from paper_uploads.models import *
 from paper_uploads.validators import *
-from paper_uploads.cloudinary.models import CloudinaryFile, CloudinaryImage
+from paper_uploads.cloudinary.models import *
 
 
 class PageGallery(ImageCollection):
@@ -75,8 +75,8 @@ class Page(models.Model):
     )
     files = CollectionField(PageFilesGallery, verbose_name=_('file gallery'))
     gallery = CollectionField(PageGallery, verbose_name=_('image gallery'))
-    cloud_file = FileField(_('file'), to=CloudinaryFile, blank=True)
-    cloud_image = ImageField(_('image'), to=CloudinaryImage, blank=True)
+    cloud_file = CloudinaryFileField(_('file'), blank=True)
+    cloud_image = CloudinaryImageField(_('image'), blank=True)
 
     ext_file = FileField(_('Extension'), blank=True, validators=[
         ExtensionValidator(['jpg', 'jpeg'])
