@@ -119,6 +119,7 @@ Object.defineProperty(BaseWidget.prototype, 'loading', {
             this.element.classList.add('loading');
         } else {
             this.element.classList.remove('loading');
+            this.element.classList.remove('processing');
         }
         this._loading = newValue;
     }
@@ -145,6 +146,10 @@ BaseWidget.prototype.initUploader = function() {
     }).on('progress', function(id, percentage) {
         const progressBar = _this.element.querySelector('.progress-bar');
         progressBar && (progressBar.style.width = percentage + '%');
+
+        if (percentage >= 100) {
+            _this.element.classList.add('processing');
+        }
     }).on('complete', function(id, response) {
         _this.empty = false;
         _this.instanceId = response.instance_id;
