@@ -42,6 +42,6 @@ class Migration(migrations.Migration):
                 'abstract': False,
                 'default_permissions': (),
             },
-            bases=(paper_uploads.cloudinary.container.CloudinaryContainerMixin, paper_uploads.models.base.ProxyFileAttributesMixin, paper_uploads.models.containers.base.ContainerMixinBase, models.Model),
+            bases=(paper_uploads.cloudinary.container.CloudinaryContainerMixin, paper_uploads.models.containers.base.ContainerMixinBase, models.Model),
         ),
     ]

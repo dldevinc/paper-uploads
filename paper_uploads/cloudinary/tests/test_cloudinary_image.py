@@ -61,6 +61,14 @@ class TestCloudinaryImage(TestCase):
     def test_validation(self):
         self.assertIn('acceptFiles', self.object.get_validation())
 
+    def test_proxy_attrs(self):
+        for name in self.object.PROXY_FILE_ATTRIBUTES:
+            with self.subTest(name):
+                self.assertEqual(
+                    getattr(self.object, name),
+                    getattr(self.object.file, name),
+                )
+
 
 class TestSlaveCloudinaryImage(TestCase):
     def setUp(self) -> None:

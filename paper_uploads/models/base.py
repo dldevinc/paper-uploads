@@ -1,14 +1,10 @@
 import posixpath
 from typing import Dict, Type, Any, Optional
-from itertools import chain
 from django.apps import apps
 from django.db import models
-from django.core import checks
-from django.core.files import File
 from django.utils.timezone import now
 from django.core.exceptions import FieldDoesNotExist
 from django.utils.translation import gettext_lazy as _
-from ..conf import PROXY_FILE_ATTRIBUTES
 from ..logging import logger
 from .containers import ContainerMixinBase
 
@@ -48,34 +44,6 @@ class UploadedFileBase(ContainerMixinBase, models.Model):
             type(self).__name__,
             self.name
         )
-
-    def __getattr__(self, item):
-        # для вызова через super() в классах-потомках
-        raise AttributeError(
-            "'%s' object has no attribute '%s'" % (self.__class__.__name__, item)
-        )
-
-    @classmethod
-    def check(cls, **kwargs):
-        return [
-            *super().check(**kwargs),
-            *cls._check_prohibited_field_names(),
-        ]
-
-    @classmethod
-    def _check_prohibited_field_names(cls, **kwargs):
-        errors = []
-        for field in chain(cls._meta.local_fields, cls._meta.local_many_to_many):
-            if field.name in PROXY_FILE_ATTRIBUTES:
-                errors.append(
-                    checks.Error(
-                        "The field '%s' clashes with the proxied file attribute '%s'" % (
-                            field.name, field.name
-                        ),
-                        obj=cls,
-                    )
-                )
-        return errors
 
     def save(self, *args, **kwargs):
         is_new_file = False
@@ -176,17 +144,6 @@ class SlaveModelMixin(models.Model):
     def get_validation(cls) -> Dict[str, Any]:
         """
         Возвращает конфигурацию валидации загружаемых файлов FineUploader.
-        см. https://docs.fineuploader.com/branch/master/api/options.html#validation
+        https://docs.fineuploader.com/branch/master/api/options.html#validation
         """
         return {}
-
-
-class ProxyFileAttributesMixin:
-    FILE_FILED = 'file'
-
-    def __getattr__(self, item):
-        """ Перенос часто используемых методов файла на уровень модели """
-        if item in PROXY_FILE_ATTRIBUTES:
-            file_field = getattr(self, self.FILE_FILED)
-            return getattr(file_field, item)
-        return super().__getattr__(item)

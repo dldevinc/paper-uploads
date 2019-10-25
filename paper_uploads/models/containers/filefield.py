@@ -1,9 +1,13 @@
 import hashlib
 from django.core.files import File
-from .base import ContainerMixinBase
+from .base import ContainerMixinBase, ProxyAttributesContainerMixin
 
 
-class FileFieldContainerMixin(ContainerMixinBase):
+class FileFieldContainerMixin(ProxyAttributesContainerMixin, ContainerMixinBase):
+    PROXY_FILE_ATTRIBUTES = {
+        'url', 'path', 'open', 'read', 'close', 'closed'
+    }
+
     def _attach_file(self, file: File):
         self.file.save(file.name, file, save=False)
 

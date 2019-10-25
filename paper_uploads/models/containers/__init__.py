@@ -1,2 +1,2 @@
-from .base import ContainerMixinBase
+from .base import ContainerMixinBase, ProxyAttributesContainerMixin
 from .filefield import FileFieldContainerMixin

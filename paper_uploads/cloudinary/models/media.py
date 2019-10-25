@@ -5,11 +5,11 @@ from django.core.files import File
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
 from cloudinary.models import CloudinaryField
-from ...models.base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
+from ...models.base import UploadedFileBase, SlaveModelMixin
 from ..container import CloudinaryContainerMixin
 
 
-class CloudinaryMedia(CloudinaryContainerMixin, ProxyFileAttributesMixin, SlaveModelMixin, UploadedFileBase):
+class CloudinaryMedia(CloudinaryContainerMixin, SlaveModelMixin, UploadedFileBase):
     cloudinary_resource_type = 'video'
 
     file = CloudinaryField(_('file'), resource_type='video')

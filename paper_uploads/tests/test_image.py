@@ -5,7 +5,6 @@ from django.core.files import File
 from tests.app.models import Page
 from ..models import UploadedImage
 from ..models.fields import ImageField
-from ..conf import PROXY_FILE_ATTRIBUTES
 from .. import validators
 
 TESTS_PATH = Path(__file__).parent / 'samples'
@@ -67,7 +66,7 @@ class TestUploadedImage(TestCase):
         self.assertIn('acceptFiles', self.object.get_validation())
 
     def test_proxy_attrs(self):
-        for name in PROXY_FILE_ATTRIBUTES:
+        for name in self.object.PROXY_FILE_ATTRIBUTES:
             with self.subTest(name):
                 self.assertEqual(
                     getattr(self.object, name),

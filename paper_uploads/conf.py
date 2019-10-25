@@ -56,12 +56,6 @@ IMPORT_STRINGS = (
     'STORAGE',
 )
 
-
-# Атрибуты файла, переносимые на уровень модели
-PROXY_FILE_ATTRIBUTES = {
-    'url', 'path', 'open', 'read', 'close', 'closed'
-}
-
 # Иконки для файлов в галерее
 FILE_ICON_DEFAULT = 'unknown'
 FILE_ICON_OVERRIDES = {

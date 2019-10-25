@@ -5,11 +5,11 @@ from django.core.files import File
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
 from cloudinary.models import CloudinaryField
-from ...models.base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
+from ...models.base import UploadedFileBase, SlaveModelMixin
 from ..container import CloudinaryContainerMixin
 
 
-class CloudinaryFile(CloudinaryContainerMixin, ProxyFileAttributesMixin, SlaveModelMixin, UploadedFileBase):
+class CloudinaryFile(CloudinaryContainerMixin, SlaveModelMixin, UploadedFileBase):
     file = CloudinaryField(_('file'), resource_type='raw')
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 

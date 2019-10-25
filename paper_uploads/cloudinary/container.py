@@ -7,10 +7,14 @@ from requests.models import ITER_CHUNK_SIZE
 from django.core.files import File
 from django.core.exceptions import ValidationError
 from ..logging import logger
-from ..models.containers import ContainerMixinBase
+from ..models.containers import ContainerMixinBase, ProxyAttributesContainerMixin
 
 
-class CloudinaryContainerMixin(ContainerMixinBase):
+class CloudinaryContainerMixin(ProxyAttributesContainerMixin, ContainerMixinBase):
+    PROXY_FILE_ATTRIBUTES = {
+        'url',
+    }
+
     cloudinary_type = 'upload'
     cloudinary_resource_type = 'raw'
 

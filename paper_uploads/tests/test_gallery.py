@@ -4,7 +4,6 @@ from django.test import TestCase
 from django.core.files import File
 from ..models import SVGItem, ImageItem, FileItem
 from ..models.fields import CollectionField
-from ..conf import PROXY_FILE_ATTRIBUTES
 from .. import validators
 from tests.app.models import Page, PageGallery, PageFilesGallery
 
@@ -162,21 +161,33 @@ class TestCollection(TestCase):
         with self.assertRaises(KeyError):
             self.image_item.get_variation_file('nonexist')
 
-    def test_proxy_attrs(self):
-        for name in PROXY_FILE_ATTRIBUTES:
+    def test_svg_item_proxy_attrs(self):
+        for name in self.svg_item.PROXY_FILE_ATTRIBUTES:
             with self.subTest(name):
                 self.assertEqual(
                     getattr(self.svg_item, name),
                     getattr(self.svg_item.file, name),
                 )
-                self.assertEqual(
-                    getattr(self.image_item, name),
-                    getattr(self.image_item.file, name),
-                )
+
+    def test_file_item_proxy_attrs(self):
+        for name in self.file_item.PROXY_FILE_ATTRIBUTES:
+            with self.subTest(name):
                 self.assertEqual(
                     getattr(self.file_item, name),
                     getattr(self.file_item.file, name),
                 )
+
+    def test_image_item_proxy_attrs(self):
+        for name in self.image_item.PROXY_FILE_ATTRIBUTES:
+            with self.subTest(name):
+                self.assertEqual(
+                    getattr(self.image_item, name),
+                    getattr(self.image_item.file, name),
+                )
+
+    def test_audio_item_proxy_attrs(self):
+        for name in self.audio_item.PROXY_FILE_ATTRIBUTES:
+            with self.subTest(name):
                 self.assertEqual(
                     getattr(self.audio_item, name),
                     getattr(self.audio_item.file, name),
@@ -213,7 +224,7 @@ class TestCollection(TestCase):
 
     def test_file_preview(self):
         self.assertEqual(self.file_item.preview, '/static/paper_uploads/dist/image/pdf.svg')
-        self.assertEqual(self.audio_item.preview, '/static/paper_uploads/dist/image/unknown.svg')
+        self.assertEqual(self.audio_item.preview, '/static/paper_uploads/dist/image/audio.svg')
 
 
 class TestImageCollection(TestCase):
@@ -301,7 +312,7 @@ class TestImageCollection(TestCase):
             self.image_item.get_variation_file('nonexist')
 
     def test_proxy_attrs(self):
-        for name in PROXY_FILE_ATTRIBUTES:
+        for name in self.image_item.PROXY_FILE_ATTRIBUTES:
             with self.subTest(name):
                 self.assertEqual(
                     getattr(self.image_item, name),

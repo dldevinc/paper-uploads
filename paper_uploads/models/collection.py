@@ -22,7 +22,7 @@ from ..variations import PaperVariation
 from ..postprocess import postprocess_common_file, postprocess_variation
 from ..helpers import build_variations
 from .. import tasks
-from .base import SlaveModelMixin, ProxyFileAttributesMixin
+from .base import SlaveModelMixin
 from .file import UploadedFileBase
 from .containers import FileFieldContainerMixin
 from .image import VariationalImageBase, VariationalFileField
@@ -164,7 +164,7 @@ class CollectionFileItemMixin:
         raise NotImplementedError
 
 
-class FileItemBase(CollectionFileItemMixin, FileFieldContainerMixin, ProxyFileAttributesMixin, CollectionItemBase, UploadedFileBase):
+class FileItemBase(CollectionFileItemMixin, FileFieldContainerMixin, CollectionItemBase, UploadedFileBase):
     admin_template_name = 'paper_uploads/collection_item/file.html'
 
     file = models.FileField(_('file'), max_length=255, storage=upload_storage,
@@ -226,7 +226,7 @@ class FileItemBase(CollectionFileItemMixin, FileFieldContainerMixin, ProxyFileAt
             self._postprocess_sync()
 
 
-class ImageItemBase(CollectionFileItemMixin, FileFieldContainerMixin, ProxyFileAttributesMixin, CollectionItemBase, VariationalImageBase):
+class ImageItemBase(CollectionFileItemMixin, FileFieldContainerMixin, CollectionItemBase, VariationalImageBase):
     admin_template_name = 'paper_uploads/collection_item/image.html'
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
 

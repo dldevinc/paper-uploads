@@ -7,11 +7,11 @@ from ..conf import settings
 from ..storage import upload_storage
 from ..postprocess import postprocess_common_file
 from .. import tasks
-from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
+from .base import UploadedFileBase, SlaveModelMixin
 from .containers import FileFieldContainerMixin
 
 
-class UploadedFile(FileFieldContainerMixin, ProxyFileAttributesMixin, SlaveModelMixin, UploadedFileBase):
+class UploadedFile(FileFieldContainerMixin, SlaveModelMixin, UploadedFileBase):
     file = models.FileField(_('file'), max_length=255,
         upload_to=settings.FILES_UPLOAD_TO, storage=upload_storage)
     display_name = models.CharField(_('display name'), max_length=255, blank=True)

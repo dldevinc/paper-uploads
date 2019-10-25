@@ -17,7 +17,7 @@ from ..postprocess import postprocess_variation
 from ..variations import PaperVariation
 from .. import tasks
 from .fields.image import VariationalFileField
-from .base import UploadedFileBase, SlaveModelMixin, ProxyFileAttributesMixin
+from .base import UploadedFileBase, SlaveModelMixin
 from .containers import FileFieldContainerMixin
 
 __all__ = ['UploadedImageBase', 'VariationalImageBase', 'UploadedImage']
@@ -297,7 +297,7 @@ class VariationalImageBase(UploadedImageBase):
             self._postprocess_sync(names)
 
 
-class UploadedImage(FileFieldContainerMixin, ProxyFileAttributesMixin, SlaveModelMixin, VariationalImageBase):
+class UploadedImage(FileFieldContainerMixin, SlaveModelMixin, VariationalImageBase):
     file = VariationalFileField(_('file'), max_length=255, upload_to=settings.IMAGES_UPLOAD_TO, storage=upload_storage)
 
     class Meta(UploadedImageBase.Meta):
