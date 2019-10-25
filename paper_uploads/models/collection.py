@@ -1,7 +1,7 @@
 import magic
 import posixpath
 from collections import OrderedDict
-from typing import Dict, Type, Any, IO, Iterable
+from typing import Dict, Type, Any, Iterable
 from django.db import models, DEFAULT_DB_ALIAS
 from django.core import checks
 from django.template import loader
@@ -156,7 +156,7 @@ class CollectionItemBase(PolymorphicModel):
 
 class CollectionFileItemMixin:
     @classmethod
-    def file_supported(cls, file: IO) -> bool:
+    def file_supported(cls, file: File) -> bool:
         """
         Проверка загруженного файла на принадлежность текущему типу элемента галереи.
         Должен вернуть True, если файл может быть представлен текущим классом.
@@ -387,7 +387,7 @@ class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
             raise ValueError('Unsupported collection item type: %s' % item_type)
         return self.items.filter(item_type=item_type).order_by('order')
 
-    def detect_file_type(self, file: IO) -> str:
+    def detect_file_type(self, file: File) -> str:
         raise NotImplementedError
 
     def _recut_sync(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS):
@@ -426,7 +426,7 @@ class FileItem(FileItemBase):
     preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
 
     @classmethod
-    def file_supported(cls, file: IO) -> bool:
+    def file_supported(cls, file: File) -> bool:
         return True
 
     def save(self, *args, **kwargs):
@@ -461,7 +461,7 @@ class SVGItem(FileItemBase):
         verbose_name_plural = _('SVG-files')
 
     @classmethod
-    def file_supported(cls, file: IO) -> bool:
+    def file_supported(cls, file: File) -> bool:
         filename, ext = posixpath.splitext(file.name)
         return ext.lower() == '.svg'
 
@@ -492,7 +492,7 @@ class ImageItem(ImageItemBase):
         }
 
     @classmethod
-    def file_supported(cls, file: IO) -> bool:
+    def file_supported(cls, file: File) -> bool:
         mimetype = magic.from_buffer(file.read(1024), mime=True)
         file.seek(0)    # correct file position after mimetype detection
         basetype, subtype = mimetype.split('/', 1)
@@ -527,7 +527,7 @@ class Collection(CollectionBase):
             )
         super().save(*args, **kwargs)
 
-    def detect_file_type(self, file: IO) -> str:
+    def detect_file_type(self, file: File) -> str:
         """
         Определение класса элемента, которому нужно отнести загружаемый файл.
         """
@@ -550,5 +550,5 @@ class ImageCollection(Collection):
             'acceptFiles': 'image/*',
         }
 
-    def detect_file_type(self, file: IO) -> str:
+    def detect_file_type(self, file: File) -> str:
         return 'image'
