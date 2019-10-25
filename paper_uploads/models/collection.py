@@ -52,6 +52,8 @@ class CollectionItemBase(PolymorphicModel):
 
     class Meta:
         default_permissions = ()
+        verbose_name = _('item')
+        verbose_name_plural = _('items')
 
     @classmethod
     def check(cls, **kwargs):
@@ -165,16 +167,12 @@ class CollectionFileItemMixin:
 
 
 class FileItemBase(CollectionFileItemMixin, FileFieldContainerMixin, CollectionItemBase, UploadedFileBase):
-    admin_template_name = 'paper_uploads/collection_item/file.html'
-
     file = models.FileField(_('file'), max_length=255, storage=upload_storage,
         upload_to=settings.COLLECTION_FILES_UPLOAD_TO)
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
     class Meta(CollectionItemBase.Meta):
         abstract = True
-        verbose_name = _('file')
-        verbose_name_plural = _('files')
 
     def __str__(self):
         return self.get_file_name()
@@ -226,8 +224,36 @@ class FileItemBase(CollectionFileItemMixin, FileFieldContainerMixin, CollectionI
             self._postprocess_sync()
 
 
+class FilePreviewIconItemMixin(models.Model):
+    preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
+
+    class Meta(CollectionItemBase.Meta):
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        self.preview = self.get_preview_url()
+        super().save(*args, **kwargs)
+
+    def get_preview_url(self):
+        icon_path_template = 'paper_uploads/dist/image/{}.svg'
+        extension = FILE_ICON_OVERRIDES.get(self.extension, self.extension)
+        icon_path = icon_path_template.format(extension)
+        if find(icon_path) is None:
+            icon_path = icon_path_template.format(FILE_ICON_DEFAULT)
+        return staticfiles_storage.url(icon_path)
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            **super().as_dict(),
+            'preview': loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
+                'item': self,
+                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+            })
+        }
+
+
 class ImageItemBase(CollectionFileItemMixin, FileFieldContainerMixin, CollectionItemBase, VariationalImageBase):
-    admin_template_name = 'paper_uploads/collection_item/image.html'
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
 
     file = VariationalFileField(_('file'), max_length=255, storage=upload_storage,
@@ -235,8 +261,6 @@ class ImageItemBase(CollectionFileItemMixin, FileFieldContainerMixin, Collection
 
     class Meta(CollectionItemBase.Meta):
         abstract = True
-        verbose_name = _('image')
-        verbose_name_plural = _('images')
 
     def __str__(self):
         return self.get_file_name()
@@ -246,21 +270,6 @@ class ImageItemBase(CollectionFileItemMixin, FileFieldContainerMixin, Collection
         if not self.collection_content_type:
             raise RuntimeError('method must be called after `attach_to`')
         super().attach_file(file)
-
-    def get_variations(self) -> Dict[str, PaperVariation]:
-        """
-        Перебираем возможные места вероятного определения вариаций и берем
-        первое непустое значение. Порядок проверки:
-            1) параметр `variations` поля `CollectionItemTypeField`
-            2) член класса галереи VARIATIONS
-        К найденному словарю примешиваются вариации для админки.
-        """
-        if not hasattr(self, '_variations_cache'):
-            collection_cls = self.get_collection_class()
-            itemtype_field = self.get_itemtype_field()
-            variation_configs = self._get_variation_configs(itemtype_field, collection_cls)
-            self._variations_cache = build_variations(variation_configs)
-        return self._variations_cache
 
     def post_save_new_file(self):
         """
@@ -298,6 +307,21 @@ class ImageItemBase(CollectionFileItemMixin, FileFieldContainerMixin, Collection
                 continue
             variation_filename = variation.get_output_filename(self.get_file_name())
             postprocess_variation(variation_filename, variation, field=itemtype_field)
+
+    def get_variations(self) -> Dict[str, PaperVariation]:
+        """
+        Перебираем возможные места вероятного определения вариаций и берем
+        первое непустое значение. Порядок проверки:
+            1) параметр `variations` поля `CollectionItemTypeField`
+            2) член класса галереи VARIATIONS
+        К найденному словарю примешиваются вариации для админки.
+        """
+        if not hasattr(self, '_variations_cache'):
+            collection_cls = self.get_collection_class()
+            itemtype_field = self.get_itemtype_field()
+            variation_configs = self._get_variation_configs(itemtype_field, collection_cls)
+            self._variations_cache = build_variations(variation_configs)
+        return self._variations_cache
 
     @classmethod
     def _get_variation_configs(cls, field, collection_cls) -> Dict[str, Any]:
@@ -420,43 +444,24 @@ class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
 # ==============================================================================
 
 
-class FileItem(FileItemBase):
+class FileItem(FilePreviewIconItemMixin, FileItemBase):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
+    admin_template_name = 'paper_uploads/collection_item/file.html'
 
-    preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
+    class Meta(FileItemBase.Meta):
+        verbose_name = _('file')
+        verbose_name_plural = _('files')
 
     @classmethod
     def file_supported(cls, file: File) -> bool:
         return True
-
-    def save(self, *args, **kwargs):
-        self.preview = self.get_preview_url()
-        super().save(*args, **kwargs)
-
-    def as_dict(self) -> Dict[str, Any]:
-        return {
-            **super().as_dict(),
-            'preview': loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
-                'item': self,
-                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-            })
-        }
-
-    def get_preview_url(self):
-        icon_path_template = 'paper_uploads/dist/image/{}.svg'
-        extension = FILE_ICON_OVERRIDES.get(self.extension, self.extension)
-        icon_path = icon_path_template.format(extension)
-        if find(icon_path) is None:
-            icon_path = icon_path_template.format(FILE_ICON_DEFAULT)
-        return staticfiles_storage.url(icon_path)
 
 
 class SVGItem(FileItemBase):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     admin_template_name = 'paper_uploads/collection_item/svg.html'
 
-    class Meta(CollectionItemBase.Meta):
+    class Meta(FileItemBase.Meta):
         verbose_name = _('SVG-file')
         verbose_name_plural = _('SVG-files')
 
@@ -478,6 +483,11 @@ class SVGItem(FileItemBase):
 
 class ImageItem(ImageItemBase):
     change_form_class = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
+    admin_template_name = 'paper_uploads/collection_item/image.html'
+
+    class Meta(ImageItemBase.Meta):
+        verbose_name = _('image')
+        verbose_name_plural = _('images')
 
     def as_dict(self) -> Dict[str, Any]:
         return {
