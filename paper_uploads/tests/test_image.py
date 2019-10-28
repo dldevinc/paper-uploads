@@ -27,7 +27,7 @@ class TestUploadedImage(TestCase):
         self.assertEqual(self.object.name, 'Image')
 
     def test_extension_lowercase(self):
-        self.assertEqual(self.object.extension, 'jpeg')
+        self.assertEqual(self.object.extension, 'jpg')
 
     def test_file_size(self):
         self.assertEqual(self.object.size, 214779)
@@ -36,7 +36,7 @@ class TestUploadedImage(TestCase):
         self.assertEqual(self.object.hash, '8af6d51189e57d1e6ae4188a5a1fcaea4da39b7b')
 
     def test_canonical_name(self):
-        self.assertEqual(self.object.canonical_name, 'Image.jpeg')
+        self.assertEqual(self.object.canonical_name, 'Image.jpg')
 
     def test_file_exist(self):
         self.assertTrue(os.path.isfile(self.object.path))

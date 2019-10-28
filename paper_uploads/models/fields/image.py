@@ -1,15 +1,14 @@
 import os
 from typing import Dict, Any
-from django.db import models
 from django.core import checks
 from django.utils.crypto import get_random_string
 from django.core.exceptions import SuspiciousFileOperation
 from ...helpers import build_variations
 from ... import forms
-from .base import FileFieldBase
+from .base import FileFieldBase, FormattedFileField
 
 
-class VariationalFileField(models.FileField):
+class VariationalFileField(FormattedFileField):
     """
     Из-за того, что вариация может самостоятельно установить свой формат,
     возможна ситуация, когда вариации одного изображения перезапишут вариации

@@ -8,12 +8,13 @@ from ..storage import upload_storage
 from ..postprocess import postprocess_common_file
 from .. import tasks
 from .base import UploadedFileBase, SlaveModelMixin
+from .fields import FormattedFileField
 from .containers import FileFieldContainerMixin
 
 
 class UploadedFile(FileFieldContainerMixin, SlaveModelMixin, UploadedFileBase):
-    file = models.FileField(_('file'), max_length=255,
-        upload_to=settings.FILES_UPLOAD_TO, storage=upload_storage)
+    file = FormattedFileField(_('file'), max_length=255, storage=upload_storage,
+        upload_to=settings.FILES_UPLOAD_TO)
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
     class Meta(UploadedFileBase.Meta):

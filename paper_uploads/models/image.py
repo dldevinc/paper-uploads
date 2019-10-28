@@ -16,7 +16,7 @@ from ..storage import upload_storage
 from ..postprocess import postprocess_variation
 from ..variations import PaperVariation
 from .. import tasks
-from .fields.image import VariationalFileField
+from .fields import VariationalFileField
 from .base import UploadedFileBase, SlaveModelMixin
 from .containers import FileFieldContainerMixin
 

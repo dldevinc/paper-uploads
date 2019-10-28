@@ -26,7 +26,7 @@ from .base import SlaveModelMixin
 from .file import UploadedFileBase
 from .containers import FileFieldContainerMixin
 from .image import VariationalImageBase, VariationalFileField
-from .fields import CollectionItemTypeField
+from .fields import CollectionItemTypeField, FormattedFileField
 
 __all__ = [
     'CollectionItemBase', 'FileItemBase', 'ImageItemBase', 'CollectionBase',
@@ -167,7 +167,7 @@ class CollectionFileItemMixin:
 
 
 class FileItemBase(CollectionFileItemMixin, FileFieldContainerMixin, CollectionItemBase, UploadedFileBase):
-    file = models.FileField(_('file'), max_length=255, storage=upload_storage,
+    file = FormattedFileField(_('file'), max_length=255, storage=upload_storage,
         upload_to=settings.COLLECTION_FILES_UPLOAD_TO)
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 

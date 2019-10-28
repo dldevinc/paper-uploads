@@ -3,7 +3,7 @@ from django.db import migrations, transaction
 from django.db.models.signals import post_delete, Signal
 from .logging import logger
 from .models import UploadedFileBase
-from .models.fields.base import FileFieldBase
+from .models.fields import FileFieldBase
 
 collection_reordered = Signal(providing_args=["instance"])
 

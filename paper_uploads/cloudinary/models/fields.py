@@ -1,4 +1,4 @@
-from ...models.fields.file import FileFieldBase
+from ...models.fields import FileFieldBase
 from ... import forms
 
 

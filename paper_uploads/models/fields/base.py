@@ -1,3 +1,4 @@
+import os
 from typing import Dict, Any
 from django.db import models
 from django.core import checks
@@ -6,6 +7,9 @@ from ... import validators
 
 
 class FileFieldBase(models.OneToOneField):
+    """
+    Базовый класс для ссылок на модели файлов.
+    """
     def __init__(self, verbose_name=None, **kwargs):
         kwargs.setdefault('null', True)
         kwargs.setdefault('related_name', '+')
@@ -98,3 +102,16 @@ class FileFieldBase(models.OneToOneField):
                 validation['maxImageWidth'] = v.width_limit
                 validation['maxImageHeight'] = v.height_limit
         return validation
+
+
+class FormattedFileField(models.FileField):
+    """
+    Обертка над стандартным файловым полем, форматирующее расширение файлов.
+    """
+    def generate_filename(self, instance, filename):
+        file_root, file_ext = os.path.splitext(filename)
+        file_ext = file_ext.lower()
+        if file_ext == '.jpeg':
+            file_ext = '.jpg'
+        filename = ''.join([file_root, file_ext])
+        return super().generate_filename(instance, filename)

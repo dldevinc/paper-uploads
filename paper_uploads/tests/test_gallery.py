@@ -69,7 +69,7 @@ class TestCollection(TestCase):
 
     def test_extension_lowercase(self):
         self.assertEqual(self.svg_item.extension, 'svg')
-        self.assertEqual(self.image_item.extension, 'jpeg')
+        self.assertEqual(self.image_item.extension, 'jpg')
         self.assertEqual(self.file_item.extension, 'pdf')
         self.assertEqual(self.audio_item.extension, 'ogg')
 
@@ -87,7 +87,7 @@ class TestCollection(TestCase):
 
     def test_canonical_name(self):
         self.assertEqual(self.svg_item.canonical_name, 'cartman.svg')
-        self.assertEqual(self.image_item.canonical_name, 'Image.jpeg')
+        self.assertEqual(self.image_item.canonical_name, 'Image.jpg')
         self.assertEqual(self.file_item.canonical_name, 'Doc.pdf')
         self.assertEqual(self.audio_item.canonical_name, 'audio.ogg')
 
@@ -234,7 +234,7 @@ class TestCollection(TestCase):
                 'collectionId': 1,
                 'item_type': 'svg',
                 'name': 'cartman.svg',
-                'url': '/media/collections/files/{}/cartman.Svg'.format(now().strftime('%Y-%m-%d')),
+                'url': '/media/collections/files/{}/cartman.svg'.format(now().strftime('%Y-%m-%d')),
             },
             self.svg_item.as_dict(),
         )
@@ -245,8 +245,8 @@ class TestCollection(TestCase):
                 'id': 2,
                 'collectionId': 1,
                 'item_type': 'image',
-                'name': 'Image.jpeg',
-                'url': '/media/collections/images/{}/Image.Jpeg'.format(now().strftime('%Y-%m-%d')),
+                'name': 'Image.jpg',
+                'url': '/media/collections/images/{}/Image.jpg'.format(now().strftime('%Y-%m-%d')),
             },
             self.image_item.as_dict(),
         )
@@ -258,7 +258,7 @@ class TestCollection(TestCase):
                 'collectionId': 1,
                 'item_type': 'file',
                 'name': 'Doc.pdf',
-                'url': '/media/collections/files/{}/Doc.PDF'.format(now().strftime('%Y-%m-%d')),
+                'url': '/media/collections/files/{}/Doc.pdf'.format(now().strftime('%Y-%m-%d')),
             },
             self.file_item.as_dict(),
         )
@@ -297,7 +297,7 @@ class TestImageCollection(TestCase):
         self.assertEqual(self.image_item.name, 'Image')
 
     def test_extension_lowercase(self):
-        self.assertEqual(self.image_item.extension, 'jpeg')
+        self.assertEqual(self.image_item.extension, 'jpg')
 
     def test_file_size(self):
         self.assertEqual(self.image_item.size, 214779)
@@ -306,7 +306,7 @@ class TestImageCollection(TestCase):
         self.assertEqual(self.image_item.hash, '8af6d51189e57d1e6ae4188a5a1fcaea4da39b7b')
 
     def test_canonical_name(self):
-        self.assertEqual(self.image_item.canonical_name, 'Image.jpeg')
+        self.assertEqual(self.image_item.canonical_name, 'Image.jpg')
 
     def test_file_exist(self):
         self.assertTrue(os.path.isfile(self.image_item.path))
