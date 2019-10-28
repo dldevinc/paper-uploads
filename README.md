@@ -18,6 +18,8 @@
 от OneToOneField и не используют `<input type="file">`. Благодаря 
 этому, при ошибках валидации формы, не нужно прикреплять файлы 
 повторно.
+* Совместимость с [django-storages](https://github.com/jschneier/django-storages).
+* Опциональная интеграция с [Cloudinary](https://cloudinary.com/documentation/cloudinary_references).
 * Загруженные картинки можно нарезать на множество вариаций.
 Каждая вариация гибко настраивается. Можно указать размеры, 
 качество сжатия, формат, добавить дополнительные 
@@ -659,6 +661,82 @@ class Page(models.Model):
             )   
         )
     )
+```
+
+## Cloudinary
+Во встроенном модуле `paper_uploads.cloudinary` описаны поля и классы, 
+позволяющие загружать файлы и картинки в Cloudinary. При использовании 
+в качестве хранилища Cloudinary, постобработка и вариации не имеют 
+смысла, и поэтому отключены.
+
+### Installation
+1) `pip install cloudinary` 
+2) Добавить `paper_uploads.cloudinary` и `cloudinary` в `INSTALLED_APPS`.
+```python
+INSTALLED_APPS = [
+    # ...
+    'paper_uploads',
+    'paper_uploads.cloudinary',
+    'cloudinary',
+    # ...
+]
+```
+
+### Model fields
+```python
+from paper_uploads.cloudinary.models import *
+
+class Page(models.Model):
+    file = CloudinaryFileField(_('file'), blank=True)
+    video = CloudinaryMediaField(_('video'), blank=True)
+    image = CloudinaryImageField(_('image'), blank=True)
+```
+
+### Collections
+В модуле объявлено три класса элементов коллекции: 
+`CloudinaryFileItem`, `CloudinaryImageItem` и 
+`CloudinaryMediaItem` (для аудио и видео).
+
+**NOTE**: В отличие от библиотеки `PIL`, Cloudinary поддерживает загрузку
+SVG-файлов в качестве изображений. Поэтому для SVG-файлов отдельный 
+класс не нужен.
+
+Классы элементов коллекций Cloudinary используются также как обычные:
+```python
+from paper_uploads.models import *
+from paper_uploads.cloudinary.models import *
+
+
+class PageFiles(Collection):
+    image = CollectionItemTypeField(CloudinaryImageItem)
+    file = CollectionItemTypeField(CloudinaryFileItem)
+
+
+class Page(models.Model):
+    files = CollectionField(PageFiles)
+```
+
+По аналогии с классом `ImageCollection`, для Cloudinary объявлено 
+два класса готовых коллекций: `CloudinaryCollection` и `CloudinaryImageCollection`.
+`CloudinaryCollection` может хранить любые файлы, 
+а `CloudinaryImageCollection` — только изображения.
+
+```python
+from paper_uploads.models import *
+from paper_uploads.cloudinary.models import *
+
+
+class PageFiles(CloudinaryCollection):
+    pass
+
+
+class PageGallery(CloudinaryImageCollection):
+    pass
+
+
+class Page(models.Model):
+    files = CollectionField(PageFiles)
+    gallery = CollectionField(PageGallery)
 ```
 
 ## Settings

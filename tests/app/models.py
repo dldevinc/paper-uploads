@@ -46,6 +46,14 @@ class PageFilesGallery(Collection):
     file = CollectionItemTypeField(FileItem)
 
 
+class PageCloudinaryGallery(CloudinaryImageCollection):
+    pass
+
+
+class PageCloudinaryFilesGallery(CloudinaryCollection):
+    pass
+
+
 class Page(models.Model):
     header = models.CharField(_('header'), max_length=255)
     file = FileField(_('simple file'), blank=True)
@@ -78,6 +86,8 @@ class Page(models.Model):
     cloud_file = CloudinaryFileField(_('file'), blank=True)
     cloud_video = CloudinaryMediaField(_('video'), blank=True)
     cloud_image = CloudinaryImageField(_('image'), blank=True)
+    cloud_files = CollectionField(PageCloudinaryFilesGallery, verbose_name=_('file gallery'))
+    cloud_gallery = CollectionField(PageCloudinaryGallery, verbose_name=_('image gallery'))
 
     ext_file = FileField(_('Extension'), blank=True, validators=[
         ExtensionValidator(['jpg', 'jpeg'])

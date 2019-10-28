@@ -16,6 +16,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='page',
             name='cloud_video',
-            field=paper_uploads.cloudinary.models.fields.CloudinaryMediaField(blank=True, on_delete=django.db.models.deletion.SET_NULL, to='paper_uploads_cloudinary.CloudinaryVideo', verbose_name='video'),
+            field=paper_uploads.cloudinary.models.fields.CloudinaryMediaField(blank=True, on_delete=django.db.models.deletion.SET_NULL, to='paper_uploads_cloudinary.CloudinaryMedia', verbose_name='video'),
         ),
     ]

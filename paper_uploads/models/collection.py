@@ -227,7 +227,7 @@ class FileItemBase(CollectionFileItemMixin, FileFieldContainerMixin, CollectionI
 class FilePreviewIconItemMixin(models.Model):
     preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
 
-    class Meta(CollectionItemBase.Meta):
+    class Meta:
         abstract = True
 
     def save(self, *args, **kwargs):
@@ -267,7 +267,7 @@ class ImageItemBase(CollectionFileItemMixin, FileFieldContainerMixin, Collection
 
     def attach_file(self, file: File):
         # fix recursion exception
-        if not self.collection_content_type:
+        if not self.collection_content_type_id:
             raise RuntimeError('method must be called after `attach_to`')
         super().attach_file(file)
 

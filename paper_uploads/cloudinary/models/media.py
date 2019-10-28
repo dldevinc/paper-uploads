@@ -16,8 +16,8 @@ class CloudinaryMedia(CloudinaryContainerMixin, SlaveModelMixin, UploadedFileBas
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
     class Meta(UploadedFileBase.Meta):
-        verbose_name = _('video')
-        verbose_name_plural = _('videos')
+        verbose_name = _('media')
+        verbose_name_plural = _('media')
 
     def attach_file(self, file: File):
         # set name without Cloudinary suffix
