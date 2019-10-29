@@ -37,9 +37,15 @@ class CloudinaryContainerMixin(ProxyAttributesContainerMixin, ContainerMixinBase
         else:
             upload = cloudinary.uploader.upload
 
+        cloudinary_options = options.get('cloudinary', {})
+
         try:
-            result = upload(file, type=self.cloudinary_type,
-                            resource_type=self.cloudinary_resource_type, use_filename=True)
+            result = upload(
+                file,
+                type=self.cloudinary_type,
+                resource_type=self.cloudinary_resource_type,
+                **cloudinary_options
+            )
         except cloudinary.exceptions.Error as e:
             raise ValidationError(*e.args)
 

@@ -1,15 +1,13 @@
-import posixpath
 from typing import Dict, Any
-from django.core.files import File
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
 from cloudinary.models import CloudinaryField
 from ...models.base import UploadedFileBase, SlaveModelMixin
 from ...models.image import UploadedImageBase
-from ..container import CloudinaryContainerMixin
+from .base import CloudinaryFieldMixin
 
 
-class CloudinaryImage(CloudinaryContainerMixin, SlaveModelMixin, UploadedImageBase):
+class CloudinaryImage(CloudinaryFieldMixin, SlaveModelMixin, UploadedImageBase):
     cloudinary_resource_type = 'image'
 
     file = CloudinaryField(_('file'), resource_type='image')
@@ -17,13 +15,6 @@ class CloudinaryImage(CloudinaryContainerMixin, SlaveModelMixin, UploadedImageBa
     class Meta(UploadedFileBase.Meta):
         verbose_name = _('image')
         verbose_name_plural = _('images')
-
-    def attach_file(self, file: File, **options):
-        # set name without Cloudinary suffix
-        basename = posixpath.basename(file.name)
-        file_name, file_ext = posixpath.splitext(basename)
-        self.name = file_name
-        super(UploadedImageBase, self).attach_file(file, **options)
 
     @classmethod
     def get_validation(cls) -> Dict[str, Any]:

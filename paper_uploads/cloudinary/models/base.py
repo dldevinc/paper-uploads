@@ -1,0 +1,17 @@
+import posixpath
+from django.core.files import File
+from ..container import CloudinaryContainerMixin
+
+
+class CloudinaryFieldMixin(CloudinaryContainerMixin):
+    def attach_file(self, file: File, **options):
+        # set name without Cloudinary suffix
+        basename = posixpath.basename(file.name)
+        file_name, file_ext = posixpath.splitext(basename)
+        self.name = file_name
+
+        # set cloudinary options from field data
+        owner_field = self.get_owner_field()
+        options.setdefault('cloudinary', owner_field.cloudinary_options)
+
+        super().attach_file(file, **options)
