@@ -670,17 +670,25 @@ class Page(models.Model):
 смысла, и поэтому отключены.
 
 ### Installation
-1) `pip install cloudinary` 
+1) `pip install cloudinary`
 2) Добавить `paper_uploads.cloudinary` и `cloudinary` в `INSTALLED_APPS`.
-```python
-INSTALLED_APPS = [
-    # ...
-    'paper_uploads',
-    'paper_uploads.cloudinary',
-    'cloudinary',
-    # ...
-]
-```
+    ```python
+    INSTALLED_APPS = [
+        # ...
+        'paper_uploads',
+        'paper_uploads.cloudinary',
+        'cloudinary',
+        # ...
+    ]
+    ```
+3) Задать [данные учетной записи](https://github.com/cloudinary/pycloudinary#configuration) Cloudinary
+    ```python
+    CLOUDINARY = {
+       'cloud_name': 'mycloud',
+       'api_key': '012345678901234',
+       'api_secret': 'g1rtyOCvm4tDIfCPFFuh4u1W0PC'
+    }
+    ```
 
 ### Model fields
 ```python
@@ -737,6 +745,18 @@ class PageGallery(CloudinaryImageCollection):
 class Page(models.Model):
     files = CollectionField(PageFiles)
     gallery = CollectionField(PageGallery)
+```
+
+### Usage
+В шаблонах доступен Jinja2-аналог шаблонного тэга `cloudinary_url`,
+входящего в состав библиотеки [cloudinary](https://github.com/cloudinary/pycloudinary).
+```jinja2
+<img src={% cloudinary_url page.image width=1024 crop=fill %}>
+```
+
+Также доступна одноименная глобальная функция:
+```jinja2
+<img src={{ cloudinary_url(page.image, width=1024, crop='fill') }}>
 ```
 
 ## Settings
