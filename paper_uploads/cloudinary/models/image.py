@@ -18,12 +18,12 @@ class CloudinaryImage(CloudinaryContainerMixin, SlaveModelMixin, UploadedImageBa
         verbose_name = _('image')
         verbose_name_plural = _('images')
 
-    def attach_file(self, file: File):
+    def attach_file(self, file: File, **options):
         # set name without Cloudinary suffix
         basename = posixpath.basename(file.name)
         file_name, file_ext = posixpath.splitext(basename)
         self.name = file_name
-        super(UploadedImageBase, self).attach_file(file)
+        super(UploadedImageBase, self).attach_file(file, **options)
 
     @classmethod
     def get_validation(cls) -> Dict[str, Any]:

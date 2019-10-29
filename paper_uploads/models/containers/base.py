@@ -44,11 +44,11 @@ class ContainerMixinBase:
             "'%s' object has no attribute '%s'" % (self.__class__.__name__, item)
         )
 
-    def attach_file(self, file: File):
-        data = self._attach_file(file)
+    def attach_file(self, file: File, **options):
+        data = self._attach_file(file, **options)
         self._post_attach_file(data)
 
-    def _attach_file(self, file: File):
+    def _attach_file(self, file: File, **options):
         raise NotImplementedError
 
     def _post_attach_file(self, data=None):

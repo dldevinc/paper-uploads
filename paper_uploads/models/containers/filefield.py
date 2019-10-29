@@ -8,7 +8,7 @@ class FileFieldContainerMixin(ProxyAttributesContainerMixin, ContainerMixinBase)
         'url', 'path', 'open', 'read', 'close', 'closed'
     }
 
-    def _attach_file(self, file: File):
+    def _attach_file(self, file: File, **options):
         self.file.save(file.name, file, save=False)
 
     def rename_file(self, new_name: str):

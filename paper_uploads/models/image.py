@@ -131,7 +131,7 @@ class UploadedImageBase(UploadedFileBase):
     class Meta(UploadedFileBase.Meta):
         abstract = True
 
-    def attach_file(self, file: File):
+    def attach_file(self, file: File, **options):
         try:
             image = Image.open(file)
         except OSError:
@@ -140,7 +140,7 @@ class UploadedImageBase(UploadedFileBase):
             self.width, self.height = image.size
         finally:
             file.seek(0)
-        super().attach_file(file)
+        super().attach_file(file, **options)
 
 
 class VariationalImageBase(UploadedImageBase):

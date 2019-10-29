@@ -17,12 +17,12 @@ class CloudinaryFile(CloudinaryContainerMixin, SlaveModelMixin, UploadedFileBase
         verbose_name = _('file')
         verbose_name_plural = _('files')
 
-    def attach_file(self, file: File):
+    def attach_file(self, file: File, **options):
         # set name without Cloudinary suffix
         basename = posixpath.basename(file.name)
         file_name, file_ext = posixpath.splitext(basename)
         self.name = file_name
-        super().attach_file(file)
+        super().attach_file(file, **options)
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:

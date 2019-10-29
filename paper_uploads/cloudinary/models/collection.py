@@ -42,12 +42,12 @@ class CloudinaryFileItem(CollectionFileItemMixin, FilePreviewIconItemMixin, Clou
     def file_supported(cls, file: File) -> bool:
         return True
 
-    def attach_file(self, file: File):
+    def attach_file(self, file: File, **options):
         # set name without Cloudinary suffix
         basename = posixpath.basename(file.name)
         file_name, file_ext = posixpath.splitext(basename)
         self.name = file_name
-        super().attach_file(file)
+        super().attach_file(file, **options)
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -79,7 +79,7 @@ class CloudinaryImageItem(CollectionFileItemMixin, CloudinaryContainerMixin, Col
         basetype, subtype = mimetype.split('/', 1)
         return basetype == 'image'
 
-    def attach_file(self, file: File):
+    def attach_file(self, file: File, **options):
         # fix recursion exception
         if not self.collection_content_type_id:
             raise RuntimeError('method must be called after `attach_to`')
@@ -88,7 +88,7 @@ class CloudinaryImageItem(CollectionFileItemMixin, CloudinaryContainerMixin, Col
         basename = posixpath.basename(file.name)
         file_name, file_ext = posixpath.splitext(basename)
         self.name = file_name
-        super(UploadedImageBase, self).attach_file(file)
+        super(UploadedImageBase, self).attach_file(file, **options)
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -130,12 +130,12 @@ class CloudinaryMediaItem(CollectionFileItemMixin, FilePreviewIconItemMixin, Clo
         basetype, subtype = mimetype.split('/', 1)
         return basetype in {'video', 'audio'}
 
-    def attach_file(self, file: File):
+    def attach_file(self, file: File, **options):
         # set name without Cloudinary suffix
         basename = posixpath.basename(file.name)
         file_name, file_ext = posixpath.splitext(basename)
         self.name = file_name
-        super().attach_file(file)
+        super().attach_file(file, **options)
 
     def as_dict(self) -> Dict[str, Any]:
         return {

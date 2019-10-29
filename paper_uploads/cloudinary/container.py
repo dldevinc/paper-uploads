@@ -31,7 +31,7 @@ class CloudinaryContainerMixin(ProxyAttributesContainerMixin, ContainerMixinBase
                 public_id += '.' + self.file.format
             return public_id
 
-    def _attach_file(self, file: File):
+    def _attach_file(self, file: File, **options):
         if file.size >= 100 * 1024 * 1024:
             upload = cloudinary.uploader.upload_large
         else:
