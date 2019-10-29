@@ -131,6 +131,11 @@ class UploadedImageBase(UploadedFileBase):
     class Meta(UploadedFileBase.Meta):
         abstract = True
 
+
+class UploadedPillowImageBase(UploadedImageBase):
+    class Meta(UploadedImageBase.Meta):
+        abstract = True
+
     def attach_file(self, file: File, **options):
         try:
             image = Image.open(file)
@@ -143,8 +148,8 @@ class UploadedImageBase(UploadedFileBase):
         super().attach_file(file, **options)
 
 
-class VariationalImageBase(UploadedImageBase):
-    class Meta(UploadedImageBase.Meta):
+class VariationalImageBase(UploadedPillowImageBase):
+    class Meta(UploadedPillowImageBase.Meta):
         abstract = True
 
     def __init__(self, *args, **kwargs):
