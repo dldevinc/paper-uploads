@@ -557,7 +557,7 @@ class ImageCollection(Collection):
     def get_validation(cls) -> Dict[str, Any]:
         return {
             **super().get_validation(),
-            'acceptFiles': 'image/*',
+            'acceptFiles': ['image/*'],
         }
 
     def detect_file_type(self, file: File) -> str:

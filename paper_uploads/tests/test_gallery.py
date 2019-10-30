@@ -415,5 +415,5 @@ class TestCollectionField(TestCase):
         self.assertDictEqual(formfield.widget.get_validation(), {
             'sizeLimit': 32 * 1024 * 1024,
             'allowedExtensions': ('svg', 'bmp', 'jpeg'),
-            'acceptFiles': 'image/*'
+            'acceptFiles': ['image/*']
         })
