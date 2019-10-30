@@ -1,105 +1,99 @@
+import re
 import os
+import pytest
 from pathlib import Path
-from django.test import TestCase
 from django.core.files import File
+from django.utils.timezone import now
 from tests.app.models import Page
-from ..models import UploadedFile
-from ..models.fields import FileField
 from .. import validators
+from ..models import UploadedFile, FileField
 
+pytestmark = pytest.mark.django_db
 TESTS_PATH = Path(__file__).parent / 'samples'
 
 
-class TestUploadedFile(TestCase):
-    def setUp(self) -> None:
+class TestUploadedFile:
+    def test_file(self):
         with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as fp:
-            self.object = UploadedFile()
-            self.object.attach_file(File(fp, name='Doc.PDF'))
-            self.object.save()
-
-    def tearDown(self) -> None:
-        self.object.delete()
-
-    def test_name(self):
-        self.assertEqual(self.object.name, 'Doc')
-
-    def test_display_name(self):
-        self.assertEqual(self.object.display_name, 'Doc')
-
-    def test_extension_lowercase(self):
-        self.assertEqual(self.object.extension, 'pdf')
-
-    def test_file_size(self):
-        self.assertEqual(self.object.size, 9678)
-
-    def test_file_hash(self):
-        self.assertEqual(self.object.hash, 'bebc2ddd2a8b8270b359990580ff346d14c021fa')
-
-    def test_canonical_name(self):
-        self.assertEqual(self.object.canonical_name, 'Doc.pdf')
-
-    def test_file_exist(self):
-        self.assertTrue(os.path.isfile(self.object.path))
-
-    def test_owner_model(self):
-        self.assertIsNone(self.object.get_owner_model())
-
-    def test_owner_field(self):
-        self.assertIsNone(self.object.get_owner_field())
-
-    def test_validation(self):
-        self.assertEqual(self.object.get_validation(), {})
-
-    def test_proxy_attrs(self):
-        for name in self.object.PROXY_FILE_ATTRIBUTES:
-            with self.subTest(name):
-                self.assertEqual(
-                    getattr(self.object, name),
-                    getattr(self.object.file, name),
-                )
-
-
-class TestSlaveUploadedFile(TestCase):
-    def setUp(self) -> None:
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as fp:
-            self.object = UploadedFile(
+            obj = UploadedFile(
                 owner_app_label='app',
                 owner_model_name='page',
                 owner_fieldname='file'
             )
-            self.object.attach_file(File(fp, name='Doc.PDF'))
-            self.object.save()
+            obj.attach_file(File(fp, name='Doc.PDF'))
+            obj.save()
 
-    def tearDown(self) -> None:
-        self.object.delete()
+        try:
+            suffix = re.match(r'Doc((?:_\w+)?)', os.path.basename(obj.file.name)).group(1)
 
-    def test_owner_model(self):
-        self.assertIs(self.object.get_owner_model(), Page)
+            assert obj.PROXY_FILE_ATTRIBUTES == {'url', 'path', 'open', 'read', 'close', 'closed'}
+            assert obj.name == 'Doc'
+            assert obj.display_name == 'Doc'
+            assert obj.canonical_name == 'Doc.pdf'
+            assert obj.extension == 'pdf'
+            assert obj.size == 9678
+            assert obj.hash == 'bebc2ddd2a8b8270b359990580ff346d14c021fa'
 
-    def test_owner_field(self):
-        self.assertIs(self.object.get_owner_field(), Page._meta.get_field('file'))
+            assert os.path.isfile(obj.path)
+
+            for name in obj.PROXY_FILE_ATTRIBUTES:
+                assert getattr(obj, name) == getattr(obj.file, name)
+
+            # SlaveModelMixin methods
+            assert obj.get_owner_model() is Page
+            assert obj.get_owner_field() is Page._meta.get_field('file')
+            assert obj.get_validation() == {}
+
+            # FileFieldContainerMixin methods
+            assert obj.get_file_name() == 'files/{}/Doc{}.pdf'.format(now().strftime('%Y-%m-%d'), suffix)
+            assert obj.get_file_size() == 9678
+            assert obj.file_exists() is True
+            assert obj.get_file_hash() == 'bebc2ddd2a8b8270b359990580ff346d14c021fa'
+            assert obj.get_file_url() == '/media/files/{}/Doc{}.pdf'.format(now().strftime('%Y-%m-%d'), suffix)
+        finally:
+            obj.delete()
+
+        assert obj.file_exists() is False
+
+    def test_orphan_file(self):
+        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as fp:
+            obj = UploadedFile()
+            obj.attach_file(File(fp, name='Doc.PDF'))
+            obj.save()
+
+        try:
+            assert obj.get_owner_model() is None
+            assert obj.get_owner_field() is None
+        finally:
+            obj.delete()
+
+        assert obj.file_exists() is False
 
 
-class TestFileField(TestCase):
-    def setUp(self) -> None:
-        self.field = FileField(validators=[
-            validators.SizeValidator(32 * 1024 * 1024),
+class TestFileField:
+    def test_rel(self):
+        field = FileField()
+        assert field.null is True
+        assert field.related_model == 'paper_uploads.UploadedFile'
+        assert field.postprocess is None
+
+    def test_validators(self):
+        field = FileField(validators=[
+            validators.SizeValidator(10 * 1024 * 1024),
             validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
             validators.MimetypeValidator(['image/jpeg', 'image/bmp', 'image/Png'])
         ])
-        self.field.contribute_to_class(Page, 'file')
+        field.contribute_to_class(Page, 'file')
 
-    def test_validation(self):
-        self.assertDictEqual(self.field.get_validation(), {
-            'sizeLimit': 32 * 1024 * 1024,
+        assert field.get_validation() == {
+            'sizeLimit': 10 * 1024 * 1024,
             'allowedExtensions': ('svg', 'bmp', 'jpeg'),
             'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png')
-        })
+        }
 
-    def test_widget_validation(self):
-        formfield = self.field.formfield()
-        self.assertDictEqual(formfield.widget.get_validation(), {
-            'sizeLimit': 32 * 1024 * 1024,
+        formfield = field.formfield()
+        assert formfield.widget.get_validation() == {
+            'sizeLimit': 10 * 1024 * 1024,
             'allowedExtensions': ('svg', 'bmp', 'jpeg'),
             'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png')
-        })
+        }
