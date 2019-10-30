@@ -17,30 +17,13 @@ DEFAULTS = {
         admin_preview=dict(
             size=(144, 108),
             format='jpeg',
+            versions={'webp', '2x'},
             jpeg=dict(
-                quality=88
-            ),
-        ),
-        admin_preview_2x=dict(
-            size=(288, 216),
-            format='jpeg',
-            jpeg=dict(
-                quality=85
-            ),
-        ),
-        admin_preview_webp=dict(
-            size=(144, 108),
-            format='webp',
-            webp=dict(
                 quality=75
             ),
-        ),
-        admin_preview_webp_2x=dict(
-            size=(288, 216),
-            format='webp',
             webp=dict(
-                quality=60
-            ),
+                quality=65
+            )
         ),
     ),
 

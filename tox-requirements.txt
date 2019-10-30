@@ -8,6 +8,6 @@ django-storages==1.7.2
 django-rq==2.1.0
 dropbox==9.4.0
 -e git://github.com/dldevinc/paper-admin@v0.0.6#egg=paper-admin
-variations==0.0.14
+variations==0.0.15
 cloudinary==1.18.2
 requests==2.22.0

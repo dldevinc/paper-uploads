@@ -4,11 +4,6 @@ from .utils import lowercase_copy
 from .variations import PaperVariation
 
 
-def create_webp_version(config: Dict[str, Any]):
-    version_config = dict(config, format='webp')
-    return PaperVariation(**version_config)
-
-
 def create_retina_version(config: Dict[str, Any], *, factor=2):
     varaition_size = config.get('size', (0, 0))
     version_size = tuple(x * factor for x in varaition_size)
@@ -22,10 +17,12 @@ def get_addition_versions(name: str, config: Dict[str, Any], variation: PaperVar
 
     def add_retina_versions(factor: int):
         version_name = '{}_{}x'.format(name, factor)
-        addition_variations[version_name] = create_retina_version(config, factor=factor)
+        version_config = dict(config, name=version_name)
+        addition_variations[version_name] = create_retina_version(version_config, factor=factor)
         if need_webp_version:
             version_name = '{}_webp_{}x'.format(name, factor)
-            addition_variations[version_name] = create_webp_version(config)
+            version_config = dict(config, name=version_name, format='webp')
+            addition_variations[version_name] = create_retina_version(version_config, factor=factor)
 
     if '2x' in variation.versions:
         add_retina_versions(2)
@@ -35,7 +32,8 @@ def get_addition_versions(name: str, config: Dict[str, Any], variation: PaperVar
         add_retina_versions(4)
     if need_webp_version:
         version_name = '{}_webp'.format(name)
-        addition_variations[version_name] = create_webp_version(config)
+        version_config = dict(config, name=version_name, format='webp')
+        addition_variations[version_name] = PaperVariation(**version_config)
     return addition_variations
 
 
