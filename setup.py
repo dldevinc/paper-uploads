@@ -31,6 +31,7 @@ REQUIRED = [
 # What packages are optional?
 EXTRAS = {
     'rq': ['django-rq>2.1,<2.2'],
+    'cloudinary': ['cloudinary>1.18,<1.19'],
     'facedetection': ['face_recognition>1.2,<1.3'],
 }
 
