@@ -12,6 +12,7 @@ class CloudinaryFieldMixin(CloudinaryContainerMixin):
 
         # set cloudinary options from field data
         owner_field = self.get_owner_field()
-        options.setdefault('cloudinary', owner_field.cloudinary_options)
+        if owner_field is not None:
+            options.setdefault('cloudinary', owner_field.cloudinary_options)
 
         super().attach_file(file, **options)

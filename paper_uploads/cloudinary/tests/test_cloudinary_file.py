@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from django.test import TestCase
 from django.core.files import File
@@ -60,7 +59,7 @@ class TestSlaveCloudinaryFile(TestCase):
             self.object = CloudinaryFile(
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='file'
+                owner_fieldname='cloud_file'
             )
             self.object.attach_file(File(fp, name='Doc.PDF'))
             self.object.save()
@@ -72,4 +71,4 @@ class TestSlaveCloudinaryFile(TestCase):
         self.assertIs(self.object.get_owner_model(), Page)
 
     def test_owner_field(self):
-        self.assertIs(self.object.get_owner_field(), Page._meta.get_field('file'))
+        self.assertIs(self.object.get_owner_field(), Page._meta.get_field('cloud_file'))

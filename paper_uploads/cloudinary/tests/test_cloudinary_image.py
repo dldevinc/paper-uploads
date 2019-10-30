@@ -76,7 +76,7 @@ class TestSlaveCloudinaryImage(TestCase):
             self.object = CloudinaryImage(
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='image_ext'
+                owner_fieldname='cloud_image'
             )
             self.object.attach_file(File(fp, name='TestImage.Jpeg'))
             self.object.save()
@@ -88,4 +88,4 @@ class TestSlaveCloudinaryImage(TestCase):
         self.assertIs(self.object.get_owner_model(), Page)
 
     def test_owner_field(self):
-        self.assertIs(self.object.get_owner_field(), Page._meta.get_field('image_ext'))
+        self.assertIs(self.object.get_owner_field(), Page._meta.get_field('cloud_image'))

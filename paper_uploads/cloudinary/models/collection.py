@@ -50,18 +50,19 @@ class CloudinaryFileItem(CollectionFileItemMixin, FilePreviewIconItemMixin, Clou
 
         # set cloudinary options from field data
         item_type_field = self.get_itemtype_field()
-        cloudinary_options = {
-            'use_filename': item_type_field.options.get('use_filename', True),
-            'unique_filename': item_type_field.options.get('unique_filename', True),
-            'overwrite': item_type_field.options.get('overwrite', True),
-        }
-        public_id = item_type_field.options.get('public_id')
-        if public_id is not None:
-            self.cloudinary_options['public_id'] = public_id
-        folder = item_type_field.options.get('folder')
-        if folder is not None:
-            self.cloudinary_options['folder'] = folder
-        options.setdefault('cloudinary', cloudinary_options)
+        if item_type_field is not None:
+            cloudinary_options = {
+                'use_filename': item_type_field.options.get('use_filename', True),
+                'unique_filename': item_type_field.options.get('unique_filename', True),
+                'overwrite': item_type_field.options.get('overwrite', True),
+            }
+            public_id = item_type_field.options.get('public_id')
+            if public_id is not None:
+                self.cloudinary_options['public_id'] = public_id
+            folder = item_type_field.options.get('folder')
+            if folder is not None:
+                self.cloudinary_options['folder'] = folder
+            options.setdefault('cloudinary', cloudinary_options)
 
         super().attach_file(file, **options)
 
