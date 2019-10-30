@@ -1,6 +1,7 @@
 /* global gettext */
 
 import deepmerge from "deepmerge";
+import allSettled from "promise.allsettled";
 import {Uploader, ValidationError, getPaperParams} from "./_uploader";
 import {showError, collectError, showCollectedErrors} from "./_utils";
 
@@ -343,10 +344,11 @@ Collection.prototype.cleanItems = function() {
 /**
  * Создание коллекции.
  * @private
+ * @returns {Promise}
  */
 Collection.prototype._createCollection = function() {
     if (!isNaN(this.collectionId)) {
-        return
+        return Promise.reject('collection already exists');
     }
 
     const data = new FormData();
@@ -356,15 +358,11 @@ Collection.prototype._createCollection = function() {
     });
 
     const _this = this;
-    Promise.all([
-        preloader.show(),
-        fetch(this._opts.urls.createCollection, {
-            method: 'POST',
-            credentials: 'same-origin',
-            body: data
-        })
-    ]).then(function(values) {
-        const response = values[1];
+    return fetch(this._opts.urls.createCollection, {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: data
+    }).then(function(response) {
         if (!response.ok) {
             const error = new Error(`${response.status} ${response.statusText}`);
             error.response = response;
@@ -378,18 +376,8 @@ Collection.prototype._createCollection = function() {
             throw error
         }
 
-        preloader.hide();
         _this.collectionId = response.collection_id;
         _this.trigger('collection:created');
-    }).catch(function(error) {
-        preloader.hide();
-        if ((typeof error === 'object') && error.response && error.response.errors) {
-            showError(error.response.errors);
-        } else if (error instanceof Error) {
-            showError(error.message);
-        } else {
-            showError(error);
-        }
     });
 };
 
@@ -397,15 +385,16 @@ Collection.prototype._createCollection = function() {
  * Удаление элемента коллекции.
  * @param item
  * @private
+ * @returns {Promise}
  */
 Collection.prototype._deleteItem = function(item) {
     if (isNaN(this.collectionId)) {
-        return
+        return Promise.reject('collection required');
     }
 
     const instance_id = parseInt(item && item.dataset.pk);
     if (isNaN(instance_id)) {
-        return
+        return Promise.reject('invalid ID')
     }
 
     const data = new FormData();
@@ -418,21 +407,16 @@ Collection.prototype._deleteItem = function(item) {
     data.append('item_type', item.dataset.itemType);
 
     const _this = this;
-    Promise.all([
-        preloader.show(),
-        fetch(this._opts.urls.deleteItem, {
-            method: 'POST',
-            credentials: 'same-origin',
-            body: data
-        })
-    ]).then(function(values) {
-        const response = values[1];
+    return fetch(this._opts.urls.deleteItem, {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: data
+    }).then(function(response) {
         if (!response.ok) {
             const error = new Error(`${response.status} ${response.statusText}`);
             error.response = response;
             throw error;
         }
-
         return response.json();
     }).then(function(response) {
         if (response.errors && response.errors.length) {
@@ -441,22 +425,11 @@ Collection.prototype._deleteItem = function(item) {
             throw error
         }
 
-        preloader.hide();
-
         // анимация удаления
         item.addEventListener('animationend', function() {
             item.remove();
         });
         item.classList.add(_this._opts.itemRemovingState);
-    }).catch(function(error) {
-        preloader.hide();
-        if ((typeof error === 'object') && error.response && error.response.errors) {
-            showError(error.response.errors);
-        } else if (error instanceof Error) {
-            showError(error.message);
-        } else {
-            showError(error);
-        }
     });
 };
 
@@ -465,34 +438,30 @@ Collection.prototype._deleteItem = function(item) {
  * @param item
  * @param $dialog
  * @private
+ * @returns {Promise}
  */
 Collection.prototype._changeItem = function(item, $dialog) {
     if (isNaN(this.collectionId)) {
-        return
+        return Promise.reject('collection required');
     }
 
     const instance_id = parseInt(item && item.dataset.pk);
     if (isNaN(instance_id)) {
-        return
+        return Promise.reject('invalid ID')
     }
 
     const _this = this;
     const $form = $dialog.find('form');
-    Promise.all([
-        preloader.show(),
-        fetch($form.prop('action'), {
-            method: 'POST',
-            credentials: 'same-origin',
-            body: new FormData($form.get(0))
-        })
-    ]).then(function(values) {
-        const response = values[1];
+    return fetch($form.prop('action'), {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: new FormData($form.get(0))
+    }).then(function(response) {
         if (!response.ok) {
             const error = new Error(`${response.status} ${response.statusText}`);
             error.response = response;
             throw error;
         }
-
         return response.json();
     }).then(function(response) {
         if (response.errors && response.errors.length) {
@@ -501,7 +470,6 @@ Collection.prototype._changeItem = function(item, $dialog) {
             throw error
         }
 
-        preloader.hide();
         formUtils.cleanFormErrors($form.get(0));
         if (response.form_errors) {
             formUtils.addFormErrorsFromJSON($form.get(0), response.form_errors);
@@ -520,25 +488,17 @@ Collection.prototype._changeItem = function(item, $dialog) {
                 fileName.textContent = response.name;
             }
         }
-    }).catch(function(error) {
-        preloader.hide();
-        if ((typeof error === 'object') && error.response && error.response.errors) {
-            showError(error.response.errors);
-        } else if (error instanceof Error) {
-            showError(error.message);
-        } else {
-            showError(error);
-        }
     });
 };
 
 /**
  * Удаление галереи.
  * @private
+ * @returns {Promise}
  */
 Collection.prototype._deleteCollection = function() {
     if (isNaN(this.collectionId)) {
-        return
+        return Promise.reject('collection required')
     }
 
     const data = new FormData();
@@ -553,15 +513,11 @@ Collection.prototype._deleteCollection = function() {
     this.uploader.uploader.cancelAll();
 
     const _this = this;
-    Promise.all([
-        preloader.show(),
-        fetch(this._opts.urls.deleteCollection, {
-            method: 'POST',
-            credentials: 'same-origin',
-            body: data
-        })
-    ]).then(function(values) {
-        const response = values[1];
+    return fetch(this._opts.urls.deleteCollection, {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: data
+    }).then(function(response) {
         if (!response.ok) {
             const error = new Error(`${response.status} ${response.statusText}`);
             error.response = response;
@@ -586,22 +542,11 @@ Collection.prototype._deleteCollection = function() {
                 _this.cleanItems();
                 _this.collectionId = '';
                 _this.trigger('collection:deleted');
-                preloader.hide();
             });
         } else {
             _this.cleanItems();
             _this.collectionId = '';
             _this.trigger('collection:deleted');
-            preloader.hide();
-        }
-    }).catch(function(error) {
-        preloader.hide();
-        if ((typeof error === 'object') && error.response && error.response.errors) {
-            showError(error.response.errors);
-        } else if (error instanceof Error) {
-            showError(error.message);
-        } else {
-            showError(error);
         }
     });
 };
@@ -628,7 +573,22 @@ Collection.prototype.addListeners = function() {
         }
 
         event.preventDefault();
-        _this._createCollection();
+
+        Promise.all([
+            preloader.show(),
+            _this._createCollection()
+        ]).then(function() {
+            preloader.hide();
+        }).catch(function(error) {
+            preloader.hide();
+            if ((typeof error === 'object') && error.response && error.response.errors) {
+                showError(error.response.errors);
+            } else if (error instanceof Error) {
+                showError(error.message);
+            } else {
+                showError(error);
+            }
+        });
     });
 
     // удаление галереи
@@ -653,7 +613,21 @@ Collection.prototype.addListeners = function() {
                     label: gettext('Delete'),
                     className: 'btn-danger',
                     callback: function() {
-                        _this._deleteCollection();
+                        Promise.all([
+                            preloader.show(),
+                            _this._deleteCollection()
+                        ]).then(function() {
+                            preloader.hide()
+                        }).catch(function(error) {
+                            preloader.hide();
+                            if ((typeof error === 'object') && error.response && error.response.errors) {
+                                showError(error.response.errors);
+                            } else if (error instanceof Error) {
+                                showError(error.message);
+                            } else {
+                                showError(error);
+                            }
+                        });
                     }
                 }
             }
@@ -719,7 +693,21 @@ Collection.prototype.addListeners = function() {
                         label: gettext('Save'),
                         className: 'btn-success',
                         callback: function() {
-                            _this._changeItem(item, this);
+                            Promise.all([
+                                preloader.show(),
+                                _this._changeItem(item, $dialog)
+                            ]).then(function() {
+                                preloader.hide();
+                            }).catch(function(error) {
+                                preloader.hide();
+                                if ((typeof error === 'object') && error.response && error.response.errors) {
+                                    showError(error.response.errors);
+                                } else if (error instanceof Error) {
+                                    showError(error.message);
+                                } else {
+                                    showError(error);
+                                }
+                            });
                             return false;
                         }
                     }
@@ -728,7 +716,21 @@ Collection.prototype.addListeners = function() {
 
             const $form = $dialog.find('form');
             $form.on('submit', function() {
-                _this._changeItem(item, $dialog);
+                Promise.all([
+                    preloader.show(),
+                    _this._changeItem(item, $dialog)
+                ]).then(function() {
+                    preloader.hide();
+                }).catch(function(error) {
+                    preloader.hide();
+                    if ((typeof error === 'object') && error.response && error.response.errors) {
+                        showError(error.response.errors);
+                    } else if (error instanceof Error) {
+                        showError(error.message);
+                    } else {
+                        showError(error);
+                    }
+                });
                 return false;
             });
         }).catch(function(error) {
@@ -778,7 +780,21 @@ Collection.prototype.addListeners = function() {
                     className: 'btn-danger',
                     callback: function() {
                         const item = event.target.closest(_this._opts.item);
-                        _this._deleteItem(item);
+                        Promise.all([
+                            preloader.show(),
+                            _this._deleteItem(item)
+                        ]).then(function() {
+                            preloader.hide();
+                        }).catch(function(error) {
+                            preloader.hide();
+                            if ((typeof error === 'object') && error.response && error.response.errors) {
+                                showError(error.response.errors);
+                            } else if (error instanceof Error) {
+                                showError(error.message);
+                            } else {
+                                showError(error);
+                            }
+                        });
                     }
                 }
             }
@@ -808,7 +824,7 @@ Collection.prototype.addListeners = function() {
             }
             target_state = !checkbox.checked;
         } else {
-            // при клике на чекбокс целевое состяние уже достигнуто
+            // при клике на чекбокс целевое состояние уже достигнуто
             target_state = checkbox.checked;
         }
 
@@ -829,7 +845,7 @@ Collection.prototype.addListeners = function() {
         lastChecked = item;
     });
 
-    // удаление выделенных элементов при нижатии Delete
+    // удаление выделенных элементов при нажатии Delete
     this.element.addEventListener('keyup', function(event) {
         if (event.code === 'Delete') {
             const items = Array.from(_this.itemContainer.querySelectorAll(_this._opts.item));
@@ -853,8 +869,28 @@ Collection.prototype.addListeners = function() {
                             label: gettext('Delete'),
                             className: 'btn-danger',
                             callback: function() {
-                                checkedItems.forEach(function(item) {
-                                    _this._deleteItem(item);
+                                const delete_promises = checkedItems.map(function(item) {
+                                    return _this._deleteItem(item)
+                                });
+                                delete_promises.unshift(preloader.show());
+
+                                allSettled(
+                                    delete_promises
+                                ).then(function(results) {
+                                    preloader.hide();
+                                    for (let result of results) {
+                                        if (result.status === 'rejected') {
+                                            const error = result.reason;
+                                            if ((typeof error === 'object') && error.response && error.response.errors) {
+                                                collectError(error.response.errors);
+                                            } else if (error instanceof Error) {
+                                                collectError(error.message);
+                                            } else {
+                                                collectError(error);
+                                            }
+                                        }
+                                    }
+                                    showCollectedErrors();
                                 });
                             }
                         }
