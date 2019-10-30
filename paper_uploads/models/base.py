@@ -2,6 +2,7 @@ import posixpath
 from typing import Dict, Type, Any, Optional
 from django.apps import apps
 from django.db import models
+from django.core.files import File
 from django.utils.timezone import now
 from django.core.exceptions import FieldDoesNotExist
 from django.utils.translation import gettext_lazy as _
@@ -69,13 +70,20 @@ class UploadedFileBase(ContainerMixinBase, models.Model):
         """
         return '{}.{}'.format(self.name, self.extension)
 
-    def _post_attach_file(self, data=None):
-        super()._post_attach_file(data)
-        basename = posixpath.basename(self.get_file_name())
+    def attach_file(self, file: File, **options):
+        # skip suffix
+        basename = posixpath.basename(file.name)
         file_name, file_ext = posixpath.splitext(basename)
         if not self.name:
             self.name = file_name
-        self.extension = file_ext.lstrip('.').lower()
+        super().attach_file(file, **options)
+
+    def _post_attach_file(self, data=None):
+        super()._post_attach_file(data)
+        basename = posixpath.basename(self.get_file_name())
+        _, file_ext = posixpath.splitext(basename)
+        if not self.extension:
+            self.extension = file_ext.lstrip('.').lower()
         self.size = self.get_file_size()
 
         if self.hash:   # перезапись существующего файла
