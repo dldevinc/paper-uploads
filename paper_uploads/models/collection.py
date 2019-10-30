@@ -265,12 +265,6 @@ class ImageItemBase(CollectionFileItemMixin, FileFieldContainerMixin, Collection
     def __str__(self):
         return self.get_file_name()
 
-    def attach_file(self, file: File, **options):
-        # fix recursion exception
-        if not self.collection_content_type_id:
-            raise RuntimeError('method must be called after `attach_to`')
-        super().attach_file(file, **options)
-
     def post_save_new_file(self):
         """
         При отложенной нарезке превью для админки режутся сразу,

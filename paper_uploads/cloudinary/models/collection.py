@@ -19,28 +19,9 @@ __all__ = [
 ]
 
 
-class CloudinaryFileItem(CollectionFileItemMixin, FilePreviewIconItemMixin, CloudinaryContainerMixin, CollectionItemBase, UploadedFileBase):
-    change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
-    admin_template_name = 'paper_uploads/collection_item/file.html'
-
-    file = CloudinaryField(_('file'), resource_type='raw')
-    display_name = models.CharField(_('display name'), max_length=255, blank=True)
-
+class CloudinaryCollectionFileItemMixin(CloudinaryContainerMixin, CollectionFileItemMixin, CollectionItemBase):
     class Meta(CollectionItemBase.Meta):
-        verbose_name = _('file')
-        verbose_name_plural = _('files')
-
-    def __str__(self):
-        return self.get_file_name()
-
-    def save(self, *args, **kwargs):
-        if not self.pk and not self.display_name:
-            self.display_name = self.name
-        super().save(*args, **kwargs)
-
-    @classmethod
-    def file_supported(cls, file: File) -> bool:
-        return True
+        abstract = True
 
     def attach_file(self, file: File, **options):
         # skip Cloudinary suffix
@@ -66,6 +47,30 @@ class CloudinaryFileItem(CollectionFileItemMixin, FilePreviewIconItemMixin, Clou
 
         super().attach_file(file, **options)
 
+
+class CloudinaryFileItem(CloudinaryCollectionFileItemMixin, FilePreviewIconItemMixin, UploadedFileBase):
+    change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
+    admin_template_name = 'paper_uploads/collection_item/file.html'
+
+    file = CloudinaryField(_('file'), resource_type='raw')
+    display_name = models.CharField(_('display name'), max_length=255, blank=True)
+
+    class Meta(CollectionItemBase.Meta):
+        verbose_name = _('file')
+        verbose_name_plural = _('files')
+
+    def __str__(self):
+        return self.get_file_name()
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.display_name:
+            self.display_name = self.name
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def file_supported(cls, file: File) -> bool:
+        return True
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
@@ -74,7 +79,7 @@ class CloudinaryFileItem(CollectionFileItemMixin, FilePreviewIconItemMixin, Clou
         }
 
 
-class CloudinaryImageItem(CollectionFileItemMixin, CloudinaryContainerMixin, CollectionItemBase, UploadedImageBase):
+class CloudinaryImageItem(CloudinaryCollectionFileItemMixin, UploadedImageBase):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
     change_form_class = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
     admin_template_name = 'paper_uploads/collection_item/cloudinary_image.html'
@@ -95,17 +100,6 @@ class CloudinaryImageItem(CollectionFileItemMixin, CloudinaryContainerMixin, Col
         file.seek(0)    # correct file position after mimetype detection
         basetype, subtype = mimetype.split('/', 1)
         return basetype == 'image'
-
-    def attach_file(self, file: File, **options):
-        # fix recursion exception
-        if not self.collection_content_type_id:
-            raise RuntimeError('method must be called after `attach_to`')
-
-        # set name without Cloudinary suffix
-        basename = posixpath.basename(file.name)
-        file_name, file_ext = posixpath.splitext(basename)
-        self.name = file_name
-        super(UploadedImageBase, self).attach_file(file, **options)
 
     def _post_attach_file(self, data=None):
         super()._post_attach_file(data)
@@ -128,7 +122,7 @@ class CloudinaryImageItem(CollectionFileItemMixin, CloudinaryContainerMixin, Col
         }
 
 
-class CloudinaryMediaItem(CollectionFileItemMixin, FilePreviewIconItemMixin, CloudinaryContainerMixin, CollectionItemBase, UploadedFileBase):
+class CloudinaryMediaItem(CloudinaryCollectionFileItemMixin, FilePreviewIconItemMixin, UploadedFileBase):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     admin_template_name = 'paper_uploads/collection_item/file.html'
     cloudinary_resource_type = 'video'
@@ -154,13 +148,6 @@ class CloudinaryMediaItem(CollectionFileItemMixin, FilePreviewIconItemMixin, Clo
         file.seek(0)    # correct file position after mimetype detection
         basetype, subtype = mimetype.split('/', 1)
         return basetype in {'video', 'audio'}
-
-    def attach_file(self, file: File, **options):
-        # set name without Cloudinary suffix
-        basename = posixpath.basename(file.name)
-        file_name, file_ext = posixpath.splitext(basename)
-        self.name = file_name
-        super().attach_file(file, **options)
 
     def as_dict(self) -> Dict[str, Any]:
         return {
