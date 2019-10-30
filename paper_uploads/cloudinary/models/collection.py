@@ -43,7 +43,7 @@ class CloudinaryFileItem(CollectionFileItemMixin, FilePreviewIconItemMixin, Clou
         return True
 
     def attach_file(self, file: File, **options):
-        # set name without Cloudinary suffix
+        # skip Cloudinary suffix
         basename = posixpath.basename(file.name)
         file_name, file_ext = posixpath.splitext(basename)
         self.name = file_name
@@ -106,6 +106,14 @@ class CloudinaryImageItem(CollectionFileItemMixin, CloudinaryContainerMixin, Col
         file_name, file_ext = posixpath.splitext(basename)
         self.name = file_name
         super(UploadedImageBase, self).attach_file(file, **options)
+
+    def _post_attach_file(self, data=None):
+        super()._post_attach_file(data)
+        if isinstance(data, dict):
+            if 'width' in data:
+                self.width = data['width']
+            if 'height' in data:
+                self.height = data['height']
 
     def as_dict(self) -> Dict[str, Any]:
         return {

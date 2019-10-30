@@ -29,6 +29,8 @@ class FileFieldContainerMixin(ProxyAttributesContainerMixin, ContainerMixinBase)
         return self.file.url
 
     def file_exists(self) -> bool:
+        if self.file is None or not self.file.name:
+            return False
         return self.file.storage.exists(self.get_file_name())
 
     def get_file_hash(self) -> str:

@@ -16,6 +16,14 @@ class CloudinaryImage(CloudinaryFieldMixin, SlaveModelMixin, UploadedImageBase):
         verbose_name = _('image')
         verbose_name_plural = _('images')
 
+    def _post_attach_file(self, data=None):
+        super()._post_attach_file(data)
+        if isinstance(data, dict):
+            if 'width' in data:
+                self.width = data['width']
+            if 'height' in data:
+                self.height = data['height']
+
     @classmethod
     def get_validation(cls) -> Dict[str, Any]:
         return {

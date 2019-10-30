@@ -5,7 +5,7 @@ from ..container import CloudinaryContainerMixin
 
 class CloudinaryFieldMixin(CloudinaryContainerMixin):
     def attach_file(self, file: File, **options):
-        # set name without Cloudinary suffix
+        # skip Cloudinary suffix
         basename = posixpath.basename(file.name)
         file_name, file_ext = posixpath.splitext(basename)
         self.name = file_name

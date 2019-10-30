@@ -57,15 +57,6 @@ class CloudinaryContainerMixin(ProxyAttributesContainerMixin, ContainerMixinBase
         self.file = resource
         return result
 
-    def _post_attach_file(self, data=None):
-        super()._post_attach_file(data)
-        if isinstance(data, dict):
-            # размеры изображений
-            if 'width' in data:
-                self.width = data['width']
-            if 'height' in data:
-                self.height = data['height']
-
     def rename_file(self, new_name: str):
         try:
             result = cloudinary.uploader.rename(
@@ -124,6 +115,8 @@ class CloudinaryContainerMixin(ProxyAttributesContainerMixin, ContainerMixinBase
         return self.file.url
 
     def file_exists(self) -> bool:
+        if self.file is None:
+            return False
         response = requests.head(self.get_file_url())
         if response.status_code == 404:
             return False
