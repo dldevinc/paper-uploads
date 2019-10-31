@@ -179,7 +179,7 @@ PAPER_UPLOADS = {
         },
         'svg': {
             'command': 'svgo',
-            'arguments': '--precision=5 "{file}"',
+            'arguments': '--precision=4 --disable=convertPathData "{file}"',
         },
         'webp': False
     }

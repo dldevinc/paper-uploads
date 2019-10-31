@@ -335,7 +335,7 @@ from paper_uploads.models import *
 # file / image
 with open('file.doc', 'rb') as fp:
     file = UploadedFile()
-    file.attach_file(File(fp, name='file.doc'))
+    file.attach_file(fp)
     file.save()
 
 
