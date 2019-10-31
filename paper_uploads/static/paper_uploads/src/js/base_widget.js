@@ -152,7 +152,7 @@ BaseWidget.prototype.initUploader = function() {
         }
     }).on('complete', function(id, response) {
         _this.empty = false;
-        _this.instanceId = response.instance_id;
+        _this.instanceId = response.id;
         _this.trigger('upload:created');
 
         const fileName = _this.element.querySelector('.file-name');

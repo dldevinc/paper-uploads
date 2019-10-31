@@ -43,7 +43,7 @@ class TestUploadedImage:
 
             assert os.path.isfile(obj.path)
             assert obj.as_dict() == {
-                'instance_id': obj.pk,
+                'id': obj.pk,
                 'name': obj.name,
                 'ext': obj.extension,
                 'size': obj.size,

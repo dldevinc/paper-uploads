@@ -105,7 +105,7 @@ class UploadedFileBase(ContainerMixinBase, models.Model):
         Служит для формирования виджета файла без перезагрузки страницы.
         """
         return {
-            'instance_id': self.pk,
+            'id': self.pk,
             'name': self.name,
             'ext': self.extension,
             'size': self.size,

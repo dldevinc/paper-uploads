@@ -37,7 +37,7 @@ class TestCloudinaryFile:
             assert obj.hash == 'bebc2ddd2a8b8270b359990580ff346d14c021fa'
 
             assert obj.as_dict() == {
-                'instance_id': obj.pk,
+                'id': obj.pk,
                 'name': obj.display_name,
                 'ext': obj.extension,
                 'size': obj.size,

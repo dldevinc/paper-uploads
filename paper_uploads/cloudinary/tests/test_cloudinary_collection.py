@@ -140,11 +140,10 @@ class TestCloudinaryFileItem:
 
             # TODO: нет данных от CollectionItemBase
             assert item.as_dict() == {
-                'instance_id': item.pk,
+                'id': item.pk,
                 'ext': item.extension,
                 'size': item.size,
 
-                # 'id': item.pk,
                 # 'collectionId': item.collection_id,
                 # 'item_type': item.item_type,
                 'name': item.canonical_name,
@@ -225,11 +224,10 @@ class TestCloudinaryMediaItem:
 
             # TODO: нет данных от CollectionItemBase
             assert item.as_dict() == {
-                'instance_id': item.pk,
+                'id': item.pk,
                 'ext': item.extension,
                 'size': item.size,
 
-                # 'id': item.pk,
                 # 'collectionId': item.collection_id,
                 # 'item_type': item.item_type,
                 'name': item.canonical_name,
@@ -317,11 +315,10 @@ class TestCloudinaryImageItem:
 
             # TODO: нет данных от CollectionItemBase
             assert item.as_dict() == {
-                'instance_id': item.pk,
+                'id': item.pk,
                 'ext': item.extension,
                 'size': item.size,
 
-                # 'id': item.pk,
                 # 'collectionId': item.collection_id,
                 # 'item_type': item.item_type,
                 'name': item.canonical_name,

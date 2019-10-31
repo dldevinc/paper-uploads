@@ -37,7 +37,7 @@ class TestCloudinaryMedia:
             assert obj.hash == '4fccac8855634c2dccbd806aa7fc4ac3879e5a35'
 
             assert obj.as_dict() == {
-                'instance_id': obj.pk,
+                'id': obj.pk,
                 'name': obj.display_name,
                 'ext': obj.extension,
                 'size': obj.size,
