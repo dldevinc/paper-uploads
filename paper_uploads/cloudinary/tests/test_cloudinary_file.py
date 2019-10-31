@@ -2,6 +2,7 @@ import re
 import pytest
 from pathlib import Path
 from django.core.files import File
+from django.template.defaultfilters import filesizeformat
 from tests.app.models import Page
 from ... import validators
 from ..models import CloudinaryFile, CloudinaryFileField
@@ -34,6 +35,18 @@ class TestCloudinaryFile:
             assert obj.extension == 'pdf'
             assert obj.size == 9678
             assert obj.hash == 'bebc2ddd2a8b8270b359990580ff346d14c021fa'
+
+            assert obj.as_dict() == {
+                'instance_id': obj.pk,
+                'name': obj.display_name,
+                'ext': obj.extension,
+                'size': obj.size,
+                'url': obj.get_file_url(),
+                'file_info': '({ext}, {size})'.format(
+                    ext=obj.extension,
+                    size=filesizeformat(obj.size)
+                )
+            }
 
             for name in obj.PROXY_FILE_ATTRIBUTES:
                 assert getattr(obj, name) == getattr(obj.file, name)

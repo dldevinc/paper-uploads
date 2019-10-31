@@ -429,6 +429,7 @@ class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
         })
 
     def recut(self, names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS):
+        # TODO: не для всех галерей этот метод имеет смысл (Cloudinary)
         if settings.RQ_ENABLED:
             self._recut_async(names, using=using)
         else:

@@ -2,6 +2,7 @@ import re
 import pytest
 from pathlib import Path
 from django.core.files import File
+from django.template.defaultfilters import filesizeformat
 from tests.app.models import Page
 from ... import validators
 from ..models import CloudinaryMedia, CloudinaryMediaField
@@ -34,6 +35,18 @@ class TestCloudinaryMedia:
             assert obj.extension == 'ogg'
             assert obj.size == 105243
             assert obj.hash == '4fccac8855634c2dccbd806aa7fc4ac3879e5a35'
+
+            assert obj.as_dict() == {
+                'instance_id': obj.pk,
+                'name': obj.display_name,
+                'ext': obj.extension,
+                'size': obj.size,
+                'url': obj.get_file_url(),
+                'file_info': '({ext}, {size})'.format(
+                    ext=obj.extension,
+                    size=filesizeformat(obj.size)
+                )
+            }
 
             for name in obj.PROXY_FILE_ATTRIBUTES:
                 assert getattr(obj, name) == getattr(obj.file, name)

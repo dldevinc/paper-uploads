@@ -1,9 +1,11 @@
 import re
 import pytest
 from pathlib import Path
+from django.template import loader
 from django.core.files import File
 from django.core.exceptions import ObjectDoesNotExist
 from tests.app.models import Page, PageCloudinaryGallery, PageCloudinaryFilesGallery
+from ...conf import settings
 from ... import validators
 from ...models.fields import CollectionField
 from ..models import CloudinaryFileItem, CloudinaryMediaItem, CloudinaryImageItem
@@ -136,6 +138,24 @@ class TestCloudinaryFileItem:
             assert item.hash == 'a8c8369de899050565873ab78ee1503fbafcc859'
             assert item.item_type == 'file'
 
+            # TODO: нет данных от CollectionItemBase
+            assert item.as_dict() == {
+                'instance_id': item.pk,
+                'ext': item.extension,
+                'size': item.size,
+
+                # 'id': item.pk,
+                # 'collectionId': item.collection_id,
+                # 'item_type': item.item_type,
+                'name': item.canonical_name,
+                'url': item.get_file_url(),
+                'preview': loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
+                    'item': item,
+                    'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                    'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+                })
+            }
+
             for name in item.PROXY_FILE_ATTRIBUTES:
                 assert getattr(item, name) == getattr(item.file, name)
 
@@ -202,6 +222,24 @@ class TestCloudinaryMediaItem:
             assert item.size == 105243
             assert item.hash == '4fccac8855634c2dccbd806aa7fc4ac3879e5a35'
             assert item.item_type == 'media'
+
+            # TODO: нет данных от CollectionItemBase
+            assert item.as_dict() == {
+                'instance_id': item.pk,
+                'ext': item.extension,
+                'size': item.size,
+
+                # 'id': item.pk,
+                # 'collectionId': item.collection_id,
+                # 'item_type': item.item_type,
+                'name': item.canonical_name,
+                'url': item.get_file_url(),
+                'preview': loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
+                    'item': item,
+                    'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                    'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+                })
+            }
 
             for name in item.PROXY_FILE_ATTRIBUTES:
                 assert getattr(item, name) == getattr(item.file, name)
@@ -276,6 +314,24 @@ class TestCloudinaryImageItem:
             assert item.height == 1200
             assert item.cropregion == ''
             assert item.item_type == 'image'
+
+            # TODO: нет данных от CollectionItemBase
+            assert item.as_dict() == {
+                'instance_id': item.pk,
+                'ext': item.extension,
+                'size': item.size,
+
+                # 'id': item.pk,
+                # 'collectionId': item.collection_id,
+                # 'item_type': item.item_type,
+                'name': item.canonical_name,
+                'url': item.get_file_url(),
+                'preview': loader.render_to_string('paper_uploads/collection_item/preview/cloudinary_image.html', {
+                    'item': item,
+                    'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                    'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+                })
+            }
 
             for name in item.PROXY_FILE_ATTRIBUTES:
                 assert getattr(item, name) == getattr(item.file, name)

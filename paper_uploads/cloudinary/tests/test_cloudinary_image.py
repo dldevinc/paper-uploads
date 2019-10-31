@@ -2,6 +2,7 @@ import re
 import pytest
 from pathlib import Path
 from django.core.files import File
+from django.template.defaultfilters import filesizeformat
 from tests.app.models import Page
 from ... import validators
 from ..models import CloudinaryImage, CloudinaryImageField
@@ -40,6 +41,22 @@ class TestCloudinaryImage:
             assert obj.width == 1600
             assert obj.height == 1200
             assert obj.cropregion == ''
+
+            assert obj.as_dict() == {
+                'instance_id': obj.pk,
+                'name': obj.name,
+                'ext': obj.extension,
+                'size': obj.size,
+                'url': obj.get_file_url(),
+                'width': obj.width,
+                'height': obj.height,
+                'file_info': '({ext}, {width}x{height}, {size})'.format(
+                    ext=obj.extension,
+                    width=obj.width,
+                    height=obj.height,
+                    size=filesizeformat(obj.size)
+                )
+            }
 
             for name in obj.PROXY_FILE_ATTRIBUTES:
                 assert getattr(obj, name) == getattr(obj.file, name)
