@@ -7,6 +7,7 @@ from typing import Dict, Iterator, Tuple, Iterable, Optional, Any, Sequence
 from django.db import models
 from django.core.files import File
 from django.core.exceptions import ValidationError
+from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
 from variations.utils import prepare_image
@@ -17,8 +18,10 @@ from ..postprocess import postprocess_variation
 from ..variations import PaperVariation
 from .. import tasks
 from .fields import VariationalFileField
-from .base import UploadedFileBase, SlaveModelMixin
-from .containers import FileFieldContainerMixin
+from .base import (
+    ReverseFieldModelMixin, ReadonlyFileProxyMixin, VariableImageResourceMixin,
+    PostprocessableFileFieldResource, UploadedFileBase
+)
 
 __all__ = ['UploadedImageBase', 'VariationalImageBase', 'UploadedImage']
 
@@ -302,15 +305,34 @@ class VariationalImageBase(UploadedPillowImageBase):
             self._postprocess_sync(names)
 
 
-class UploadedImage(FileFieldContainerMixin, SlaveModelMixin, VariationalImageBase):
+class UploadedImage(ReverseFieldModelMixin, ReadonlyFileProxyMixin, VariableImageResourceMixin, PostprocessableFileFieldResource):
     file = VariationalFileField(_('file'), max_length=255, upload_to=settings.IMAGES_UPLOAD_TO, storage=upload_storage)
 
-    class Meta(UploadedImageBase.Meta):
+    class Meta(PostprocessableFileFieldResource.Meta):
         verbose_name = _('image')
         verbose_name_plural = _('images')
 
-    def __str__(self):
-        return self.get_file_name()
+    def get_file(self) -> FieldFile:
+        return self.file
+
+    def postprocess(self, **kwargs):
+        # Исходник изображения не обрабатываем
+        pass
+
+    def postprocess_variation(self, file: VariationFile, variation: PaperVariation):
+        owner_field = self.get_owner_field()
+        postprocess_variation(file, variation, field=owner_field)
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            **super().as_dict(),
+            'file_info': '({ext}, {width}x{height}, {size})'.format(
+                ext=self.extension,
+                width=self.width,
+                height=self.height,
+                size=filesizeformat(self.size)
+            )
+        }
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         if not hasattr(self, '_variations_cache'):
@@ -323,20 +345,7 @@ class UploadedImage(FileFieldContainerMixin, SlaveModelMixin, VariationalImageBa
 
     @classmethod
     def get_validation(cls) -> Dict[str, Any]:
+        # TODO: магический метод
         return {
-            **super().get_validation(),
             'acceptFiles': ['image/*'],
-        }
-
-    def as_dict(self) -> Dict[str, Any]:
-        return {
-            **super().as_dict(),
-            'width': self.width,
-            'height': self.height,
-            'file_info': '({ext}, {width}x{height}, {size})'.format(
-                ext=self.extension,
-                width=self.width,
-                height=self.height,
-                size=filesizeformat(self.size)
-            )
         }

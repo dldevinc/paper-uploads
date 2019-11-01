@@ -5,4 +5,4 @@ from ...models import UploadedImage
 class UploadedImageDialog(UploadedFileBaseForm):
     class Meta:
         model = UploadedImage
-        fields = ('new_name', 'alt', 'title')
+        fields = ('new_name', 'title', 'description')
