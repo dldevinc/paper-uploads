@@ -9,11 +9,11 @@ from ..variations import PaperVariation
 from .fields import VariationalFileField
 from .base import (
     VariationFile, ReverseFieldModelMixin, ReadonlyFileProxyMixin,
-    VariableImageResourceMixin, PostprocessableFileFieldResource
+    VersatileImageResourceMixin, PostprocessableFileFieldResource
 )
 
 
-class UploadedImage(ReverseFieldModelMixin, ReadonlyFileProxyMixin, VariableImageResourceMixin, PostprocessableFileFieldResource):
+class UploadedImage(ReverseFieldModelMixin, ReadonlyFileProxyMixin, VersatileImageResourceMixin, PostprocessableFileFieldResource):
     file = VariationalFileField(_('file'), max_length=255, upload_to=settings.IMAGES_UPLOAD_TO, storage=upload_storage)
 
     class Meta(PostprocessableFileFieldResource.Meta):

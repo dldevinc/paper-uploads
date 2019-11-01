@@ -21,7 +21,7 @@ __all__ = [
     'Resource', 'HashableResourceMixin', 'FileResource', 'FileFieldResource',
     'PostprocessableFileFieldResource', 'ReverseFieldModelMixin', 'ReadonlyFileProxyMixin',
     'ImageFileResourceMixin', 'ImageFieldResourceMixin', 'VariationFile',
-    'VariableImageResourceMixin',
+    'VersatileImageResourceMixin',
 ]
 
 
@@ -424,7 +424,7 @@ class VariationFile(File):
         return self._dimensions_cache
 
 
-class VariableImageResourceMixin(ImageFieldResourceMixin):
+class VersatileImageResourceMixin(ImageFieldResourceMixin):
     """
     Подкласс файлового ресурса вариативного изображения, доступ к которому
     осуществляется через Storage.

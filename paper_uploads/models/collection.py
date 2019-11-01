@@ -25,7 +25,7 @@ from ..helpers import build_variations
 from .. import tasks
 from .base import (
     VariationFile, Resource, ReadonlyFileProxyMixin, ReverseFieldModelMixin,
-    VariableImageResourceMixin, PostprocessableFileFieldResource
+    VersatileImageResourceMixin, PostprocessableFileFieldResource
 )
 from .image import VariationalFileField
 from .fields import CollectionItemTypeField, FormattedFileField
@@ -285,7 +285,7 @@ class SVGItem(ReadonlyFileProxyMixin, CollectionResourceItem, PostprocessableFil
         return ext.lower() == '.svg'
 
 
-class ImageItem(ReadonlyFileProxyMixin, VariableImageResourceMixin, CollectionResourceItem, PostprocessableFileFieldResource):
+class ImageItem(ReadonlyFileProxyMixin, VersatileImageResourceMixin, CollectionResourceItem, PostprocessableFileFieldResource):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
     change_form_class = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
     admin_template_name = 'paper_uploads/collection_item/image.html'
