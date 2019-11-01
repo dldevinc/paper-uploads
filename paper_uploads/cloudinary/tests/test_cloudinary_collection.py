@@ -323,7 +323,7 @@ class TestCloudinaryImageItem:
                 # 'item_type': item.item_type,
                 'name': item.canonical_name,
                 'url': item.get_file_url(),
-                'preview': loader.render_to_string('paper_uploads/collection_item/preview/cloudinary_image.html', {
+                'preview': loader.render_to_string('paper_uploads_cloudinary/collection_item/preview/image.html', {
                     'item': item,
                     'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
                     'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,

@@ -82,7 +82,7 @@ class CloudinaryFileItem(CloudinaryCollectionFileItemMixin, FilePreviewItemMixin
 class CloudinaryImageItem(CloudinaryCollectionFileItemMixin, UploadedImageBase):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
     change_form_class = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
-    admin_template_name = 'paper_uploads/collection_item/cloudinary_image.html'
+    admin_template_name = 'paper_uploads_cloudinary/collection_item/image.html'
     cloudinary_resource_type = 'image'
 
     file = CloudinaryField(_('file'), resource_type='image')
@@ -114,7 +114,7 @@ class CloudinaryImageItem(CloudinaryCollectionFileItemMixin, UploadedImageBase):
             **super().as_dict(),
             'name': self.canonical_name,
             'url': self.get_file_url(),
-            'preview': loader.render_to_string('paper_uploads/collection_item/preview/cloudinary_image.html', {
+            'preview': loader.render_to_string('paper_uploads_cloudinary/collection_item/preview/image.html', {
                 'item': self,
                 'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
                 'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
