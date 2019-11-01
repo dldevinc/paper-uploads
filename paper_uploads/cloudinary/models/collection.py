@@ -10,7 +10,7 @@ from ...conf import settings
 from ...models.base import UploadedFileBase
 from ...models.image import UploadedImageBase
 from ...models.fields import CollectionItemTypeField
-from ...models.collection import FilePreviewIconItemMixin, CollectionItemBase, CollectionFileItemMixin, Collection
+from ...models.collection import FilePreviewItemMixin, CollectionResourceItem, Collection
 from ..container import CloudinaryContainerMixin
 
 __all__ = [
@@ -19,8 +19,8 @@ __all__ = [
 ]
 
 
-class CloudinaryCollectionFileItemMixin(CloudinaryContainerMixin, CollectionFileItemMixin, CollectionItemBase):
-    class Meta(CollectionItemBase.Meta):
+class CloudinaryCollectionFileItemMixin(CloudinaryContainerMixin, CollectionResourceItem):
+    class Meta(CollectionResourceItem.Meta):
         abstract = True
 
     def attach_file(self, file: File, **options):
@@ -48,14 +48,14 @@ class CloudinaryCollectionFileItemMixin(CloudinaryContainerMixin, CollectionFile
         super().attach_file(file, **options)
 
 
-class CloudinaryFileItem(CloudinaryCollectionFileItemMixin, FilePreviewIconItemMixin, UploadedFileBase):
+class CloudinaryFileItem(CloudinaryCollectionFileItemMixin, FilePreviewItemMixin, UploadedFileBase):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     admin_template_name = 'paper_uploads/collection_item/file.html'
 
     file = CloudinaryField(_('file'), resource_type='raw')
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
-    class Meta(CollectionItemBase.Meta):
+    class Meta(CollectionResourceItem.Meta):
         verbose_name = _('file')
         verbose_name_plural = _('files')
 
@@ -87,7 +87,7 @@ class CloudinaryImageItem(CloudinaryCollectionFileItemMixin, UploadedImageBase):
 
     file = CloudinaryField(_('file'), resource_type='image')
 
-    class Meta(CollectionItemBase.Meta):
+    class Meta(CollectionResourceItem.Meta):
         verbose_name = _('image')
         verbose_name_plural = _('images')
 
@@ -122,7 +122,7 @@ class CloudinaryImageItem(CloudinaryCollectionFileItemMixin, UploadedImageBase):
         }
 
 
-class CloudinaryMediaItem(CloudinaryCollectionFileItemMixin, FilePreviewIconItemMixin, UploadedFileBase):
+class CloudinaryMediaItem(CloudinaryCollectionFileItemMixin, FilePreviewItemMixin, UploadedFileBase):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     admin_template_name = 'paper_uploads/collection_item/file.html'
     cloudinary_resource_type = 'video'
@@ -130,7 +130,7 @@ class CloudinaryMediaItem(CloudinaryCollectionFileItemMixin, FilePreviewIconItem
     file = CloudinaryField(_('file'), resource_type='video')
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
-    class Meta(CollectionItemBase.Meta):
+    class Meta(CollectionResourceItem.Meta):
         verbose_name = _('media')
         verbose_name_plural = _('media')
 

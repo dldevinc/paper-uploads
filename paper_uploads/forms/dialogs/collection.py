@@ -11,4 +11,4 @@ class FileItemDialog(UploadedFileBaseForm):
 class ImageItemDialog(UploadedFileBaseForm):
     class Meta:
         model = ImageItem
-        fields = ('new_name', 'alt', 'title')
+        fields = ('new_name', 'title', 'description')

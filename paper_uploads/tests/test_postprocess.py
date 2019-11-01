@@ -1,6 +1,5 @@
 import pytest
 from pathlib import Path
-from django.core.files import File
 from tests.app.models import TestCollection, TestCollectionBlocked, TestCollectionOverride
 from ..exceptions import PostprocessProhibited
 from .. import postprocess
@@ -270,11 +269,11 @@ class TestRealCollection:
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
             item = ImageItem(
-                file=File(jpeg_file, name='Image.Jpeg'),
-                alt='Alternate text',
                 title='Image title',
+                description='Alternate text',
             )
             item.attach_to(collection)
+            item.attach_file(jpeg_file)
             item.full_clean()
             item.save()
 
@@ -300,6 +299,7 @@ class TestRealCollection:
             # ensure postprocessed
             assert item.mobile.size == 89900
         finally:
+            item.delete_file()
             collection.delete()
 
 
@@ -309,11 +309,11 @@ class TestRealCollectionBlocked:
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
             item = ImageItem(
-                file=File(jpeg_file, name='Image.Jpeg'),
-                alt='Alternate text',
                 title='Image title',
+                description='Alternate text',
             )
             item.attach_to(collection)
+            item.attach_file(jpeg_file)
             item.full_clean()
             item.save()
 
@@ -337,6 +337,7 @@ class TestRealCollectionBlocked:
             # ensure not postprocessed
             assert item.mobile.size == 109101
         finally:
+            item.delete_file()
             collection.delete()
 
 
@@ -346,11 +347,11 @@ class TestRealCollectionOverride:
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
             item = ImageItem(
-                file=File(jpeg_file, name='Image.Jpeg'),
-                alt='Alternate text',
                 title='Image title',
+                description='Alternate text',
             )
             item.attach_to(collection)
+            item.attach_file(jpeg_file)
             item.full_clean()
             item.save()
 
@@ -377,4 +378,5 @@ class TestRealCollectionOverride:
             # ensure not postprocessed
             assert item.mobile.size == 109101
         finally:
+            item.delete_file()
             collection.delete()

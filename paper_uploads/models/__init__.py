@@ -8,8 +8,9 @@ __all__ = [
     'UploadedFileBase', 'UploadedImageBase', 'VariationalImageBase',
     'UploadedFile', 'UploadedImage',
 
-    'CollectionItemBase', 'FileItemBase', 'ImageItemBase', 'CollectionBase',
-    'FileItem', 'ImageItem', 'SVGItem', 'Collection', 'ImageCollection',
+    'CollectionResourceItem', 'CollectionBase',
+    'FileItem', 'SVGItem', 'ImageItem',
+    'Collection', 'ImageCollection',
 
     'FileField', 'ImageField', 'CollectionField', 'CollectionItemTypeField'
 ]

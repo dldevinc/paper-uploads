@@ -11,7 +11,7 @@ from ..logging import logger
 from .. import signals
 from .. import exceptions
 from ..utils import run_validators
-from ..models.collection import CollectionItemBase, CollectionBase
+from ..models.collection import CollectionResourceItem, CollectionBase
 from . import helpers
 
 
@@ -235,9 +235,9 @@ def sort_items(request):
     with transaction.atomic():
         for index, item_id in enumerate(item_ids):
             if item_id in set(instance.items.values_list('pk', flat=True)):
-                CollectionItemBase.objects.filter(pk=item_id).update(order=index)
+                CollectionResourceItem.objects.filter(pk=item_id).update(order=index)
             else:
-                CollectionItemBase.objects.filter(pk=item_id).update(order=2**32 - 1)
+                CollectionResourceItem.objects.filter(pk=item_id).update(order=2**32 - 1)
 
     signals.collection_reordered.send(collection_cls, instance=instance)
     return helpers.success_response()
