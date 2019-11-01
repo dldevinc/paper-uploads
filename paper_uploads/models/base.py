@@ -285,8 +285,8 @@ class PostprocessableFileFieldResource(FileFieldResource):
             **kwargs,
         })
 
-    @staticmethod
-    def _postprocess_task(app_label: str, model_name: str, object_id: int, using: str, **kwargs):
+    @classmethod
+    def _postprocess_task(cls, app_label: str, model_name: str, object_id: int, using: str, **kwargs):
         """
         Задача для django-rq.
         Вызывает `postprocess()` экземпляра в отдельном процессе.
@@ -561,8 +561,8 @@ class VariableImageResourceMixin(ImageFieldResourceMixin):
             **kwargs,
         })
 
-    @staticmethod
-    def _recut_task(app_label: str, model_name: str, object_id: int, using: str, **kwargs):
+    @classmethod
+    def _recut_task(cls, app_label: str, model_name: str, object_id: int, using: str, **kwargs):
         """
         Задача для django-rq.
         Вызывает `recut()` экземпляра в отдельном процессе.
