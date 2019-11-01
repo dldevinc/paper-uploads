@@ -338,7 +338,7 @@ class UploadedImage(ReverseFieldModelMixin, ReadonlyFileProxyMixin, VariableImag
         if not hasattr(self, '_variations_cache'):
             owner_field = self.get_owner_field()
             if owner_field is not None:
-                self._variations_cache = getattr(owner_field, 'variations')
+                self._variations_cache = getattr(owner_field, 'variations', {}).copy()
             else:
                 return {}
         return self._variations_cache
