@@ -438,6 +438,7 @@ class VariableImageResourceMixin(ImageFieldResourceMixin):
 
     def __init__(self, *args, **kwargs):
         self._variations_attached = False
+        self._variation_files_cache = {}
         super().__init__(*args, **kwargs)
 
     def __getattr__(self, name):
@@ -462,11 +463,17 @@ class VariableImageResourceMixin(ImageFieldResourceMixin):
     def attach_file(self, file: Union[File, IO], **options):
         super().attach_file(file, **options)
         self.need_recut = True
+        self._variation_files_cache.clear()
 
     def _delete_file(self):
         for vname, vfile in self.variation_files():
             vfile.delete()
         super()._delete_file()
+
+    def _rename_file(self, new_name: str):
+        super()._rename_file(new_name)
+        self.recut()
+        self._variation_files_cache.clear()
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         raise NotImplementedError
@@ -479,14 +486,15 @@ class VariableImageResourceMixin(ImageFieldResourceMixin):
         if not self.get_file():
             return
 
-        cache_name = '_{}_variation'.format(variation_name)
-        variation_file = getattr(self, cache_name, None)
-        if variation_file is None:
+        cache = self._variation_files_cache
+        if variation_name in cache:
+            variation_file = cache[variation_name]
+        else:
             variation_file = VariationFile(
                 instance=self,
                 variation_name=variation_name
             )
-            setattr(self, cache_name, variation_file)
+            cache[variation_name] = variation_file
         return variation_file
 
     def calculate_max_size(self, source_size: Sequence[int]) -> Tuple[int, int]:
