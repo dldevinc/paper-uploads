@@ -37,8 +37,14 @@ class FileWidgetBase(widgets.Widget):
         return self.model._base_manager.get(pk=value)
 
     def get_validation(self):
+        model_validation_method = getattr(self.model, 'get_validation', None)
+        if model_validation_method is not None and callable(model_validation_method):
+            model_validation = model_validation_method()
+        else:
+            model_validation = {}
+
         return {
-            **self.model.get_validation(),
+            **model_validation,
             **self.validation,
         }
 
@@ -57,10 +63,10 @@ class FileWidgetBase(widgets.Widget):
                 ", ".join(validation['allowedExtensions'])
             ))
         if 'acceptFiles' in validation:
-            acceptFiles = validation['acceptFiles']
+            accept_files = validation['acceptFiles']
             limits.append((
                 _('Allowed MIME types'),
-                acceptFiles if isinstance(acceptFiles, str) else ", ".join(acceptFiles)
+                accept_files if isinstance(accept_files, str) else ", ".join(accept_files)
             ))
         if 'sizeLimit' in validation:
             limits.append((
@@ -68,41 +74,41 @@ class FileWidgetBase(widgets.Widget):
                 filesizeformat(validation['sizeLimit'])
             ))
 
-        minWidth = validation.get('minImageWidth', 0)
-        minHeight = validation.get('minImageHeight', 0)
-        if minWidth:
-            if minHeight:
+        min_width = validation.get('minImageWidth', 0)
+        min_height = validation.get('minImageHeight', 0)
+        if min_width:
+            if min_height:
                 limits.append((
                     _('Minimum image size'),
-                    _('%sx%s pixels') % (minWidth, minHeight)
+                    _('%sx%s pixels') % (min_width, min_height)
                 ))
             else:
                 limits.append((
                     _('Minimum image width'),
-                    _('%s pixels') % minWidth
+                    _('%s pixels') % min_width
                 ))
-        elif minHeight:
+        elif min_height:
             limits.append((
                 _('Minimum image height'),
-                _('%s pixels') % minHeight
+                _('%s pixels') % min_height
             ))
 
-        maxWidth = validation.get('maxImageWidth', 0)
-        maxHeight = validation.get('maxImageHeight', 0)
-        if maxWidth:
-            if maxHeight:
+        max_width = validation.get('maxImageWidth', 0)
+        max_height = validation.get('maxImageHeight', 0)
+        if max_width:
+            if max_height:
                 limits.append((
                     _('Maximum image size'),
-                    _('%sx%s pixels') % (maxWidth, maxHeight)
+                    _('%sx%s pixels') % (max_width, max_height)
                 ))
             else:
                 limits.append((
                     _('Maximum image width'),
-                    _('%s pixels') % maxWidth
+                    _('%s pixels') % max_width
                 ))
-        elif maxHeight:
+        elif max_height:
             limits.append((
                 _('Maximum image height'),
-                _('%s pixels') % maxHeight
+                _('%s pixels') % max_height
             ))
         return limits
