@@ -2,12 +2,12 @@ import re
 import os
 import pytest
 from pathlib import Path
-from django.core.files import File
-from django.utils.timezone import now
+from django.conf import settings
+from django.utils.timezone import now, timedelta
 from django.template.defaultfilters import filesizeformat
-from tests.app.models import Page
 from .. import validators
 from ..models import UploadedFile, FileField
+from tests.app.models import Page
 
 pytestmark = pytest.mark.django_db
 TESTS_PATH = Path(__file__).parent / 'samples'
@@ -15,71 +15,129 @@ TESTS_PATH = Path(__file__).parent / 'samples'
 
 class TestUploadedFile:
     def test_file(self):
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as fp:
+        with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
             obj = UploadedFile(
                 owner_app_label='app',
                 owner_model_name='page',
                 owner_fieldname='file'
             )
-            obj.attach_file(File(fp, name='Doc.PDF'))
+            obj.attach_file(svg_file, name='Cartman.SVG')
             obj.save()
 
+        suffix = re.match(r'Cartman((?:_\w+)?)', os.path.basename(obj.file.name)).group(1)
+
         try:
-            suffix = re.match(r'Doc((?:_\w+)?)', os.path.basename(obj.file.name)).group(1)
+            # Resource
+            assert obj.name == 'Cartman'
+            assert now() - obj.created_at < timedelta(seconds=10)
+            assert now() - obj.uploaded_at < timedelta(seconds=10)
+            assert now() - obj.modified_at < timedelta(seconds=10)
 
-            assert obj.PROXY_FILE_ATTRIBUTES == {'url', 'path', 'open', 'read', 'close', 'closed'}
-            assert obj.name == 'Doc'
-            assert obj.display_name == 'Doc'
-            assert obj.canonical_name == 'Doc.pdf'
-            assert obj.extension == 'pdf'
-            assert obj.size == 9678
-            assert obj.hash == 'bebc2ddd2a8b8270b359990580ff346d14c021fa'
+            # HashableResourceMixin
+            assert obj.hash == '563bca379c51c21a7bdff080f7cff67914040c10'
 
+            # FileResource
+            assert obj.extension == 'svg'
+            assert obj.size == 1118
+            assert str(obj) == 'Cartman.svg'
+            assert repr(obj) == "UploadedFile('Cartman.svg')"
+            assert obj.get_basename() == 'Cartman.svg'
+            assert obj.get_file() is obj.file
+            assert obj.get_file_name() == f"files/{now().strftime('%Y-%m-%d')}/Cartman{suffix}.svg"
+            assert obj.get_file_url() == f"/media/files/{now().strftime('%Y-%m-%d')}/Cartman{suffix}.svg"
+            assert obj.is_file_exists() is True
+
+            # FileFieldResource
             assert os.path.isfile(obj.path)
+
+            # PostrocessableFileFieldResource
+            assert os.stat(TESTS_PATH / 'cartman.svg').st_size == 1183
+
+            # ReverseFieldModelMixin
+            assert obj.owner_app_label == 'app'
+            assert obj.owner_model_name == 'page'
+            assert obj.owner_fieldname == 'file'
+            assert obj.get_owner_model() is Page
+            assert obj.get_owner_field() is Page._meta.get_field('file')
+
+            # ReadonlyFileProxyMixin
+            assert obj.url == obj.get_file_url()
+            assert obj.path == os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, obj.get_file_name())
+            assert obj.closed is True
+            with obj.open():
+                assert obj.closed is False
+                assert obj.read(4) == b'<svg'
+                assert obj.tell() == 4
+                obj.seek(0)
+                assert obj.tell() == 0
+                assert obj.closed is False
+            assert obj.closed is True
+
+            # UploadedFile
+            assert obj.display_name == 'Cartman'
+
+            # as_dict
             assert obj.as_dict() == {
                 'id': obj.pk,
-                'name': obj.display_name,
-                'ext': obj.extension,
+                'name': obj.name,
+                'extension': obj.extension,
                 'size': obj.size,
                 'url': obj.get_file_url(),
                 'file_info': '({ext}, {size})'.format(
                     ext=obj.extension,
                     size=filesizeformat(obj.size)
-                )
+                ),
             }
-
-            for name in obj.PROXY_FILE_ATTRIBUTES:
-                assert getattr(obj, name) == getattr(obj.file, name)
-
-            # SlaveModelMixin methods
-            assert obj.get_owner_model() is Page
-            assert obj.get_owner_field() is Page._meta.get_field('file')
-            assert obj.get_validation() == {}
-
-            # FileFieldContainerMixin methods
-            assert obj.get_file_name() == 'files/{}/Doc{}.pdf'.format(now().strftime('%Y-%m-%d'), suffix)
-            assert obj.get_file_size() == 9678
-            assert obj.file_exists() is True
-            assert obj.get_file_hash() == 'bebc2ddd2a8b8270b359990580ff346d14c021fa'
-            assert obj.get_file_url() == '/media/files/{}/Doc{}.pdf'.format(now().strftime('%Y-%m-%d'), suffix)
         finally:
+            file_path = obj.path
+            assert os.path.isfile(file_path) is True
+            obj.delete_file()
+            assert os.path.isfile(file_path) is False
+            assert obj.is_file_exists() is False
+
             obj.delete()
 
-        assert obj.file_exists() is False
-
     def test_orphan_file(self):
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as fp:
+        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
             obj = UploadedFile()
-            obj.attach_file(File(fp, name='Doc.PDF'))
+            obj.attach_file(pdf_file, name='Doc.PDF')
             obj.save()
 
         try:
             assert obj.get_owner_model() is None
             assert obj.get_owner_field() is None
         finally:
+            obj.delete_file()
             obj.delete()
 
-        assert obj.file_exists() is False
+    def test_empty_file(self):
+        obj = UploadedFile()
+        try:
+            assert obj.closed is True
+            assert obj.get_file_name() == ''
+            with pytest.raises(ValueError):
+                obj.get_file_url()
+            assert obj.is_file_exists() is False
+        finally:
+            obj.delete_file()
+
+    def test_missing_file(self):
+        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+            obj = UploadedFile()
+            obj.attach_file(pdf_file, name='Doc.PDF')
+            obj.save()
+
+        os.unlink(obj.path)
+        suffix = re.match(r'Doc((?:_\w+)?)', os.path.basename(obj.file.name)).group(1)
+
+        try:
+            assert obj.closed is True
+            assert obj.get_file_name() == f"files/{now().strftime('%Y-%m-%d')}/Doc{suffix}.pdf"
+            assert obj.get_file_url() == f"/media/files/{now().strftime('%Y-%m-%d')}/Doc{suffix}.pdf"
+            assert obj.is_file_exists() is False
+        finally:
+            obj.delete_file()
+            obj.delete()
 
 
 class TestFileField:

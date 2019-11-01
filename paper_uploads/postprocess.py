@@ -3,13 +3,13 @@ import shutil
 import subprocess
 from PIL import Image
 from typing import Dict, Any
-from django.core.files.storage import FileSystemStorage
+from django.db.models.fields.files import FieldFile
 from .conf import settings
 from .logging import logger
-from .storage import upload_storage
 from .exceptions import PostprocessProhibited
 from .utils import lowercase_copy
 from .variations import PaperVariation
+from .models import VariationFile
 
 
 def _run(path: str, options: Dict[str, str]):
@@ -80,21 +80,11 @@ def get_postprocess_variation_options(format: str, variation: PaperVariation, fi
     raise PostprocessProhibited
 
 
-def postprocess_variation(variation_filename: str, variation: PaperVariation,
-        field: Any = None):
+def postprocess_variation(file: VariationFile, variation: PaperVariation, field: Any = None):
     """
     Постобработка загруженного изображения.
     """
-    if not isinstance(upload_storage, FileSystemStorage):
-        # Постобработка доступна только для локального хранилища
-        return
-
-    variation_path = upload_storage.path(variation_filename)
-    if not os.path.exists(variation_path):
-        logger.warning('File not found: {}'.format(variation_path))
-        return
-
-    output_format = variation.output_format(variation_path)
+    output_format = variation.output_format(file.path)
 
     try:
         postprocess_options = get_postprocess_variation_options(
@@ -104,7 +94,7 @@ def postprocess_variation(variation_filename: str, variation: PaperVariation,
         )
     except PostprocessProhibited:
         return
-    _run(variation_path, postprocess_options)
+    _run(file.path, postprocess_options)
 
 
 def get_postprocess_common_options(format: str, field: Any = None) -> Dict[str, str]:
@@ -138,20 +128,11 @@ def get_postprocess_common_options(format: str, field: Any = None) -> Dict[str, 
     raise PostprocessProhibited
 
 
-def postprocess_common_file(source_filename: str, field: Any = None):
+def postprocess_common_file(file: FieldFile, field: Any = None):
     """
     Постобработка загруженного файла.
     """
-    if not isinstance(upload_storage, FileSystemStorage):
-        # Постобработка доступна только для локального хранилища
-        return
-
-    source_path = upload_storage.path(source_filename)
-    if not os.path.exists(source_path):
-        logger.warning('File not found: {}'.format(source_path))
-        return
-
-    _, ext = os.path.splitext(source_filename)
+    _, ext = os.path.splitext(file.path)
     ext = ext.lower()
     if ext in Image.EXTENSION.keys():
         # файл является изображением — их не трогаем
@@ -161,4 +142,4 @@ def postprocess_common_file(source_filename: str, field: Any = None):
         postprocess_options = get_postprocess_common_options(ext.lstrip('.'), field=field)
     except PostprocessProhibited:
         return
-    _run(source_path, postprocess_options)
+    _run(file.path, postprocess_options)

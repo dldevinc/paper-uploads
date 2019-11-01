@@ -2,7 +2,6 @@ from django.db.models.signals import Signal
 
 collection_reordered = Signal(providing_args=["instance"])
 hash_updated = Signal(providing_args=["instance", "hash"])
-file_postprocessed = Signal(providing_args=["instance", "params"])
 
 pre_attach_file = Signal(providing_args=["instance", "file", "options"])
 post_attach_file = Signal(providing_args=["instance", "file", "response"])
