@@ -385,6 +385,7 @@ class TestImageItem:
 
             # FileFieldResource
             assert os.path.isfile(item.path)
+            assert all(os.path.isfile(vfile.path) for vname, vfile in item.variation_files())
 
             # PostrocessableFileFieldResource
             assert os.stat(TESTS_PATH / 'Image.Jpeg').st_size == 214779
@@ -436,14 +437,10 @@ class TestImageItem:
                 'admin_preview_webp': 2532,
                 'admin_preview_webp_2x': 6448,
             }
-            media_dir = os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT)
-            for vname, variation in item.get_variations().items():
-                variation_path = os.path.join(
-                    media_dir,
-                    variation.get_output_filename(item.get_file_name())
-                )
-                assert os.path.isfile(variation_path)
-                assert os.stat(variation_path).st_size == expected_varaition_sizes[vname]
+
+            for vname, vfile in item.variation_files():
+                assert os.path.isfile(vfile.path)
+                assert os.stat(vfile.path).st_size == expected_varaition_sizes[vname]
 
             with pytest.raises(KeyError):
                 item.get_variation_file('nothing')
@@ -481,19 +478,16 @@ class TestImageItem:
                 })
             }
         finally:
-            file_path = item.path
-            assert os.path.isfile(file_path) is True
-            item.delete_file()
-            assert os.path.isfile(file_path) is False
-            assert item.is_file_exists() is False
+            source_path = item.path
+            variation_pathes = {
+                vfile.path
+                for vname, vfile in item.variation_files()
+            }
 
-            media_dir = os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT)
-            for vname, variation in item.get_variations().items():
-                variation_path = os.path.join(
-                    media_dir,
-                    variation.get_output_filename(file_path)
-                )
-                assert os.path.isfile(variation_path) is False
+            item.delete_file()
+            assert os.path.isfile(source_path) is False
+            assert all(not os.path.isfile(path) for path in variation_pathes)
+            assert item.is_file_exists() is False
 
             collection.delete()
 

@@ -52,6 +52,7 @@ class TestUploadedImage:
 
             # FileFieldResource
             assert os.path.isfile(obj.path)
+            assert all(os.path.isfile(vfile.path) for vname, vfile in obj.variation_files())
 
             # PostrocessableFileFieldResource
             assert os.stat(TESTS_PATH / 'Image.Jpeg').st_size == 214779
@@ -105,11 +106,10 @@ class TestUploadedImage:
                 'tablet': 82449,
                 'admin': 13404,
             }
-            varaition_dir = os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, f"images/{now().strftime('%Y-%m-%d')}/")
-            for vname in obj.get_variations().keys():
-                file_path = os.path.join(varaition_dir, f"Image{suffix}.{vname}.jpg")
-                assert os.path.isfile(file_path)
-                assert os.stat(file_path).st_size == expected_varaition_sizes[vname]
+
+            for vname, vfile in obj.variation_files():
+                assert os.path.isfile(vfile.path)
+                assert os.stat(vfile.path).st_size == expected_varaition_sizes[vname]
 
             with pytest.raises(KeyError):
                 obj.get_variation_file('nothing')
@@ -139,16 +139,16 @@ class TestUploadedImage:
                 )
             }
         finally:
-            file_path = obj.path
-            assert os.path.isfile(file_path) is True
-            obj.delete_file()
-            assert os.path.isfile(file_path) is False
-            assert obj.is_file_exists() is False
+            source_path = obj.path
+            variation_pathes = {
+                vfile.path
+                for vname, vfile in obj.variation_files()
+            }
 
-            varaition_dir = os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, f"images/{now().strftime('%Y-%m-%d')}/")
-            for vname in obj.get_variations().keys():
-                file_path = os.path.join(varaition_dir, f"Image{suffix}.{vname}.jpg")
-                assert os.path.isfile(file_path) is False
+            obj.delete_file()
+            assert os.path.isfile(source_path) is False
+            assert all(not os.path.isfile(path) for path in variation_pathes)
+            assert obj.is_file_exists() is False
 
     def test_orphan_image(self):
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_image:
@@ -195,10 +195,8 @@ class TestUploadedImage:
         suffix = re.match(r'Image((?:_\w+)?)', os.path.basename(obj.file.name)).group(1)
 
         os.unlink(obj.path)
-        varaition_dir = os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, f"images/{now().strftime('%Y-%m-%d')}/")
-        for vname in obj.get_variations().keys():
-            file_path = os.path.join(varaition_dir, f"Image{suffix}.{vname}.jpg")
-            os.unlink(file_path)
+        for vname, vfile in obj.variation_files():
+            os.unlink(vfile.path)
 
         try:
             assert obj.closed is True
@@ -207,6 +205,46 @@ class TestUploadedImage:
             assert obj.is_file_exists() is False
             assert obj.desktop.url == f"/media/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.desktop.jpg"
         finally:
+            obj.delete_file()
+            obj.delete()
+
+    def test_image_rename(self):
+        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+            obj = UploadedImage(
+                owner_app_label='app',
+                owner_model_name='page',
+                owner_fieldname='image_ext'
+            )
+            obj.attach_file(jpeg_file, name='Image.Jpeg')
+            obj.save()
+
+        source_path = obj.path
+        variation_pathes = {
+            vfile.path
+            for vname, vfile in obj.variation_files()
+        }
+        obj.rename_file('/path/to/new_image.webp')    # must use only filename without extension
+
+        try:
+            # old files exists
+            assert os.path.isfile(source_path)
+            assert all(os.path.isfile(path) for path in variation_pathes)
+
+            new_source_path = obj.path
+            new_variation_pathes = {
+                vfile.path
+                for vname, vfile in obj.variation_files()
+            }
+            assert 'new_image' in new_source_path
+
+            # new files exists
+            assert os.path.isfile(new_source_path)
+            assert all(os.path.isfile(path) for path in new_variation_pathes)
+        finally:
+            os.unlink(source_path)
+            for path in variation_pathes:
+                os.unlink(path)
+
             obj.delete_file()
             obj.delete()
 
