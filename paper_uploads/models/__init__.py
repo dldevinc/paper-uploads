@@ -1,4 +1,4 @@
-from .base import UploadedFileBase
+from .base import *
 from .file import UploadedFile
 from .image import UploadedImageBase, VariationalImageBase, UploadedImage
 from .collection import *

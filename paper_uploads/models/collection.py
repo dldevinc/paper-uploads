@@ -22,8 +22,7 @@ from ..variations import PaperVariation
 from ..postprocess import postprocess_common_file, postprocess_variation
 from ..helpers import build_variations
 from .. import tasks
-from .base import SlaveModelMixin
-from .file import UploadedFileBase
+from .base import UploadedFileBase, SlaveModelMixin
 from .containers import FileFieldContainerMixin
 from .image import VariationalImageBase, VariationalFileField
 from .fields import CollectionItemTypeField, FormattedFileField
