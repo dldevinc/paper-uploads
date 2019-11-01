@@ -520,7 +520,7 @@ class Collection(CollectionBase):
 
 class ImageCollection(Collection):
     """
-    Галерея, позволяющая хранить только изображения.
+    Коллекция, позволяющая хранить только изображения.
     """
     image = CollectionItemTypeField(ImageItem)
 

@@ -354,9 +354,9 @@ class TestImageItem:
                 title='Image title',
                 description='Image description',
             )
-            # item.attach_file(jpeg_file)     # <- works
+            # item.attach_file(jpeg_file)     # <- TODO: recursion error
             item.attach_to(collection)
-            item.attach_file(jpeg_file)     # <- works too
+            item.attach_file(jpeg_file)
             item.full_clean()
             item.save()
 
