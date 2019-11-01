@@ -182,8 +182,12 @@ class FileResource(HashableResourceMixin):
         raise NotImplementedError
 
     def rename_file(self, new_name: str):
+        basename = os.path.basename(new_name)
+        file_name, _ = os.path.splitext(basename)
+        self.name = file_name
+
         signals.pre_rename_file.send(type(self), instance=self, new_name=new_name)
-        self._rename_file(new_name)
+        self._rename_file(file_name)
         signals.post_rename_file.send(type(self), instance=self, new_name=new_name)
 
     def _rename_file(self, new_name: str):
