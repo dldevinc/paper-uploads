@@ -197,7 +197,7 @@ class FileItemBase(CollectionFileItemMixin, FileFieldContainerMixin, CollectionI
         if itemtype_field is None:
             return
 
-        postprocess_common_file(self.get_file_name(), field=itemtype_field)
+        postprocess_common_file(self.get_file(), field=itemtype_field)
 
         new_hash = self.get_file_hash()
         if new_hash and new_hash != self.hash:
@@ -298,8 +298,8 @@ class ImageItemBase(CollectionFileItemMixin, FileFieldContainerMixin, Collection
         for name, variation in self.get_variations().items():
             if names and name not in names:
                 continue
-            variation_filename = variation.get_output_filename(self.get_file_name())
-            postprocess_variation(variation_filename, variation, field=itemtype_field)
+            variation_file = self.get_variation_file(name)
+            postprocess_variation(variation_file, variation, field=itemtype_field)
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         """
