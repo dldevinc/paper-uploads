@@ -179,8 +179,8 @@ class TestFileItem:
             assert item.get_itemtype_field() is PageFilesGallery.item_types['file']
 
             # FilePreviewItemMixin
-            assert item.preview == f"/static/paper_uploads/dist/image/xls.svg"
-            assert item.get_preview_url() == item.preview
+            assert item.preview_url == f"/static/paper_uploads/dist/image/xls.svg"
+            assert item.get_preview_url() == item.preview_url
 
             # FileItem
             assert item.display_name == 'sheet'
@@ -194,6 +194,7 @@ class TestFileItem:
                 'url': item.get_file_url(),
                 'collectionId': item.collection_id,
                 'item_type': item.item_type,
+                'caption': item.get_basename(),
                 'preview': loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
                     'item': item,
                     'preview_width': paper_settings.COLLECTION_ITEM_PREVIEW_WIDTH,
@@ -300,6 +301,7 @@ class TestSVGItem:
                 'url': item.get_file_url(),
                 'collectionId': item.collection_id,
                 'item_type': item.item_type,
+                'caption': item.get_basename(),
                 'preview': loader.render_to_string('paper_uploads/collection_item/preview/svg.html', {
                     'item': item,
                     'preview_width': paper_settings.COLLECTION_ITEM_PREVIEW_WIDTH,
@@ -471,6 +473,7 @@ class TestImageItem:
                 'cropregion': item.cropregion,
                 'title': item.title,
                 'description': item.description,
+                'caption': item.get_basename(),
                 'preview': loader.render_to_string('paper_uploads/collection_item/preview/image.html', {
                     'item': item,
                     'preview_width': paper_settings.COLLECTION_ITEM_PREVIEW_WIDTH,

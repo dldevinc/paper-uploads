@@ -1,7 +1,7 @@
 import magic
 import posixpath
 from collections import OrderedDict
-from typing import Dict, Type, Any, Iterable
+from typing import Dict, Type, Any
 from django.db import models, DEFAULT_DB_ALIAS
 from django.core import checks
 from django.template import loader
@@ -127,6 +127,8 @@ class CollectionResourceItem(PolymorphicModel):
             **super().as_dict(),
             'collectionId': self.collection_id,
             'item_type': self.item_type,
+            'caption': self.caption,
+            'preview': self.preview,
         }
 
     def get_collection_class(self) -> Type['CollectionBase']:
@@ -153,16 +155,34 @@ class CollectionResourceItem(PolymorphicModel):
         else:
             raise ValueError('Unsupported collection item: %s' % type(self).__name__)
 
+    @property
+    def caption(self):
+        """ Заголовок для виджета в админке """
+        raise NotImplementedError
+
+    @property
+    def preview(self):
+        """ Картинка-превью для виджета в админке """
+        raise NotImplementedError
+
 
 class FilePreviewItemMixin(models.Model):
-    preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
+    preview_url = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
 
     class Meta:
         abstract = True
 
     def save(self, *args, **kwargs):
-        self.preview = self.get_preview_url()
+        self.preview_url = self.get_preview_url()
         super().save(*args, **kwargs)
+
+    @property
+    def preview(self):
+        return loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
+            'item': self,
+            'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+            'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+        })
 
     def get_preview_url(self):
         icon_path_template = 'paper_uploads/dist/image/{}.svg'
@@ -171,16 +191,6 @@ class FilePreviewItemMixin(models.Model):
         if find(icon_path) is None:
             icon_path = icon_path_template.format(FILE_ICON_DEFAULT)
         return staticfiles_storage.url(icon_path)
-
-    def as_dict(self) -> Dict[str, Any]:
-        return {
-            **super().as_dict(),
-            'preview': loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
-                'item': self,
-                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-            })
-        }
 
 
 class FileItem(FilePreviewItemMixin, ReadonlyFileProxyMixin, CollectionResourceItem, PostprocessableFileFieldResource):
@@ -220,12 +230,13 @@ class FileItem(FilePreviewItemMixin, ReadonlyFileProxyMixin, CollectionResourceI
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
-            'preview': loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
-                'item': self,
-                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-            })
+            'caption': self.caption,
+            'preview': self.preview,
         }
+
+    @property
+    def caption(self):
+        return self.get_basename()
 
     @classmethod
     def file_supported(cls, file: File) -> bool:
@@ -267,15 +278,17 @@ class SVGItem(ReadonlyFileProxyMixin, CollectionResourceItem, PostprocessableFil
                 self.modified_at = now()
                 self.save(update_fields=['hash', 'size', 'modified_at'])
 
-    def as_dict(self) -> Dict[str, Any]:
-        return {
-            **super().as_dict(),
-            'preview': loader.render_to_string('paper_uploads/collection_item/preview/svg.html', {
-                'item': self,
-                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-            })
-        }
+    @property
+    def caption(self):
+        return self.get_basename()
+
+    @property
+    def preview(self):
+        return loader.render_to_string('paper_uploads/collection_item/preview/svg.html', {
+            'item': self,
+            'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+            'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+        })
 
     @classmethod
     def file_supported(cls, file: File) -> bool:
@@ -337,15 +350,17 @@ class ImageItem(ReadonlyFileProxyMixin, VersatileImageResourceMixin, CollectionR
             self._variations_cache = build_variations(variation_configs)
         return self._variations_cache
 
-    def as_dict(self) -> Dict[str, Any]:
-        return {
-            **super().as_dict(),
-            'preview': loader.render_to_string('paper_uploads/collection_item/preview/image.html', {
-                'item': self,
-                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-            })
-        }
+    @property
+    def caption(self):
+        return self.get_basename()
+
+    @property
+    def preview(self):
+        return loader.render_to_string('paper_uploads/collection_item/preview/image.html', {
+            'item': self,
+            'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+            'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+        })
 
     @classmethod
     def file_supported(cls, file: File) -> bool:
