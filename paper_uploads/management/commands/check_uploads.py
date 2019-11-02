@@ -1,8 +1,8 @@
 from django.apps import apps
 from django.db import DEFAULT_DB_ALIAS
 from django.core.management import BaseCommand
-from ...models.base import SlaveModelMixin
-from ...models import UploadedFileBase, VariationalImageBase, Collection, CollectionItemBase
+from ...models.base import FileResource, VersatileImageResourceMixin, ReverseFieldModelMixin
+from ...models.collection import CollectionResourceItem, Collection
 
 
 class Command(BaseCommand):
@@ -22,7 +22,7 @@ class Command(BaseCommand):
 
     def check_exists(self):
         for model in apps.get_models():
-            if not issubclass(model, UploadedFileBase):
+            if not issubclass(model, FileResource):
                 continue
 
             total = model._base_manager.using(self.database).count()
@@ -30,6 +30,8 @@ class Command(BaseCommand):
                 continue
 
             for index, instance in enumerate(model._base_manager.using(self.database).iterator(), start=1):
+                assert isinstance(instance, FileResource)
+
                 if self.verbosity >= 2:
                     self.stdout.write('\r' + (' ' * 80), ending='\r')
 
@@ -40,7 +42,7 @@ class Command(BaseCommand):
                     instance=instance
                 )
 
-                if not instance.file_exists():
+                if not instance.is_file_exists():
                     invalid = True
                     message += "\n  Not found source file"
 
@@ -62,7 +64,7 @@ class Command(BaseCommand):
 
     def check_variations(self):
         for model in apps.get_models():
-            if not issubclass(model, VariationalImageBase):
+            if not issubclass(model, VersatileImageResourceMixin):
                 continue
 
             total = model._base_manager.using(self.database).count()
@@ -70,6 +72,8 @@ class Command(BaseCommand):
                 continue
 
             for index, instance in enumerate(model._base_manager.using(self.database).iterator(), start=1):
+                assert isinstance(instance, VersatileImageResourceMixin)
+
                 if self.verbosity >= 2:
                     self.stdout.write('\r' + (' ' * 80), ending='\r')
 
@@ -81,13 +85,13 @@ class Command(BaseCommand):
                 )
 
                 missed_variations = []
-                for name, file in instance.get_variation_files():
-                    if not file.exists():
-                        missed_variations.append(name)
+                for vname, vfile in instance.variation_files():
+                    if not vfile.exists():
+                        missed_variations.append(vname)
 
                 if missed_variations:
                     invalid = True
-                    recreatable = self.options['fix_missing'] and instance.file_exists()
+                    recreatable = self.options['fix_missing'] and instance.is_file_exists()
                     for vname in missed_variations:
                         message += "\n  Not found variation '{}'".format(vname)
                         if recreatable:
@@ -114,7 +118,7 @@ class Command(BaseCommand):
 
     def check_owners(self):
         for model in apps.get_models():
-            if not issubclass(model, SlaveModelMixin):
+            if not issubclass(model, ReverseFieldModelMixin):
                 continue
 
             if model._meta.proxy:
@@ -125,6 +129,8 @@ class Command(BaseCommand):
                 continue
 
             for index, instance in enumerate(model._base_manager.using(self.database).iterator(), start=1):
+                assert isinstance(instance, ReverseFieldModelMixin)
+
                 if self.verbosity >= 2:
                     self.stdout.write('\r' + (' ' * 80), ending='\r')
 
@@ -184,8 +190,10 @@ class Command(BaseCommand):
                 self.stdout.write('')
 
     def check_item_types(self):
-        total = CollectionItemBase.objects.using(self.database).count()
-        for index, item in enumerate(CollectionItemBase.objects.using(self.database).iterator(), start=1):
+        total = CollectionResourceItem.objects.using(self.database).count()
+        for index, item in enumerate(CollectionResourceItem.objects.using(self.database).iterator(), start=1):
+            assert isinstance(item, CollectionResourceItem)
+
             if self.verbosity >= 2:
                 self.stdout.write('\r' + (' ' * 80), ending='\r')
 

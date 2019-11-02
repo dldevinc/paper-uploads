@@ -7,33 +7,34 @@ from django.db.models.fields import Field
 from django.core.management import BaseCommand
 from django.db.models.utils import make_model_tuple
 from paper_uploads.models import ItemField
-from ...models import VariationalImageBase, ImageItemBase, Collection
-
-
-def is_gallery(model: Type[Union[models.Model, Collection]]) -> bool:
-    """
-    Возвращает True, если model - коллекция, в которой есть хотя бы один
-    элемент подкласса ImageItemBase.
-    """
-    if issubclass(model, Collection):
-        for name, field in model.item_types.items():
-            if issubclass(field.model, ImageItemBase):
-                return True
-    return False
+from ...models.base import VersatileImageResourceMixin
+from ...models.collection import Collection
 
 
 def is_image(field: Field) -> bool:
     """
-    Возвращает True, если поле хранит изображение, которое можно перенарезать.
+    Возвращает True, если поле ссылается на класс изображения с вариациями.
     """
-    return field.is_relation and issubclass(field.related_model, VariationalImageBase)
+    return field.is_relation and issubclass(field.related_model, VersatileImageResourceMixin)
 
 
 def is_image_item(field: ItemField) -> bool:
     """
-    Возвращает True, если поле коллекции ссылается на элемент-изображение.
+    Возвращает True, если поле коллекции подключает класс элемента
+    изображения с вариациями.
     """
-    return issubclass(field.model, ImageItemBase)
+    return issubclass(field.model, VersatileImageResourceMixin)
+
+
+def is_gallery(model: Type[Union[models.Model, Collection]]) -> bool:
+    """
+    Возвращает True, если model - коллекция, в которой есть
+    хотя бы один класс элемента изображения с вариациями.
+    """
+    return issubclass(model, Collection) and any(
+        is_image_item(field)
+        for field in model.item_types.values()
+    )
 
 
 def get_allowed_models() -> Tuple[List[str], List[str]]:
@@ -57,6 +58,10 @@ def get_allowed_models() -> Tuple[List[str], List[str]]:
 
 
 def get_allowed_fields(model: Type[Union[models.Model, Collection]]) -> List[str]:
+    """
+    Для заданной модели возвращает список имен полей, хранящих
+    ссылки на изображения с вариациями.
+    """
     if is_gallery(model):
         return [
             name
@@ -71,15 +76,11 @@ def get_allowed_fields(model: Type[Union[models.Model, Collection]]) -> List[str
         ]
 
 
-def get_regular_field(model: Type[models.Model], fieldname: str) -> Field:
-    return model._meta.get_field(fieldname)
-
-
-def get_itemtype_field(model: Type[Collection], fieldname: str) -> ItemField:
-    return model.item_types[fieldname]
-
-
-def get_allowed_variations(model: Type[Union[models.Model, Collection]], field: Union[VariationalImageBase, ItemField]) -> List[str]:
+def get_allowed_variations(model: Type[Union[models.Model, Collection]],
+        field: Union[VersatileImageResourceMixin, ItemField]) -> List[str]:
+    """
+    Для заданного поля модели возвращает список имен вариаций
+    """
     if is_gallery(model):
         if not is_image_item(field):
             raise TypeError("field '%s' refers to the non-image model" % field.name)
@@ -88,6 +89,20 @@ def get_allowed_variations(model: Type[Union[models.Model, Collection]], field: 
         if not is_image(field):
             raise TypeError("field '%s' refers to the non-image model" % field.name)
         return list(field.variations.keys())
+
+
+def get_regular_field(model: Type[models.Model], fieldname: str) -> Field:
+    """
+    Получение поля обычной модели
+    """
+    return model._meta.get_field(fieldname)
+
+
+def get_itemtype_field(model: Type[Collection], fieldname: str) -> ItemField:
+    """
+    Получение поля коллекции
+    """
+    return model.item_types[fieldname]
 
 
 class Command(BaseCommand):
@@ -148,7 +163,7 @@ class Command(BaseCommand):
 
         # process
         if is_gallery(model):
-            total = model.objects.using(self.database).count()  # use objects manager!
+            total = model.objects.using(self.database).count()  # use `objects` manager!
             for index, collection in enumerate(model.objects.using(self.database).iterator(), start=1):
                 if self.verbosity >= 1:
                     self.stdout.write(self.style.SUCCESS(
@@ -156,7 +171,11 @@ class Command(BaseCommand):
                             model_name, collection.pk, index, total
                         )
                     ))
-                collection.recut(names=variations, using=self.database)
+
+                for name, field in collection.item_types.items():
+                    if is_image_item(field):
+                        for item in collection.get_items().iterator():
+                            item.recut(names=variations)
         else:
             instances = model._base_manager.using(self.database).exclude((fieldname, None))
             total = instances.count()
