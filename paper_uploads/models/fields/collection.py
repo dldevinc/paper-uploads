@@ -41,7 +41,7 @@ class CollectionField(FileFieldBase):
         })
 
 
-class CollectionItemTypeField:
+class ItemField:
     """
     Поле для подключения классов элементов галереи.
     Допустимо для использования только в подклассах галерей.
@@ -55,9 +55,10 @@ class CollectionItemTypeField:
             to._meta.model_name
         except AttributeError:
             assert isinstance(to, str), (
-                "%s(%r) is invalid. First parameter to CollectionItemTypeField must be a model" % (
+                "%s(%r) is invalid. First parameter to %s must be a model" % (
                     self.__class__.__name__,
                     to,
+                    self.__class__.__name__,
                 )
             )
 

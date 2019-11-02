@@ -11,5 +11,5 @@ __all__ = [
     'FileItem', 'SVGItem', 'ImageItem',
     'Collection', 'ImageCollection',
 
-    'FileField', 'ImageField', 'CollectionField', 'CollectionItemTypeField'
+    'FileField', 'ImageField', 'CollectionField', 'ItemField'
 ]

@@ -9,7 +9,7 @@ from cloudinary.models import CloudinaryField
 from ...conf import settings
 from ...models.base import UploadedFileBase
 from ...models.image import UploadedImageBase
-from ...models.fields import CollectionItemTypeField
+from ...models.fields import ItemField
 from ...models.collection import FilePreviewItemMixin, CollectionResourceItem, Collection
 from ..container import CloudinaryContainerMixin
 
@@ -158,13 +158,13 @@ class CloudinaryMediaItem(CloudinaryCollectionFileItemMixin, FilePreviewItemMixi
 
 
 class CloudinaryCollection(Collection):
-    image = CollectionItemTypeField(CloudinaryImageItem)
-    media = CollectionItemTypeField(CloudinaryMediaItem)
-    file = CollectionItemTypeField(CloudinaryFileItem)
+    image = ItemField(CloudinaryImageItem)
+    media = ItemField(CloudinaryMediaItem)
+    file = ItemField(CloudinaryFileItem)
 
 
 class CloudinaryImageCollection(Collection):
-    image = CollectionItemTypeField(CloudinaryImageItem)
+    image = ItemField(CloudinaryImageItem)
 
     @classmethod
     def get_validation(cls) -> Dict[str, Any]:

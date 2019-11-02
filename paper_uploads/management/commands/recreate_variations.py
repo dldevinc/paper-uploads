@@ -6,7 +6,7 @@ from django.db import models, DEFAULT_DB_ALIAS
 from django.db.models.fields import Field
 from django.core.management import BaseCommand
 from django.db.models.utils import make_model_tuple
-from paper_uploads.models import CollectionItemTypeField
+from paper_uploads.models import ItemField
 from ...models import VariationalImageBase, ImageItemBase, Collection
 
 
@@ -29,7 +29,7 @@ def is_image(field: Field) -> bool:
     return field.is_relation and issubclass(field.related_model, VariationalImageBase)
 
 
-def is_image_item(field: CollectionItemTypeField) -> bool:
+def is_image_item(field: ItemField) -> bool:
     """
     Возвращает True, если поле коллекции ссылается на элемент-изображение.
     """
@@ -75,11 +75,11 @@ def get_regular_field(model: Type[models.Model], fieldname: str) -> Field:
     return model._meta.get_field(fieldname)
 
 
-def get_itemtype_field(model: Type[Collection], fieldname: str) -> CollectionItemTypeField:
+def get_itemtype_field(model: Type[Collection], fieldname: str) -> ItemField:
     return model.item_types[fieldname]
 
 
-def get_allowed_variations(model: Type[Union[models.Model, Collection]], field: Union[VariationalImageBase, CollectionItemTypeField]) -> List[str]:
+def get_allowed_variations(model: Type[Union[models.Model, Collection]], field: Union[VariationalImageBase, ItemField]) -> List[str]:
     if is_gallery(model):
         if not is_image_item(field):
             raise TypeError("field '%s' refers to the non-image model" % field.name)

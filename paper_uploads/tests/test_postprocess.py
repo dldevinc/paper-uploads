@@ -209,7 +209,7 @@ class TestFileFieldOverride:
 
 class TestCollectionItemField:
     def test_options(self):
-        field = CollectionItemTypeField(SVGItem)
+        field = ItemField(SVGItem)
 
         assert (postprocess.get_postprocess_common_options('svg', field) == {
             'command': 'svgo',
@@ -222,7 +222,7 @@ class TestCollectionItemField:
 
 class TestCollectionItemFieldBlocked:
     def test_options(self):
-        field = CollectionItemTypeField(SVGItem, postprocess=False)
+        field = ItemField(SVGItem, postprocess=False)
 
         with pytest.raises(PostprocessProhibited):
             postprocess.get_postprocess_common_options('svg', field)
@@ -231,9 +231,9 @@ class TestCollectionItemFieldBlocked:
             postprocess.get_postprocess_common_options('exe', field)
 
 
-class TestCollectionItemTypeFieldOverride:
+class TestItemFieldOverride:
     def test_options(self):
-        field = CollectionItemTypeField(SVGItem, postprocess=dict(
+        field = ItemField(SVGItem, postprocess=dict(
             svg=False,
             exe={
                 'command': 'echo'

@@ -193,20 +193,20 @@ from paper_uploads.models import *
 
 
 class PageFiles(Collection):
-    svg = CollectionItemTypeField(SVGItem)
-    image = CollectionItemTypeField(ImageItem)
-    file = CollectionItemTypeField(FileItem)
+    svg = ItemField(SVGItem)
+    image = ItemField(ImageItem)
+    file = ItemField(FileItem)
 ``` 
 
-Псевдо-поле `CollectionItemTypeField` подключает модель 
+Псевдо-поле `ItemField` подключает модель 
 элемента к коллекции под заданным именем, которое сохраняется 
 в базу данных (в поле `item_type`) вместе с загруженным файлом. 
 При изменении имен псевдо-полей или при добавлении новых классов 
 элементов к существующим коллекциям, разработчик должен самостоятельно 
 обеспечить согласованное состояние БД.
 
-Вместе с моделью элемента, в поле `CollectionItemTypeField`
-можно указать [валидаторы](#Validators) и дополнительные параметры 
+Вместе с моделью элемента, в поле `ItemField` можно указать 
+[валидаторы](#Validators) и дополнительные параметры 
 (в словаре `options`), которые могут быть использованы для 
 более детальной настройки элемента коллекции.
 
@@ -224,9 +224,9 @@ from paper_uploads.models import *
 
 
 class PageFiles(Collection):
-    svg = CollectionItemTypeField(SVGItem)
-    image = CollectionItemTypeField(ImageItem)
-    file = CollectionItemTypeField(FileItem)
+    svg = ItemField(SVGItem)
+    image = ItemField(ImageItem)
+    file = ItemField(FileItem)
 
 
 class Page(models.Model):
@@ -256,17 +256,16 @@ class Page(models.Model):
                 clip=False            
             )        
         )       
-        image = CollectionItemTypeField(ImageItem)
+        image = ItemField(ImageItem)
     ```
    
-2) в дополнительных параметрах поля `CollectionItemTypeField` 
-по ключу `variations`:
+2) в дополнительных параметрах поля `ItemField` по ключу `variations`:
 
     ```python
     from paper_uploads.models import *
     
     class PageGallery(Collection):
-        image = CollectionItemTypeField(ImageItem, options={
+        image = ItemField(ImageItem, options={
             'variations': dict(
                 mobile=dict(
                     size=(640, 0),
@@ -455,7 +454,7 @@ class Page(models.Model):
 
 
 class PageGallery(Collection):
-    file = CollectionItemTypeField(FileItem, validators=[
+    file = ItemField(FileItem, validators=[
         SizeValidator(10 * 1024 * 1024), 
     ])
 ```
@@ -552,16 +551,16 @@ class Page(models.Model):
 с `pilkit`-процессорами, указываемыми в параметре `postprocessors`.
 
 В коллекциях переопределить команду можно через 
-псевдо-поле `CollectionItemTypeField`:
+псевдо-поле `ItemField`:
 ```python
 class PageFiles(Collection):
-    image = CollectionItemTypeField(ImageItem, postprocess={
+    image = ItemField(ImageItem, postprocess={
         'jpeg': {
             'command': 'jpegtran',     
             'arguments': '"{file}"', 
         }              
     })
-    file = CollectionItemTypeField(FileItem)
+    file = ItemField(FileItem)
 ```
 
 ### Common postprocessing
@@ -592,16 +591,16 @@ class Page(models.Model):
 ```
 
 В коллекциях переопределить команду можно через 
-псевдо-поле `CollectionItemTypeField`:
+псевдо-поле `ItemField`:
 ```python
 class PageFiles(Collection):
-    svg = CollectionItemTypeField(SVGItem, postprocess={
+    svg = ItemField(SVGItem, postprocess={
         'svg': {
             'command': 'svgo',     
             'arguments': '--precision=4 "{file}"', 
         }              
     })
-    file = CollectionItemTypeField(FileItem)
+    file = ItemField(FileItem)
 ```
 
 ## Variation versions
@@ -722,8 +721,8 @@ from paper_uploads.cloudinary.models import *
 
 
 class PageFiles(Collection):
-    image = CollectionItemTypeField(CloudinaryImageItem)
-    file = CollectionItemTypeField(CloudinaryFileItem)
+    image = ItemField(CloudinaryImageItem)
+    file = ItemField(CloudinaryFileItem)
 
 
 class Page(models.Model):
