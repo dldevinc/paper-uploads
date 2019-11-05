@@ -24,7 +24,7 @@ class FileFieldBase(models.OneToOneField):
         ]
 
     def _check_relation_class(self):
-        from ...models.base import FileFieldResource, ReverseFieldModelMixin
+        from ...models.base import FileResource, ReverseFieldModelMixin
 
         rel_is_string = isinstance(self.remote_field.model, str)
         if rel_is_string:
@@ -33,13 +33,13 @@ class FileFieldBase(models.OneToOneField):
         model_name = self.remote_field.model if rel_is_string else self.remote_field.model._meta.object_name
 
         if (
-            not issubclass(self.remote_field.model, FileFieldResource)
+            not issubclass(self.remote_field.model, FileResource)
             or not issubclass(self.remote_field.model, ReverseFieldModelMixin)
         ):
             return [
                 checks.Error(
                     "Field defines a relation with model '%s', which is not "
-                    "subclass of both UploadedFileBase and SlaveModelMixin" % model_name,
+                    "subclass of both FileResource and ReverseFieldModelMixin" % model_name,
                     obj=self,
                 )
             ]

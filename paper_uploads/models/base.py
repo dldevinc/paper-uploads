@@ -630,7 +630,7 @@ class ReadonlyFileProxyMixin:
         return self.get_file()
 
     def __exit__(self, exc_type, exc_value, tb):
-        self.get_file().close()
+        self.close()
 
     def open(self, mode='rb'):
         return self.get_file().open(mode)

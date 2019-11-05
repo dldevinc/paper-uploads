@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'paper_uploads',
-    # 'paper_uploads.cloudinary',
+    'paper_uploads.cloudinary',
     'django_rq',
     'cloudinary',
     'tests.app',
