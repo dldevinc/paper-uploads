@@ -235,3 +235,13 @@ class TestCloudinaryImageField:
             'maxImageWidth': 1920,
             'maxImageHeight': 1440,
         }
+
+    def test_cloudinary_options(self):
+        field = CloudinaryImageField(cloudinary={
+            'public_id': 'myimage',
+            'folder': 'images',
+        })
+        assert field.cloudinary_options == {
+            'public_id': 'myimage',
+            'folder': 'images',
+        }

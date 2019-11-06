@@ -207,11 +207,11 @@ class TestCloudinaryFileField:
         }
 
     def test_cloudinary_options(self):
-        field = CloudinaryFileField(public_id='myfile', folder='files')
+        field = CloudinaryFileField(cloudinary={
+            'public_id': 'myfile',
+            'folder': 'files',
+        })
         assert field.cloudinary_options == {
-            'use_filename': True,
-            'unique_filename': True,
-            'overwrite': True,
             'public_id': 'myfile',
             'folder': 'files',
         }

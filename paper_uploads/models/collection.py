@@ -227,13 +227,6 @@ class FileItem(FilePreviewItemMixin, ReadonlyFileProxyMixin, CollectionResourceI
                 self.modified_at = now()
                 self.save(update_fields=['hash', 'size', 'modified_at'])
 
-    def as_dict(self) -> Dict[str, Any]:
-        return {
-            **super().as_dict(),
-            'caption': self.caption,
-            'preview': self.preview,
-        }
-
     @property
     def caption(self):
         return self.get_basename()
@@ -513,6 +506,7 @@ class ImageCollection(Collection):
 
     @classmethod
     def get_validation(cls) -> Dict[str, Any]:
+        # TODO: магический метод
         return {
             'acceptFiles': ['image/*'],
         }

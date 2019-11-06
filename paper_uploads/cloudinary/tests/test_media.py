@@ -208,11 +208,11 @@ class TestCloudinaryMediaField:
         }
 
     def test_cloudinary_options(self):
-        field = CloudinaryMediaField(public_id='myfile', folder='files')
+        field = CloudinaryMediaField(cloudinary={
+            'public_id': 'myimage',
+            'folder': 'media',
+        })
         assert field.cloudinary_options == {
-            'use_filename': True,
-            'unique_filename': True,
-            'overwrite': True,
-            'public_id': 'myfile',
-            'folder': 'files',
+            'public_id': 'myimage',
+            'folder': 'media',
         }

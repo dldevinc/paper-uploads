@@ -4,6 +4,7 @@ from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
 from ... import signals
+from ...conf import settings
 from ...models.base import ReverseFieldModelMixin, ImageFileResourceMixin
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
 
@@ -19,9 +20,11 @@ class CloudinaryImage(ReverseFieldModelMixin, ReadonlyCloudinaryFileProxyMixin, 
         """
         Установка опций загрузки файла из параметров поля
         """
+        cloudinary_options = settings.CLOUDINARY.copy()
         owner_field = self.get_owner_field()
         if owner_field is not None and hasattr(owner_field, 'cloudinary_options'):
-            options.setdefault('cloudinary', owner_field.cloudinary_options)
+            cloudinary_options.update(owner_field.cloudinary_options or {})
+        options.setdefault('cloudinary', cloudinary_options)
         return super().attach_file(file, name, **options)
 
     def as_dict(self) -> Dict[str, Any]:
