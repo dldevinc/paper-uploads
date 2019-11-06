@@ -230,11 +230,11 @@ class TestCloudinaryMediaItem:
     def test_file_item(self):
         collection = PageCloudinaryFilesGallery.objects.create()
 
-        with open(TESTS_PATH / 'audio.ogg', 'rb') as xls_file:
+        with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
             item = CloudinaryMediaItem()
             # item.attach_file(xls_file)      # <- works
             item.attach_to(collection)
-            item.attach_file(xls_file)      # <- works too
+            item.attach_file(audio_file)      # <- works too
             item.full_clean()
             item.save()
 

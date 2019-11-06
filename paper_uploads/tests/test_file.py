@@ -142,6 +142,39 @@ class TestUploadedFile:
             obj.delete_file()
             obj.delete()
 
+    def test_file_rename(self):
+        with open(TESTS_PATH / 'sheet.xlsx', 'rb') as xlsx_file:
+            obj = UploadedFile(
+                owner_app_label='app',
+                owner_model_name='page',
+                owner_fieldname='file'
+            )
+            obj.attach_file(xlsx_file)
+            obj.save()
+
+        old_name = obj.get_file_name()
+
+        try:
+            # check old file
+            assert obj.get_file().storage.exists(old_name)
+            assert obj.is_file_exists()
+
+            obj.rename_file('new_name')
+
+            # recheck old file
+            assert obj.get_file().storage.exists(old_name)
+
+            # check new file
+            new_name = obj.get_file_name()
+            assert obj.name == 'new_name'
+            assert 'new_name.xlsx' in new_name
+            assert obj.is_file_exists()
+            assert obj.get_file().storage.exists(new_name)
+        finally:
+            obj.get_file().storage.delete(old_name)
+            obj.delete_file()
+            obj.delete()
+
 
 class TestFileField:
     def test_rel(self):

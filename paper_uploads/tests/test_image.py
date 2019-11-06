@@ -208,42 +208,43 @@ class TestUploadedImage:
             obj.delete_file()
             obj.delete()
 
-    def test_image_rename(self):
+    def test_file_rename(self):
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
             obj = UploadedImage(
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='image_ext'
+                owner_fieldname='image'
             )
-            obj.attach_file(jpeg_file, name='Image.Jpeg')
+            obj.attach_file(jpeg_file)
             obj.save()
 
-        source_path = obj.path
-        variation_pathes = {
-            vfile.path
-            for vname, vfile in obj.variation_files()
-        }
-        obj.rename_file('/path/to/new_image.webp')    # must use only filename without extension
+        old_name = obj.get_file_name()
+        old_variations = {vfile.path for vname, vfile in obj.variation_files()}
 
         try:
-            # old files exists
-            assert os.path.isfile(source_path)
-            assert all(os.path.isfile(path) for path in variation_pathes)
+            # check old files
+            assert obj.get_file().storage.exists(old_name)
+            assert obj.is_file_exists()
+            assert all(os.path.isfile(path) for path in old_variations)
 
-            new_source_path = obj.path
-            new_variation_pathes = {
-                vfile.path
-                for vname, vfile in obj.variation_files()
-            }
-            assert 'new_image' in new_source_path
+            obj.rename_file('new_name')
 
-            # new files exists
-            assert os.path.isfile(new_source_path)
-            assert all(os.path.isfile(path) for path in new_variation_pathes)
+            # recheck old files
+            assert obj.get_file().storage.exists(old_name)
+            assert all(os.path.isfile(path) for path in old_variations)
+
+            # check new files
+            new_name = obj.get_file_name()
+            new_variations = {vfile.path for vname, vfile in obj.variation_files()}
+            assert obj.name == 'new_name'
+            assert 'new_name.jpg' in new_name
+            assert obj.is_file_exists()
+            assert obj.get_file().storage.exists(new_name)
+            assert all(os.path.isfile(path) for path in new_variations)
         finally:
-            os.unlink(source_path)
-            for path in variation_pathes:
-                os.unlink(path)
+            obj.file.storage.delete(old_name)
+            for path in old_variations:
+                obj.file.storage.delete(path)
 
             obj.delete_file()
             obj.delete()

@@ -153,25 +153,49 @@ class TestCloudinaryMedia:
             obj.delete()
 
     def test_file_rename(self):
-        with open(TESTS_PATH / 'audio.ogg', 'rb') as jpeg_file:
+        with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
             obj = CloudinaryMedia(
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='cloud_file'
+                owner_fieldname='cloud_media'
             )
-            obj.attach_file(jpeg_file)
+            obj.attach_file(audio_file)
             obj.save()
 
-        old_name = obj.get_public_id()
-        obj.rename_file('/path/to/new_audio.rar')    # must use only filename without extension
+        old_public_id = obj.get_public_id()
 
         try:
-            new_name = obj.get_public_id()
-            assert 'new_audio' in new_name
+            # check old file
+            assert isinstance(cloudinary.uploader.explicit(
+                old_public_id,
+                type=obj.cloudinary_type,
+                resource_type=obj.cloudinary_resource_type
+            ), dict)
             assert obj.is_file_exists()
+
+            obj.rename_file('new_name')
+
+            # TODO: старый файл не сохраняется
+            # # recheck old file
+            # assert isinstance(cloudinary.uploader.explicit(
+            #     old_public_id,
+            #     type=obj.cloudinary_type,
+            #     resource_type=obj.cloudinary_resource_type
+            # ), dict)
+
+            # check new file
+            new_public_id = obj.get_public_id()
+            assert obj.name == 'new_name'
+            assert re.search(r'new_name_\w+\.ogg$', obj.get_file_name()) is not None
+            assert obj.is_file_exists()
+            assert isinstance(cloudinary.uploader.explicit(
+                new_public_id,
+                type=obj.cloudinary_type,
+                resource_type=obj.cloudinary_resource_type
+            ), dict)
         finally:
             cloudinary.uploader.destroy(
-                old_name,
+                old_public_id,
                 type=obj.cloudinary_type,
                 resource_type=obj.cloudinary_resource_type
             )

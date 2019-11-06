@@ -1,5 +1,8 @@
+import string
+import random
 import requests
 import tempfile
+import posixpath
 import cloudinary.uploader
 from typing import IO
 from django.core.files import File
@@ -47,10 +50,14 @@ class CloudinaryFileResource(FileResource):
         if file is None:
             return False
 
-        response = requests.head(self.get_file_url())
-        if response.status_code == 404:
+        try:
+            cloudinary.uploader.explicit(
+                self.get_public_id(),
+                type=self.cloudinary_type,
+                resource_type=self.cloudinary_resource_type,
+            )
+        except cloudinary.exceptions.Error:
             return False
-        response.raise_for_status()
         return True
 
     def _attach_file(self, file: File, **options):
@@ -80,12 +87,21 @@ class CloudinaryFileResource(FileResource):
         return result
 
     def _rename_file(self, new_name: str):
+        old_public_id = self.get_public_id()
+
+        file_dir, file_name = posixpath.split(old_public_id)
+        _, format = posixpath.splitext(file_name)
+        rand = ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.digits) for _ in range(6))
+        new_name = posixpath.join(file_dir, f"{new_name}_{rand}")
+        if self.cloudinary_resource_type == 'raw':
+            new_name += format
+
         try:
             result = cloudinary.uploader.rename(
-                self.get_public_id(),
+                old_public_id,
                 new_name,
                 type=self.cloudinary_type,
-                resource_type=self.cloudinary_resource_type
+                resource_type=self.cloudinary_resource_type,
             )
         except cloudinary.exceptions.Error:
             logger.exception("Couldn't rename Cloudinary file: {}".format(self.get_file_name()))
