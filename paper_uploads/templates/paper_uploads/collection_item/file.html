@@ -6,14 +6,12 @@
 
   <div class="collection__item-caption sortable-handler">
     <div class="collection__item-name text-muted"
-         title="{% if item %}{{ item.canonical_name }}{% endif %}">
-      {% if item %}{{ item.canonical_name }}{% endif %}
+         title="{% if item %}{{ item.caption }}{% endif %}">
+      {% if item %}{{ item.caption }}{% endif %}
     </div>
   </div>
 
-  <div class="collection__item-preview" style="width: {{ preview_width }}px; height: {{ preview_height }}px">
-    {% include 'paper_uploads/collection_item/preview/file.html' %}
-  </div>
+  <div class="collection__item-preview" style="width: {{ preview_width }}px; height: {{ preview_height }}px">{{ item.preview }}</div>
 
   <div class="collection__item-toolbar">
     <div class="collection__item-tools tool-items d-flex align-items-center">

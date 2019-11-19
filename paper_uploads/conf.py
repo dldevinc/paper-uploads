@@ -32,6 +32,11 @@ DEFAULTS = {
 
     'VARIATION_DEFAULTS': {},
     'POSTPROCESS': {},
+    'CLOUDINARY': {
+        'use_filename': True,
+        'unique_filename': True,
+        'overwrite': True,
+    }
 }
 
 # List of settings that may be in string import notation.

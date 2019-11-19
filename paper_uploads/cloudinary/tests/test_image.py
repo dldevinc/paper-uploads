@@ -1,33 +1,30 @@
 import re
-import os
 import pytest
 from pathlib import Path
-from django.conf import settings
+import cloudinary.uploader
 from django.core.exceptions import ValidationError
 from django.utils.timezone import now, timedelta
 from django.template.defaultfilters import filesizeformat
-from .. import validators
-from ..models import VariationFile, UploadedImage, ImageField
+from ... import validators
+from ..models import CloudinaryImage, CloudinaryImageField
 from tests.app.models import Page
 
 pytestmark = pytest.mark.django_db
-TESTS_PATH = Path(__file__).parent / 'samples'
+TESTS_PATH = Path(__file__).parent.parent.parent / 'tests' / 'samples'
 
 
-class TestUploadedImage:
+class TestCloudinaryImage:
     def test_image(self):
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
-            obj = UploadedImage(
+            obj = CloudinaryImage(
                 title='Image title',
                 description='Image description',
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='image_ext'
+                owner_fieldname='cloud_image'
             )
             obj.attach_file(jpeg_file, name='Image.Jpeg')
             obj.save()
-
-        suffix = re.match(r'Image((?:_\w+)?)', os.path.basename(obj.file.name)).group(1)
 
         try:
             # Resource
@@ -43,30 +40,26 @@ class TestUploadedImage:
             assert obj.extension == 'jpg'
             assert obj.size == 214779
             assert str(obj) == 'Image.jpg'
-            assert repr(obj) == "UploadedImage('Image.jpg')"
+            assert repr(obj) == "CloudinaryImage('Image.jpg')"
             assert obj.get_basename() == 'Image.jpg'
             assert obj.get_file() is obj.file
-            assert obj.get_file_name() == f"images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
-            assert obj.get_file_url() == f"/media/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+            assert re.fullmatch(r'Image_\w+\.jpg', obj.get_file_name()) is not None
+            assert re.fullmatch(r'http://res\.cloudinary\.com/[^/]+/image/upload/[^/]+/Image_\w+\.jpg', obj.get_file_url()) is not None
             assert obj.is_file_exists() is True
-
-            # FileFieldResource
-            assert os.path.isfile(obj.path)
-            assert all(os.path.isfile(vfile.path) for vname, vfile in obj.variation_files())
-
-            # PostrocessableFileFieldResource
-            assert os.stat(TESTS_PATH / 'Image.Jpeg').st_size == 214779
 
             # ReverseFieldModelMixin
             assert obj.owner_app_label == 'app'
             assert obj.owner_model_name == 'page'
-            assert obj.owner_fieldname == 'image_ext'
+            assert obj.owner_fieldname == 'cloud_image'
             assert obj.get_owner_model() is Page
-            assert obj.get_owner_field() is Page._meta.get_field('image_ext')
+            assert obj.get_owner_field() is Page._meta.get_field('cloud_image')
 
             # ReadonlyFileProxyMixin
             assert obj.url == obj.get_file_url()
-            assert obj.path == os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, obj.get_file_name())
+
+            with pytest.raises(AttributeError):
+                print(obj.path)
+
             assert obj.closed is True
             with obj.open():
                 assert obj.closed is False
@@ -84,37 +77,17 @@ class TestUploadedImage:
             assert obj.height == 1200
             assert obj.cropregion == ''
 
-            # VariableImageResourceMixin
-            assert obj.get_variations().keys() == {'desktop', 'tablet', 'admin'}
+            # CloudinaryFileResource
+            assert obj.cloudinary_resource_type == 'image'
+            assert obj.cloudinary_type == 'upload'
 
-            assert obj._variations_attached is False
-            assert isinstance(obj.get_variation_file('desktop'), VariationFile)
-            assert obj.desktop is obj.get_variation_file('desktop')
-            assert obj._variations_attached is True
+            cloudinary_field = obj._meta.get_field('file')
+            assert cloudinary_field.type == obj.cloudinary_type
+            assert cloudinary_field.resource_type == obj.cloudinary_resource_type
 
-            for vname, vfile in obj.variation_files():
-                assert isinstance(vfile, VariationFile)
-                assert vfile is obj.get_variation_file(vname)
+            obj.refresh_from_db()
+            assert re.fullmatch(r'Image_\w+', obj.get_public_id()) is not None
 
-            assert obj.calculate_max_size((3000, 2000)) == (1600, 1067)
-            assert obj.calculate_max_size((1600, 1000)) == (1600, 1000)
-            assert obj.calculate_max_size((1400, 1200)) == (1600, 1200)
-            assert obj.calculate_max_size((800, 600)) == (1600, 600)
-
-            expected_varaition_sizes = {
-                'desktop': 137100,
-                'tablet': 82449,
-                'admin': 13404,
-            }
-
-            for vname, vfile in obj.variation_files():
-                assert os.path.isfile(vfile.path)
-                assert os.stat(vfile.path).st_size == expected_varaition_sizes[vname]
-
-            with pytest.raises(KeyError):
-                obj.get_variation_file('nothing')
-
-            # UploadedImage
             assert obj.get_validation() == {
                 'acceptFiles': ['image/*'],
             }
@@ -139,20 +112,14 @@ class TestUploadedImage:
                 )
             }
         finally:
-            source_path = obj.path
-            variation_pathes = {
-                vfile.path
-                for vname, vfile in obj.variation_files()
-            }
-
             obj.delete_file()
-            assert os.path.isfile(source_path) is False
-            assert all(not os.path.isfile(path) for path in variation_pathes)
             assert obj.is_file_exists() is False
+
+            obj.delete()
 
     def test_orphan_image(self):
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_image:
-            obj = UploadedImage()
+            obj = CloudinaryImage()
             obj.attach_file(jpeg_image, name='Image.Jpeg')
             obj.save()
 
@@ -164,19 +131,18 @@ class TestUploadedImage:
             obj.delete()
 
     def test_not_image(self):
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
-            obj = UploadedImage()
-            with pytest.raises(ValidationError) as exc:
-                obj.attach_file(pdf_file, name='Doc.PDF')
-            assert exc.value.message == '`Doc.pdf` is not an image'
+        with open(TESTS_PATH / 'sheet.xlsx', 'rb') as pdf_file:
+            obj = CloudinaryImage()
+            with pytest.raises(ValidationError, match='Unsupported .*'):
+                obj.attach_file(pdf_file)
             obj.delete_file()
 
     def test_empty_file(self):
-        obj = UploadedImage()
+        obj = CloudinaryImage()
         try:
             assert obj.closed is True
             assert bool(obj.file) is False
-            with pytest.raises(ValueError):
+            with pytest.raises(AttributeError):
                 obj.get_file_url()
             assert obj.is_file_exists() is False
         finally:
@@ -184,86 +150,95 @@ class TestUploadedImage:
 
     def test_missing_file(self):
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
-            obj = UploadedImage(
+            obj = CloudinaryImage(
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='image_ext'
+                owner_fieldname='cloud_image'
             )
             obj.attach_file(jpeg_file, name='Image.Jpeg')
             obj.save()
 
-        suffix = re.match(r'Image((?:_\w+)?)', os.path.basename(obj.file.name)).group(1)
-
-        os.unlink(obj.path)
-        for vname, vfile in obj.variation_files():
-            os.unlink(vfile.path)
+        cloudinary.uploader.destroy(
+            obj.get_public_id(),
+            type=obj.cloudinary_type,
+            resource_type=obj.cloudinary_resource_type
+        )
 
         try:
             assert obj.closed is True
-            assert obj.get_file_name() == f"images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
-            assert obj.get_file_url() == f"/media/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+            assert re.fullmatch(r'Image\w+\.jpg', obj.get_file_name()) is not None
+            assert re.fullmatch(r'http://res\.cloudinary\.com/[^/]+/image/upload/[^/]+/Image\w+\.jpg', obj.get_file_url()) is not None
             assert obj.is_file_exists() is False
-            assert obj.desktop.url == f"/media/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.desktop.jpg"
         finally:
             obj.delete_file()
             obj.delete()
 
     def test_file_rename(self):
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
-            obj = UploadedImage(
+        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as audio_file:
+            obj = CloudinaryImage(
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='image'
+                owner_fieldname='cloud_image'
             )
-            obj.attach_file(jpeg_file)
+            obj.attach_file(audio_file)
             obj.save()
 
-        old_name = obj.get_file_name()
-        old_variations = {vfile.path for vname, vfile in obj.variation_files()}
+        old_public_id = obj.get_public_id()
 
         try:
-            # check old files
-            assert obj.get_file().storage.exists(old_name)
+            # check old file
+            assert isinstance(cloudinary.uploader.explicit(
+                old_public_id,
+                type=obj.cloudinary_type,
+                resource_type=obj.cloudinary_resource_type
+            ), dict)
             assert obj.is_file_exists()
-            assert all(os.path.isfile(path) for path in old_variations)
 
             obj.rename_file('new_name')
 
-            # recheck old files
-            assert obj.get_file().storage.exists(old_name)
-            assert all(os.path.isfile(path) for path in old_variations)
+            # TODO: старый файл не сохраняется
+            # # recheck old file
+            # assert isinstance(cloudinary.uploader.explicit(
+            #     old_public_id,
+            #     type=obj.cloudinary_type,
+            #     resource_type=obj.cloudinary_resource_type
+            # ), dict)
 
-            # check new files
-            new_name = obj.get_file_name()
-            new_variations = {vfile.path for vname, vfile in obj.variation_files()}
+            # check new file
+            new_public_id = obj.get_public_id()
             assert obj.name == 'new_name'
-            assert 'new_name.jpg' in new_name
+            assert re.search(r'new_name_\w+\.jpg$', obj.get_file_name()) is not None
             assert obj.is_file_exists()
-            assert obj.get_file().storage.exists(new_name)
-            assert all(os.path.isfile(path) for path in new_variations)
+            assert isinstance(cloudinary.uploader.explicit(
+                new_public_id,
+                type=obj.cloudinary_type,
+                resource_type=obj.cloudinary_resource_type
+            ), dict)
         finally:
-            obj.file.storage.delete(old_name)
-            for path in old_variations:
-                obj.file.storage.delete(path)
+            cloudinary.uploader.destroy(
+                old_public_id,
+                type=obj.cloudinary_type,
+                resource_type=obj.cloudinary_resource_type
+            )
 
             obj.delete_file()
             obj.delete()
 
 
-class TestImageField:
+class TestCloudinaryImageField:
     def test_rel(self):
-        field = ImageField()
+        field = CloudinaryImageField()
         assert field.null is True
-        assert field.related_model == 'paper_uploads.UploadedImage'
+        assert field.related_model == 'paper_uploads_cloudinary.CloudinaryImage'
 
     def test_validators(self):
-        field = ImageField(validators=[
+        field = CloudinaryImageField(validators=[
             validators.SizeValidator(10 * 1024 * 1024),
             validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
             validators.ImageMinSizeValidator(640, 480),
             validators.ImageMaxSizeValidator(1920, 1440),
         ])
-        field.contribute_to_class(Page, 'image')    # resets varaitions
+        field.contribute_to_class(Page, 'cloud_image')    # resets varaitions
 
         assert field.get_validation() == {
             'sizeLimit': 10 * 1024 * 1024,
@@ -283,4 +258,14 @@ class TestImageField:
             'minImageHeight': 480,
             'maxImageWidth': 1920,
             'maxImageHeight': 1440,
+        }
+
+    def test_cloudinary_options(self):
+        field = CloudinaryImageField(cloudinary={
+            'public_id': 'myimage',
+            'folder': 'images',
+        })
+        assert field.cloudinary_options == {
+            'public_id': 'myimage',
+            'folder': 'images',
         }

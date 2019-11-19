@@ -3,7 +3,7 @@ import uuid
 import shutil
 import tempfile
 import posixpath
-from typing import Optional, Dict, Any, Iterable, Union, List, IO, Type, TypeVar
+from typing import Optional, Dict, Any, Iterable, Union, List, Type, TypeVar
 from django.conf import settings
 from django.http import JsonResponse
 from django.core.files.uploadedfile import UploadedFile

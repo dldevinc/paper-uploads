@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist, Multiple
 from ..logging import logger
 from .. import exceptions
 from ..utils import run_validators
-from ..models import UploadedFileBase
+from ..models import FileResource
 from ..forms.dialogs.file import UploadedFileDialog
 from . import helpers
 
@@ -35,7 +35,7 @@ def upload(request):
         # Определение модели файла
         content_type_id = request.POST.get('paperContentType')
         try:
-            model_class = helpers.get_model_class(content_type_id, base_class=UploadedFileBase)
+            model_class = helpers.get_model_class(content_type_id, base_class=FileResource)
         except exceptions.InvalidContentType:
             logger.exception('Error')
             return helpers.error_response('Invalid content type')
@@ -45,6 +45,7 @@ def upload(request):
             owner_model_name=request.POST.get('paperOwnerModelName'),
             owner_fieldname=request.POST.get('paperOwnerFieldname')
         )
+
         owner_field = instance.get_owner_field()
 
         try:
@@ -52,12 +53,13 @@ def upload(request):
             instance.full_clean()
             if owner_field is not None:
                 run_validators(file, owner_field.validators)
-            instance.save()
         except ValidationError as e:
             instance.delete_file()
             messages = helpers.get_exception_messages(e)
             logger.debug(messages)
             return helpers.error_response(messages)
+
+        instance.save()
     finally:
         file.close()
     return helpers.success_response(instance.as_dict())
@@ -73,7 +75,7 @@ def delete(request):
     instance_id = request.POST.get('instance_id')
 
     try:
-        model_class = helpers.get_model_class(content_type_id, base_class=UploadedFileBase)
+        model_class = helpers.get_model_class(content_type_id, base_class=FileResource)
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid content type')
@@ -105,7 +107,7 @@ class ChangeView(PermissionRequiredMixin, FormView):
         instance_id = self.request.GET.get('instance_id')
 
         try:
-            model_class = helpers.get_model_class(content_type_id, base_class=UploadedFileBase)
+            model_class = helpers.get_model_class(content_type_id, base_class=FileResource)
         except exceptions.InvalidContentType:
             raise exceptions.AjaxFormError('Invalid content type')
 

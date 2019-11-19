@@ -1,6 +1,5 @@
 import pytest
 from pathlib import Path
-from django.core.files import File
 from tests.app.models import TestCollection, TestCollectionBlocked, TestCollectionOverride
 from ..exceptions import PostprocessProhibited
 from .. import postprocess
@@ -25,7 +24,7 @@ class TestGlobal:
 
         assert (postprocess.get_postprocess_common_options('svg') == {
             'command': 'svgo',
-            'arguments': '--precision=5 "{file}"',
+            'arguments': '--precision=4 --disable=convertPathData "{file}"',
         })
 
         with pytest.raises(PostprocessProhibited):
@@ -56,7 +55,7 @@ class TestVariation:
 
         assert (postprocess.get_postprocess_variation_options('svg', variation) == {
             'command': 'svgo',
-            'arguments': '--precision=5 "{file}"',
+            'arguments': '--precision=4 --disable=convertPathData "{file}"',
         })
 
         with pytest.raises(PostprocessProhibited):
@@ -141,7 +140,7 @@ class TestFileField:
 
         assert (postprocess.get_postprocess_common_options('svg', field) == {
             'command': 'svgo',
-            'arguments': '--precision=5 "{file}"',
+            'arguments': '--precision=4 --disable=convertPathData "{file}"',
         })
 
         with pytest.raises(PostprocessProhibited):
@@ -210,11 +209,11 @@ class TestFileFieldOverride:
 
 class TestCollectionItemField:
     def test_options(self):
-        field = CollectionItemTypeField(SVGItem)
+        field = ItemField(SVGItem)
 
         assert (postprocess.get_postprocess_common_options('svg', field) == {
             'command': 'svgo',
-            'arguments': '--precision=5 "{file}"',
+            'arguments': '--precision=4 --disable=convertPathData "{file}"',
         })
 
         with pytest.raises(PostprocessProhibited):
@@ -223,7 +222,7 @@ class TestCollectionItemField:
 
 class TestCollectionItemFieldBlocked:
     def test_options(self):
-        field = CollectionItemTypeField(SVGItem, postprocess=False)
+        field = ItemField(SVGItem, postprocess=False)
 
         with pytest.raises(PostprocessProhibited):
             postprocess.get_postprocess_common_options('svg', field)
@@ -232,9 +231,9 @@ class TestCollectionItemFieldBlocked:
             postprocess.get_postprocess_common_options('exe', field)
 
 
-class TestCollectionItemTypeFieldOverride:
+class TestItemFieldOverride:
     def test_options(self):
-        field = CollectionItemTypeField(SVGItem, postprocess=dict(
+        field = ItemField(SVGItem, postprocess=dict(
             svg=False,
             exe={
                 'command': 'echo'
@@ -252,15 +251,15 @@ class TestCollectionItemTypeFieldOverride:
 class TestPostprocess:
     def test_options(self):
         with open(TESTS_PATH / 'cartman.svg', 'rb') as fp:
-            obj = UploadedFile(
-                file=File(fp, name='cartman.svg'),
-            )
+            obj = UploadedFile()
+            obj.attach_file(fp, name='cartman.svg')
             obj.save()
 
         try:
-            assert obj.size == 1022
-            assert obj.hash == 'f98668ff3534d61cfcef507478abfe7b4c1dbb8a'
+            assert obj.size == 1118
+            assert obj.hash == '563bca379c51c21a7bdff080f7cff67914040c10'
         finally:
+            obj.delete_file()
             obj.delete()
 
 
@@ -270,11 +269,11 @@ class TestRealCollection:
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
             item = ImageItem(
-                file=File(jpeg_file, name='Image.Jpeg'),
-                alt='Alternate text',
                 title='Image title',
+                description='Alternate text',
             )
             item.attach_to(collection)
+            item.attach_file(jpeg_file)
             item.full_clean()
             item.save()
 
@@ -294,12 +293,13 @@ class TestRealCollection:
 
             assert (postprocess.get_postprocess_variation_options('svg', variation, field=field) == {
                 'command': 'svgo',
-                'arguments': '--precision=5 "{file}"',
+                'arguments': '--precision=4 --disable=convertPathData "{file}"',
             })
 
             # ensure postprocessed
             assert item.mobile.size == 89900
         finally:
+            item.delete_file()
             collection.delete()
 
 
@@ -309,11 +309,11 @@ class TestRealCollectionBlocked:
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
             item = ImageItem(
-                file=File(jpeg_file, name='Image.Jpeg'),
-                alt='Alternate text',
                 title='Image title',
+                description='Alternate text',
             )
             item.attach_to(collection)
+            item.attach_file(jpeg_file)
             item.full_clean()
             item.save()
 
@@ -337,6 +337,7 @@ class TestRealCollectionBlocked:
             # ensure not postprocessed
             assert item.mobile.size == 109101
         finally:
+            item.delete_file()
             collection.delete()
 
 
@@ -346,11 +347,11 @@ class TestRealCollectionOverride:
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
             item = ImageItem(
-                file=File(jpeg_file, name='Image.Jpeg'),
-                alt='Alternate text',
                 title='Image title',
+                description='Alternate text',
             )
             item.attach_to(collection)
+            item.attach_file(jpeg_file)
             item.full_clean()
             item.save()
 
@@ -367,7 +368,7 @@ class TestRealCollectionOverride:
 
             assert (postprocess.get_postprocess_variation_options('svg', variation, field=field) == {
                 'command': 'svgo',
-                'arguments': '--precision=5 "{file}"',
+                'arguments': '--precision=4 --disable=convertPathData "{file}"',
             })
 
             assert (postprocess.get_postprocess_variation_options('webp', variation, field=field) == {
@@ -377,4 +378,5 @@ class TestRealCollectionOverride:
             # ensure not postprocessed
             assert item.mobile.size == 109101
         finally:
+            item.delete_file()
             collection.delete()

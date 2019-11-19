@@ -244,8 +244,8 @@ Collection.prototype.initUploader = function() {
 
             const fileName = clone.querySelector(_this._opts.itemName);
             if (fileName) {
-                fileName.title = response.name;
-                fileName.textContent = response.name;
+                fileName.title = response.caption;
+                fileName.textContent = response.caption;
             }
 
             preloader.before(clone);
@@ -484,8 +484,8 @@ Collection.prototype._changeItem = function(item, $dialog) {
 
             const fileName = item.querySelector(_this._opts.itemName);
             if (fileName) {
-                fileName.title = response.name;
-                fileName.textContent = response.name;
+                fileName.title = response.caption;
+                fileName.textContent = response.caption;
             }
         }
     });

@@ -4,7 +4,9 @@ from django.core.management import BaseCommand
 from django.utils.timezone import now, timedelta
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, DEFAULT_DB_ALIAS
-from ...models import UploadedFileBase, CollectionItemBase, CollectionBase
+from polymorphic.models import PolymorphicModel
+from ...models.base import FileResource
+from ...models.collection import CollectionBase
 
 
 class Command(BaseCommand):
@@ -14,7 +16,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--max-age', type=int, default=30,
+            '--min-age', type=int, default=30,
             help='Minimum instance age in minutes to look for'
         )
         parser.add_argument(
@@ -114,12 +116,12 @@ class Command(BaseCommand):
 
     def clean_source_missing(self, queryset):
         """
-        Поиск файлов
+        Поиск экземпляров с утерянными файлами
         """
         sourceless_items = set()
         related_model = queryset.model
         for instance in queryset.iterator():
-            if not instance.file_exists():
+            if not instance.is_file_exists():
                 sourceless_items.add(instance.pk)
 
         if not sourceless_items:
@@ -159,28 +161,36 @@ class Command(BaseCommand):
         self.database = options['database']
         self.interactive = options['interactive']
 
-        max_age = now() - timedelta(minutes=options['max_age'])
+        min_age = now() - timedelta(minutes=options['min_age'])
 
         for model in apps.get_models():
-            if not issubclass(model, UploadedFileBase):
+            if not issubclass(model, FileResource):
                 continue
-            if issubclass(model, CollectionItemBase):
+            if issubclass(model, PolymorphicModel):
                 continue
             if model._meta.abstract:
                 continue
 
-            self.clean_source_missing(model._base_manager.using(self.database).all())
+            self.clean_source_missing(
+                model._base_manager.using(self.database).all()
+            )
             self.clean_model(
                 model._base_manager.using(self.database).filter(
-                    uploaded_at__lte=max_age
+                    uploaded_at__lte=min_age
                 )
             )
 
         for model in apps.get_models():
-            if issubclass(model, CollectionItemBase) and model is not CollectionItemBase and not model._meta.abstract:
-                self.clean_source_missing(
-                    model._base_manager.using(self.database).non_polymorphic()
-                )
+            if not issubclass(model, FileResource):
+                continue
+            if not issubclass(model, PolymorphicModel):
+                continue
+            if model._meta.abstract:
+                continue
+
+            self.clean_source_missing(
+                model._base_manager.using(self.database).non_polymorphic()
+            )
 
         # Do not touch fresh galleries - they may not be saved yet.
         for model in apps.get_models():
@@ -188,6 +198,6 @@ class Command(BaseCommand):
                 content_type = ContentType.objects.get_for_model(model, for_concrete_model=False)
                 collection_qs = model._base_manager.using(self.database).filter(
                     collection_content_type=content_type,
-                    created_at__lte=max_age
+                    created_at__lte=min_age
                 )
                 self.clean_model(collection_qs)

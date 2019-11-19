@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('paper_uploads', '0011_delete_cloudinaryfile'),
+        ('paper_uploads', '0009_auto_20191018_0554'),
     ]
 
     operations = [

@@ -1,19 +1,4 @@
-from django.dispatch import receiver
 from django.db import migrations, transaction
-from django.db.models.signals import post_delete
-from ..logging import logger
-
-
-@receiver(post_delete)
-def delete_uploaded_file(sender, instance, **kwargs):
-    from ..models import UploadedFileBase
-    if isinstance(instance, UploadedFileBase):
-        try:
-            instance.delete_file()
-        except Exception:
-            # Удаленные storage (например dropbox) могут кидать исключение
-            # при попытке удалить файл, которого нет на сервере.
-            logger.exception("Failed to delete a file `{}`".format(instance.get_file_name()))
 
 
 class RenameFileField(migrations.RunPython):

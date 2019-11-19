@@ -34,8 +34,8 @@ class PageGallery(ImageCollection):
 
 
 class PageFilesGallery(Collection):
-    svg = CollectionItemTypeField(SVGItem)
-    image = CollectionItemTypeField(ImageItem, options={
+    svg = ItemField(SVGItem)
+    image = ItemField(ImageItem, options={
         'variations': dict(
             mobile=dict(
                 size=(640, 0),
@@ -43,7 +43,7 @@ class PageFilesGallery(Collection):
             )
         )
     })
-    file = CollectionItemTypeField(FileItem)
+    file = ItemField(FileItem)
 
 
 class PageCloudinaryGallery(CloudinaryImageCollection):
@@ -135,7 +135,7 @@ class Document(models.Model):
 # =====================
 
 class TestCollection(Collection):
-    image = CollectionItemTypeField(ImageItem, options={
+    image = ItemField(ImageItem, options={
         'variations': dict(
             mobile=dict(
                 size=(640, 0),
@@ -148,7 +148,7 @@ class TestCollection(Collection):
 
 
 class TestCollectionBlocked(Collection):
-    image = CollectionItemTypeField(ImageItem, postprocess=False, options={
+    image = ItemField(ImageItem, postprocess=False, options={
         'variations': dict(
             mobile=dict(
                 size=(640, 0),
@@ -166,7 +166,7 @@ class TestCollectionBlocked(Collection):
 
 
 class TestCollectionOverride(Collection):
-    image = CollectionItemTypeField(
+    image = ItemField(
         ImageItem,
         postprocess=dict(
             jpeg=False,

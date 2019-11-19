@@ -1,6 +1,6 @@
 from functools import partial
 from cloudinary.templatetags.cloudinary import cloudinary_url
-from ..container import CloudinaryContainerMixin
+from ..models.base import CloudinaryFileResource
 
 
 try:
@@ -18,7 +18,7 @@ if jinja2 is not None:
         source экземпляры CloudinaryContainerMixin.
         """
         def inner(ctx, source, *args, **kwargs):
-            if isinstance(source, CloudinaryContainerMixin):
+            if isinstance(source, CloudinaryFileResource):
                 source = source.file
             return func(ctx, source, *args, **kwargs)
         return inner
