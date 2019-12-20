@@ -1,7 +1,8 @@
 /* global gettext */
 
 import deepmerge from "deepmerge";
-import {Uploader, getPaperParams} from "./_uploader";
+import allSettled from "promise.allsettled";
+import {Uploader, ValidationError, getPaperParams} from "./_uploader";
 import {showError, collectError, showCollectedErrors} from "./_utils";
 
 // PaperAdmin API
@@ -36,6 +37,7 @@ function Collection(element, options) {
         input: '.collection__input',
         itemContainer: '.collection__items',
         item: '.collection__item',
+        createButton: '.collection__create-button',
         uploadButton: '.collection__upload-button',
         deleteButton: '.collection__delete-button',
         preloaderItem: '.collection__item--preloader',
@@ -50,10 +52,12 @@ function Collection(element, options) {
         deleteItemButton: '.collection__item-delete-button',
         itemSelectorTemplate: '.collection__{}-item-template',
 
+        collectionEmptyState: 'collection--empty',
         itemCheckedState: 'collection__item--checked',
         itemRemovingState: 'collection__item--removing',
 
         urls: {
+            createCollection: '',
             deleteCollection: '',
             uploadItem: '',
             changeItem: '',
@@ -72,6 +76,11 @@ function Collection(element, options) {
     this.itemContainer = this.element.querySelector(this._opts.itemContainer);
     if (!this.itemContainer) {
         throw new Error(`Not found element "${this._opts.itemContainer}"`);
+    }
+
+    this.createButton = this.element.querySelector(this._opts.createButton);
+    if (!this.createButton) {
+        throw new Error(`Not found element "${this._opts.createButton}"`);
     }
 
     this.uploadButton = this.element.querySelector(this._opts.uploadButton);
@@ -94,27 +103,48 @@ Object.defineProperty(Collection.prototype, 'collectionId', {
         return parseInt(this.input.value);
     },
     set: function(value) {
-        this.input.value = parseInt(value) || '';
+        const newValue = parseInt(value);
+        if (isNaN(newValue)) {
+            // удаление коллекции
+            this.input.value = '';
+            this.createButton.disabled = false;
+            this.uploadButton.disabled = true;
+            this.deleteButton.disabled = true;
+            this.element.classList.add(this._opts.collectionEmptyState);
+
+            const uploadInput = this.uploadButton.querySelector('input[type="file"]');
+            uploadInput && (uploadInput.disabled = true);
+        } else {
+            // создание коллекции
+            this.input.value = newValue;
+            this.createButton.disabled = true;
+            this.uploadButton.disabled = false;
+            this.deleteButton.disabled = false;
+            this.element.classList.remove(this._opts.collectionEmptyState);
+
+            const uploadInput = this.uploadButton.querySelector('input[type="file"]');
+            uploadInput && (uploadInput.disabled = false);
+        }
     }
 });
 
-Object.defineProperty(Collection.prototype, 'empty', {
+Object.defineProperty(Collection.prototype, 'loading', {
     get: function() {
-        return Boolean(this._empty);
+        return Boolean(this._loading);
     },
     set: function(value) {
         const newValue = Boolean(value);
-        if (newValue === Boolean(this._empty)) {
+        if (newValue === Boolean(this._loading)) {
             return
         }
         if (newValue) {
-            this.element.classList.add('empty');
+            this.element.classList.add('loading');
             this.deleteButton.disabled = true;
         } else {
-            this.element.classList.remove('empty');
+            this.element.classList.remove('loading');
             this.deleteButton.disabled = false;
         }
-        this._empty = newValue;
+        this._loading = newValue;
     }
 });
 
@@ -122,9 +152,10 @@ Object.defineProperty(Collection.prototype, 'empty', {
  * Инициализация галереи
  */
 Collection.prototype.init = function() {
-    this.empty = isNaN(this.collectionId);
     this.uploader = this.initUploader();
     this.sortable = this.initSortable();
+    this.collectionId = this.input.value;
+    this.loading = false;
     this.addListeners();
 };
 
@@ -136,15 +167,24 @@ Collection.prototype.initUploader = function() {
     return new Uploader(this.element, {
         url: this._opts.urls.uploadItem,
         multiple: true,
+        maxConnections: 4,
         button: this.uploadButton,
         dropzones: this.element.querySelectorAll('.dropzone-overlay'),
         validation: JSON.parse(this.element.dataset.validation),
-        extraData: {
+        params: {
             collectionId: function() {
                 return _this.collectionId;
+            },
+            order: function(id) {
+                const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
+                return Array.from(_this.itemContainer.children).indexOf(preloader);
             }
         },
-    }).on('submit', function(id) {
+    }).on('submit', function() {
+        if (isNaN(_this.collectionId)) {
+            throw new ValidationError();
+        }
+    }).on('submitted', function(id) {
         const template = _this.element.querySelector(_this._opts.preloaderTemplate);
         const clone = document.importNode(template.content, true);
 
@@ -163,6 +203,8 @@ Collection.prototype.initUploader = function() {
 
         _this.trigger('collection:submit_item', [preloader, id]);
     }).on('upload', function(id) {
+        _this.loading = true;
+
         const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
         _this.trigger('collection:upload_item', [preloader, id]);
     }).on('progress', function(id, percentage) {
@@ -174,8 +216,7 @@ Collection.prototype.initUploader = function() {
             preloader.classList.add('processing');
         }
     }).on('complete', function(id, response) {
-        if (_this.empty) {
-            _this.empty = false;
+        if (isNaN(_this.collectionId)) {
             _this.collectionId = response.collectionId;
             _this.trigger('collection:created');
         }
@@ -203,8 +244,8 @@ Collection.prototype.initUploader = function() {
 
             const fileName = clone.querySelector(_this._opts.itemName);
             if (fileName) {
-                fileName.title = response.name;
-                fileName.textContent = response.name;
+                fileName.title = response.caption;
+                fileName.textContent = response.caption;
             }
 
             preloader.before(clone);
@@ -232,6 +273,7 @@ Collection.prototype.initUploader = function() {
             preloader.classList.add(_this._opts.itemRemovingState);
         }
     }).on('all_complete', function() {
+        _this.loading = false;
         showCollectedErrors();
     });
 };
@@ -299,14 +341,60 @@ Collection.prototype.cleanItems = function() {
     }
 };
 
+/**
+ * Создание коллекции.
+ * @private
+ * @returns {Promise}
+ */
+Collection.prototype._createCollection = function() {
+    if (!isNaN(this.collectionId)) {
+        return Promise.reject('collection already exists');
+    }
+
+    const data = new FormData();
+    const params = getPaperParams(this.element);
+    Object.keys(params).forEach(function(name) {
+        data.append(name, params[name]);
+    });
+
+    const _this = this;
+    return fetch(this._opts.urls.createCollection, {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: data
+    }).then(function(response) {
+        if (!response.ok) {
+            const error = new Error(`${response.status} ${response.statusText}`);
+            error.response = response;
+            throw error;
+        }
+        return response.json();
+    }).then(function(response) {
+        if (response.errors && response.errors.length) {
+            const error = new Error('Invalid request');
+            error.response = response;
+            throw error
+        }
+
+        _this.collectionId = response.collection_id;
+        _this.trigger('collection:created');
+    });
+};
+
+/**
+ * Удаление элемента коллекции.
+ * @param item
+ * @private
+ * @returns {Promise}
+ */
 Collection.prototype._deleteItem = function(item) {
     if (isNaN(this.collectionId)) {
-        return
+        return Promise.reject('collection required');
     }
 
     const instance_id = parseInt(item && item.dataset.pk);
     if (isNaN(instance_id)) {
-        return
+        return Promise.reject('invalid ID')
     }
 
     const data = new FormData();
@@ -319,21 +407,16 @@ Collection.prototype._deleteItem = function(item) {
     data.append('item_type', item.dataset.itemType);
 
     const _this = this;
-    Promise.all([
-        preloader.show(),
-        fetch(this._opts.urls.deleteItem, {
-            method: 'POST',
-            credentials: 'same-origin',
-            body: data
-        })
-    ]).then(function(values) {
-        const response = values[1];
+    return fetch(this._opts.urls.deleteItem, {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: data
+    }).then(function(response) {
         if (!response.ok) {
             const error = new Error(`${response.status} ${response.statusText}`);
             error.response = response;
             throw error;
         }
-
         return response.json();
     }).then(function(response) {
         if (response.errors && response.errors.length) {
@@ -342,22 +425,11 @@ Collection.prototype._deleteItem = function(item) {
             throw error
         }
 
-        preloader.hide();
-
         // анимация удаления
         item.addEventListener('animationend', function() {
             item.remove();
         });
         item.classList.add(_this._opts.itemRemovingState);
-    }).catch(function(error) {
-        preloader.hide();
-        if ((typeof error === 'object') && error.response && error.response.errors) {
-            showError(error.response.errors);
-        } else if (error instanceof Error) {
-            showError(error.message);
-        } else {
-            showError(error);
-        }
     });
 };
 
@@ -366,34 +438,30 @@ Collection.prototype._deleteItem = function(item) {
  * @param item
  * @param $dialog
  * @private
+ * @returns {Promise}
  */
 Collection.prototype._changeItem = function(item, $dialog) {
     if (isNaN(this.collectionId)) {
-        return
+        return Promise.reject('collection required');
     }
 
     const instance_id = parseInt(item && item.dataset.pk);
     if (isNaN(instance_id)) {
-        return
+        return Promise.reject('invalid ID')
     }
 
     const _this = this;
     const $form = $dialog.find('form');
-    Promise.all([
-        preloader.show(),
-        fetch($form.prop('action'), {
-            method: 'POST',
-            credentials: 'same-origin',
-            body: new FormData($form.get(0))
-        })
-    ]).then(function(values) {
-        const response = values[1];
+    return fetch($form.prop('action'), {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: new FormData($form.get(0))
+    }).then(function(response) {
         if (!response.ok) {
             const error = new Error(`${response.status} ${response.statusText}`);
             error.response = response;
             throw error;
         }
-
         return response.json();
     }).then(function(response) {
         if (response.errors && response.errors.length) {
@@ -402,7 +470,6 @@ Collection.prototype._changeItem = function(item, $dialog) {
             throw error
         }
 
-        preloader.hide();
         formUtils.cleanFormErrors($form.get(0));
         if (response.form_errors) {
             formUtils.addFormErrorsFromJSON($form.get(0), response.form_errors);
@@ -417,18 +484,9 @@ Collection.prototype._changeItem = function(item, $dialog) {
 
             const fileName = item.querySelector(_this._opts.itemName);
             if (fileName) {
-                fileName.title = response.name;
-                fileName.textContent = response.name;
+                fileName.title = response.caption;
+                fileName.textContent = response.caption;
             }
-        }
-    }).catch(function(error) {
-        preloader.hide();
-        if ((typeof error === 'object') && error.response && error.response.errors) {
-            showError(error.response.errors);
-        } else if (error instanceof Error) {
-            showError(error.message);
-        } else {
-            showError(error);
         }
     });
 };
@@ -436,10 +494,11 @@ Collection.prototype._changeItem = function(item, $dialog) {
 /**
  * Удаление галереи.
  * @private
+ * @returns {Promise}
  */
 Collection.prototype._deleteCollection = function() {
     if (isNaN(this.collectionId)) {
-        return
+        return Promise.reject('collection required')
     }
 
     const data = new FormData();
@@ -449,8 +508,12 @@ Collection.prototype._deleteCollection = function() {
     });
     data.append('collectionId', this.collectionId.toString());
 
+    // отмена всех текущих загрузок. По идее, их и так быть не должно,
+    // т.к. кнопка блокируется.
+    this.uploader.uploader.cancelAll();
+
     const _this = this;
-    fetch(this._opts.urls.deleteCollection, {
+    return fetch(this._opts.urls.deleteCollection, {
         method: 'POST',
         credentials: 'same-origin',
         body: data
@@ -477,23 +540,13 @@ Collection.prototype._deleteCollection = function() {
         if (lastItem) {
             lastItem.addEventListener('animationend', function() {
                 _this.cleanItems();
-                _this.empty = true;
                 _this.collectionId = '';
                 _this.trigger('collection:deleted');
             });
         } else {
             _this.cleanItems();
-            _this.empty = true;
             _this.collectionId = '';
             _this.trigger('collection:deleted');
-        }
-    }).catch(function(error) {
-        if ((typeof error === 'object') && error.response && error.response.errors) {
-            showError(error.response.errors);
-        } else if (error instanceof Error) {
-            showError(error.message);
-        } else {
-            showError(error);
         }
     });
 };
@@ -512,6 +565,31 @@ Collection.prototype._checkItem = function(item, state=true) {
 
 Collection.prototype.addListeners = function() {
     const _this = this;
+
+    // создание галереи
+    this.element.addEventListener('click', function(event) {
+        if (!event.target.closest(_this._opts.createButton)) {
+            return
+        }
+
+        event.preventDefault();
+
+        Promise.all([
+            preloader.show(),
+            _this._createCollection()
+        ]).then(function() {
+            preloader.hide();
+        }).catch(function(error) {
+            preloader.hide();
+            if ((typeof error === 'object') && error.response && error.response.errors) {
+                showError(error.response.errors);
+            } else if (error instanceof Error) {
+                showError(error.message);
+            } else {
+                showError(error);
+            }
+        });
+    });
 
     // удаление галереи
     this.element.addEventListener('click', function(event) {
@@ -535,7 +613,21 @@ Collection.prototype.addListeners = function() {
                     label: gettext('Delete'),
                     className: 'btn-danger',
                     callback: function() {
-                        _this._deleteCollection();
+                        Promise.all([
+                            preloader.show(),
+                            _this._deleteCollection()
+                        ]).then(function() {
+                            preloader.hide()
+                        }).catch(function(error) {
+                            preloader.hide();
+                            if ((typeof error === 'object') && error.response && error.response.errors) {
+                                showError(error.response.errors);
+                            } else if (error instanceof Error) {
+                                showError(error.message);
+                            } else {
+                                showError(error);
+                            }
+                        });
                     }
                 }
             }
@@ -601,7 +693,21 @@ Collection.prototype.addListeners = function() {
                         label: gettext('Save'),
                         className: 'btn-success',
                         callback: function() {
-                            _this._changeItem(item, this);
+                            Promise.all([
+                                preloader.show(),
+                                _this._changeItem(item, $dialog)
+                            ]).then(function() {
+                                preloader.hide();
+                            }).catch(function(error) {
+                                preloader.hide();
+                                if ((typeof error === 'object') && error.response && error.response.errors) {
+                                    showError(error.response.errors);
+                                } else if (error instanceof Error) {
+                                    showError(error.message);
+                                } else {
+                                    showError(error);
+                                }
+                            });
                             return false;
                         }
                     }
@@ -610,7 +716,21 @@ Collection.prototype.addListeners = function() {
 
             const $form = $dialog.find('form');
             $form.on('submit', function() {
-                _this._changeItem(item, $dialog);
+                Promise.all([
+                    preloader.show(),
+                    _this._changeItem(item, $dialog)
+                ]).then(function() {
+                    preloader.hide();
+                }).catch(function(error) {
+                    preloader.hide();
+                    if ((typeof error === 'object') && error.response && error.response.errors) {
+                        showError(error.response.errors);
+                    } else if (error instanceof Error) {
+                        showError(error.message);
+                    } else {
+                        showError(error);
+                    }
+                });
                 return false;
             });
         }).catch(function(error) {
@@ -660,7 +780,21 @@ Collection.prototype.addListeners = function() {
                     className: 'btn-danger',
                     callback: function() {
                         const item = event.target.closest(_this._opts.item);
-                        _this._deleteItem(item);
+                        Promise.all([
+                            preloader.show(),
+                            _this._deleteItem(item)
+                        ]).then(function() {
+                            preloader.hide();
+                        }).catch(function(error) {
+                            preloader.hide();
+                            if ((typeof error === 'object') && error.response && error.response.errors) {
+                                showError(error.response.errors);
+                            } else if (error instanceof Error) {
+                                showError(error.message);
+                            } else {
+                                showError(error);
+                            }
+                        });
                     }
                 }
             }
@@ -690,7 +824,7 @@ Collection.prototype.addListeners = function() {
             }
             target_state = !checkbox.checked;
         } else {
-            // при клике на чекбокс целевое состяние уже достигнуто
+            // при клике на чекбокс целевое состояние уже достигнуто
             target_state = checkbox.checked;
         }
 
@@ -711,7 +845,7 @@ Collection.prototype.addListeners = function() {
         lastChecked = item;
     });
 
-    // удаление выделенных элементов при нижатии Delete
+    // удаление выделенных элементов при нажатии Delete
     this.element.addEventListener('keyup', function(event) {
         if (event.code === 'Delete') {
             const items = Array.from(_this.itemContainer.querySelectorAll(_this._opts.item));
@@ -735,8 +869,28 @@ Collection.prototype.addListeners = function() {
                             label: gettext('Delete'),
                             className: 'btn-danger',
                             callback: function() {
-                                checkedItems.forEach(function(item) {
-                                    _this._deleteItem(item);
+                                const delete_promises = checkedItems.map(function(item) {
+                                    return _this._deleteItem(item)
+                                });
+                                delete_promises.unshift(preloader.show());
+
+                                allSettled(
+                                    delete_promises
+                                ).then(function(results) {
+                                    preloader.hide();
+                                    for (let result of results) {
+                                        if (result.status === 'rejected') {
+                                            const error = result.reason;
+                                            if ((typeof error === 'object') && error.response && error.response.errors) {
+                                                collectError(error.response.errors);
+                                            } else if (error instanceof Error) {
+                                                collectError(error.message);
+                                            } else {
+                                                collectError(error);
+                                            }
+                                        }
+                                    }
+                                    showCollectedErrors();
                                 });
                             }
                         }
@@ -771,6 +925,7 @@ function initWidget(element) {
 
     new Collection(element, {
         urls: {
+            createCollection: element.dataset.createCollectionUrl,
             deleteCollection: element.dataset.deleteCollectionUrl,
             uploadItem: element.dataset.uploadItemUrl,
             changeItem: element.dataset.changeItemUrl,

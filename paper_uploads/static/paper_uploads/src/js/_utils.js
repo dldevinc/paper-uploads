@@ -62,6 +62,10 @@ function showCollectedErrors() {
     }
 
     setTimeout(function() {
+        if (!_errors || !_errors.length) {
+            return
+        }
+
         bootbox.alert({
             title: 'Error',
             message: formatErrors(_errors)

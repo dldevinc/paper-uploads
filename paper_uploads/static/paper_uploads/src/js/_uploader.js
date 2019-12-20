@@ -6,13 +6,37 @@ import match from 'mime-match';
 const EventEmitter = window.paperAdmin.EventEmitter;
 
 
+/**
+ * Класс ошибки валидации файла при событии onSubmit()
+ * @constructor
+ */
+function ValidationError() {
+    Error.apply(this, arguments) ;
+    this.name = "ValidationError";
+    if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, ValidationError);
+    } else {
+        this.stack = (new Error()).stack;
+    }
+}
+
+ValidationError.prototype = Object.create(Error.prototype);
+
+
+/**
+ * Класс-обертка над загрузчиком Fine Uploader.
+ * @param element
+ * @param options
+ * @constructor
+ */
 function Uploader(element, options) {
     this._opts = Object.assign({
         url: '',
         multiple: false,
+        maxConnections: 1,
         button: null,
         dropzones: null,
-        extraData: null,
+        params: null,
         validation: {},
         filters: []
     }, options);
@@ -23,14 +47,26 @@ function Uploader(element, options) {
 
 Uploader.prototype = Object.create(EventEmitter.prototype);
 
-Uploader.prototype.getParams = function() {
-    if (typeof this._opts.extraData === 'function') {
-        return Object.assign(getPaperParams(this.element), this._opts.extraData.call(this));
-    } else if (typeof this._opts.extraData === 'object') {
-        return Object.assign(getPaperParams(this.element), this._opts.extraData);
+Uploader.prototype.getParams = function(id) {
+    if (typeof this._opts.params === 'function') {
+        return Object.assign(getPaperParams(this.element), this._opts.params.call(this, id));
+    } else if (typeof this._opts.params === 'object') {
+        return Object.assign(getPaperParams(this.element), this._opts.params);
     } else {
         return getPaperParams(this.element);
     }
+};
+
+Uploader.prototype.formatParams = function(params, id) {
+    const plain_params = {};
+    for (let [key, value] of Object.entries(params)) {
+        if (typeof value === 'function') {
+            plain_params[key] = value(id);
+        } else {
+            plain_params[key] = value;
+        }
+    }
+    return plain_params;
 };
 
 Uploader.prototype._makeUploader = function() {
@@ -42,14 +78,16 @@ Uploader.prototype._makeUploader = function() {
     let uploader = new FineUploaderBasic({
         button: this._opts.button,
         multiple: this._opts.multiple,
-        maxConnections: 1,
+        maxConnections: this._opts.maxConnections,
         request: {
-            endpoint: this._opts.url,
-            params: this.getParams()
+            endpoint: this._opts.url
         },
         chunking: {
             enabled: true,
-            partSize: 1024 * 1024
+            partSize: 2 * 1024 * 1024,
+            concurrent: {
+                enabled: false
+            }
         },
         text: {
             fileInputTitle: ''
@@ -116,7 +154,7 @@ Uploader.prototype._makeUploader = function() {
                             const url = window.URL && window.URL.createObjectURL ? window.URL : window.webkitURL && window.webkitURL.createObjectURL ? window.webkitURL : null;
                             if (url) {
                                 image.onerror = function() {
-                                    reject("Cannot determine dimensions for image. May be too large.");
+                                    reject("Cannot determine dimensions for an image. May be too large.");
                                 };
                                 image.onload = function() {
                                     resolve({
@@ -152,9 +190,24 @@ Uploader.prototype._makeUploader = function() {
                         });
                     }
                 }
+
+                try {
+                    _this.trigger('submit', [id]);
+                } catch (e) {
+                    if (e.name === 'ValidationError') {
+                        return false;
+                    } else {
+                        throw e;
+                    }
+                }
             },
             onSubmitted: function(id) {
-                _this.trigger('submit', [id]);
+                _this.trigger('submitted', [id]);
+                let params = _this.getParams(id);
+                if (params) {
+                    params = _this.formatParams(params, id);
+                    this.setParams(params, id);
+                }
             },
             onUpload: function(id) {
                 _this.trigger('upload', [id]);
@@ -225,4 +278,4 @@ function getPaperParams(element) {
 }
 
 
-export {Uploader, getPaperParams};
+export {Uploader, ValidationError, getPaperParams};

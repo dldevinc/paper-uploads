@@ -2,8 +2,11 @@ import os
 import uuid
 import shutil
 import tempfile
-from typing import Optional, Dict, Any, Iterable, Union, List, IO, Type, TypeVar
+import posixpath
+from typing import Optional, Dict, Any, Iterable, Union, List, Type, TypeVar
+from django.conf import settings
 from django.http import JsonResponse
+from django.core.files.uploadedfile import UploadedFile
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.contrib.contenttypes.models import ContentType
 from .. import exceptions
@@ -48,7 +51,22 @@ def get_exception_messages(exception: ValidationError) -> List[str]:
     return messages
 
 
-def read_file(request) -> IO:
+class TemporaryUploadedFile(UploadedFile):
+    def temporary_file_path(self):
+        """Return the full path of this file."""
+        return self.file.name
+
+    def close(self):
+        try:
+            super().close()
+        finally:
+            try:
+                os.unlink(self.temporary_file_path())
+            except OSError:
+                pass
+
+
+def read_file(request) -> UploadedFile:
     """
     Загрузка файла с поддержкой chunks.
     """
@@ -66,7 +84,9 @@ def read_file(request) -> IO:
     except (AttributeError, ValueError):
         raise exceptions.InvalidUUID
 
-    tempfilepath = os.path.join(tempfile.gettempdir(), str(uid))
+    tempdir = settings.FILE_UPLOAD_TEMP_DIR or tempfile.gettempdir()
+
+    tempfilepath = os.path.join(tempdir, 'upload_{}'.format(uid))
     file = request.FILES.get('qqfile')
     if file is None:    # бывает при отмене загрузки на медленном интернете
         if os.path.isfile(tempfilepath):
@@ -80,7 +100,11 @@ def read_file(request) -> IO:
         if chunk_index < total_chunks - 1:
             raise exceptions.ContinueUpload
 
-        file = open(tempfilepath, 'rb')
+        qqfilename = request.POST.get('qqfilename')
+        basename = posixpath.basename(qqfilename)
+
+        fp = open(tempfilepath, 'rb')
+        file = TemporaryUploadedFile(fp, name=basename, size=os.path.getsize(tempfilepath))
 
     return file
 

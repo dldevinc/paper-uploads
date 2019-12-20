@@ -1,0 +1,42 @@
+<div class="collection__item collection__item--cloudinary-image"
+     style="width: {{ preview_width }}px"
+     tabindex="-1"
+     data-pk="{% if item %}{{ item.pk }}{% endif %}"
+     data-item-type="{% if item %}{{ item.item_type }}{% endif %}">
+
+  <div class="collection__item-caption sortable-handler">
+    <div class="collection__item-name text-muted"
+         title="{% if item %}{{ item.caption }}{% endif %}">
+      {% if item %}{{ item.caption }}{% endif %}
+    </div>
+  </div>
+
+  <div class="collection__item-preview" style="width: {{ preview_width }}px; height: {{ preview_height }}px">{{ item.preview }}</div>
+
+  <div class="collection__item-toolbar">
+    <div class="collection__item-tools tool-items d-flex align-items-center">
+      <label class="collection__item-checkbox-holder tool-item">
+        <input type="checkbox" name="{{ widget.name }}-check" class="collection__item-checkbox">
+      </label>
+
+      <a href="{% if item %}{{ item.file.url }}{% endif %}" class="collection__item-link tool-item text-info"
+         target="_blank" tabindex="-1"
+         data-toggle="tooltip" data-placement="top" data-trigger="hover"
+         data-html="true" title="{{ _('View file') }}">
+        <i class="fa fa-fw fa-eye"></i>
+      </a>
+
+      <button type="button" class="collection__item-change-button tool-item text-info"
+              data-toggle="tooltip" data-placement="top" data-trigger="hover"
+              data-html="true" title="{{ _('Edit file') }}" tabindex="-1">
+        <i class="fa fa-fw fa-pencil"></i>
+      </button>
+
+      <button type="button" class="collection__item-delete-button tool-item text-danger ml-auto"
+              data-toggle="tooltip" data-placement="top" data-trigger="hover"
+              data-html="true" title="{{ _('Delete file') }}" tabindex="-1">
+        <i class="fa fa-fw fa-trash"></i>
+      </button>
+    </div>
+  </div>
+</div>

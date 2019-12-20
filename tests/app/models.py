@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from paper_uploads.models import *
 from paper_uploads.validators import *
+from paper_uploads.cloudinary.models import *
 
 
 class PageGallery(ImageCollection):
@@ -33,8 +34,8 @@ class PageGallery(ImageCollection):
 
 
 class PageFilesGallery(Collection):
-    svg = CollectionItemTypeField(SVGItem)
-    image = CollectionItemTypeField(ImageItem, options={
+    svg = ItemField(SVGItem)
+    image = ItemField(ImageItem, options={
         'variations': dict(
             mobile=dict(
                 size=(640, 0),
@@ -42,7 +43,15 @@ class PageFilesGallery(Collection):
             )
         )
     })
-    file = CollectionItemTypeField(FileItem)
+    file = ItemField(FileItem)
+
+
+class PageCloudinaryGallery(CloudinaryImageCollection):
+    pass
+
+
+class PageCloudinaryFilesGallery(CloudinaryCollection):
+    pass
 
 
 class Page(models.Model):
@@ -74,6 +83,11 @@ class Page(models.Model):
     )
     files = CollectionField(PageFilesGallery, verbose_name=_('file gallery'))
     gallery = CollectionField(PageGallery, verbose_name=_('image gallery'))
+    cloud_file = CloudinaryFileField(_('file'), blank=True)
+    cloud_video = CloudinaryMediaField(_('video'), blank=True)
+    cloud_image = CloudinaryImageField(_('image'), blank=True)
+    cloud_files = CollectionField(PageCloudinaryFilesGallery, verbose_name=_('file gallery'))
+    cloud_gallery = CollectionField(PageCloudinaryGallery, verbose_name=_('image gallery'))
 
     ext_file = FileField(_('Extension'), blank=True, validators=[
         ExtensionValidator(['jpg', 'jpeg'])
@@ -114,3 +128,66 @@ class Document(models.Model):
     class Meta:
         verbose_name = _('document')
         verbose_name_plural = _('documents')
+
+
+# =====================
+# Коллекции для тестов
+# =====================
+
+class DummyCollection(Collection):
+    image = ItemField(ImageItem, options={
+        'variations': dict(
+            mobile=dict(
+                size=(640, 0),
+                jpeg=dict(
+                    quality=88
+                )
+            )
+        )
+    })
+
+
+class DummyCollectionBlocked(Collection):
+    image = ItemField(ImageItem, postprocess=False, options={
+        'variations': dict(
+            mobile=dict(
+                size=(640, 0),
+                jpeg=dict(
+                    quality=88
+                ),
+                postprocess=dict(
+                    webp={
+                        'command': 'echo'
+                    }
+                )
+            )
+        )
+    })
+
+
+class DummyCollectionOverride(Collection):
+    image = ItemField(
+        ImageItem,
+        postprocess=dict(
+            jpeg=False,
+            png={
+                'command': 'echo'
+            },
+            webp=False
+        ),
+        options={
+            'variations': dict(
+                mobile=dict(
+                    size=(640, 0),
+                    jpeg=dict(
+                        quality=88
+                    ),
+                    postprocess=dict(
+                        webp={
+                            'command': 'man'
+                        }
+                    )
+                )
+            )
+        }
+    )

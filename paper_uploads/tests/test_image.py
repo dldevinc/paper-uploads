@@ -1,171 +1,286 @@
+import re
 import os
+import pytest
 from pathlib import Path
-from django.test import TestCase
-from django.core.files import File
-from tests.app.models import Page
-from ..models import UploadedImage
-from ..models.fields import ImageField
-from ..conf import PROXY_FILE_ATTRIBUTES
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.utils.timezone import now, timedelta
+from django.template.defaultfilters import filesizeformat
 from .. import validators
+from ..models import VariationFile, UploadedImage, ImageField
+from tests.app.models import Page
 
+pytestmark = pytest.mark.django_db
 TESTS_PATH = Path(__file__).parent / 'samples'
 
 
-class TestUploadedImage(TestCase):
-    def setUp(self) -> None:
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as fp:
-            self.object = UploadedImage(
-                file=File(fp, name='Image.Jpeg'),
-                alt='Alternate text',
+class TestUploadedImage:
+    def test_image(self):
+        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+            obj = UploadedImage(
                 title='Image title',
-            )
-            self.object.save()
-
-    def tearDown(self) -> None:
-        self.object.delete()
-
-    def test_name(self):
-        self.assertEqual(self.object.name, 'Image')
-
-    def test_extension_lowercase(self):
-        self.assertEqual(self.object.extension, 'jpeg')
-
-    def test_file_size(self):
-        self.assertEqual(self.object.size, 214779)
-
-    def test_file_hash(self):
-        self.assertEqual(self.object.hash, '8af6d51189e57d1e6ae4188a5a1fcaea4da39b7b')
-
-    def test_canonical_name(self):
-        self.assertEqual(self.object.canonical_name, 'Image.jpeg')
-
-    def test_file_exist(self):
-        self.assertTrue(os.path.isfile(self.object.path))
-
-    def test_alt(self):
-        self.assertEqual(self.object.alt, 'Alternate text')
-
-    def test_title(self):
-        self.assertEqual(self.object.title, 'Image title')
-
-    def test_width(self):
-        self.assertEqual(self.object.width, 1600)
-
-    def test_height(self):
-        self.assertEqual(self.object.height, 1200)
-
-    def test_cropregion(self):
-        self.assertEqual(self.object.cropregion, '')
-
-    def test_owner_model(self):
-        self.assertIsNone(self.object.get_owner_model())
-
-    def test_owner_field(self):
-        self.assertIsNone(self.object.get_owner_field())
-
-    def test_validation(self):
-        self.assertIn('acceptFiles', self.object.get_validation())
-
-    def test_proxy_attrs(self):
-        for name in PROXY_FILE_ATTRIBUTES:
-            with self.subTest(name):
-                self.assertEqual(
-                    getattr(self.object, name),
-                    getattr(self.object.file, name),
-                )
-
-
-class TestSlaveUploadedImage(TestCase):
-    def setUp(self) -> None:
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as fp:
-            self.object = UploadedImage(
-                file=File(fp, name='TestImage.Jpeg'),
+                description='Image description',
                 owner_app_label='app',
                 owner_model_name='page',
                 owner_fieldname='image_ext'
             )
-            self.object.save()
+            obj.attach_file(jpeg_file, name='Image.Jpeg')
+            obj.save()
 
-    def tearDown(self) -> None:
-        self.object.delete()
+        suffix = re.match(r'Image((?:_\w+)?)', os.path.basename(obj.file.name)).group(1)
 
-    def test_owner_model(self):
-        self.assertIs(self.object.get_owner_model(), Page)
+        try:
+            # Resource
+            assert obj.name == 'Image'
+            assert now() - obj.created_at < timedelta(seconds=10)
+            assert now() - obj.uploaded_at < timedelta(seconds=10)
+            assert now() - obj.modified_at < timedelta(seconds=10)
 
-    def test_owner_field(self):
-        self.assertIs(self.object.get_owner_field(), Page._meta.get_field('image_ext'))
+            # HashableResourceMixin
+            assert obj.hash == '8af6d51189e57d1e6ae4188a5a1fcaea4da39b7b'
 
-    def test_get_variations(self):
-        variations = self.object.get_variations()
-        self.assertIn('desktop', variations)
-        self.assertIn('tablet', variations)
-        self.assertIn('admin', variations)
+            # FileResource
+            assert obj.extension == 'jpg'
+            assert obj.size == 214779
+            assert str(obj) == 'Image.jpg'
+            assert repr(obj) == "UploadedImage('Image.jpg')"
+            assert obj.get_basename() == 'Image.jpg'
+            assert obj.get_file() is obj.file
+            assert obj.get_file_name() == f"images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+            assert obj.get_file_url() == f"/media/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+            assert obj.is_file_exists() is True
 
-    def test_variation_attrs(self):
-        variations = dict(self.object.get_variation_files())
-        self.assertEqual(getattr(self.object, 'desktop'), variations['desktop'])
-        self.assertEqual(getattr(self.object, 'tablet'), variations['tablet'])
-        self.assertEqual(getattr(self.object, 'admin'), variations['admin'])
+            # FileFieldResource
+            assert os.path.isfile(obj.path)
+            assert all(os.path.isfile(vfile.path) for vname, vfile in obj.variation_files())
 
-    def test_get_invalid_variation_file(self):
-        with self.assertRaises(KeyError):
-            self.object.get_variation_file('nonexist')
+            # PostrocessableFileFieldResource
+            assert os.stat(TESTS_PATH / 'Image.Jpeg').st_size == 214779
 
-    def test_get_variation_files(self):
-        expected = {
-            'admin': 'TestImage.admin.jpg',
-            'desktop': 'TestImage.desktop.jpg',
-            'tablet': 'TestImage.tablet.jpg',
-        }
-        self.assertDictEqual({
-            name: os.path.basename(file.name)
-            for name, file in self.object.get_variation_files()
-        }, expected)
+            # ReverseFieldModelMixin
+            assert obj.owner_app_label == 'app'
+            assert obj.owner_model_name == 'page'
+            assert obj.owner_fieldname == 'image_ext'
+            assert obj.get_owner_model() is Page
+            assert obj.get_owner_field() is Page._meta.get_field('image_ext')
 
-    def test_get_draft_size(self):
-        expected = {
-            (3000, 2000): (1600, 1067),
-            (1400, 1200): (1600, 1200),
-            (800, 600): (1600, 600),
-        }
-        for input_size, output_size in expected.items():
-            with self.subTest(input_size):
-                self.assertSequenceEqual(
-                    self.object.get_draft_size(input_size),
-                    output_size
+            # ReadonlyFileProxyMixin
+            assert obj.url == obj.get_file_url()
+            assert obj.path == os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, obj.get_file_name())
+            assert obj.closed is True
+            with obj.open():
+                assert obj.closed is False
+                assert obj.read(4) == b'\xff\xd8\xff\xe0'
+                assert obj.tell() == 4
+                obj.seek(0)
+                assert obj.tell() == 0
+                assert obj.closed is False
+            assert obj.closed is True
+
+            # ImageFileResourceMixin
+            assert obj.title == 'Image title'
+            assert obj.description == 'Image description'
+            assert obj.width == 1600
+            assert obj.height == 1200
+            assert obj.cropregion == ''
+
+            # VariableImageResourceMixin
+            assert obj.get_variations().keys() == {'desktop', 'tablet', 'admin'}
+
+            assert obj._variations_attached is False
+            assert isinstance(obj.get_variation_file('desktop'), VariationFile)
+            assert obj.desktop is obj.get_variation_file('desktop')
+            assert obj._variations_attached is True
+
+            for vname, vfile in obj.variation_files():
+                assert isinstance(vfile, VariationFile)
+                assert vfile is obj.get_variation_file(vname)
+
+            assert obj.calculate_max_size((3000, 2000)) == (1600, 1067)
+            assert obj.calculate_max_size((1600, 1000)) == (1600, 1000)
+            assert obj.calculate_max_size((1400, 1200)) == (1600, 1200)
+            assert obj.calculate_max_size((800, 600)) == (1600, 600)
+
+            expected_varaition_sizes = {
+                'desktop': 137100,
+                'tablet': 82449,
+                'admin': 13404,
+            }
+
+            for vname, vfile in obj.variation_files():
+                assert os.path.isfile(vfile.path)
+                assert os.stat(vfile.path).st_size == expected_varaition_sizes[vname]
+
+            with pytest.raises(KeyError):
+                obj.get_variation_file('nothing')
+
+            # UploadedImage
+            assert obj.get_validation() == {
+                'acceptFiles': ['image/*'],
+            }
+
+            # as_dict
+            assert obj.as_dict() == {
+                'id': obj.pk,
+                'name': obj.name,
+                'extension': obj.extension,
+                'size': obj.size,
+                'url': obj.get_file_url(),
+                'width': obj.width,
+                'height': obj.height,
+                'cropregion': obj.cropregion,
+                'title': obj.title,
+                'description': obj.description,
+                'file_info': '({ext}, {width}x{height}, {size})'.format(
+                    ext=obj.extension,
+                    width=obj.width,
+                    height=obj.height,
+                    size=filesizeformat(obj.size)
                 )
+            }
+        finally:
+            source_path = obj.path
+            variation_pathes = {
+                vfile.path
+                for vname, vfile in obj.variation_files()
+            }
+
+            obj.delete_file()
+            assert os.path.isfile(source_path) is False
+            assert all(not os.path.isfile(path) for path in variation_pathes)
+            assert obj.is_file_exists() is False
+
+    def test_orphan_image(self):
+        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_image:
+            obj = UploadedImage()
+            obj.attach_file(jpeg_image, name='Image.Jpeg')
+            obj.save()
+
+        try:
+            assert obj.get_owner_model() is None
+            assert obj.get_owner_field() is None
+        finally:
+            obj.delete_file()
+            obj.delete()
+
+    def test_not_image(self):
+        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+            obj = UploadedImage()
+            with pytest.raises(ValidationError) as exc:
+                obj.attach_file(pdf_file, name='Doc.PDF')
+            assert exc.value.message == '`Doc.pdf` is not an image'
+            obj.delete_file()
+
+    def test_empty_file(self):
+        obj = UploadedImage()
+        try:
+            assert obj.closed is True
+            assert bool(obj.file) is False
+            with pytest.raises(ValueError):
+                obj.get_file_url()
+            assert obj.is_file_exists() is False
+        finally:
+            obj.delete_file()
+
+    def test_missing_file(self):
+        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+            obj = UploadedImage(
+                owner_app_label='app',
+                owner_model_name='page',
+                owner_fieldname='image_ext'
+            )
+            obj.attach_file(jpeg_file, name='Image.Jpeg')
+            obj.save()
+
+        suffix = re.match(r'Image((?:_\w+)?)', os.path.basename(obj.file.name)).group(1)
+
+        os.unlink(obj.path)
+        for vname, vfile in obj.variation_files():
+            os.unlink(vfile.path)
+
+        try:
+            assert obj.closed is True
+            assert obj.get_file_name() == f"images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+            assert obj.get_file_url() == f"/media/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+            assert obj.is_file_exists() is False
+            assert obj.desktop.url == f"/media/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.desktop.jpg"
+        finally:
+            obj.delete_file()
+            obj.delete()
+
+    def test_file_rename(self):
+        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+            obj = UploadedImage(
+                owner_app_label='app',
+                owner_model_name='page',
+                owner_fieldname='image'
+            )
+            obj.attach_file(jpeg_file)
+            obj.save()
+
+        old_name = obj.get_file_name()
+        old_variations = {vfile.path for vname, vfile in obj.variation_files()}
+
+        try:
+            # check old files
+            assert obj.get_file().storage.exists(old_name)
+            assert obj.is_file_exists()
+            assert all(os.path.isfile(path) for path in old_variations)
+
+            obj.rename_file('new_name')
+
+            # recheck old files
+            assert obj.get_file().storage.exists(old_name)
+            assert all(os.path.isfile(path) for path in old_variations)
+
+            # check new files
+            new_name = obj.get_file_name()
+            new_variations = {vfile.path for vname, vfile in obj.variation_files()}
+            assert obj.name == 'new_name'
+            assert 'new_name.jpg' in new_name
+            assert obj.is_file_exists()
+            assert obj.get_file().storage.exists(new_name)
+            assert all(os.path.isfile(path) for path in new_variations)
+        finally:
+            obj.file.storage.delete(old_name)
+            for path in old_variations:
+                obj.file.storage.delete(path)
+
+            obj.delete_file()
+            obj.delete()
 
 
-class TestImageField(TestCase):
-    def setUp(self) -> None:
-        self.field = ImageField(validators=[
-            validators.SizeValidator(32 * 1024 * 1024),
+class TestImageField:
+    def test_rel(self):
+        field = ImageField()
+        assert field.null is True
+        assert field.related_model == 'paper_uploads.UploadedImage'
+
+    def test_validators(self):
+        field = ImageField(validators=[
+            validators.SizeValidator(10 * 1024 * 1024),
             validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
-            validators.MimetypeValidator(['image/jpeg', 'image/bmp', 'image/Png']),
             validators.ImageMinSizeValidator(640, 480),
             validators.ImageMaxSizeValidator(1920, 1440),
         ])
-        self.field.contribute_to_class(Page, 'image')
+        field.contribute_to_class(Page, 'image')    # resets varaitions
 
-    def test_validation(self):
-        self.assertDictEqual(self.field.get_validation(), {
-            'sizeLimit': 32 * 1024 * 1024,
+        assert field.get_validation() == {
+            'sizeLimit': 10 * 1024 * 1024,
             'allowedExtensions': ('svg', 'bmp', 'jpeg'),
-            'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png'),
             'minImageWidth': 640,
             'minImageHeight': 480,
             'maxImageWidth': 1920,
             'maxImageHeight': 1440,
-        })
+        }
 
-    def test_widget_validation(self):
-        formfield = self.field.formfield()
-        self.assertDictEqual(formfield.widget.get_validation(), {
-            'sizeLimit': 32 * 1024 * 1024,
+        formfield = field.formfield()
+        assert formfield.widget.get_validation() == {
+            'sizeLimit': 10 * 1024 * 1024,
             'allowedExtensions': ('svg', 'bmp', 'jpeg'),
-            'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png'),
+            'acceptFiles': ['image/*'],
             'minImageWidth': 640,
             'minImageHeight': 480,
             'maxImageWidth': 1920,
             'maxImageHeight': 1440,
-        })
+        }

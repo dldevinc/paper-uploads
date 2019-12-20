@@ -1,3 +1,4 @@
+import os
 from typing import Dict, Any
 from django.db import models
 from django.core import checks
@@ -6,6 +7,9 @@ from ... import validators
 
 
 class FileFieldBase(models.OneToOneField):
+    """
+    Базовый класс для ссылок на модели файлов.
+    """
     def __init__(self, verbose_name=None, **kwargs):
         kwargs.setdefault('null', True)
         kwargs.setdefault('related_name', '+')
@@ -20,19 +24,22 @@ class FileFieldBase(models.OneToOneField):
         ]
 
     def _check_relation_class(self):
-        from ...models.base import UploadedFileBase, SlaveModelMixin
+        from ...models.base import FileResource, ReverseFieldModelMixin
 
         rel_is_string = isinstance(self.remote_field.model, str)
         if rel_is_string:
             return []
 
         model_name = self.remote_field.model if rel_is_string else self.remote_field.model._meta.object_name
-        if (not issubclass(self.remote_field.model, UploadedFileBase)
-                or not issubclass(self.remote_field.model, SlaveModelMixin)):
+
+        if (
+            not issubclass(self.remote_field.model, FileResource)
+            or not issubclass(self.remote_field.model, ReverseFieldModelMixin)
+        ):
             return [
                 checks.Error(
                     "Field defines a relation with model '%s', which is not "
-                    "subclass of both UploadedFileBase and SlaveModelMixin" % model_name,
+                    "subclass of both FileResource and ReverseFieldModelMixin" % model_name,
                     obj=self,
                 )
             ]
@@ -81,7 +88,7 @@ class FileFieldBase(models.OneToOneField):
         см. https://docs.fineuploader.com/branch/master/api/options.html#validation
 
         image.minWidth и т.п. не используются из-за недостатка кастомизации
-        текста о ошибках.
+        текста об ошибках.
         """
         validation = {}
         for v in self.validators:
@@ -98,3 +105,16 @@ class FileFieldBase(models.OneToOneField):
                 validation['maxImageWidth'] = v.width_limit
                 validation['maxImageHeight'] = v.height_limit
         return validation
+
+
+class FormattedFileField(models.FileField):
+    """
+    Обертка над стандартным файловым полем, форматирующее расширение файлов.
+    """
+    def generate_filename(self, instance, filename):
+        file_root, file_ext = os.path.splitext(filename)
+        file_ext = file_ext.lower()
+        if file_ext == '.jpeg':
+            file_ext = '.jpg'
+        filename = ''.join([file_root, file_ext])
+        return super().generate_filename(instance, filename)

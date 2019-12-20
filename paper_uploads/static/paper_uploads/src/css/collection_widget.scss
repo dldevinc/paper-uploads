@@ -12,6 +12,12 @@
 
 }
 
+.collection--empty {
+  .dropzone-overlay {
+    display: none;
+  }
+}
+
 .collection__items {
   display: flex;
   margin-right: -0.75rem;

@@ -10,10 +10,9 @@ const bootbox = window.paperAdmin.bootbox;
 const preloader = window.paperAdmin.preloader;
 const formUtils = window.paperAdmin.formUtils;
 
-// TODO: прерывание загрузки
-
 /**
  * @fires upload:submit
+ * @fires upload:submitted
  * @fires upload:upload
  * @fires upload:created
  * @fires upload:deleted
@@ -120,6 +119,7 @@ Object.defineProperty(BaseWidget.prototype, 'loading', {
             this.element.classList.add('loading');
         } else {
             this.element.classList.remove('loading');
+            this.element.classList.remove('processing');
         }
         this._loading = newValue;
     }
@@ -135,8 +135,8 @@ BaseWidget.prototype.initUploader = function() {
         button: this.uploadButton,
         dropzones: this.element.querySelectorAll('.dropzone-overlay'),
         validation: JSON.parse(this.element.dataset.validation),
-    }).on('submit', function(id) {
-        _this.trigger('upload:submit', [id]);
+    }).on('submitted', function(id) {
+        _this.trigger('upload:submitted', [id]);
     }).on('upload', function(id) {
         _this.loading = true;
 
@@ -146,9 +146,13 @@ BaseWidget.prototype.initUploader = function() {
     }).on('progress', function(id, percentage) {
         const progressBar = _this.element.querySelector('.progress-bar');
         progressBar && (progressBar.style.width = percentage + '%');
+
+        if (percentage >= 100) {
+            _this.element.classList.add('processing');
+        }
     }).on('complete', function(id, response) {
         _this.empty = false;
-        _this.instanceId = response.instance_id;
+        _this.instanceId = response.id;
         _this.trigger('upload:created');
 
         const fileName = _this.element.querySelector('.file-name');
@@ -249,11 +253,15 @@ BaseWidget.prototype._delete = function() {
     data.append('instance_id', this.instanceId.toString());
 
     const _this = this;
-    fetch(this._opts.urls.delete, {
-        method: 'POST',
-        credentials: 'same-origin',
-        body: data
-    }).then(function(response) {
+    Promise.all([
+        preloader.show(),
+        fetch(this._opts.urls.delete, {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: data
+        })
+    ]).then(function(values) {
+        const response = values[1];
         if (!response.ok) {
             const error = new Error(`${response.status} ${response.statusText}`);
             error.response = response;
@@ -267,6 +275,7 @@ BaseWidget.prototype._delete = function() {
             throw error
         }
 
+        preloader.hide();
         _this.empty = true;
         _this.instanceId = '';
 
@@ -278,6 +287,7 @@ BaseWidget.prototype._delete = function() {
 
         _this.trigger('upload:deleted');
     }).catch(function(error) {
+        preloader.hide();
         if ((typeof error === 'object') && error.response && error.response.errors) {
             showError(error.response.errors);
         } else if (error instanceof Error) {

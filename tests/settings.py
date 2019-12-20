@@ -40,7 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'paper_uploads',
+    'paper_uploads.cloudinary',
     'django_rq',
+    'cloudinary',
     'tests.app',
 ]
 
@@ -177,7 +179,7 @@ PAPER_UPLOADS = {
         },
         'svg': {
             'command': 'svgo',
-            'arguments': '--precision=5 "{file}"',
+            'arguments': '--precision=4 --disable=convertPathData "{file}"',
         },
         'webp': False
     }

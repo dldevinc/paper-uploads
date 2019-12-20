@@ -49,6 +49,17 @@
       opacity: 0.5;
       transition: opacity 0s;
     }
+
+    .file-uploader__upload-button input {
+      display: none;
+    }
+  }
+
+  &.processing {
+    .form-control {
+      border-top-right-radius: 0.25rem;
+      border-bottom-right-radius: 0.25rem;
+    }
   }
 }
 
@@ -67,13 +78,15 @@
   }
 }
 
-// скрытие всех кнопок на пустом виджете
-.file-uploader.empty:not(.loading) .input-group-append {
+// скрытие всех кнопок на пустом виджете и на стадии обработки
+.file-uploader.empty:not(.loading) .input-group-append,
+.file-uploader.empty.processing .input-group-append {
   display: none;
 }
 
 // скрытие кнопок отмены загрузки при любых состояниях, кроме загрузки
-.file-uploader:not(.loading) .file-uploader__loading-buttons {
+.file-uploader:not(.loading) .file-uploader__loading-buttons,
+.file-uploader.processing .file-uploader__loading-buttons {
   display: none;
 }
 

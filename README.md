@@ -12,12 +12,13 @@
 
 ## Features
 * Каждый файл представлен своей моделью, что позволяет 
-хранить метаданные. Например alt и title для изображения.
+хранить метаданные. Например, alt и title для изображения.
 * Загрузка файлов происходит асинхронно.
 * Поля для хранения файлов являются производными 
-от OneToOneField и не используют `<input type="file">`. Благодаря 
-этому, при ошибках валидации формы, не нужно прикреплять файлы 
-повторно.
+от `OneToOneField` и не используют `<input type="file">`. Благодаря 
+этому, при ошибках валидации прикрепленные файлы не сбрасываются.
+* Совместимость с [django-storages](https://github.com/jschneier/django-storages).
+* Опциональная интеграция с [Cloudinary](https://cloudinary.com/documentation/cloudinary_references).
 * Загруженные картинки можно нарезать на множество вариаций.
 Каждая вариация гибко настраивается. Можно указать размеры, 
 качество сжатия, формат, добавить дополнительные 
@@ -28,7 +29,8 @@
 для отложенной нарезки картинок на вариации.
 * Возможность постобработки изображений консольными утилитами. 
 Такими как `mozjpeg` и `pngquant`.
-* Возможность сортировать элементы коллекций.
+* Возможность создавать коллекции файлов. В частности, галерей изображений с 
+возможностью сортировки элементов.
 
 ## Installation
 ```python
@@ -59,7 +61,7 @@ PAPER_UPLOADS = {
         },
         'svg': {
             'command': 'svgo',
-            'arguments': '--precision=4 "{file}"',
+            'arguments': '--precision=4 --disable=convertPathData "{file}"',
         },   
     }
 }
@@ -96,14 +98,16 @@ class Page(models.Model):
 * `uploaded_at` - дата загрузки файла.
 * `modified_at` - дата изменения модели.
 
-Модели, унаследованные от `UploadedFileBase`, проксируют некоторые 
-свойства файла на уровень модели:
+Модели файлов (`UploadedFile`, `UploadedImage` и модели элементов коллекций) 
+проксирует некоторые аттрибуты и методы файла на уровень модели:
 * `url`
 * `path`
 * `open`
-* `read`
 * `close`
 * `closed`
+* `read`
+* `seek`
+* `tell`
 
 Таким образом, вместо `Page.report.file.url` можно использовать 
 `Page.report.url`.
@@ -112,7 +116,7 @@ class Page(models.Model):
 Поле для загрузки изображений. 
 
 Поддерживает нарезку на неограниченное количество вариаций. 
-Настройки вариаций задаются словарем `variations`. Синтаксис вариаций 
+Настройки вариаций задаются в словаре `variations`. Синтаксис вариаций 
 можно посмотреть в модуле [variations](https://github.com/dldevinc/variations).
 
 Исходное загруженное изображение сохраняется в файловой системе без 
@@ -121,7 +125,6 @@ class Page(models.Model):
 [recreate_variations](#recreate_variations).
 
 ```python
-from pilkit import processors
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from paper_uploads.models import *
@@ -129,25 +132,26 @@ from paper_uploads.models import *
 
 class Page(models.Model):
     image = ImageField(_('single image'), blank=True)
-    varsatile_image = ImageField(_('image with variations'),
+    versatile_image = ImageField(_('image with variations'),
         blank=True,
         variations=dict(
             desktop=dict(
                 size=(1600, 0),
                 clip=False,
                 jpeg=dict(
-                    quality=92,
+                    quality=80,
+                    progressive=True
                 ),
-                postprocessors=[
-                    processors.ColorOverlay('#FF0000'),
-                ],
             ),
             tablet=dict(
                 size=(1024, 0),
                 clip=False,
+                jpeg=dict(
+                    quality=75,
+                ),
             ),
-            admin=dict(
-                size=(320, 0),
+            mobile=dict(
+                size=(640, 0),
                 clip=False,
             )
         )
@@ -160,19 +164,19 @@ class Page(models.Model):
 * `name` - имя файла без расширения и суффикса, добавляемого `FileStorage`.
 Пример: `summer_photo`.
 * `extension` - расширение файла в нижнем регистре. Пример: `jpg`.
-* `size` - размер файла в байтах.
-* `hash` - SHA-1 хэш содержимого файла.
-* `alt` - текст аттрибута `alt` для тэга `<img>`.
 * `title` - текст аттрибута `title` для тэга `<img>`.
+* `description` - текст аттрибута `alt` для тэга `<img>`.
 * `width` - ширина исходного изображения в пикселях.
 * `height` - высота исходного изображения в пикселях.
+* `size` - размер файла в байтах.
+* `hash` - SHA-1 хэш содержимого файла.
 * `created_at` - дата создания экземпляра модели.
 * `uploaded_at` - дата загрузки файла.
 * `modified_at` - дата изменения модели.
 
 К вариациям можно обращаться прямо из экземпляра `UploadedImage`:
 ```python
-page.varsatile_image.desktop.url
+page.versatile_image.desktop.url
 ```
 
 ## Collections
@@ -189,25 +193,25 @@ from paper_uploads.models import *
 
 
 class PageFiles(Collection):
-    svg = CollectionItemTypeField(SVGItem)
-    image = CollectionItemTypeField(ImageItem)
-    file = CollectionItemTypeField(FileItem)
+    svg = ItemField(SVGItem)
+    image = ItemField(ImageItem)
+    file = ItemField(FileItem)
 ``` 
 
-Псевдо-поле `CollectionItemTypeField` подключает модель 
+Псевдо-поле `ItemField` подключает модель 
 элемента к коллекции под заданным именем, которое сохраняется 
 в базу данных (в поле `item_type`) вместе с загруженным файлом. 
-При изменении имен псевдо-полей или при добавлении новых элементов 
-к существующим коллекциям, разработчик должен самостоятельно 
+При изменении имен псевдо-полей или при добавлении новых классов 
+элементов к существующим коллекциям, разработчик должен самостоятельно 
 обеспечить согласованное состояние БД.
 
-Вместе с моделью элемента, в поле `CollectionItemTypeField`
-можно указать [валидаторы](#Validators) и дополнительные параметры 
+Вместе с моделью элемента, в поле `ItemField` можно указать 
+[валидаторы](#Validators) и дополнительные параметры 
 (в словаре `options`), которые могут быть использованы для 
 более детальной настройки элемента коллекции.
 
-Порядок подключения элементов к коллекции имеет значение: первый 
-класс элемента, чей метод `file_supported()` вернет `True`, 
+Порядок подключения классов элементов к коллекции имеет значение: 
+первый класс, чей метод `file_supported()` вернет `True`, 
 определит модель загружаемого файла. Поэтому `FileItem` должен 
 указываться последним, т.к. он принимает любые файлы.
 
@@ -220,9 +224,9 @@ from paper_uploads.models import *
 
 
 class PageFiles(Collection):
-    svg = CollectionItemTypeField(SVGItem)
-    image = CollectionItemTypeField(ImageItem)
-    file = CollectionItemTypeField(FileItem)
+    svg = ItemField(SVGItem)
+    image = ItemField(ImageItem)
+    file = ItemField(FileItem)
 
 
 class Page(models.Model):
@@ -231,7 +235,7 @@ class Page(models.Model):
 
 ---
 
-В состав библиотеки входят следующие готовые классы элементов:
+В состав библиотеки входят следующие классы элементов:
 * `FileItem`. Может хранить любой файл. Из-за этого при 
 подключении к коллекции этот тип должен быть подключен последним.
 * `SVGItem`. Функционально иденичен `FileItem`, но в админке вместо 
@@ -252,16 +256,16 @@ class Page(models.Model):
                 clip=False            
             )        
         )       
-        image = CollectionItemTypeField(ImageItem)
+        image = ItemField(ImageItem)
     ```
    
-2) ключ `variations` словаря `options` поля `CollectionItemTypeField`:
+2) в дополнительных параметрах поля `ItemField` по ключу `variations`:
 
     ```python
     from paper_uploads.models import *
     
     class PageGallery(Collection):
-        image = CollectionItemTypeField(ImageItem, options={
+        image = ItemField(ImageItem, options={
             'variations': dict(
                 mobile=dict(
                     size=(640, 0),
@@ -280,7 +284,7 @@ class Page(models.Model):
 
 Для коллекций, предназначенных исключительно для изображений, 
 "из коробки" доступна модель для наследования `ImageCollection`.
-Она уже включает в себя класс элементов для картинок.
+К ней уже подключен класс элементов-изображений.
 
 ```python
 from paper_uploads.models import *
@@ -311,9 +315,13 @@ class PageGallery(ImageCollection):
 Наследование от `Collection` на самом деле создает
 [proxy-модель](https://docs.djangoproject.com/en/2.2/topics/db/models/#proxy-models).
 Это позволяет не создавать для каждой коллекции отдельную 
-таблицу в БД. А переопределенный менеджер `objects` в классе 
-`Collection` позволяет прозрачно работать с коллекциями 
-требуемого класса.
+таблицу в БД, но делает невозможным добавление к модели коллекции 
+дополнительных полей. 
+
+Чтобы экземпляры коллекций не смешивались при выполнении SQL-запросов, 
+менеджер `objects` в классе `Collection` был переопределен для того, 
+чтобы принимать во внимание `ContentType` коллекции и выполнять операции 
+только над теми коллекциями, класс которых соответствует текущему.
 
 ```python
 # Вернет только экземпляры класса MyCollection
@@ -325,25 +333,22 @@ MyCollection._base_manager.all()
 
 ## Programmatically upload files
 ```python
-from django.core.files import File
 from paper_uploads.models import *
 
 
 # file / image
 with open('file.doc', 'rb') as fp:
-    file = UploadedFile(
-        file=File(fp, name='file.doc'),
-    )
+    file = UploadedFile()
+    file.attach_file(fp)
     file.save()
 
 
 # gallery
 gallery = PageGallery.objects.create()
 with open('image.jpg', 'rb') as fp:
-    item = ImageItem(
-        file=File(fp, name='image.jpg'),
-    )
+    item = ImageItem()
     item.attach_to(gallery)
+    item.attach_file(fp)
     item.save()
 ```
 
@@ -366,7 +371,8 @@ with open('image.jpg', 'rb') as fp:
 для `item_type`
 
 При указании ключа `--fix-missing` все отсутствующие 
-вариации изображений будут автоматически перенарезаны из исходников.
+вариации изображений будут автоматически перенарезаны 
+из исходников.
 
 ```shell
 python3 manage.py check_uploads --fix-missing
@@ -376,16 +382,15 @@ python3 manage.py check_uploads --fix-missing
 Находит мусорные записи в БД (например те, у которых 
 нет владельца) и предлагает их удалить.
 
-С момента асинхронной загрузки в админке 
-до момента отправки формы файл является "сиротой", т.е. 
-отсутствует модель, ссылающаяся на него. 
-Для того, чтобы такие файлы не удалялись, по-умолчанию
-установлен фильтр, отсеивающий все файлы, загруженные за 
-последние 30 минут. Указать свой интервал фильтрации
-(в минутах) можно через ключ `--since`.  
+Ссылка на загруженный файл создается в момент отправки формы 
+в админке. Из-за этого, в течение некоторого времени файл 
+будет являться "сиротой". Для того, чтобы такие файлы не удалялись, 
+по-умолчанию установлен фильтр, отсеивающий все файлы, загруженные 
+за последние 30 минут. Указать свой интервал фильтрации
+(в минутах) можно через ключ `--min-age`.  
 
 ```shell
-python3 manage.py clean_uploads --since=10
+python3 manage.py clean_uploads --min-age=10
 ```
 
 #### recreate_variations
@@ -423,7 +428,7 @@ for image in page.gallery.get_items('image'):
 ```
 
 ## Validators
-Для добавления ограничений на загружаемые файлы используются 
+Для добавления ограничений на загружаемые файлы применяются 
 специальные валидаторы:
 * `SizeValidator` - задает максимально допустимый размер 
 файла в байтах.
@@ -448,7 +453,7 @@ class Page(models.Model):
 
 
 class PageGallery(Collection):
-    file = CollectionItemTypeField(FileItem, validators=[
+    file = ItemField(FileItem, validators=[
         SizeValidator(10 * 1024 * 1024), 
     ])
 ```
@@ -459,6 +464,9 @@ class PageGallery(Collection):
 консольных команд над загруженными файлами. Для каждого отдельного 
 формата указывается своя команда. Это позволяет произвести 
 оптимизации, которые выходят за рамки стандартных средств Python.
+
+**Постобработка выполняется только при использовании локального
+хранилища `django.core.files.storage.FileSystemStorage`**.
 
 Постобработка разделена на две группы: 
 * изображения
@@ -474,9 +482,9 @@ class PageGallery(Collection):
 Для остальных файлов, имя формата — это расширение файла.
 
 Значением является словарь, в котором *должен* присутствовать 
-ключ `command`, ссылающийся на исполняемый файл. Опционально, 
-в ключе `arguments` можно указать аргументы, передающиеся 
-исполняемому файлу. В строке аргументов можно использовать 
+ключ `command`, содержащий путь к исполняемому файлу. 
+Опционально, в ключе `arguments` можно указать дополнительные 
+аргументы для команды. В строке аргументов можно использовать 
 шаблонную переменную `{file}`, которая будет заменена на 
 абсолютный путь к файлу вариации.
 
@@ -498,7 +506,7 @@ PAPER_UPLOADS = {
 ```
 
 Для отмены постобработки необходимо указать значение `False`
-в качестве значения `postprocess` в любом из допустимых мест. 
+в качестве значения параметра `postprocess` вариации.
 
 ### Image postprocessing
 
@@ -519,18 +527,19 @@ class Page(models.Model):
     )
 ```
 
-Или переопределить постобработку для определенного формата:
+Или переопределить постобработку для каждого формата отдельно:
 ```python
 class Page(models.Model):
     image = ImageField(_('image'), blank=True,
         variations=dict(
             desktop=dict(
                 # ...
-                jpeg=dict(
-                    postprocess={
+                postprocess=dict(
+                    jpeg=False,     # disable
+                    webp={          # override
                         'command': 'echo',
-                        'arguments': '"{file}"'                
-                    },                
+                        'arguments': '"{file}"',
+                    }                
                 )
             )
         )
@@ -540,10 +549,18 @@ class Page(models.Model):
 **NOTE**: не путайте настройки постобработки `postprocess`
 с `pilkit`-процессорами, указываемыми в параметре `postprocessors`.
 
-Несмотря на то, что в коллекции можно указать `postprocess` у
-псевдо-поля `CollectionItemTypeField`, делать это для 
-элементов-изображений не рекомендуется. Потому что приоритет этого 
-значения будет наивысшим: выше, чем у параметров вариаций.
+В коллекциях переопределить команду можно через 
+псевдо-поле `ItemField`:
+```python
+class PageFiles(Collection):
+    image = ItemField(ImageItem, postprocess={
+        'jpeg': {
+            'command': 'jpegtran',     
+            'arguments': '"{file}"', 
+        }              
+    })
+    file = ItemField(FileItem)
+```
 
 ### Common postprocessing
 
@@ -552,11 +569,8 @@ class Page(models.Model):
 файла.
 
 В отличие от изображений, где постобработка применяются только к 
-вариациям, обрабатываются загруженные файлы. Поэтому есть риск 
-**безвозвратного повреждения** загруженного файла.
-
-Изображения, загруженные в `FileField`, не будут обработаны, 
-не смотря ни на формат, ни на расширение.
+вариациям, для остальных файлов обрабатывается сам загруженный файл.
+Поэтому есть риск **безвозвратного повреждения** загруженного файла.
 
 **NOTE**: при использовании [django-rq](https://github.com/rq/django-rq)
 постобработка файлов будет происходить через отложенные задачи.
@@ -576,16 +590,177 @@ class Page(models.Model):
 ```
 
 В коллекциях переопределить команду можно через 
-псевдо-поле `CollectionItemTypeField`:
+псевдо-поле `ItemField`:
 ```python
 class PageFiles(Collection):
-    svg = CollectionItemTypeField(SVGItem, postprocess={
+    svg = ItemField(SVGItem, postprocess={
         'svg': {
             'command': 'svgo',     
             'arguments': '--precision=4 "{file}"', 
         }              
     })
-    file = CollectionItemTypeField(FileItem)
+    file = ItemField(FileItem)
+```
+
+## Variation versions
+Допустим, у нас есть изображение, которое нужно отобразить в трех 
+вариантах: `desktop`, `tablet` и `mobile`. Если мы хотим поддерживать 
+Retina дисплеи, нам нужно добавить ещё, как минимум, две вариации 
+для размера `2x`. Если мы хотим ещё и использовать формат `WebP` с
+обратной совместимостью, то общее количество вариаций умножается на 2 
+и достигает 10.
+
+Поскольку Retina-вариации отличаются от обычных только увеличенным 
+на постоянный коэффициент размером, а `WebP`-вариации — принудительной 
+конвертацией в формат `WebP`, мы можем создавать эти вариации 
+автоматически. 
+
+Для объявления вариации, имеющей несколько версий, нужно указать 
+алиасы этих версий в параметре `versions`. Комбинируя эти алиасы 
+между собой, библиотека создаст дополнительные *неявные* вариации.
+
+```python
+class Page(models.Model):
+    image = ImageField(_('image'), blank=True,
+        variations=dict(
+            desktop=dict(
+                # ...
+                versions={'webp', '2x', '3x'}
+            )
+        )
+    )
+```
+
+Приведенный выше код создаст следующие вариации:
+* `desktop` - оригинальная вариация
+* `desktop_webp` - `WebP`-версия оригинальной вариации
+* `desktop_2x` - Retina 2x
+* `desktop_webp_2x` - `WebP`-версия Retina 2x
+* `desktop_3x` - Retina 3x
+* `desktop_webp_3x` - `WebP`-версия Retina 3x
+
+**NOTE**: Суффикс для Retina всегда следует после суффикса `WebP`.
+
+Поддерживаются следующие алиасы вариаций: `webp`, `2x`, `3x`, `4x`.
+Каждая неявная вариация является полноценной и обладает 
+точно такими же свойствами, что и любая другая вариация. 
+
+Если необходимо переопределить какие-то параметры дополнительной 
+вариации, то придётся объявлять вариацию явно — она всегда перезапишет 
+одноименную дополнительную вариацию.
+
+```python
+class Page(models.Model):
+    image = ImageField(_('image'), blank=True,
+        variations=dict(
+            desktop=dict(
+                size=(800, 600),
+                versions={'webp', '2x', '3x'}
+            ),
+            desktop_2x=dict(
+                size=(1600, 1200),
+                jpeg=dict(
+                    quality=72                
+                )      
+            )   
+        )
+    )
+```
+
+## Cloudinary
+Во встроенном модуле `paper_uploads.cloudinary` описаны поля и классы, 
+позволяющие загружать файлы и картинки в облачный сервис Cloudinary. 
+В этом случае постобработка и нарезка вариаций не имеют смысла, 
+и поэтому отключены.
+
+### Installation
+1) `pip install cloudinary`
+2) Добавить `paper_uploads.cloudinary` и `cloudinary` в `INSTALLED_APPS`.
+    ```python
+    INSTALLED_APPS = [
+        # ...
+        'paper_uploads',
+        'paper_uploads.cloudinary',
+        'cloudinary',
+        # ...
+    ]
+    ```
+3) Задать [данные учетной записи](https://github.com/cloudinary/pycloudinary#configuration) Cloudinary
+    ```python
+    CLOUDINARY = {
+       'cloud_name': 'mycloud',
+       'api_key': '012345678901234',
+       'api_secret': 'g1rtyOCvm4tDIfCPFFuh4u1W0PC'
+    }
+    ```
+
+### Model fields
+```python
+from paper_uploads.cloudinary.models import *
+
+class Page(models.Model):
+    file = CloudinaryFileField(_('file'), blank=True)
+    media = CloudinaryMediaField(_('media'), blank=True)
+    image = CloudinaryImageField(_('image'), blank=True)
+```
+
+### Collections
+В модуле объявлено три класса элементов коллекции: 
+`CloudinaryFileItem`, `CloudinaryImageItem` и 
+`CloudinaryMediaItem` (для аудио и видео).
+
+**NOTE**: В отличие от библиотеки `PIL`, Cloudinary поддерживает 
+загрузку SVG-файлов как изображений. Поэтому для SVG-файлов отдельный 
+класс не нужен.
+
+Классы элементов коллекций Cloudinary используются также как обычные:
+```python
+from paper_uploads.models import *
+from paper_uploads.cloudinary.models import *
+
+
+class PageFiles(Collection):
+    image = ItemField(CloudinaryImageItem)
+    file = ItemField(CloudinaryFileItem)
+
+
+class Page(models.Model):
+    files = CollectionField(PageFiles)
+```
+
+Также, как и для обычных коллекций, для Cloudinary объявлено 
+два класса готовых коллекций: `CloudinaryCollection` 
+и `CloudinaryImageCollection`. `CloudinaryCollection` может хранить 
+любые файлы, а `CloudinaryImageCollection` — только изображения.
+
+```python
+from paper_uploads.models import *
+from paper_uploads.cloudinary.models import *
+
+
+class PageFiles(CloudinaryCollection):
+    pass
+
+
+class PageGallery(CloudinaryImageCollection):
+    pass
+
+
+class Page(models.Model):
+    files = CollectionField(PageFiles)
+    gallery = CollectionField(PageGallery)
+```
+
+### Usage
+В шаблонах доступен Jinja2-аналог шаблонного тэга `cloudinary_url`,
+входящего в состав библиотеки [cloudinary](https://github.com/cloudinary/pycloudinary).
+```jinja2
+<img src={% cloudinary_url page.image width=1024 crop=fill %}>
+```
+
+Также доступна одноименная глобальная функция:
+```jinja2
+<img src={{ cloudinary_url(page.image, width=1024, crop='fill') }}>
 ```
 
 ## Settings
@@ -689,3 +864,16 @@ PAPER_UPLOADS = {
 Например: `jpeg`, `png`, `gif`, `webp`, `svg`.
 
 Значение по умолчанию: `{}`
+
+### CLOUDINARY
+Словарь, задающий глобальные [параметры загрузки](https://cloudinary.com/documentation/image_upload_api_reference#required_parameters)
+для cloudinary.
+
+Значение по умолчанию: 
+```python
+{
+    'use_filename': True,
+    'unique_filename': True,
+    'overwrite': True,
+}
+```

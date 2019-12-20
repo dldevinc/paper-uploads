@@ -1,7 +1,10 @@
+from .base import FileFieldBase, FormattedFileField
 from .file import FileField
-from .image import ImageField
-from .collection import CollectionField, CollectionItemTypeField
+from .image import ImageField, VariationalFileField
+from .collection import CollectionField, ItemField
 
 __all__ = [
-    'FileField', 'ImageField', 'CollectionField', 'CollectionItemTypeField'
+    'FileFieldBase', 'FormattedFileField', 'VariationalFileField',
+    'FileField', 'ImageField',
+    'CollectionField', 'ItemField'
 ]

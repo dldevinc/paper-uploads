@@ -1,149 +1,382 @@
+import pytest
 from pathlib import Path
-from django.test import TestCase
-from django.core.files import File
-from variations.variation import Variation
+from tests.app.models import DummyCollection, DummyCollectionBlocked, DummyCollectionOverride
 from ..exceptions import PostprocessProhibited
 from .. import postprocess
+from ..variations import PaperVariation
 from ..models import *
 
+pytestmark = pytest.mark.django_db
 TESTS_PATH = Path(__file__).parent / 'samples'
 
 
-class TestCollection(Collection):
-    svg = CollectionItemTypeField(SVGItem, postprocess=False)
-    image = CollectionItemTypeField(ImageItem, postprocess=False, options={
-        'variations': dict(
-            mobile=dict(
-                size=(640, 0),
-                clip=False,
-                postprocess={
-                    'command': 'echo'
-                }
-            )
-        )
-    })
-    file = CollectionItemTypeField(FileItem)
+class TestGlobal:
+    def test_options(self):
+        assert (postprocess.get_postprocess_common_options('jpeg') == {
+            'command': 'jpeg-recompress',
+            'arguments': '--strip --quality medium "{file}" "{file}"',
+        })
 
+        assert (postprocess.get_postprocess_common_options('png') == {
+            'command': 'pngquant',
+            'arguments': '--force --skip-if-larger --output "{file}" "{file}"'
+        })
 
-class TestGetOptions(TestCase):
-    def test_global_options(self):
-        self.assertDictEqual(
-            postprocess.get_options('jpeg'),
-            {
+        assert (postprocess.get_postprocess_common_options('svg') == {
+            'command': 'svgo',
+            'arguments': '--precision=4 --disable=convertPathData "{file}"',
+        })
+
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_common_options('exe')
+
+        for format in ('jpeg', 'JPEG', 'Jpeg'):
+            assert (postprocess.get_postprocess_common_options(format) == {
                 'command': 'jpeg-recompress',
                 'arguments': '--strip --quality medium "{file}" "{file}"',
-            }
-        )
-        self.assertDictEqual(
-            postprocess.get_options('png'),
-            {
-                'command': 'pngquant',
-                'arguments': '--force --skip-if-larger --output "{file}" "{file}"'
-            }
-        )
-        self.assertDictEqual(
-            postprocess.get_options('svg'),
-            {
-                'command': 'svgo',
-                'arguments': '--precision=5 "{file}"',
-            }
+            })
+
+
+class TestVariation:
+    def test_options(self):
+        variation = PaperVariation(
+            size=(1920, 0)
         )
 
-    def test_unexisted_format(self):
-        self.assertDictEqual(
-            postprocess.get_options('exe'),
-            {}
-        )
+        assert (postprocess.get_postprocess_variation_options('jpeg', variation) == {
+            'command': 'jpeg-recompress',
+            'arguments': '--strip --quality medium "{file}" "{file}"',
+        })
 
-    def test_case_insensitive(self):
+        assert (postprocess.get_postprocess_variation_options('png', variation) == {
+            'command': 'pngquant',
+            'arguments': '--force --skip-if-larger --output "{file}" "{file}"'
+        })
+
+        assert (postprocess.get_postprocess_variation_options('svg', variation) == {
+            'command': 'svgo',
+            'arguments': '--precision=4 --disable=convertPathData "{file}"',
+        })
+
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_variation_options('exe', variation)
+
         for format in ('jpeg', 'JPEG', 'Jpeg'):
-            self.assertDictEqual(
-                postprocess.get_options(format),
-                {
-                    'command': 'jpeg-recompress',
-                    'arguments': '--strip --quality medium "{file}" "{file}"',
-                }
-            )
+            assert (postprocess.get_postprocess_variation_options(format, variation) == {
+                'command': 'jpeg-recompress',
+                'arguments': '--strip --quality medium "{file}" "{file}"',
+            })
 
-    def test_format_level_disabling(self):
-        variation = Variation(
-            size=(0, 0),
-            jpeg=dict(
-                postprocess=False
-            )
-        )
-        with self.assertRaises(PostprocessProhibited):
-            postprocess.get_options('jpeg', variation=variation)
 
-    def test_variation_level_disabling(self):
-        variation = Variation(
-            size=(0, 0),
+class TestVariationBlocked:
+    def test_options(self):
+        variation = PaperVariation(
+            size=(1920, 0),
             postprocess=False
         )
-        with self.assertRaises(PostprocessProhibited):
-            postprocess.get_options('jpeg', variation=variation)
-        with self.assertRaises(PostprocessProhibited):
-            postprocess.get_options('png', variation=variation)
 
-    def test_global_level_disabling(self):
-        with self.assertRaises(PostprocessProhibited):
-            postprocess.get_options('webp')
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_variation_options('jpeg', variation)
 
-    def test_format_level_override(self):
-        variation = Variation(
-            size=(0, 0),
-            jpeg=dict(
-                postprocess={
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_variation_options('png', variation)
+
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_variation_options('svg', variation)
+
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_variation_options('exe', variation)
+
+        for format in ('jpeg', 'JPEG', 'Jpeg'):
+            with pytest.raises(PostprocessProhibited):
+                postprocess.get_postprocess_variation_options(format, variation)
+
+
+class TestVariationOverride:
+    def test_options(self):
+        variation = PaperVariation(
+            size=(1920, 0),
+            postprocess=dict(
+                jpeg=False,
+                svg={
                     'command': 'echo'
                 }
-            ),
-            webp=dict(
-                postprocess={
-                    'command': 'man'
-                }
-            ),
-        )
-        self.assertDictEqual(
-            postprocess.get_options('jpeg', variation=variation),
-            {
-                'command': 'echo',
-            }
-        )
-        self.assertDictEqual(
-            postprocess.get_options('webp', variation=variation),
-            {
-                'command': 'man',
-            }
-        )
-
-    def test_collection_postrocess(self):
-        svg_field = TestCollection.item_types['svg']
-        with self.assertRaises(PostprocessProhibited):
-            postprocess.get_options('svg', field=svg_field)
-
-    def test_collection_image_postrocess_issue(self):
-        """
-        Для картинок приоритет значения в поля окажется выше,
-        чем значения в вариации.
-        """
-        image_field = TestCollection.item_types['svg']
-        with self.assertRaises(PostprocessProhibited):
-            postprocess.get_options('jpeg', field=image_field)
-
-
-class TestFilePostprocess(TestCase):
-    def setUp(self) -> None:
-        with open(TESTS_PATH / 'cartman.svg', 'rb') as fp:
-            self.object = UploadedFile(
-                file=File(fp, name='cartman.svg'),
             )
-            self.object.save()
+        )
 
-    def tearDown(self) -> None:
-        self.object.delete()
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_variation_options('jpeg', variation)
 
-    def test_file_size(self):
-        self.assertEqual(self.object.size, 1022)
+        assert (postprocess.get_postprocess_variation_options('png', variation) == {
+            'command': 'pngquant',
+            'arguments': '--force --skip-if-larger --output "{file}" "{file}"'
+        })
 
-    def test_file_hash(self):
-        self.assertEqual(self.object.hash, 'f98668ff3534d61cfcef507478abfe7b4c1dbb8a')
+        assert (postprocess.get_postprocess_variation_options('svg', variation) == {
+            'command': 'echo',
+        })
+
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_variation_options('exe', variation)
+
+        for format in ('jpeg', 'JPEG', 'Jpeg'):
+            with pytest.raises(PostprocessProhibited):
+                postprocess.get_postprocess_variation_options(format, variation)
+
+
+class TestFileField:
+    def test_options(self):
+        field = FileField()
+
+        assert (postprocess.get_postprocess_common_options('jpeg', field) == {
+            'command': 'jpeg-recompress',
+            'arguments': '--strip --quality medium "{file}" "{file}"',
+        })
+
+        assert (postprocess.get_postprocess_common_options('png', field) == {
+            'command': 'pngquant',
+            'arguments': '--force --skip-if-larger --output "{file}" "{file}"'
+        })
+
+        assert (postprocess.get_postprocess_common_options('svg', field) == {
+            'command': 'svgo',
+            'arguments': '--precision=4 --disable=convertPathData "{file}"',
+        })
+
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_common_options('exe', field)
+
+        for format in ('jpeg', 'JPEG', 'Jpeg'):
+            assert (postprocess.get_postprocess_common_options(format, field) == {
+                'command': 'jpeg-recompress',
+                'arguments': '--strip --quality medium "{file}" "{file}"',
+            })
+
+
+class TestFileFieldBlocked:
+    def test_options(self):
+        field = FileField(postprocess=False)
+
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_common_options('jpeg', field)
+
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_common_options('png', field)
+
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_common_options('svg', field)
+
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_common_options('exe', field)
+
+        for format in ('jpeg', 'JPEG', 'Jpeg'):
+            with pytest.raises(PostprocessProhibited):
+                postprocess.get_postprocess_common_options(format, field)
+
+
+class TestFileFieldOverride:
+    def test_options(self):
+        field = FileField(postprocess=dict(
+            svg=False,
+            exe={
+                'command': 'echo'
+            }
+        ))
+
+        assert (postprocess.get_postprocess_common_options('jpeg', field) == {
+            'command': 'jpeg-recompress',
+            'arguments': '--strip --quality medium "{file}" "{file}"',
+        })
+
+        assert (postprocess.get_postprocess_common_options('png', field) == {
+            'command': 'pngquant',
+            'arguments': '--force --skip-if-larger --output "{file}" "{file}"'
+        })
+
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_common_options('svg', field)
+
+        assert (postprocess.get_postprocess_common_options('exe', field) == {
+            'command': 'echo',
+        })
+
+        for format in ('jpeg', 'JPEG', 'Jpeg'):
+            assert (postprocess.get_postprocess_common_options(format, field) == {
+                'command': 'jpeg-recompress',
+                'arguments': '--strip --quality medium "{file}" "{file}"',
+            })
+
+
+class TestCollectionItemField:
+    def test_options(self):
+        field = ItemField(SVGItem)
+
+        assert (postprocess.get_postprocess_common_options('svg', field) == {
+            'command': 'svgo',
+            'arguments': '--precision=4 --disable=convertPathData "{file}"',
+        })
+
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_common_options('exe', field)
+
+
+class TestCollectionItemFieldBlocked:
+    def test_options(self):
+        field = ItemField(SVGItem, postprocess=False)
+
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_common_options('svg', field)
+
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_common_options('exe', field)
+
+
+class TestItemFieldOverride:
+    def test_options(self):
+        field = ItemField(SVGItem, postprocess=dict(
+            svg=False,
+            exe={
+                'command': 'echo'
+            }
+        ))
+
+        with pytest.raises(PostprocessProhibited):
+            postprocess.get_postprocess_common_options('svg', field)
+
+        assert (postprocess.get_postprocess_common_options('exe', field) == {
+            'command': 'echo',
+        })
+
+
+class TestPostprocess:
+    def test_options(self):
+        with open(TESTS_PATH / 'cartman.svg', 'rb') as fp:
+            obj = UploadedFile()
+            obj.attach_file(fp, name='cartman.svg')
+            obj.save()
+
+        try:
+            assert obj.size == 1118
+            assert obj.hash == '563bca379c51c21a7bdff080f7cff67914040c10'
+        finally:
+            obj.delete_file()
+            obj.delete()
+
+
+class TestRealCollection:
+    def test_options(self):
+        collection = DummyCollection.objects.create()
+
+        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+            item = ImageItem(
+                title='Image title',
+                description='Alternate text',
+            )
+            item.attach_to(collection)
+            item.attach_file(jpeg_file)
+            item.full_clean()
+            item.save()
+
+        variation = item.get_variations()['mobile']
+        field = collection.item_types['image']
+
+        try:
+            assert (postprocess.get_postprocess_variation_options('jpeg', variation, field=field) == {
+                'command': 'jpeg-recompress',
+                'arguments': '--strip --quality medium "{file}" "{file}"',
+            })
+
+            assert (postprocess.get_postprocess_variation_options('png', variation, field=field) == {
+                'command': 'pngquant',
+                'arguments': '--force --skip-if-larger --output "{file}" "{file}"'
+            })
+
+            assert (postprocess.get_postprocess_variation_options('svg', variation, field=field) == {
+                'command': 'svgo',
+                'arguments': '--precision=4 --disable=convertPathData "{file}"',
+            })
+
+            # ensure postprocessed
+            assert item.mobile.size == 89900
+        finally:
+            item.delete_file()
+            collection.delete()
+
+
+class TestRealCollectionBlocked:
+    def test_options(self):
+        collection = DummyCollectionBlocked.objects.create()
+
+        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+            item = ImageItem(
+                title='Image title',
+                description='Alternate text',
+            )
+            item.attach_to(collection)
+            item.attach_file(jpeg_file)
+            item.full_clean()
+            item.save()
+
+        variation = item.get_variations()['mobile']
+        field = collection.item_types['image']
+
+        try:
+            with pytest.raises(PostprocessProhibited):
+                postprocess.get_postprocess_variation_options('jpeg', variation, field=field)
+
+            with pytest.raises(PostprocessProhibited):
+                postprocess.get_postprocess_variation_options('png', variation, field=field)
+
+            with pytest.raises(PostprocessProhibited):
+                postprocess.get_postprocess_variation_options('svg', variation, field=field)
+
+            assert (postprocess.get_postprocess_variation_options('webp', variation, field=field) == {
+                'command': 'echo',
+            })
+
+            # ensure not postprocessed
+            assert item.mobile.size == 109101
+        finally:
+            item.delete_file()
+            collection.delete()
+
+
+class TestRealCollectionOverride:
+    def test_options(self):
+        collection = DummyCollectionOverride.objects.create()
+
+        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+            item = ImageItem(
+                title='Image title',
+                description='Alternate text',
+            )
+            item.attach_to(collection)
+            item.attach_file(jpeg_file)
+            item.full_clean()
+            item.save()
+
+        variation = item.get_variations()['mobile']
+        field = collection.item_types['image']
+
+        try:
+            with pytest.raises(PostprocessProhibited):
+                postprocess.get_postprocess_variation_options('jpeg', variation, field=field)
+
+            assert (postprocess.get_postprocess_variation_options('png', variation, field=field) == {
+                'command': 'echo',
+            })
+
+            assert (postprocess.get_postprocess_variation_options('svg', variation, field=field) == {
+                'command': 'svgo',
+                'arguments': '--precision=4 --disable=convertPathData "{file}"',
+            })
+
+            assert (postprocess.get_postprocess_variation_options('webp', variation, field=field) == {
+                'command': 'man',
+            })
+
+            # ensure not postprocessed
+            assert item.mobile.size == 109101
+        finally:
+            item.delete_file()
+            collection.delete()

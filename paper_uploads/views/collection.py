@@ -1,18 +1,17 @@
 import posixpath
 from django.db import transaction
 from django.template import loader
-from django.core.files import File
 from django.views.generic import FormView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.module_loading import import_string
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
-from ..models.collection import CollectionItemBase, CollectionBase
-from ..utils import run_validators
 from ..logging import logger
-from .. import exceptions
 from .. import signals
+from .. import exceptions
+from ..utils import run_validators
+from ..models.collection import CollectionResourceItem, CollectionBase
 from . import helpers
 
 
@@ -48,6 +47,30 @@ def delete_collection(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+def create_collection(request):
+    if not request.user.has_perm('paper_uploads.upload'):
+        return helpers.error_response('Access denied')
+
+    # Определение модели галереи
+    content_type_id = request.POST.get('paperCollectionContentType')
+    try:
+        collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
+    except exceptions.InvalidContentType:
+        logger.exception('Error')
+        return helpers.error_response('Invalid content type')
+
+    collection = collection_cls.objects.create(
+        owner_app_label=request.POST.get('paperOwnerAppLabel'),
+        owner_model_name=request.POST.get('paperOwnerModelName'),
+        owner_fieldname=request.POST.get('paperOwnerFieldname')
+    )
+    return helpers.success_response({
+        'collection_id': collection.pk
+    })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
 def upload_item(request):
     if not request.user.has_perm('paper_uploads.upload'):
         return helpers.error_response('Access denied')
@@ -68,73 +91,71 @@ def upload_item(request):
     except exceptions.InvalidChunking:
         logger.exception('Error')
         return helpers.error_response('Invalid chunking', prevent_retry=False)
-    else:
-        if not isinstance(file, File):
-            file = File(file, name=basename)
 
-    # Определение модели галереи
-    content_type_id = request.POST.get('paperCollectionContentType')
     try:
-        collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
-    except exceptions.InvalidContentType:
-        logger.exception('Error')
-        return helpers.error_response('Invalid content type')
+        # Определение модели галереи
+        content_type_id = request.POST.get('paperCollectionContentType')
+        try:
+            collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
+        except exceptions.InvalidContentType:
+            logger.exception('Error')
+            return helpers.error_response('Invalid content type')
 
-    # Получение объекта галереи
-    collection_id = request.POST.get('collectionId')
-    try:
-        collection = helpers.get_instance(collection_cls, collection_id)
-    except exceptions.InvalidObjectId:
-        # создадим новую галерею
-        collection = None
-    except ObjectDoesNotExist:
-        logger.exception('Error')
-        return helpers.error_response('Collection not found')
-    except MultipleObjectsReturned:
-        logger.exception('Error')
-        return helpers.error_response('Multiple objects returned')
+        # Получение объекта галереи
+        collection_id = request.POST.get('collectionId')
+        try:
+            collection = helpers.get_instance(collection_cls, collection_id)
+        except exceptions.InvalidObjectId:
+            logger.exception('Error')
+            return helpers.error_response('Invalid collection ID')
+        except ObjectDoesNotExist:
+            logger.exception('Error')
+            return helpers.error_response('Collection not found')
+        except MultipleObjectsReturned:
+            logger.exception('Error')
+            return helpers.error_response('Multiple objects returned')
 
-    if collection is None:
-        # Создание галереи
-        collection = collection_cls(
-            owner_app_label=request.POST.get('paperOwnerAppLabel'),
-            owner_model_name=request.POST.get('paperOwnerModelName'),
-            owner_fieldname=request.POST.get('paperOwnerFieldname')
+        # Определение типа элемента галереи
+        item_type = collection.detect_file_type(file)
+        if item_type is None:
+            return helpers.error_response('Unsupported file')
+
+        item_type_field = collection_cls.item_types[item_type]
+        instance = item_type_field.model(
+            collection_content_type_id=content_type_id,
+            collection_id=collection.pk,
+            item_type=item_type,
+            name=filename,
+            size=file.size
         )
 
-    # Определение типа элемента галереи
-    item_type = collection.detect_file_type(file)
-    if item_type is None:
-        return helpers.error_response('Unsupported file')
+        try:
+            order = int(request.POST.get('order'))
+        except (TypeError, ValueError):
+            pass
+        else:
+            instance.order = max(order, 0)
 
-    try:
-        with transaction.atomic():
-            collection.save()
-
-            item_type_field = collection_cls.item_types[item_type]
-            instance = item_type_field.model(
-                collection_content_type_id=content_type_id,
-                collection_id=collection.pk,
-                item_type=item_type,
-                file=file,
-                name=filename,
-                size=file.size
-            )
+        try:
+            instance.attach_file(file)
             instance.full_clean()
             run_validators(file, item_type_field.validators)
             instance.save()
-    except ValidationError as e:
-        messages = helpers.get_exception_messages(e)
-        logger.debug(messages)
-        return helpers.error_response(messages)
-    except Exception as e:
-        logger.exception('Error')
-        if hasattr(e, 'args'):
-            message = '{}: {}'.format(type(e).__name__, e.args[0])
-        else:
-            message = type(e).__name__
-        return helpers.error_response(message)
-
+        except ValidationError as e:
+            instance.delete_file()
+            messages = helpers.get_exception_messages(e)
+            logger.debug(messages)
+            return helpers.error_response(messages)
+        except Exception as e:
+            instance.delete_file()
+            logger.exception('Error')
+            if hasattr(e, 'args'):
+                message = '{}: {}'.format(type(e).__name__, e.args[0])
+            else:
+                message = type(e).__name__
+            return helpers.error_response(message)
+    finally:
+        file.close()
     return helpers.success_response({
         **instance.as_dict(),
     })
@@ -214,9 +235,9 @@ def sort_items(request):
     with transaction.atomic():
         for index, item_id in enumerate(item_ids):
             if item_id in set(instance.items.values_list('pk', flat=True)):
-                CollectionItemBase.objects.filter(pk=item_id).update(order=index)
+                CollectionResourceItem.objects.filter(pk=item_id).update(order=index)
             else:
-                CollectionItemBase.objects.filter(pk=item_id).update(order=2**32 - 1)
+                CollectionResourceItem.objects.filter(pk=item_id).update(order=2**32 - 1)
 
     signals.collection_reordered.send(collection_cls, instance=instance)
     return helpers.success_response()

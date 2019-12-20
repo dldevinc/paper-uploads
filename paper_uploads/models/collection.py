@@ -1,13 +1,15 @@
 import magic
 import posixpath
 from collections import OrderedDict
-from typing import Dict, Type, Any, IO, Iterable
+from typing import Dict, Type, Any
 from django.db import models, DEFAULT_DB_ALIAS
 from django.core import checks
 from django.template import loader
+from django.core.files import File
 from django.utils.timezone import now
 from django.db.models import functions
 from django.db.models.base import ModelBase
+from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
 from django.utils.module_loading import import_string
 from django.contrib.staticfiles.finders import find
@@ -15,24 +17,26 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from polymorphic.models import PolymorphicModel
-from variations.variation import Variation
-from .base import SlaveModelMixin, ProxyFileAttributesMixin
-from .file import UploadedFileBase
-from .image import UploadedImageBase, VariationalFileField
-from .fields import CollectionItemTypeField
 from ..conf import settings, FILE_ICON_OVERRIDES, FILE_ICON_DEFAULT
 from ..storage import upload_storage
-from .. import tasks
+from ..variations import PaperVariation
+from ..postprocess import postprocess_common_file, postprocess_variation
 from ..helpers import build_variations
-from ..postprocess import postprocess_uploaded_file
+from .base import (
+    VariationFile, Resource, ReadonlyFileProxyMixin, ReverseFieldModelMixin,
+    VersatileImageResourceMixin, PostprocessableFileFieldResource
+)
+from .image import VariationalFileField
+from .fields import ItemField, FormattedFileField
 
 __all__ = [
-    'CollectionItemBase', 'FileItemBase', 'ImageItemBase', 'CollectionBase',
-    'FileItem', 'ImageItem', 'SVGItem', 'Collection', 'ImageCollection'
+    'CollectionResourceItem', 'CollectionBase',
+    'FileItem', 'SVGItem', 'ImageItem',
+    'Collection', 'ImageCollection'
 ]
 
 
-class CollectionItemBase(PolymorphicModel):
+class CollectionResourceItem(PolymorphicModel):
     # Флаг для индикации базового класса элемента коллекции.
     # См. метод _check_form_class()
     __BaseCollectionItem = True
@@ -48,8 +52,10 @@ class CollectionItemBase(PolymorphicModel):
     item_type = models.CharField(_('type'), max_length=32, db_index=True, editable=False)
     order = models.IntegerField(_('order'), default=0, editable=False)
 
-    class Meta:
+    class Meta(Resource.Meta):
         default_permissions = ()
+        verbose_name = _('item')
+        verbose_name_plural = _('items')
 
     @classmethod
     def check(cls, **kwargs):
@@ -105,35 +111,36 @@ class CollectionItemBase(PolymorphicModel):
         return errors
 
     def save(self, *args, **kwargs):
-        if not self.pk and not self.order:
-            # добаление новых элементов в конец
-            max_order = self.collection.items.aggregate(
-                order=functions.Coalesce(models.Max('order'), 0)
-            )['order']
-            self.order = max_order + 1
+        if not self.pk:
+            # попытка решить проблему того, что при создании коллекции,
+            # элементы отсортированы в порядке загрузки, а не в порядке
+            # добавления. Код ниже не решает проблему, но уменьшает её влияние.
+            if self.collection.items.filter(order=self.order).exists():
+                max_order = self.collection.items.aggregate(
+                    order=functions.Coalesce(models.Max('order'), 0)
+                )['order']
+                self.order = max_order + 1
         super().save(*args, **kwargs)
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            **super().as_dict(),
+            'collectionId': self.collection_id,
+            'item_type': self.item_type,
+            'caption': self.caption,
+            'preview': self.preview,
+        }
 
     def get_collection_class(self) -> Type['CollectionBase']:
         return self.collection_content_type.model_class()
 
-    def get_itemtype_field(self) -> CollectionItemTypeField:
+    def get_itemtype_field(self) -> ItemField:
         collection_cls = self.get_collection_class()
         for name, field in collection_cls.item_types.items():
             if field.model is type(self):
                 return field
 
-    def as_dict(self) -> Dict[str, Any]:
-        """
-        Словарь, возвращаемый в виде JSON после загрузки файла.
-        Служит для формирования виджета файла без перезагрузки страницы.
-        """
-        return {
-            'id': self.pk,
-            'collectionId': self.collection_id,
-            'item_type': self.item_type,
-        }
-
-    def attach_to(self, collection: 'CollectionBase', commit: bool = True):
+    def attach_to(self, collection: 'CollectionBase'):
         """
         Подключение элемента к коллекции.
         Используется в случае динамического создания элементов коллекции.
@@ -148,115 +155,216 @@ class CollectionItemBase(PolymorphicModel):
         else:
             raise ValueError('Unsupported collection item: %s' % type(self).__name__)
 
-        if commit:
-            self.save()
+    @property
+    def caption(self):
+        """ Заголовок для виджета в админке """
+        raise NotImplementedError
 
-
-class CollectionFileItemMixin:
-    @classmethod
-    def file_supported(cls, file: IO) -> bool:
-        """
-        Проверка загруженного файла на принадлежность текущему типу элемента галереи.
-        Должен вернуть True, если файл может быть представлен текущим классом.
-        """
+    @property
+    def preview(self):
+        """ Картинка-превью для виджета в админке """
         raise NotImplementedError
 
 
-class FileItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, CollectionItemBase, UploadedFileBase):
+class FilePreviewItemMixin(models.Model):
+    preview_url = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
+
+    class Meta:
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        self.preview_url = self.get_preview_url()
+        super().save(*args, **kwargs)
+
+    @property
+    def preview(self):
+        return loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
+            'item': self,
+            'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+            'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+        })
+
+    def get_preview_url(self):
+        icon_path_template = 'paper_uploads/dist/image/{}.svg'
+        extension = FILE_ICON_OVERRIDES.get(self.extension, self.extension)
+        icon_path = icon_path_template.format(extension)
+        if find(icon_path) is None:
+            icon_path = icon_path_template.format(FILE_ICON_DEFAULT)
+        return staticfiles_storage.url(icon_path)
+
+
+class FileItem(FilePreviewItemMixin, ReadonlyFileProxyMixin, CollectionResourceItem, PostprocessableFileFieldResource):
+    change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     admin_template_name = 'paper_uploads/collection_item/file.html'
 
-    file = models.FileField(_('file'), max_length=255, storage=upload_storage,
+    file = FormattedFileField(_('file'), max_length=255, storage=upload_storage,
         upload_to=settings.COLLECTION_FILES_UPLOAD_TO)
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
-    class Meta(CollectionItemBase.Meta):
-        abstract = True
-        verbose_name = _('file')
-        verbose_name_plural = _('files')
+    class Meta(CollectionResourceItem.Meta):
+        verbose_name = _('File item')
+        verbose_name_plural = _('File items')
 
-    def __str__(self):
-        return self.file.name
-
-    def pre_save_new_file(self):
-        super().pre_save_new_file()
+    def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:
             self.display_name = self.name
+        super().save(*args, **kwargs)
 
-    def post_save_new_file(self):
-        super().post_save_new_file()
-        self._postprocess()
+    def get_file(self) -> FieldFile:
+        return self.file
 
-    def as_dict(self) -> Dict[str, Any]:
-        return {
-            **super().as_dict(),
-            'name': self.canonical_name,
-            'url': self.file.url,
-        }
-
-    def _postprocess_sync(self):
+    def postprocess(self, **kwargs):
         itemtype_field = self.get_itemtype_field()
         if itemtype_field is None:
             return
 
-        postprocess_uploaded_file(self.file.name, itemtype_field)
+        postprocess_common_file(self.get_file(), field=itemtype_field)
 
-        current_hash_value = self.hash
-        self.update_hash(commit=False)
-        if current_hash_value and current_hash_value != self.hash:
-            self.size = self.file.size
-            self.update_hash(commit=False)
-            self.modified_at = now()
-            self.save(update_fields=['size', 'hash', 'modified_at'])
+        # обновление данных после обработки файла
+        with self.get_file().open() as file:
+            if self.update_hash(file):
+                self.size = file.size
+                self.modified_at = now()
+                self.save(update_fields=['hash', 'size', 'modified_at'])
 
-    def _postprocess_async(self):
-        from django_rq.queues import get_queue
-        queue = get_queue(settings.RQ_QUEUE_NAME)
-        queue.enqueue_call(tasks.postprocess_file, kwargs={
-            'app_label': self._meta.app_label,
-            'model_name': self._meta.model_name,
-            'object_id': self.pk,
-            'using': self._state.db,
+    @property
+    def caption(self):
+        return self.get_basename()
+
+    @classmethod
+    def file_supported(cls, file: File) -> bool:
+        # TODO: магический метод
+        return True
+
+
+class SVGItem(ReadonlyFileProxyMixin, CollectionResourceItem, PostprocessableFileFieldResource):
+    change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
+    admin_template_name = 'paper_uploads/collection_item/svg.html'
+
+    file = FormattedFileField(_('file'), max_length=255, storage=upload_storage,
+        upload_to=settings.COLLECTION_FILES_UPLOAD_TO)
+    display_name = models.CharField(_('display name'), max_length=255, blank=True)
+
+    class Meta(CollectionResourceItem.Meta):
+        verbose_name = _('SVG item')
+        verbose_name_plural = _('SVG items')
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.display_name:
+            self.display_name = self.name
+        super().save(*args, **kwargs)
+
+    def get_file(self) -> FieldFile:
+        return self.file
+
+    def postprocess(self, **kwargs):
+        itemtype_field = self.get_itemtype_field()
+        if itemtype_field is None:
+            return
+
+        postprocess_common_file(self.get_file(), field=itemtype_field)
+
+        # обновление данных после обработки файла
+        with self.get_file().open() as file:
+            if self.update_hash(file):
+                self.size = file.size
+                self.modified_at = now()
+                self.save(update_fields=['hash', 'size', 'modified_at'])
+
+    @property
+    def caption(self):
+        return self.get_basename()
+
+    @property
+    def preview(self):
+        return loader.render_to_string('paper_uploads/collection_item/preview/svg.html', {
+            'item': self,
+            'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+            'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
         })
 
-    def _postprocess(self):
-        if settings.RQ_ENABLED:
-            self._postprocess_async()
-        else:
-            self._postprocess_sync()
+    @classmethod
+    def file_supported(cls, file: File) -> bool:
+        # TODO: магический метод
+        filename, ext = posixpath.splitext(file.name)
+        return ext.lower() == '.svg'
 
 
-class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, CollectionItemBase, UploadedImageBase):
-    admin_template_name = 'paper_uploads/collection_item/image.html'
+class ImageItem(ReadonlyFileProxyMixin, VersatileImageResourceMixin, CollectionResourceItem, PostprocessableFileFieldResource):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
+    change_form_class = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
+    admin_template_name = 'paper_uploads/collection_item/image.html'
 
     file = VariationalFileField(_('file'), max_length=255, storage=upload_storage,
         upload_to=settings.COLLECTION_IMAGES_UPLOAD_TO)
 
-    class Meta(CollectionItemBase.Meta):
-        abstract = True
-        verbose_name = _('image')
-        verbose_name_plural = _('images')
+    class Meta(CollectionResourceItem.Meta):
+        verbose_name = _('Image item')
+        verbose_name_plural = _('Image items')
 
-    def __str__(self):
-        return self.file.name
+    def get_file(self) -> FieldFile:
+        return self.file
 
-    def get_variations(self) -> Dict[str, Variation]:
+    def postprocess(self, **kwargs):
+        # Исходник изображения не обрабатываем
+        pass
+
+    def postprocess_variation(self, file: VariationFile, variation: PaperVariation):
+        itemtype_field = self.get_itemtype_field()
+        postprocess_variation(file, variation, field=itemtype_field)
+
+    def recut_async(self, **kwargs):
+        """
+        Превью для админки режутся сразу, а остальное — потом.
+        """
+        preview_variations = tuple(self.PREVIEW_VARIATIONS.keys())
+        self._recut_sync(names=preview_variations)
+
+        names = tuple(
+            name
+            for name in kwargs.get('names', None) or self.get_variations().keys()
+            if name not in preview_variations
+        )
+        kwargs['names'] = names
+        super().recut_async(**kwargs)
+
+    def get_variations(self) -> Dict[str, PaperVariation]:
         """
         Перебираем возможные места вероятного определения вариаций и берем
         первое непустое значение. Порядок проверки:
-            1) параметр `variations` поля `CollectionItemTypeField`
+            1) параметр `variations` поля `ItemField`
             2) член класса галереи VARIATIONS
         К найденному словарю примешиваются вариации для админки.
         """
         if not hasattr(self, '_variations_cache'):
             collection_cls = self.get_collection_class()
             itemtype_field = self.get_itemtype_field()
-            variations = self._get_variations(itemtype_field, collection_cls)
-            self._variations_cache = build_variations(variations)
+            variation_configs = self._get_variation_configs(itemtype_field, collection_cls)
+            self._variations_cache = build_variations(variation_configs)
         return self._variations_cache
 
+    @property
+    def caption(self):
+        return self.get_basename()
+
+    @property
+    def preview(self):
+        return loader.render_to_string('paper_uploads/collection_item/preview/image.html', {
+            'item': self,
+            'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+            'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+        })
+
     @classmethod
-    def _get_variations(cls, field, collection_cls) -> Dict[str, Variation]:
+    def file_supported(cls, file: File) -> bool:
+        # TODO: магический метод
+        mimetype = magic.from_buffer(file.read(1024), mime=True)
+        file.seek(0)    # correct file position after mimetype detection
+        basetype, subtype = mimetype.split('/', 1)
+        return basetype == 'image'
+
+    @classmethod
+    def _get_variation_configs(cls, field, collection_cls) -> Dict[str, Any]:
         if 'variations' in field.options:
             variations = field.options['variations']
         else:
@@ -265,48 +373,35 @@ class ImageItemBase(CollectionFileItemMixin, ProxyFileAttributesMixin, Collectio
         variations.update(cls.PREVIEW_VARIATIONS)
         return variations
 
-    def post_save_new_file(self):
-        """
-        При отложенной нарезке превью для админки режутся сразу,
-        а остальное - потом.
-        """
-        super(UploadedImageBase, self).post_save_new_file()
 
-        # postprocess
-        postprocess_options = None
-        itemtype_field = self.get_itemtype_field()
-        if itemtype_field is not None:
-            postprocess_options = itemtype_field.postprocess
+# ==============================================================================
 
-        if settings.RQ_ENABLED:
-            preview_variations = tuple(self.PREVIEW_VARIATIONS.keys())
-            self._recut_sync(
-                names=preview_variations,
-                postprocess=postprocess_options
-            )
-            self.recut(
-                names=tuple(
-                    name
-                    for name in self.get_variations()
-                    if name not in preview_variations
-                ),
-                postprocess=postprocess_options
-            )
-        else:
-            self.recut(postprocess=postprocess_options)
 
-    def as_dict(self) -> Dict[str, Any]:
-        return {
-            **super().as_dict(),
-            'name': self.canonical_name,
-            'url': self.file.url,
-        }
+class ItemTypesDescriptor:
+    def __get__(self, instance, owner):
+        if owner is None:
+            owner = type(instance)
+        return OrderedDict(
+            (field.name, field)
+            for field in owner._local_item_type_fields
+        )
+
+
+class ContentItemRelation(GenericRelation):
+    """
+    FIX: cascade delete polymorphic
+    https://github.com/django-polymorphic/django-polymorphic/issues/34
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def bulk_related_objects(self, objs, using=DEFAULT_DB_ALIAS):
+        return super().bulk_related_objects(objs).non_polymorphic()
 
 
 class CollectionMetaclass(ModelBase):
     """
-    Хак, создающий прокси-модели вместо наследования, если явно не указано
-    обратное.
+    Хак, создающий прокси-модели вместо наследования, если явно не указано обратное.
     """
     def __new__(mcs, name, bases, attrs, **kwargs):
         new_attrs = {
@@ -331,31 +426,9 @@ class CollectionMetaclass(ModelBase):
         return new_class
 
 
-class ItemTypesDescriptor:
-    def __get__(self, instance, owner):
-        if owner is None:
-            owner = type(instance)
-        return OrderedDict(
-            (field.name, field)
-            for field in owner._local_item_type_fields
-        )
-
-
-class ContentItemRelation(GenericRelation):
-    """
-    FIX: cascade delete polimorphic
-    https://github.com/django-polymorphic/django-polymorphic/issues/34
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def bulk_related_objects(self, objs, using=DEFAULT_DB_ALIAS):
-        return super().bulk_related_objects(objs).non_polymorphic()
-
-
-class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
+class CollectionBase(ReverseFieldModelMixin, metaclass=CollectionMetaclass):
     item_types = ItemTypesDescriptor()
-    items = ContentItemRelation(CollectionItemBase,
+    items = ContentItemRelation('paper_uploads.CollectionResourceItem',
         content_type_field='collection_content_type',
         object_id_field='collection_id', for_concrete_model=False)
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
@@ -381,127 +454,15 @@ class CollectionBase(SlaveModelMixin, metaclass=CollectionMetaclass):
             raise ValueError('Unsupported collection item type: %s' % item_type)
         return self.items.filter(item_type=item_type).order_by('order')
 
-    def detect_file_type(self, file: IO) -> str:
+    def detect_file_type(self, file: File) -> str:
         raise NotImplementedError
-
-    def _recut_sync(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS,
-            postprocess: Dict[str, str] = None):
-        recutable_items = tuple(
-            name
-            for name, field in self.item_types.items()
-            if hasattr(field.model, 'recut')
-        )
-        for item in self.items.using(using).filter(item_type__in=recutable_items):
-            item._recut_sync(names, postprocess=postprocess)
-
-    def _recut_async(self, names: Iterable[str] = (), using: str = DEFAULT_DB_ALIAS,
-            postprocess: Dict[str, str] = None):
-        from django_rq.queues import get_queue
-        queue = get_queue(settings.RQ_QUEUE_NAME)
-        queue.enqueue_call(tasks.recut_collection, kwargs={
-            'app_label': self._meta.app_label,
-            'model_name': self._meta.model_name,
-            'object_id': self.pk,
-            'names': names,
-            'using': using,
-            'postprocess': postprocess
-        })
-
-    def recut(self, names: Iterable[str] = None, using: str = DEFAULT_DB_ALIAS,
-            postprocess: Dict[str, str] = None):
-        if settings.RQ_ENABLED:
-            self._recut_async(names, using=using, postprocess=postprocess)
-        else:
-            self._recut_sync(names, using=using, postprocess=postprocess)
-
-
-# ==============================================================================
-
-
-class FileItem(FileItemBase):
-    change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
-
-    preview = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
-
-    @classmethod
-    def file_supported(cls, file: IO) -> bool:
-        return True
-
-    def pre_save_new_file(self):
-        super().pre_save_new_file()
-        self.preview = self.get_preview_url()
-
-    def as_dict(self) -> Dict[str, Any]:
-        return {
-            **super().as_dict(),
-            'preview': loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
-                'item': self,
-                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-            })
-        }
-
-    def get_preview_url(self):
-        icon_path_template = 'paper_uploads/dist/image/{}.svg'
-        extension = FILE_ICON_OVERRIDES.get(self.extension, self.extension)
-        icon_path = icon_path_template.format(extension)
-        if find(icon_path) is None:
-            icon_path = icon_path_template.format(FILE_ICON_DEFAULT)
-        return staticfiles_storage.url(icon_path)
-
-
-class SVGItem(FileItemBase):
-    change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
-    admin_template_name = 'paper_uploads/collection_item/svg.html'
-
-    class Meta(CollectionItemBase.Meta):
-        verbose_name = _('SVG-file')
-        verbose_name_plural = _('SVG-files')
-
-    @classmethod
-    def file_supported(cls, file: IO) -> bool:
-        filename, ext = posixpath.splitext(file.name)
-        return ext.lower() == '.svg'
-
-    def as_dict(self) -> Dict[str, Any]:
-        return {
-            **super().as_dict(),
-            'preview': loader.render_to_string('paper_uploads/collection_item/preview/svg.html', {
-                'item': self,
-                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-            })
-        }
-
-
-class ImageItem(ImageItemBase):
-    change_form_class = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
-
-    def as_dict(self) -> Dict[str, Any]:
-        return {
-            **super().as_dict(),
-            'name': self.canonical_name,
-            'url': self.file.url,
-            'preview': loader.render_to_string('paper_uploads/collection_item/preview/image.html', {
-                'item': self,
-                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-            })
-        }
-
-    @classmethod
-    def file_supported(cls, file: IO) -> bool:
-        mimetype = magic.from_buffer(file.read(1024), mime=True)
-        file.seek(0)    # correct file position after mimetype detection
-        basetype, subtype = mimetype.split('/', 1)
-        return basetype == 'image'
 
 
 class CollectionManager(models.Manager):
     """
     Из-за того, что все галереи являются прокси-моделями, запросы от имени
     любого из классов галереи затрагивает абсолютно все объекты галереи.
-    С помощью этого менеджера можно работать только с галерями текущего типа.
+    С помощью этого менеджера можно работать только с галереями текущего типа.
     """
     def get_queryset(self):
         collection_ct = ContentType.objects.get_for_model(self.model, for_concrete_model=False)
@@ -509,7 +470,8 @@ class CollectionManager(models.Manager):
 
 
 class Collection(CollectionBase):
-    collection_content_type = models.ForeignKey(ContentType, null=True, on_delete=models.SET_NULL, editable=False)
+    collection_content_type = models.ForeignKey(ContentType, null=True,
+        on_delete=models.SET_NULL, editable=False)
 
     default_mgr = models.Manager()     # fix migrations manager
     objects = CollectionManager()
@@ -525,28 +487,29 @@ class Collection(CollectionBase):
             )
         super().save(*args, **kwargs)
 
-    def detect_file_type(self, file: IO) -> str:
+    def detect_file_type(self, file: File) -> str:
         """
         Определение класса элемента, которому нужно отнести загружаемый файл.
         """
         for item_type, field in self.item_types.items():
-            if issubclass(field.model, CollectionFileItemMixin):
-                if field.model.file_supported(file):
+            method = getattr(field.model, 'file_supported', None)
+            if method and callable(method):
+                if method(file):
                     return item_type
 
 
 class ImageCollection(Collection):
     """
-    Галерея, позволяющая хранить только изображения.
+    Коллекция, позволяющая хранить только изображения.
     """
-    image = CollectionItemTypeField(ImageItem)
+    image = ItemField(ImageItem)
 
     @classmethod
     def get_validation(cls) -> Dict[str, Any]:
+        # TODO: магический метод
         return {
-            **super().get_validation(),
-            'acceptFiles': 'image/*',
+            'acceptFiles': ['image/*'],
         }
 
-    def detect_file_type(self, file: IO) -> str:
+    def detect_file_type(self, file: File) -> str:
         return 'image'

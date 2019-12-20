@@ -17,30 +17,13 @@ DEFAULTS = {
         admin_preview=dict(
             size=(144, 108),
             format='jpeg',
+            versions={'webp', '2x'},
             jpeg=dict(
-                quality=88
-            ),
-        ),
-        admin_preview_2x=dict(
-            size=(288, 216),
-            format='jpeg',
-            jpeg=dict(
-                quality=85
-            ),
-        ),
-        admin_preview_webp=dict(
-            size=(144, 108),
-            format='webp',
-            webp=dict(
                 quality=75
             ),
-        ),
-        admin_preview_webp_2x=dict(
-            size=(288, 216),
-            format='webp',
             webp=dict(
-                quality=60
-            ),
+                quality=65
+            )
         ),
     ),
 
@@ -49,18 +32,17 @@ DEFAULTS = {
 
     'VARIATION_DEFAULTS': {},
     'POSTPROCESS': {},
+    'CLOUDINARY': {
+        'use_filename': True,
+        'unique_filename': True,
+        'overwrite': True,
+    }
 }
 
 # List of settings that may be in string import notation.
 IMPORT_STRINGS = (
     'STORAGE',
 )
-
-
-# Атрибуты файла, переносимые на уровень модели
-PROXY_FILE_ATTRIBUTES = {
-    'url', 'path', 'open', 'read', 'close', 'closed'
-}
 
 # Иконки для файлов в галерее
 FILE_ICON_DEFAULT = 'unknown'
@@ -71,13 +53,18 @@ FILE_ICON_OVERRIDES = {
     'flac': 'audio',
     'flv': 'video',
     'gz': 'archive',
+    'm4a': 'audio',
     'm4v': 'video',
+    'mkv': 'video',
     'mov': 'video',
+    'ogg': 'audio',
     'ogv': 'video',
     'xlsx': 'xls',
     'xz': 'archive',
     'wav': 'audio',
+    'webm': 'video',
     'wma': 'audio',
+    'wmv': 'video',
 }
 
 

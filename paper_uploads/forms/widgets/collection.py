@@ -1,7 +1,7 @@
 from django import forms
 from django.urls import reverse_lazy
-from .base import FileWidgetBase
 from ...conf import settings
+from .base import FileWidgetBase
 
 
 class CollectionWidget(FileWidgetBase):
@@ -31,6 +31,7 @@ class CollectionWidget(FileWidgetBase):
         # urls
         info = self.model._meta.app_label, self.model._meta.model_name
         context.update({
+            'create_collection_url': reverse_lazy('admin:%s_%s_create' % info),
             'delete_collection_url': reverse_lazy('admin:%s_%s_delete' % info),
             'upload_item_url': reverse_lazy('admin:%s_%s_upload_item' % info),
             'change_item_url': reverse_lazy('admin:%s_%s_change_item' % info),

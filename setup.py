@@ -22,7 +22,7 @@ VERSION = '0.1.2'
 # What packages are required for this module to be executed?
 REQUIRED = [
     'django>2.1,<3.0',
-    'variations>=0.0.10,<0.1',
+    'variations>=0.0.15,<0.1',
     'filetype>1.0',
     'python-magic>0.4,<0.5',
     'django-polymorphic>2.1,<2.2',
@@ -30,7 +30,8 @@ REQUIRED = [
 
 # What packages are optional?
 EXTRAS = {
-    'rq': ['django-rq>2.1,<2.2'],
+    'rq': ['django-rq>2.1,<2.3'],
+    'cloudinary': ['cloudinary>1.18,<1.20'],
     'facedetection': ['face_recognition>1.2,<1.3'],
 }
 

@@ -1,17 +1,14 @@
-import posixpath
-from django.db import transaction
 from django.template import loader
-from django.core.files import File
 from django.views.generic import FormView
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
-from ..forms.dialogs.file import UploadedFileDialog
-from ..models import UploadedFileBase
-from ..utils import run_validators
 from ..logging import logger
 from .. import exceptions
+from ..utils import run_validators
+from ..models import FileResource
+from ..forms.dialogs.file import UploadedFileDialog
 from . import helpers
 
 
@@ -20,9 +17,6 @@ from . import helpers
 def upload(request):
     if not request.user.has_perm('paper_uploads.upload'):
         return helpers.error_response('Access denied')
-
-    qqfilename = request.POST.get('qqfilename')
-    basename = posixpath.basename(qqfilename)
 
     try:
         file = helpers.read_file(request)
@@ -36,35 +30,38 @@ def upload(request):
     except exceptions.InvalidChunking:
         logger.exception('Error')
         return helpers.error_response('Invalid chunking', prevent_retry=False)
-    else:
-        if not isinstance(file, File):
-            file = File(file, name=basename)
-
-    # Определение модели файла
-    content_type_id = request.POST.get('paperContentType')
-    try:
-        model_class = helpers.get_model_class(content_type_id, base_class=UploadedFileBase)
-    except exceptions.InvalidContentType:
-        logger.exception('Error')
-        return helpers.error_response('Invalid content type')
 
     try:
-        with transaction.atomic():
-            instance = model_class(
-                file=file,
-                owner_app_label=request.POST.get('paperOwnerAppLabel'),
-                owner_model_name=request.POST.get('paperOwnerModelName'),
-                owner_fieldname=request.POST.get('paperOwnerFieldname')
-            )
+        # Определение модели файла
+        content_type_id = request.POST.get('paperContentType')
+        try:
+            model_class = helpers.get_model_class(content_type_id, base_class=FileResource)
+        except exceptions.InvalidContentType:
+            logger.exception('Error')
+            return helpers.error_response('Invalid content type')
+
+        instance = model_class(
+            owner_app_label=request.POST.get('paperOwnerAppLabel'),
+            owner_model_name=request.POST.get('paperOwnerModelName'),
+            owner_fieldname=request.POST.get('paperOwnerFieldname')
+        )
+
+        owner_field = instance.get_owner_field()
+
+        try:
+            instance.attach_file(file)
             instance.full_clean()
-            owner_field = instance.get_owner_field()
             if owner_field is not None:
                 run_validators(file, owner_field.validators)
-            instance.save()
-    except ValidationError as e:
-        messages = helpers.get_exception_messages(e)
-        logger.debug(messages)
-        return helpers.error_response(messages)
+        except ValidationError as e:
+            instance.delete_file()
+            messages = helpers.get_exception_messages(e)
+            logger.debug(messages)
+            return helpers.error_response(messages)
+
+        instance.save()
+    finally:
+        file.close()
     return helpers.success_response(instance.as_dict())
 
 
@@ -78,7 +75,7 @@ def delete(request):
     instance_id = request.POST.get('instance_id')
 
     try:
-        model_class = helpers.get_model_class(content_type_id, base_class=UploadedFileBase)
+        model_class = helpers.get_model_class(content_type_id, base_class=FileResource)
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid content type')
@@ -110,7 +107,7 @@ class ChangeView(PermissionRequiredMixin, FormView):
         instance_id = self.request.GET.get('instance_id')
 
         try:
-            model_class = helpers.get_model_class(content_type_id, base_class=UploadedFileBase)
+            model_class = helpers.get_model_class(content_type_id, base_class=FileResource)
         except exceptions.InvalidContentType:
             raise exceptions.AjaxFormError('Invalid content type')
 

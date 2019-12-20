@@ -1,11 +1,10 @@
 from .base import FileFieldBase
-from ..file import UploadedFile
 from ... import forms
 
 
 class FileField(FileFieldBase):
     def __init__(self, *args, postprocess=None, **kwargs):
-        kwargs.setdefault('to', UploadedFile)
+        kwargs.setdefault('to', 'paper_uploads.UploadedFile')
         super().__init__(*args, **kwargs)
         self.postprocess = postprocess
 

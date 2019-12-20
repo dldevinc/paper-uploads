@@ -9,10 +9,10 @@ class Config(AppConfig):
     verbose_name = _('Uploaded Files')
 
     def ready(self):
-        from . import signals
+        from .signals import handlers
         from .models import CollectionBase
         from .admin import CollectionAdminBase
-        pre_migrate.connect(signals.inject_rename_filefield_operations, sender=self)
+        pre_migrate.connect(handlers.inject_rename_filefield_operations, sender=self)
 
         # автоматическая регистрация моделей галерей в админке
         for model in apps.get_models():
