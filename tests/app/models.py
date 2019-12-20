@@ -134,7 +134,7 @@ class Document(models.Model):
 # Коллекции для тестов
 # =====================
 
-class TestCollection(Collection):
+class DummyCollection(Collection):
     image = ItemField(ImageItem, options={
         'variations': dict(
             mobile=dict(
@@ -147,7 +147,7 @@ class TestCollection(Collection):
     })
 
 
-class TestCollectionBlocked(Collection):
+class DummyCollectionBlocked(Collection):
     image = ItemField(ImageItem, postprocess=False, options={
         'variations': dict(
             mobile=dict(
@@ -165,7 +165,7 @@ class TestCollectionBlocked(Collection):
     })
 
 
-class TestCollectionOverride(Collection):
+class DummyCollectionOverride(Collection):
     image = ItemField(
         ImageItem,
         postprocess=dict(

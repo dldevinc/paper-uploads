@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from tests.app.models import TestCollection, TestCollectionBlocked, TestCollectionOverride
+from tests.app.models import DummyCollection, DummyCollectionBlocked, DummyCollectionOverride
 from ..exceptions import PostprocessProhibited
 from .. import postprocess
 from ..variations import PaperVariation
@@ -265,7 +265,7 @@ class TestPostprocess:
 
 class TestRealCollection:
     def test_options(self):
-        collection = TestCollection.objects.create()
+        collection = DummyCollection.objects.create()
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
             item = ImageItem(
@@ -305,7 +305,7 @@ class TestRealCollection:
 
 class TestRealCollectionBlocked:
     def test_options(self):
-        collection = TestCollectionBlocked.objects.create()
+        collection = DummyCollectionBlocked.objects.create()
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
             item = ImageItem(
@@ -343,7 +343,7 @@ class TestRealCollectionBlocked:
 
 class TestRealCollectionOverride:
     def test_options(self):
-        collection = TestCollectionOverride.objects.create()
+        collection = DummyCollectionOverride.objects.create()
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
             item = ImageItem(
