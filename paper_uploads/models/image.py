@@ -13,7 +13,8 @@ from .base import (
 )
 
 
-class UploadedImage(ReverseFieldModelMixin, ReadonlyFileProxyMixin, VersatileImageResourceMixin, PostprocessableFileFieldResource):
+class UploadedImage(ReverseFieldModelMixin, ReadonlyFileProxyMixin,
+                    VersatileImageResourceMixin, PostprocessableFileFieldResource):
     file = VariationalFileField(_('file'), max_length=255, upload_to=settings.IMAGES_UPLOAD_TO, storage=upload_storage)
 
     class Meta(PostprocessableFileFieldResource.Meta):

@@ -23,7 +23,6 @@ if jinja2 is not None:
             return func(ctx, source, *args, **kwargs)
         return inner
 
-
     class CloudinaryExtension(Extension):
         tags = {'cloudinary_url'}
 
@@ -44,7 +43,6 @@ if jinja2 is not None:
         @staticmethod
         def _cloudinary_url(ctx, *args, caller=None, **kwargs):
             return paper_cloudinary(cloudinary_url)(ctx, *args, **kwargs)
-
 
     # django-jinja support
     try:

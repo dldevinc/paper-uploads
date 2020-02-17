@@ -12,8 +12,12 @@ from .fields import FormattedFileField
 
 
 class UploadedFile(ReverseFieldModelMixin, ReadonlyFileProxyMixin, PostprocessableFileFieldResource):
-    file = FormattedFileField(_('file'), max_length=255, storage=upload_storage,
-        upload_to=settings.FILES_UPLOAD_TO)
+    file = FormattedFileField(
+        _('file'),
+        max_length=255,
+        storage=upload_storage,
+        upload_to=settings.FILES_UPLOAD_TO
+    )
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
     class Meta(PostprocessableFileFieldResource.Meta):

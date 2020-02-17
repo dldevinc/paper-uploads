@@ -88,11 +88,11 @@ class TestCollection:
             collection.delete()
 
     def test_manager(self):
-        file_collection_1 = PageFilesGallery.objects.create()
-        file_collection_2 = PageFilesGallery.objects.create()
-        image_collection_1 = PageGallery.objects.create()
-        image_collection_2 = PageGallery.objects.create()
-        image_collection_3 = PageGallery.objects.create()
+        PageFilesGallery.objects.create()
+        PageFilesGallery.objects.create()
+        PageGallery.objects.create()
+        PageGallery.objects.create()
+        PageGallery.objects.create()
 
         assert PageFilesGallery.objects.count() == 2
         assert PageGallery.objects.count() == 3

@@ -46,8 +46,11 @@ class CollectionResourceItem(PolymorphicModel):
 
     collection_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     collection_id = models.IntegerField()
-    collection = GenericForeignKey(ct_field='collection_content_type',
-        fk_field='collection_id', for_concrete_model=False)
+    collection = GenericForeignKey(
+        ct_field='collection_content_type',
+        fk_field='collection_id',
+        for_concrete_model=False
+    )
 
     item_type = models.CharField(_('type'), max_length=32, db_index=True, editable=False)
     order = models.IntegerField(_('order'), default=0, editable=False)
@@ -197,8 +200,12 @@ class FileItem(FilePreviewItemMixin, ReadonlyFileProxyMixin, CollectionResourceI
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     admin_template_name = 'paper_uploads/collection_item/file.html'
 
-    file = FormattedFileField(_('file'), max_length=255, storage=upload_storage,
-        upload_to=settings.COLLECTION_FILES_UPLOAD_TO)
+    file = FormattedFileField(
+        _('file'),
+        max_length=255,
+        storage=upload_storage,
+        upload_to=settings.COLLECTION_FILES_UPLOAD_TO
+    )
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
     class Meta(CollectionResourceItem.Meta):
@@ -241,8 +248,12 @@ class SVGItem(ReadonlyFileProxyMixin, CollectionResourceItem, PostprocessableFil
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     admin_template_name = 'paper_uploads/collection_item/svg.html'
 
-    file = FormattedFileField(_('file'), max_length=255, storage=upload_storage,
-        upload_to=settings.COLLECTION_FILES_UPLOAD_TO)
+    file = FormattedFileField(
+        _('file'),
+        max_length=255,
+        storage=upload_storage,
+        upload_to=settings.COLLECTION_FILES_UPLOAD_TO
+    )
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
     class Meta(CollectionResourceItem.Meta):
@@ -290,13 +301,18 @@ class SVGItem(ReadonlyFileProxyMixin, CollectionResourceItem, PostprocessableFil
         return ext.lower() == '.svg'
 
 
-class ImageItem(ReadonlyFileProxyMixin, VersatileImageResourceMixin, CollectionResourceItem, PostprocessableFileFieldResource):
+class ImageItem(ReadonlyFileProxyMixin, VersatileImageResourceMixin,
+                CollectionResourceItem, PostprocessableFileFieldResource):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
     change_form_class = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
     admin_template_name = 'paper_uploads/collection_item/image.html'
 
-    file = VariationalFileField(_('file'), max_length=255, storage=upload_storage,
-        upload_to=settings.COLLECTION_IMAGES_UPLOAD_TO)
+    file = VariationalFileField(
+        _('file'),
+        max_length=255,
+        storage=upload_storage,
+        upload_to=settings.COLLECTION_IMAGES_UPLOAD_TO
+    )
 
     class Meta(CollectionResourceItem.Meta):
         verbose_name = _('Image item')
@@ -428,9 +444,11 @@ class CollectionMetaclass(ModelBase):
 
 class CollectionBase(ReverseFieldModelMixin, metaclass=CollectionMetaclass):
     item_types = ItemTypesDescriptor()
-    items = ContentItemRelation('paper_uploads.CollectionResourceItem',
+    items = ContentItemRelation(
+        'paper_uploads.CollectionResourceItem',
         content_type_field='collection_content_type',
-        object_id_field='collection_id', for_concrete_model=False)
+        object_id_field='collection_id', for_concrete_model=False
+    )
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
 
     class Meta:
@@ -470,8 +488,12 @@ class CollectionManager(models.Manager):
 
 
 class Collection(CollectionBase):
-    collection_content_type = models.ForeignKey(ContentType, null=True,
-        on_delete=models.SET_NULL, editable=False)
+    collection_content_type = models.ForeignKey(
+        ContentType,
+        null=True,
+        on_delete=models.SET_NULL,
+        editable=False
+    )
 
     default_mgr = models.Manager()     # fix migrations manager
     objects = CollectionManager()
@@ -482,9 +504,7 @@ class Collection(CollectionBase):
 
     def save(self, *args, **kwargs):
         if not self.collection_content_type:
-            self.collection_content_type = ContentType.objects.get_for_model(self,
-                for_concrete_model=False
-            )
+            self.collection_content_type = ContentType.objects.get_for_model(self, for_concrete_model=False)
         super().save(*args, **kwargs)
 
     def detect_file_type(self, file: File) -> str:

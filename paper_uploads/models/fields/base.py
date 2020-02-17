@@ -32,10 +32,8 @@ class FileFieldBase(models.OneToOneField):
 
         model_name = self.remote_field.model if rel_is_string else self.remote_field.model._meta.object_name
 
-        if (
-            not issubclass(self.remote_field.model, FileResource)
-            or not issubclass(self.remote_field.model, ReverseFieldModelMixin)
-        ):
+        if (not issubclass(self.remote_field.model, FileResource) or not
+                issubclass(self.remote_field.model, ReverseFieldModelMixin)):
             return [
                 checks.Error(
                     "Field defines a relation with model '%s', which is not "

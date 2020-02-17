@@ -77,7 +77,7 @@ def get_allowed_fields(model: Type[Union[models.Model, Collection]]) -> List[str
 
 
 def get_allowed_variations(model: Type[Union[models.Model, Collection]],
-        field: Union[VersatileImageResourceMixin, ItemField]) -> List[str]:
+                           field: Union[VersatileImageResourceMixin, ItemField]) -> List[str]:
     """
     Для заданного поля модели возвращает список имен вариаций
     """

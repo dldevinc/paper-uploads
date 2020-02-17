@@ -95,7 +95,12 @@ class FileResource(HashableResourceMixin):
     """
     Подкласс ресурса, представляющего файл.
     """
-    extension = models.CharField(_('extension'), max_length=32, editable=False, help_text=_('Lowercase, without leading dot'))
+    extension = models.CharField(
+        _('extension'),
+        max_length=32,
+        editable=False,
+        help_text=_('Lowercase, without leading dot')
+    )
     size = models.PositiveIntegerField(_('size'), default=0, editable=False)
 
     class Meta(HashableResourceMixin.Meta):
@@ -296,12 +301,18 @@ class ImageFileResourceMixin(models.Model):
     """
     Подкласс файлового ресурса для изображений
     """
-    title = models.CharField(_('title'), max_length=255, blank=True,
-        help_text=_('The title is being used as a tooltip when the user hovers '
-                    'the mouse over the image'))
-    description = models.CharField(_('description'), max_length=255, blank=True,
-        help_text=_('This text will be used by screen readers, search engines, '
-                    'or when the image cannot be loaded'))
+    title = models.CharField(
+        _('title'),
+        max_length=255,
+        blank=True,
+        help_text=_('The title is being used as a tooltip when the user hovers the mouse over the image')
+    )
+    description = models.CharField(
+        _('description'),
+        max_length=255,
+        blank=True,
+        help_text=_('This text will be used by screen readers, search engines, or when the image cannot be loaded')
+    )
     width = models.PositiveSmallIntegerField(_('width'), default=0, editable=False)
     height = models.PositiveSmallIntegerField(_('height'), default=0, editable=False)
     cropregion = models.CharField(_('crop region'), max_length=24, blank=True, editable=False)

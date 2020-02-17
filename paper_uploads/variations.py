@@ -13,7 +13,7 @@ class PaperVariation(Variation):
       * Хранение перечня дополнительных версий вариации
     """
     def __init__(self, *args, name: str = '', postprocess: Union[Dict, bool] = None,
-            versions: Iterable[str] = None, **kwargs):
+                 versions: Iterable[str] = None, **kwargs):
         self.name = name
         self.versions = versions or set()
         self.postprocess = postprocess

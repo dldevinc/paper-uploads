@@ -163,7 +163,7 @@ class ReadonlyCloudinaryFileProxyMixin:
     Проксирование некоторых свойств файла (только для чтения) на уровень модели
     """
     _wrapped_file = None
-    SPOOL_SIZE = 10*1024*1024
+    SPOOL_SIZE = 10 * 1024 * 1024
 
     read = property(lambda self: self._wrapped_file.read)
     seek = property(lambda self: self._wrapped_file.seek)

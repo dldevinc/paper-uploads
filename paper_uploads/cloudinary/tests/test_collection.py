@@ -85,11 +85,11 @@ class TestCloudinaryCollection:
             collection.delete()
 
     def test_manager(self):
-        file_collection_1 = PageCloudinaryFilesGallery.objects.create()
-        file_collection_2 = PageCloudinaryFilesGallery.objects.create()
-        image_collection_1 = PageCloudinaryGallery.objects.create()
-        image_collection_2 = PageCloudinaryGallery.objects.create()
-        image_collection_3 = PageCloudinaryGallery.objects.create()
+        PageCloudinaryFilesGallery.objects.create()
+        PageCloudinaryFilesGallery.objects.create()
+        PageCloudinaryGallery.objects.create()
+        PageCloudinaryGallery.objects.create()
+        PageCloudinaryGallery.objects.create()
 
         assert PageCloudinaryFilesGallery.objects.count() == 2
         assert PageCloudinaryGallery.objects.count() == 3

@@ -62,7 +62,7 @@ class TestImplicitVersions:
 class TestInvalidVersion:
     def test_invalid_versions(self) -> None:
         with pytest.raises(ValueError):
-            field = ImageField(variations=dict(
+            ImageField(variations=dict(
                 desktop=dict(
                     size=(1920, 0),
                     clip=False,
