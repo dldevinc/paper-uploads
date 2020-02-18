@@ -1,10 +1,10 @@
 from django.apps import apps
-from django.db import models
-from django.core.management import BaseCommand
-from django.utils.timezone import now, timedelta
 from django.contrib.contenttypes.models import ContentType
-from django.db import transaction, DEFAULT_DB_ALIAS
+from django.core.management import BaseCommand
+from django.db import DEFAULT_DB_ALIAS, models, transaction
+from django.utils.timezone import now, timedelta
 from polymorphic.models import PolymorphicModel
+
 from ...models.base import FileResource
 from ...models.collection import CollectionBase
 

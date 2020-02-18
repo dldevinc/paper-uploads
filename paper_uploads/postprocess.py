@@ -1,15 +1,17 @@
 import os
 import shutil
 import subprocess
-from PIL import Image
-from typing import Dict, Any
+from typing import Any, Dict
+
 from django.db.models.fields.files import FieldFile
+from PIL import Image
+
 from .conf import settings
-from .logging import logger
 from .exceptions import PostprocessProhibited
+from .logging import logger
+from .models import VariationFile
 from .utils import lowercase_copy
 from .variations import PaperVariation
-from .models import VariationFile
 
 
 def _run(path: str, options: Dict[str, str]):

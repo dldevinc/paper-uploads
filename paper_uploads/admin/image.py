@@ -1,7 +1,8 @@
-from django.urls import path
 from django.contrib import admin
-from ..models.image import UploadedImage
+from django.urls import path
+
 from .. import views
+from ..models.image import UploadedImage
 from .base import UploadedFileBase
 
 

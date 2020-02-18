@@ -1,14 +1,16 @@
 import re
-import pytest
 from pathlib import Path
-from django.template import loader
+
+import pytest
 from django.core.files import File
+from django.template import loader
 from django.utils.timezone import now, timedelta
-from tests.app.models import Page, PageCloudinaryGallery, PageCloudinaryFilesGallery
-from ...conf import settings
+from tests.app.models import Page, PageCloudinaryFilesGallery, PageCloudinaryGallery
+
 from ... import validators
+from ...conf import settings
 from ...models.fields import CollectionField
-from ..models import CloudinaryFileItem, CloudinaryMediaItem, CloudinaryImageItem
+from ..models import CloudinaryFileItem, CloudinaryImageItem, CloudinaryMediaItem
 
 pytestmark = pytest.mark.django_db
 TESTS_PATH = Path(__file__).parent.parent.parent / 'tests' / 'samples'

@@ -1,5 +1,7 @@
-import pytest
 from pathlib import Path
+
+import pytest
+
 from ..models.fields import ImageField
 
 TESTS_PATH = Path(__file__).parent / 'samples'

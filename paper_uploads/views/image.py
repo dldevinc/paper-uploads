@@ -1,14 +1,19 @@
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.core.exceptions import (
+    MultipleObjectsReturned,
+    ObjectDoesNotExist,
+    ValidationError,
+)
 from django.template import loader
-from django.views.generic import FormView
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
-from ..logging import logger
+from django.views.generic import FormView
+
 from .. import exceptions
-from ..utils import run_validators
-from ..models import FileResource
 from ..forms.dialogs.image import UploadedImageDialog
+from ..logging import logger
+from ..models import FileResource
+from ..utils import run_validators
 from . import helpers
 
 

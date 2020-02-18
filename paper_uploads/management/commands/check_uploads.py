@@ -1,8 +1,13 @@
 from django.apps import apps
-from django.db import DEFAULT_DB_ALIAS
 from django.core.management import BaseCommand
-from ...models.base import FileResource, VersatileImageResourceMixin, ReverseFieldModelMixin
-from ...models.collection import CollectionResourceItem, Collection
+from django.db import DEFAULT_DB_ALIAS
+
+from ...models.base import (
+    FileResource,
+    ReverseFieldModelMixin,
+    VersatileImageResourceMixin,
+)
+from ...models.collection import Collection, CollectionResourceItem
 
 
 class Command(BaseCommand):

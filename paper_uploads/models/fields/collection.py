@@ -1,8 +1,9 @@
 from django.core import checks
 from django.db.models import Field
 from django.utils.functional import cached_property
-from .base import FileFieldBase
+
 from ... import forms
+from .base import FileFieldBase
 
 
 class CollectionField(FileFieldBase):

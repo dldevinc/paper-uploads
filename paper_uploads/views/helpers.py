@@ -1,14 +1,16 @@
 import os
-import uuid
+import posixpath
 import shutil
 import tempfile
-import posixpath
-from typing import Optional, Dict, Any, Iterable, Union, List, Type, TypeVar
+import uuid
+from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar, Union
+
 from django.conf import settings
-from django.http import JsonResponse
-from django.core.files.uploadedfile import UploadedFile
-from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
+from django.core.files.uploadedfile import UploadedFile
+from django.http import JsonResponse
+
 from .. import exceptions
 
 T = TypeVar('T')

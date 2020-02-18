@@ -1,11 +1,13 @@
-from typing import Dict, Any, Union, IO
+from typing import IO, Any, Dict, Union
+
 from django.core.files import File
 from django.dispatch import receiver
-from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
+from django.utils.translation import gettext_lazy as _
+
 from ... import signals
 from ...conf import settings
-from ...models.base import ReverseFieldModelMixin, ImageFileResourceMixin
+from ...models.base import ImageFileResourceMixin, ReverseFieldModelMixin
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
 
 

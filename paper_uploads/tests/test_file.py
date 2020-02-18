@@ -1,13 +1,15 @@
-import re
 import os
-import pytest
+import re
 from pathlib import Path
+
+import pytest
 from django.conf import settings
-from django.utils.timezone import now, timedelta
 from django.template.defaultfilters import filesizeformat
-from .. import validators
-from ..models import UploadedFile, FileField
+from django.utils.timezone import now, timedelta
 from tests.app.models import Page
+
+from .. import validators
+from ..models import FileField, UploadedFile
 
 pytestmark = pytest.mark.django_db
 TESTS_PATH = Path(__file__).parent / 'samples'

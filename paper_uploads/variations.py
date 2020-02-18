@@ -1,5 +1,6 @@
 import posixpath
-from typing import Union, Dict, Set, Iterable
+from typing import Dict, Iterable, Set, Union
+
 from variations.variation import Variation
 
 ALLOWED_VERSIONS = {'webp', '2x', '3x', '4x'}

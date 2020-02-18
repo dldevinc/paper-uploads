@@ -1,17 +1,19 @@
 import os
 import re
-import pytest
 from pathlib import Path
+
+import pytest
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.template import loader
 from django.core.files import File
+from django.template import loader
 from django.utils.timezone import now, timedelta
-from ..conf import settings as paper_settings
+from tests.app.models import Page, PageFilesGallery, PageGallery
+
 from .. import validators
-from ..models import VariationFile, SVGItem, ImageItem, FileItem
+from ..conf import settings as paper_settings
+from ..models import FileItem, ImageItem, SVGItem, VariationFile
 from ..models.fields import CollectionField
-from tests.app.models import Page, PageGallery, PageFilesGallery
 
 pytestmark = pytest.mark.django_db
 TESTS_PATH = Path(__file__).parent / 'samples'

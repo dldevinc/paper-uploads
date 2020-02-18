@@ -1,5 +1,5 @@
-from .base import FileFieldBase
 from ..widgets import FileWidget
+from .base import FileFieldBase
 
 
 class FileField(FileFieldBase):

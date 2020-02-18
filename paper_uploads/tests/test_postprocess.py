@@ -1,10 +1,16 @@
-import pytest
 from pathlib import Path
-from tests.app.models import DummyCollection, DummyCollectionBlocked, DummyCollectionOverride
-from ..exceptions import PostprocessProhibited
+
+import pytest
+from tests.app.models import (
+    DummyCollection,
+    DummyCollectionBlocked,
+    DummyCollectionOverride,
+)
+
 from .. import postprocess
-from ..variations import PaperVariation
+from ..exceptions import PostprocessProhibited
 from ..models import *
+from ..variations import PaperVariation
 
 pytestmark = pytest.mark.django_db
 TESTS_PATH = Path(__file__).parent / 'samples'

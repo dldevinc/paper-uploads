@@ -1,15 +1,17 @@
-import string
-import random
-import requests
-import tempfile
 import posixpath
-import cloudinary.uploader
+import random
+import string
+import tempfile
 from typing import IO
-from django.core.files import File
-from django.core.exceptions import ValidationError
-from django.utils.translation import ugettext_lazy as _
+
+import cloudinary.uploader
+import requests
 from cloudinary import CloudinaryResource
 from cloudinary.models import CloudinaryField
+from django.core.exceptions import ValidationError
+from django.core.files import File
+from django.utils.translation import ugettext_lazy as _
+
 from ...logging import logger
 from ...models import FileResource
 

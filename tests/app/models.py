@@ -1,9 +1,9 @@
-from pilkit import processors
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from paper_uploads.cloudinary.models import *
 from paper_uploads.models import *
 from paper_uploads.validators import *
-from paper_uploads.cloudinary.models import *
+from pilkit import processors
 
 
 class PageGallery(ImageCollection):

@@ -1,12 +1,14 @@
 import sys
-from typing import Type, Tuple, List, Union
 from itertools import chain
+from typing import List, Tuple, Type, Union
+
 from django.apps import apps
-from django.db import models, DEFAULT_DB_ALIAS
-from django.db.models.fields import Field
 from django.core.management import BaseCommand
+from django.db import DEFAULT_DB_ALIAS, models
+from django.db.models.fields import Field
 from django.db.models.utils import make_model_tuple
 from paper_uploads.models import ItemField
+
 from ...models.base import VersatileImageResourceMixin
 from ...models.collection import Collection
 

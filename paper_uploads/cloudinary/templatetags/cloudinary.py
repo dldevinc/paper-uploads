@@ -1,7 +1,8 @@
 from functools import partial
-from cloudinary.templatetags.cloudinary import cloudinary_url
-from ..models.base import CloudinaryFileResource
 
+from cloudinary.templatetags.cloudinary import cloudinary_url
+
+from ..models.base import CloudinaryFileResource
 
 try:
     import jinja2

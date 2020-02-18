@@ -1,8 +1,8 @@
 from .base import *
-from .file import UploadedFile
-from .image import UploadedImage
 from .collection import *
 from .fields import *
+from .file import UploadedFile
+from .image import UploadedImage
 
 __all__ = [
     'UploadedFile', 'UploadedImage',

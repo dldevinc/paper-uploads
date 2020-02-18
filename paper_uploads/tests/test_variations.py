@@ -1,4 +1,5 @@
 from tests.app.models import Page
+
 from ..variations import PaperVariation
 
 

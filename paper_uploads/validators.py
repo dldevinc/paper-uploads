@@ -1,12 +1,13 @@
 import os
-import magic
 from typing import Sequence
-from PIL import Image
-from django.core.files import File
+
+import magic
 from django.core.exceptions import ValidationError
+from django.core.files import File
+from django.template.defaultfilters import filesizeformat
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
-from django.template.defaultfilters import filesizeformat
+from PIL import Image
 
 __all__ = [
     'ExtensionValidator', 'MimetypeValidator', 'SizeValidator',

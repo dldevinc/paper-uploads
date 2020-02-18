@@ -1,10 +1,12 @@
 import time
-from typing import IO, Dict, Any, Iterable, Union
+from typing import IO, Any, Dict, Iterable, Union
+
 from django.apps import apps
-from django.db import DEFAULT_DB_ALIAS
 from django.core import exceptions
-from django.core.files import File
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.files import File
+from django.db import DEFAULT_DB_ALIAS
+
 from .logging import logger
 
 MAX_DB_ATTEMPTS = 3

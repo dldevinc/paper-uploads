@@ -1,9 +1,10 @@
 import json
+
+from django.contrib.contenttypes.models import ContentType
 from django.forms import widgets
+from django.template.defaultfilters import filesizeformat
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
-from django.template.defaultfilters import filesizeformat
-from django.contrib.contenttypes.models import ContentType
 
 
 class FileWidgetBase(widgets.Widget):

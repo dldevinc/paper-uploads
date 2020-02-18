@@ -1,4 +1,4 @@
-from django.apps import apps, AppConfig
+from django.apps import AppConfig, apps
 from django.contrib.admin.sites import site
 from django.db.models.signals import pre_migrate
 from django.utils.translation import gettext_lazy as _

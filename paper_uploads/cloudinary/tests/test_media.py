@@ -1,12 +1,14 @@
 import re
-import pytest
 from pathlib import Path
+
 import cloudinary.uploader
-from django.utils.timezone import now, timedelta
+import pytest
 from django.template.defaultfilters import filesizeformat
+from django.utils.timezone import now, timedelta
+from tests.app.models import Page
+
 from ... import validators
 from ..models import CloudinaryMedia, CloudinaryMediaField
-from tests.app.models import Page
 
 pytestmark = pytest.mark.django_db
 TESTS_PATH = Path(__file__).parent.parent.parent / 'tests' / 'samples'

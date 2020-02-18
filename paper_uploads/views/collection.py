@@ -1,17 +1,22 @@
 import posixpath
+
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.core.exceptions import (
+    MultipleObjectsReturned,
+    ObjectDoesNotExist,
+    ValidationError,
+)
 from django.db import transaction
 from django.template import loader
-from django.views.generic import FormView
-from django.views.decorators.csrf import csrf_exempt
 from django.utils.module_loading import import_string
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
-from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.core.exceptions import ValidationError, ObjectDoesNotExist, MultipleObjectsReturned
+from django.views.generic import FormView
+
+from .. import exceptions, signals
 from ..logging import logger
-from .. import signals
-from .. import exceptions
+from ..models.collection import CollectionBase, CollectionResourceItem
 from ..utils import run_validators
-from ..models.collection import CollectionResourceItem, CollectionBase
 from . import helpers
 
 

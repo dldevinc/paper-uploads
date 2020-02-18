@@ -1,33 +1,39 @@
-import magic
 import posixpath
 from collections import OrderedDict
-from typing import Dict, Type, Any
-from django.db import models, DEFAULT_DB_ALIAS
+from typing import Any, Dict, Type
+
+import magic
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.staticfiles.finders import find
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core import checks
-from django.template import loader
 from django.core.files import File
-from django.utils.timezone import now
+from django.db import DEFAULT_DB_ALIAS, models
 from django.db.models import functions
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
-from django.utils.translation import gettext_lazy as _
+from django.template import loader
 from django.utils.module_loading import import_string
-from django.contrib.staticfiles.finders import find
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.staticfiles.storage import staticfiles_storage
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.utils.timezone import now
+from django.utils.translation import gettext_lazy as _
 from polymorphic.models import PolymorphicModel
-from ..conf import settings, FILE_ICON_OVERRIDES, FILE_ICON_DEFAULT
+
+from ..conf import FILE_ICON_DEFAULT, FILE_ICON_OVERRIDES, settings
+from ..helpers import build_variations
+from ..postprocess import postprocess_common_file, postprocess_variation
 from ..storage import upload_storage
 from ..variations import PaperVariation
-from ..postprocess import postprocess_common_file, postprocess_variation
-from ..helpers import build_variations
 from .base import (
-    VariationFile, Resource, ReadonlyFileProxyMixin, ReverseFieldModelMixin,
-    VersatileImageResourceMixin, PostprocessableFileFieldResource
+    PostprocessableFileFieldResource,
+    ReadonlyFileProxyMixin,
+    Resource,
+    ReverseFieldModelMixin,
+    VariationFile,
+    VersatileImageResourceMixin,
 )
+from .fields import FormattedFileField, ItemField
 from .image import VariationalFileField
-from .fields import ItemField, FormattedFileField
 
 __all__ = [
     'CollectionResourceItem', 'CollectionBase',

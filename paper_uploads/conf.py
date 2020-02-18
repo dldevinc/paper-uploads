@@ -1,7 +1,6 @@
 from django import conf
 from django.utils.module_loading import import_string
 
-
 DEFAULTS = {
     'STORAGE': 'django.core.files.storage.FileSystemStorage',
     'STORAGE_OPTIONS': {},

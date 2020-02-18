@@ -1,10 +1,12 @@
 import os
-from typing import Dict, Any
+from typing import Any, Dict
+
 from django.core import checks
-from django.utils.crypto import get_random_string
 from django.core.exceptions import SuspiciousFileOperation
-from ...helpers import build_variations
+from django.utils.crypto import get_random_string
+
 from ... import forms
+from ...helpers import build_variations
 from .base import FileFieldBase, FormattedFileField
 
 

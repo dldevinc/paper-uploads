@@ -1,13 +1,19 @@
+from typing import IO, Any, Dict, Union
+
 import magic
-from typing import Dict, Any, Union, IO
+from django.core.files import File
 from django.db import models
 from django.template import loader
-from django.core.files import File
 from django.utils.translation import gettext_lazy as _
+
 from ...conf import settings
-from ...models.fields import ItemField
 from ...models.base import ImageFileResourceMixin
-from ...models.collection import FilePreviewItemMixin, CollectionResourceItem, Collection
+from ...models.collection import (
+    Collection,
+    CollectionResourceItem,
+    FilePreviewItemMixin,
+)
+from ...models.fields import ItemField
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
 
 __all__ = [

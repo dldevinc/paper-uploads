@@ -1,20 +1,21 @@
+import hashlib
 import io
 import os
-import hashlib
-from PIL import Image
-from typing import IO, Dict, Type, Any, Optional, Union, Tuple, Iterator, Sequence
+from typing import IO, Any, Dict, Iterator, Optional, Sequence, Tuple, Type, Union
+
 from django.apps import apps
-from django.db import models
-from django.core.files import File
-from django.utils.timezone import now
 from django.core.exceptions import FieldDoesNotExist, ValidationError
-from django.utils.translation import gettext_lazy as _
+from django.core.files import File
+from django.db import models
 from django.db.models.fields.files import FieldFile
+from django.utils.timezone import now
+from django.utils.translation import gettext_lazy as _
+from PIL import Image
 from variations.utils import prepare_image
-from .. import signals
+
+from .. import signals, utils
 from ..conf import settings
 from ..logging import logger
-from .. import utils
 from ..variations import PaperVariation
 
 __all__ = [

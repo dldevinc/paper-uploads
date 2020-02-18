@@ -1,13 +1,19 @@
-from typing import Dict, Any
+from typing import Any, Dict
+
 from django.db import models
-from django.utils.timezone import now
 from django.db.models.fields.files import FieldFile
-from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
+from django.utils.timezone import now
+from django.utils.translation import gettext_lazy as _
+
 from ..conf import settings
-from ..storage import upload_storage
 from ..postprocess import postprocess_common_file
-from .base import PostprocessableFileFieldResource, ReverseFieldModelMixin, ReadonlyFileProxyMixin
+from ..storage import upload_storage
+from .base import (
+    PostprocessableFileFieldResource,
+    ReadonlyFileProxyMixin,
+    ReverseFieldModelMixin,
+)
 from .fields import FormattedFileField
 
 

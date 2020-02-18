@@ -1,8 +1,10 @@
 import os
-from typing import Dict, Any
-from django.db import models
+from typing import Any, Dict
+
 from django.core import checks
+from django.db import models
 from django.db.models.signals import post_delete
+
 from ... import validators
 
 
