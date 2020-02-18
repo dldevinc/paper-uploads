@@ -15,16 +15,18 @@ TESTS_PATH = Path(__file__).parent / 'samples'
 
 class TestUploadedFile:
     def test_file(self):
-        with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
+        with open(TESTS_PATH / "cartman.svg", "rb") as svg_file:
             obj = UploadedFile(
-                owner_app_label='app',
-                owner_model_name='page',
-                owner_fieldname='file'
+                owner_app_label="app",
+                owner_model_name="page",
+                owner_fieldname="file",
             )
-            obj.attach_file(svg_file, name='Cartman.SVG')
+            obj.attach_file(svg_file, name="Cartman.SVG")
             obj.save()
 
-        suffix = re.match(r'Cartman((?:_\w+)?)', os.path.basename(obj.file.name)).group(1)
+        suffix_match = re.match(r"Cartman((?:_\w+)?)", os.path.basename(obj.file.name))
+        assert suffix_match is not None
+        suffix = suffix_match.group(1)
 
         try:
             # Resource
@@ -114,7 +116,11 @@ class TestUploadedFile:
             obj.delete()
 
     def test_empty_file(self):
-        obj = UploadedFile()
+        obj = UploadedFile(
+            owner_app_label="app",
+            owner_model_name="page",
+            owner_fieldname="file",
+        )
         try:
             assert obj.closed is True
             assert bool(obj.file) is False
@@ -131,7 +137,9 @@ class TestUploadedFile:
             obj.save()
 
         os.unlink(obj.path)
-        suffix = re.match(r'Doc((?:_\w+)?)', os.path.basename(obj.file.name)).group(1)
+        suffix_match = re.match(r"Doc((?:_\w+)?)", os.path.basename(obj.file.name))
+        assert suffix_match is not None
+        suffix = suffix_match.group(1)
 
         try:
             assert obj.closed is True
@@ -143,11 +151,11 @@ class TestUploadedFile:
             obj.delete()
 
     def test_file_rename(self):
-        with open(TESTS_PATH / 'sheet.xlsx', 'rb') as xlsx_file:
+        with open(TESTS_PATH / "sheet.xlsx", "rb") as xlsx_file:
             obj = UploadedFile(
-                owner_app_label='app',
-                owner_model_name='page',
-                owner_fieldname='file'
+                owner_app_label="app",
+                owner_model_name="page",
+                owner_fieldname="file",
             )
             obj.attach_file(xlsx_file)
             obj.save()

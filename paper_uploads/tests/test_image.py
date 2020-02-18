@@ -16,7 +16,7 @@ TESTS_PATH = Path(__file__).parent / 'samples'
 
 class TestUploadedImage:
     def test_image(self):
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(TESTS_PATH / "Image.Jpeg", "rb") as jpeg_file:
             obj = UploadedImage(
                 title='Image title',
                 description='Image description',
@@ -24,10 +24,12 @@ class TestUploadedImage:
                 owner_model_name='page',
                 owner_fieldname='image_ext'
             )
-            obj.attach_file(jpeg_file, name='Image.Jpeg')
+            obj.attach_file(jpeg_file, name="Image.Jpeg")
             obj.save()
 
-        suffix = re.match(r'Image((?:_\w+)?)', os.path.basename(obj.file.name)).group(1)
+        suffix_match = re.match(r"Image((?:_\w+)?)", os.path.basename(obj.file.name))
+        assert suffix_match is not None
+        suffix = suffix_match.group(1)
 
         try:
             # Resource
@@ -172,27 +174,34 @@ class TestUploadedImage:
             obj.delete_file()
 
     def test_empty_file(self):
-        obj = UploadedImage()
+        obj = UploadedImage(
+            owner_app_label="app",
+            owner_model_name="page",
+            owner_fieldname="image_ext",
+        )
         try:
             assert obj.closed is True
             assert bool(obj.file) is False
             with pytest.raises(ValueError):
                 obj.get_file_url()
             assert obj.is_file_exists() is False
+            assert obj.get_variation_file("desktop") is None
         finally:
             obj.delete_file()
 
     def test_missing_file(self):
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(TESTS_PATH / "Image.Jpeg", "rb") as jpeg_file:
             obj = UploadedImage(
                 owner_app_label='app',
                 owner_model_name='page',
                 owner_fieldname='image_ext'
             )
-            obj.attach_file(jpeg_file, name='Image.Jpeg')
+            obj.attach_file(jpeg_file, name="Image.Jpeg")
             obj.save()
 
-        suffix = re.match(r'Image((?:_\w+)?)', os.path.basename(obj.file.name)).group(1)
+        suffix_match = re.match(r"Image((?:_\w+)?)", os.path.basename(obj.file.name))
+        assert suffix_match is not None
+        suffix = suffix_match.group(1)
 
         os.unlink(obj.path)
         for vname, vfile in obj.variation_files():
@@ -209,11 +218,11 @@ class TestUploadedImage:
             obj.delete()
 
     def test_file_rename(self):
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(TESTS_PATH / "Image.Jpeg", "rb") as jpeg_file:
             obj = UploadedImage(
-                owner_app_label='app',
-                owner_model_name='page',
-                owner_fieldname='image'
+                owner_app_label="app",
+                owner_model_name="page",
+                owner_fieldname="image",
             )
             obj.attach_file(jpeg_file)
             obj.save()

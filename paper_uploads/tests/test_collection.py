@@ -20,9 +20,9 @@ TESTS_PATH = Path(__file__).parent / 'samples'
 class TestCollection:
     def test_collection(self):
         collection = PageFilesGallery.objects.create(
-            owner_app_label='app',
-            owner_model_name='page',
-            owner_fieldname='files'
+            owner_app_label="app",
+            owner_model_name="page",
+            owner_fieldname="files",
         )
 
         try:
@@ -54,9 +54,9 @@ class TestCollection:
 
     def test_image_collection(self):
         collection = PageGallery.objects.create(
-            owner_app_label='app',
-            owner_model_name='page',
-            owner_fieldname='gallery'
+            owner_app_label="app",
+            owner_model_name="page",
+            owner_fieldname="gallery",
         )
 
         try:
@@ -127,7 +127,9 @@ class TestFileItem:
             item.full_clean()
             item.save()
 
-        suffix = re.match(r'sheet((?:_\w+)?)', os.path.basename(item.file.name)).group(1)
+        suffix_match = re.match(r"sheet((?:_\w+)?)", os.path.basename(item.file.name))
+        assert suffix_match is not None
+        suffix = suffix_match.group(1)
 
         try:
             # Resource
@@ -238,7 +240,9 @@ class TestSVGItem:
             item.full_clean()
             item.save()
 
-        suffix = re.match(r'cartman((?:_\w+)?)', os.path.basename(item.file.name)).group(1)
+        suffix_match = re.match(r"cartman((?:_\w+)?)", os.path.basename(item.file.name))
+        assert suffix_match is not None
+        suffix = suffix_match.group(1)
 
         try:
             # Resource
@@ -351,18 +355,21 @@ class TestImageItem:
     def test_image_item(self):
         collection = PageFilesGallery.objects.create()
 
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(TESTS_PATH / "Image.Jpeg", "rb") as jpeg_file:
             item = ImageItem(
-                title='Image title',
-                description='Image description',
+                title="Image title",
+                description="Image description",
             )
+
             # item.attach_file(jpeg_file)     # <- TODO: recursion error
             item.attach_to(collection)
             item.attach_file(jpeg_file)
             item.full_clean()
             item.save()
 
-        suffix = re.match(r'Image((?:_\w+)?)', os.path.basename(item.file.name)).group(1)
+        suffix_match = re.match(r"Image((?:_\w+)?)", os.path.basename(item.file.name))
+        assert suffix_match is not None
+        suffix = suffix_match.group(1)
 
         try:
             # Resource

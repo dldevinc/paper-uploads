@@ -116,7 +116,11 @@ class TestCloudinaryFile:
             obj.delete()
 
     def test_empty_file(self):
-        obj = CloudinaryFile()
+        obj = CloudinaryFile(
+            owner_app_label="app",
+            owner_model_name="page",
+            owner_fieldname="cloud_file",
+        )
         try:
             assert obj.closed is True
             assert bool(obj.file) is False
