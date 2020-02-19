@@ -24,7 +24,7 @@ class TestUploadedImage:
                 description='Image description',
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='image_ext'
+                owner_fieldname='image_ext',
             )
             obj.attach_file(jpeg_file, name="Image.Jpeg")
             obj.save()
@@ -50,13 +50,21 @@ class TestUploadedImage:
             assert repr(obj) == "UploadedImage('Image.jpg')"
             assert obj.get_basename() == 'Image.jpg'
             assert obj.get_file() is obj.file
-            assert obj.get_file_name() == f"images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
-            assert obj.get_file_url() == f"/media/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+            assert (
+                obj.get_file_name()
+                == f"images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+            )
+            assert (
+                obj.get_file_url()
+                == f"/media/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+            )
             assert obj.is_file_exists() is True
 
             # FileFieldResource
             assert os.path.isfile(obj.path)
-            assert all(os.path.isfile(vfile.path) for vname, vfile in obj.variation_files())
+            assert all(
+                os.path.isfile(vfile.path) for vname, vfile in obj.variation_files()
+            )
 
             # PostrocessableFileFieldResource
             assert os.stat(TESTS_PATH / 'Image.Jpeg').st_size == 214779
@@ -70,7 +78,9 @@ class TestUploadedImage:
 
             # ReadonlyFileProxyMixin
             assert obj.url == obj.get_file_url()
-            assert obj.path == os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, obj.get_file_name())
+            assert obj.path == os.path.join(
+                settings.BASE_DIR, settings.MEDIA_ROOT, obj.get_file_name()
+            )
             assert obj.closed is True
             with obj.open():
                 assert obj.closed is False
@@ -139,15 +149,12 @@ class TestUploadedImage:
                     ext=obj.extension,
                     width=obj.width,
                     height=obj.height,
-                    size=filesizeformat(obj.size)
-                )
+                    size=filesizeformat(obj.size),
+                ),
             }
         finally:
             source_path = obj.path
-            variation_pathes = {
-                vfile.path
-                for vname, vfile in obj.variation_files()
-            }
+            variation_pathes = {vfile.path for vname, vfile in obj.variation_files()}
 
             obj.delete_file()
             assert os.path.isfile(source_path) is False
@@ -196,7 +203,7 @@ class TestUploadedImage:
             obj = UploadedImage(
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='image_ext'
+                owner_fieldname='image_ext',
             )
             obj.attach_file(jpeg_file, name="Image.Jpeg")
             obj.save()
@@ -211,10 +218,19 @@ class TestUploadedImage:
 
         try:
             assert obj.closed is True
-            assert obj.get_file_name() == f"images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
-            assert obj.get_file_url() == f"/media/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+            assert (
+                obj.get_file_name()
+                == f"images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+            )
+            assert (
+                obj.get_file_url()
+                == f"/media/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+            )
             assert obj.is_file_exists() is False
-            assert obj.desktop.url == f"/media/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.desktop.jpg"
+            assert (
+                obj.desktop.url
+                == f"/media/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.desktop.jpg"
+            )
         finally:
             obj.delete_file()
             obj.delete()
@@ -268,13 +284,15 @@ class TestImageField:
         assert field.related_model == 'paper_uploads.UploadedImage'
 
     def test_validators(self):
-        field = ImageField(validators=[
-            validators.SizeValidator(10 * 1024 * 1024),
-            validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
-            validators.ImageMinSizeValidator(640, 480),
-            validators.ImageMaxSizeValidator(1920, 1440),
-        ])
-        field.contribute_to_class(Page, 'image')    # resets varaitions
+        field = ImageField(
+            validators=[
+                validators.SizeValidator(10 * 1024 * 1024),
+                validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
+                validators.ImageMinSizeValidator(640, 480),
+                validators.ImageMaxSizeValidator(1920, 1440),
+            ]
+        )
+        field.contribute_to_class(Page, 'image')  # resets varaitions
 
         assert field.get_validation() == {
             'sizeLimit': 10 * 1024 * 1024,

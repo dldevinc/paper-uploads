@@ -17,12 +17,14 @@ from .base import (
 from .fields import FormattedFileField
 
 
-class UploadedFile(ReverseFieldModelMixin, ReadonlyFileProxyMixin, PostprocessableFileFieldResource):
+class UploadedFile(
+    ReverseFieldModelMixin, ReadonlyFileProxyMixin, PostprocessableFileFieldResource
+):
     file = FormattedFileField(
         _('file'),
         max_length=255,
         storage=upload_storage,
-        upload_to=settings.FILES_UPLOAD_TO
+        upload_to=settings.FILES_UPLOAD_TO,
     )
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
@@ -43,8 +45,7 @@ class UploadedFile(ReverseFieldModelMixin, ReadonlyFileProxyMixin, Postprocessab
             **super().as_dict(),
             'name': self.display_name,
             'file_info': '({ext}, {size})'.format(
-                ext=self.extension,
-                size=filesizeformat(self.size)
+                ext=self.extension, size=filesizeformat(self.size)
             ),
         }
 

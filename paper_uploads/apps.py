@@ -12,6 +12,7 @@ class Config(AppConfig):
         from .signals import handlers
         from .models import CollectionBase
         from .admin import CollectionAdminBase
+
         pre_migrate.connect(handlers.inject_rename_filefield_operations, sender=self)
 
         # автоматическая регистрация моделей галерей в админке

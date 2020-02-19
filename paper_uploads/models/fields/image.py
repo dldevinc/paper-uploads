@@ -18,6 +18,7 @@ class VariationalFileField(FormattedFileField):
     Поэтому мы проверяем все имена будущих вариаций на существование, чтобы
     не допустить перезапись.
     """
+
     def variations_collapsed(self, instance, name):
         if self.storage.exists(name):
             return True
@@ -34,8 +35,12 @@ class VariationalFileField(FormattedFileField):
         max_length = self.max_length
         dir_name, file_name = os.path.split(name)
         file_root, file_ext = os.path.splitext(file_name)
-        while self.variations_collapsed(instance, name) or (max_length and len(name) > max_length):
-            name = os.path.join(dir_name, "%s_%s%s" % (file_root, get_random_string(7), file_ext))
+        while self.variations_collapsed(instance, name) or (
+            max_length and len(name) > max_length
+        ):
+            name = os.path.join(
+                dir_name, "%s_%s%s" % (file_root, get_random_string(7), file_ext)
+            )
             if max_length is None:
                 continue
             # Truncate file_root if max_length exceeded.
@@ -48,7 +53,9 @@ class VariationalFileField(FormattedFileField):
                         'Please make sure the corresponding file field '
                         'allows sufficient "max_length".' % name
                     )
-                name = os.path.join(dir_name, "%s_%s%s" % (file_root, get_random_string(7), file_ext))
+                name = os.path.join(
+                    dir_name, "%s_%s%s" % (file_root, get_random_string(7), file_ext)
+                )
         return name
 
 
@@ -71,8 +78,7 @@ class ImageField(FileFieldBase):
             if name.startswith('_'):
                 return [
                     checks.Error(
-                        "Variation name can\'t starts with '_': %s" % name,
-                        obj=self,
+                        "Variation name can\'t starts with '_': %s" % name, obj=self,
                     )
                 ]
         return []

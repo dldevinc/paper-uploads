@@ -10,7 +10,9 @@ from ...models.base import ReverseFieldModelMixin
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
 
 
-class CloudinaryFile(ReverseFieldModelMixin, ReadonlyCloudinaryFileProxyMixin, CloudinaryFileResource):
+class CloudinaryFile(
+    ReverseFieldModelMixin, ReadonlyCloudinaryFileProxyMixin, CloudinaryFileResource
+):
     cloudinary_resource_type = 'raw'
 
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
@@ -40,7 +42,6 @@ class CloudinaryFile(ReverseFieldModelMixin, ReadonlyCloudinaryFileProxyMixin, C
             **super().as_dict(),
             'name': self.display_name,
             'file_info': '({ext}, {size})'.format(
-                ext=self.extension,
-                size=filesizeformat(self.size)
+                ext=self.extension, size=filesizeformat(self.size)
             ),
         }

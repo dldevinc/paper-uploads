@@ -23,7 +23,7 @@ class TestCloudinaryImage:
                 description='Image description',
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='cloud_image'
+                owner_fieldname='cloud_image',
             )
             obj.attach_file(jpeg_file, name='Image.Jpeg')
             obj.save()
@@ -46,7 +46,13 @@ class TestCloudinaryImage:
             assert obj.get_basename() == 'Image.jpg'
             assert obj.get_file() is obj.file
             assert re.fullmatch(r'Image_\w+\.jpg', obj.get_file_name()) is not None
-            assert re.fullmatch(r'http://res\.cloudinary\.com/[^/]+/image/upload/[^/]+/Image_\w+\.jpg', obj.get_file_url()) is not None
+            assert (
+                re.fullmatch(
+                    r'http://res\.cloudinary\.com/[^/]+/image/upload/[^/]+/Image_\w+\.jpg',
+                    obj.get_file_url(),
+                )
+                is not None
+            )
             assert obj.is_file_exists() is True
 
             # ReverseFieldModelMixin
@@ -110,8 +116,8 @@ class TestCloudinaryImage:
                     ext=obj.extension,
                     width=obj.width,
                     height=obj.height,
-                    size=filesizeformat(obj.size)
-                )
+                    size=filesizeformat(obj.size),
+                ),
             }
         finally:
             obj.delete_file()
@@ -159,7 +165,7 @@ class TestCloudinaryImage:
             obj = CloudinaryImage(
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='cloud_image'
+                owner_fieldname='cloud_image',
             )
             obj.attach_file(jpeg_file, name='Image.Jpeg')
             obj.save()
@@ -167,13 +173,19 @@ class TestCloudinaryImage:
         cloudinary.uploader.destroy(
             obj.get_public_id(),
             type=obj.cloudinary_type,
-            resource_type=obj.cloudinary_resource_type
+            resource_type=obj.cloudinary_resource_type,
         )
 
         try:
             assert obj.closed is True
             assert re.fullmatch(r'Image\w+\.jpg', obj.get_file_name()) is not None
-            assert re.fullmatch(r'http://res\.cloudinary\.com/[^/]+/image/upload/[^/]+/Image\w+\.jpg', obj.get_file_url()) is not None
+            assert (
+                re.fullmatch(
+                    r'http://res\.cloudinary\.com/[^/]+/image/upload/[^/]+/Image\w+\.jpg',
+                    obj.get_file_url(),
+                )
+                is not None
+            )
             assert obj.is_file_exists() is False
         finally:
             obj.delete_file()
@@ -184,7 +196,7 @@ class TestCloudinaryImage:
             obj = CloudinaryImage(
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='cloud_image'
+                owner_fieldname='cloud_image',
             )
             obj.attach_file(audio_file)
             obj.save()
@@ -193,11 +205,14 @@ class TestCloudinaryImage:
 
         try:
             # check old file
-            assert isinstance(cloudinary.uploader.explicit(
-                old_public_id,
-                type=obj.cloudinary_type,
-                resource_type=obj.cloudinary_resource_type
-            ), dict)
+            assert isinstance(
+                cloudinary.uploader.explicit(
+                    old_public_id,
+                    type=obj.cloudinary_type,
+                    resource_type=obj.cloudinary_resource_type,
+                ),
+                dict,
+            )
             assert obj.is_file_exists()
 
             obj.rename_file('new_name')
@@ -215,16 +230,19 @@ class TestCloudinaryImage:
             assert obj.name == 'new_name'
             assert re.search(r'new_name_\w+\.jpg$', obj.get_file_name()) is not None
             assert obj.is_file_exists()
-            assert isinstance(cloudinary.uploader.explicit(
-                new_public_id,
-                type=obj.cloudinary_type,
-                resource_type=obj.cloudinary_resource_type
-            ), dict)
+            assert isinstance(
+                cloudinary.uploader.explicit(
+                    new_public_id,
+                    type=obj.cloudinary_type,
+                    resource_type=obj.cloudinary_resource_type,
+                ),
+                dict,
+            )
         finally:
             cloudinary.uploader.destroy(
                 old_public_id,
                 type=obj.cloudinary_type,
-                resource_type=obj.cloudinary_resource_type
+                resource_type=obj.cloudinary_resource_type,
             )
 
             obj.delete_file()
@@ -238,13 +256,15 @@ class TestCloudinaryImageField:
         assert field.related_model == 'paper_uploads_cloudinary.CloudinaryImage'
 
     def test_validators(self):
-        field = CloudinaryImageField(validators=[
-            validators.SizeValidator(10 * 1024 * 1024),
-            validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
-            validators.ImageMinSizeValidator(640, 480),
-            validators.ImageMaxSizeValidator(1920, 1440),
-        ])
-        field.contribute_to_class(Page, 'cloud_image')    # resets varaitions
+        field = CloudinaryImageField(
+            validators=[
+                validators.SizeValidator(10 * 1024 * 1024),
+                validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
+                validators.ImageMinSizeValidator(640, 480),
+                validators.ImageMaxSizeValidator(1920, 1440),
+            ]
+        )
+        field.contribute_to_class(Page, 'cloud_image')  # resets varaitions
 
         assert field.get_validation() == {
             'sizeLimit': 10 * 1024 * 1024,

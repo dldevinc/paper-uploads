@@ -10,7 +10,7 @@ class TestVariations:
         assert variations['tablet'].face_detection is True
         assert variations['tablet'].extra_context['jpeg'] == {
             'quality': 80,
-            'progressive': True
+            'progressive': True,
         }
 
     def test_varaition_defaults_override(self):

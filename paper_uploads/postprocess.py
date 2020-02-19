@@ -27,25 +27,27 @@ def _run(path: str, options: Dict[str, str]):
         logger.warning("Command '{}' not found".format(executable))
         return
 
-    arguments = options.get('arguments', '').format(
-        file=path
-    )
+    arguments = options.get('arguments', '').format(file=path)
     process = subprocess.Popen(
         '{} {}'.format(executable_path, arguments),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        shell=True
+        shell=True,
     )
     out, err = process.communicate()
-    logger.debug('Command: {} {}\nStdout: {}\nStderr: {}'.format(
-        executable_path,
-        arguments,
-        out.decode() if out is not None else '',
-        err.decode() if err is not None else '',
-    ))
+    logger.debug(
+        'Command: {} {}\nStdout: {}\nStderr: {}'.format(
+            executable_path,
+            arguments,
+            out.decode() if out is not None else '',
+            err.decode() if err is not None else '',
+        )
+    )
 
 
-def get_postprocess_variation_options(format: str, variation: PaperVariation, field: Any = None) -> Dict[str, str]:
+def get_postprocess_variation_options(
+    format: str, variation: PaperVariation, field: Any = None
+) -> Dict[str, str]:
     """
     Получение настроек постобработки изображения для заданного формата.
     Если постобработка запрещена, выбрасывает исключение PostprocessProhibited.
@@ -82,7 +84,9 @@ def get_postprocess_variation_options(format: str, variation: PaperVariation, fi
     raise PostprocessProhibited
 
 
-def postprocess_variation(file: VariationFile, variation: PaperVariation, field: Any = None):
+def postprocess_variation(
+    file: VariationFile, variation: PaperVariation, field: Any = None
+):
     """
     Постобработка загруженного изображения.
     """
@@ -90,9 +94,7 @@ def postprocess_variation(file: VariationFile, variation: PaperVariation, field:
 
     try:
         postprocess_options = get_postprocess_variation_options(
-            output_format,
-            variation,
-            field=field
+            output_format, variation, field=field
         )
     except PostprocessProhibited:
         return
@@ -141,7 +143,9 @@ def postprocess_common_file(file: FieldFile, field: Any = None):
         return
 
     try:
-        postprocess_options = get_postprocess_common_options(ext.lstrip('.'), field=field)
+        postprocess_options = get_postprocess_common_options(
+            ext.lstrip('.'), field=field
+        )
     except PostprocessProhibited:
         return
     _run(file.path, postprocess_options)

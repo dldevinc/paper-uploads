@@ -28,7 +28,9 @@ def delete_collection(request):
 
     content_type_id = request.POST.get('paperCollectionContentType')
     try:
-        collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
+        collection_cls = helpers.get_model_class(
+            content_type_id, base_class=CollectionBase
+        )
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid content type')
@@ -59,7 +61,9 @@ def create_collection(request):
     # Определение модели галереи
     content_type_id = request.POST.get('paperCollectionContentType')
     try:
-        collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
+        collection_cls = helpers.get_model_class(
+            content_type_id, base_class=CollectionBase
+        )
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid content type')
@@ -67,7 +71,7 @@ def create_collection(request):
     collection = collection_cls.objects.create(
         owner_app_label=request.POST.get('paperOwnerAppLabel'),
         owner_model_name=request.POST.get('paperOwnerModelName'),
-        owner_fieldname=request.POST.get('paperOwnerFieldname')
+        owner_fieldname=request.POST.get('paperOwnerFieldname'),
     )
     return helpers.success_response({
         'collection_id': collection.pk
@@ -101,7 +105,9 @@ def upload_item(request):
         # Определение модели галереи
         content_type_id = request.POST.get('paperCollectionContentType')
         try:
-            collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
+            collection_cls = helpers.get_model_class(
+                content_type_id, base_class=CollectionBase
+            )
         except exceptions.InvalidContentType:
             logger.exception('Error')
             return helpers.error_response('Invalid content type')
@@ -131,7 +137,7 @@ def upload_item(request):
             collection_id=collection.pk,
             item_type=item_type,
             name=filename,
-            size=file.size
+            size=file.size,
         )
 
         try:
@@ -174,7 +180,9 @@ def delete_item(request):
 
     content_type_id = request.POST.get('paperCollectionContentType')
     try:
-        collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
+        collection_cls = helpers.get_model_class(
+            content_type_id, base_class=CollectionBase
+        )
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid content type')
@@ -212,7 +220,9 @@ def sort_items(request):
 
     content_type_id = request.POST.get('paperCollectionContentType')
     try:
-        collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
+        collection_cls = helpers.get_model_class(
+            content_type_id, base_class=CollectionBase
+        )
     except exceptions.InvalidContentType:
         logger.exception('Error')
         return helpers.error_response('Invalid content type')
@@ -242,7 +252,9 @@ def sort_items(request):
             if item_id in set(instance.items.values_list('pk', flat=True)):
                 CollectionResourceItem.objects.filter(pk=item_id).update(order=index)
             else:
-                CollectionResourceItem.objects.filter(pk=item_id).update(order=2**32 - 1)
+                CollectionResourceItem.objects.filter(pk=item_id).update(
+                    order=2 ** 32 - 1
+                )
 
     signals.collection_reordered.send(collection_cls, instance=instance)
     return helpers.success_response()
@@ -259,7 +271,9 @@ class ChangeView(PermissionRequiredMixin, FormView):
     def get_instance(self):
         content_type_id = self.request.GET.get('paperCollectionContentType')
         try:
-            collection_cls = helpers.get_model_class(content_type_id, base_class=CollectionBase)
+            collection_cls = helpers.get_model_class(
+                content_type_id, base_class=CollectionBase
+            )
         except exceptions.InvalidContentType:
             logger.exception('Error')
             return helpers.error_response('Invalid content type')
@@ -314,6 +328,10 @@ class ChangeView(PermissionRequiredMixin, FormView):
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        return helpers.success_response({
-            'form': loader.render_to_string(self.template_name, context, request=request)
-        })
+        return helpers.success_response(
+            {
+                'form': loader.render_to_string(
+                    self.template_name, context, request=request
+                )
+            }
+        )

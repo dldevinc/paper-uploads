@@ -19,9 +19,16 @@ from ..logging import logger
 from ..variations import PaperVariation
 
 __all__ = [
-    'Resource', 'HashableResourceMixin', 'FileResource', 'FileFieldResource',
-    'PostprocessableFileFieldResource', 'ReverseFieldModelMixin', 'ReadonlyFileProxyMixin',
-    'ImageFileResourceMixin', 'ImageFieldResourceMixin', 'VariationFile',
+    'Resource',
+    'HashableResourceMixin',
+    'FileResource',
+    'FileFieldResource',
+    'PostprocessableFileFieldResource',
+    'ReverseFieldModelMixin',
+    'ReadonlyFileProxyMixin',
+    'ImageFileResourceMixin',
+    'ImageFieldResourceMixin',
+    'VariationFile',
     'VersatileImageResourceMixin',
 ]
 
@@ -41,6 +48,7 @@ class Resource(models.Model):
     """
     Базовый класс ресурса, который может хранить модуль.
     """
+
     name = models.CharField(_('name'), max_length=255, editable=False)
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
     uploaded_at = models.DateTimeField(_('uploaded at'), default=now, editable=False)
@@ -72,7 +80,13 @@ class HashableResourceMixin(Resource):
     Подкласс ресурса, который содержит хэш своего контента.
     Хэш может быть использован для поиска дубликатов и других целей.
     """
-    hash = models.CharField(_('hash'), max_length=40, editable=False, help_text=_('SHA-1 checksum of a resource'))
+
+    hash = models.CharField(
+        _('hash'),
+        max_length=40,
+        editable=False,
+        help_text=_('SHA-1 checksum of a resource'),
+    )
 
     class Meta(Resource.Meta):
         abstract = True
@@ -96,11 +110,12 @@ class FileResource(HashableResourceMixin):
     """
     Подкласс ресурса, представляющего файл.
     """
+
     extension = models.CharField(
         _('extension'),
         max_length=32,
         editable=False,
-        help_text=_('Lowercase, without leading dot')
+        help_text=_('Lowercase, without leading dot'),
     )
     size = models.PositiveIntegerField(_('size'), default=0, editable=False)
 
@@ -172,7 +187,9 @@ class FileResource(HashableResourceMixin):
         self.update_hash(file)
         file.seek(0)
 
-        signals.pre_attach_file.send(type(self), instance=self, file=file, options=options)
+        signals.pre_attach_file.send(
+            type(self), instance=self, file=file, options=options
+        )
         response = self._attach_file(file, **options)
         signals.post_attach_file.send(type(self), instance=self, response=response)
 
@@ -207,6 +224,7 @@ class FileFieldResource(FileResource):
     """
     Подкласс файлового ресурса, доступ к которому осуществляется через Storage.
     """
+
     class Meta(FileResource.Meta):
         abstract = True
 
@@ -242,6 +260,7 @@ class PostprocessableFileFieldResource(FileFieldResource):
     Подкласс файлового ресурса, который может быть обработан локальными утилитами.
     Используемый Django Storage должен быть подклассом FileSystemStorage.
     """
+
     # флаг, запускающий постобработку после сохранения экземпляра модели в БД
     need_postprocess = False
 
@@ -279,17 +298,23 @@ class PostprocessableFileFieldResource(FileFieldResource):
         Добавление задачи постобработки в django-rq.
         """
         from django_rq.queues import get_queue
+
         queue = get_queue(settings.RQ_QUEUE_NAME)
-        queue.enqueue_call(self._postprocess_task, kwargs={
-            'app_label': self._meta.app_label,
-            'model_name': self._meta.model_name,
-            'object_id': self.pk,
-            'using': self._state.db,
-            **kwargs,
-        })
+        queue.enqueue_call(
+            self._postprocess_task,
+            kwargs={
+                'app_label': self._meta.app_label,
+                'model_name': self._meta.model_name,
+                'object_id': self.pk,
+                'using': self._state.db,
+                **kwargs,
+            },
+        )
 
     @classmethod
-    def _postprocess_task(cls, app_label: str, model_name: str, object_id: int, using: str, **kwargs):
+    def _postprocess_task(
+        cls, app_label: str, model_name: str, object_id: int, using: str, **kwargs
+    ):
         """
         Задача для django-rq.
         Вызывает `postprocess()` экземпляра в отдельном процессе.
@@ -302,21 +327,28 @@ class ImageFileResourceMixin(models.Model):
     """
     Подкласс файлового ресурса для изображений
     """
+
     title = models.CharField(
         _('title'),
         max_length=255,
         blank=True,
-        help_text=_('The title is being used as a tooltip when the user hovers the mouse over the image')
+        help_text=_(
+            'The title is being used as a tooltip when the user hovers the mouse over the image'
+        ),
     )
     description = models.CharField(
         _('description'),
         max_length=255,
         blank=True,
-        help_text=_('This text will be used by screen readers, search engines, or when the image cannot be loaded')
+        help_text=_(
+            'This text will be used by screen readers, search engines, or when the image cannot be loaded'
+        ),
     )
     width = models.PositiveSmallIntegerField(_('width'), default=0, editable=False)
     height = models.PositiveSmallIntegerField(_('height'), default=0, editable=False)
-    cropregion = models.CharField(_('crop region'), max_length=24, blank=True, editable=False)
+    cropregion = models.CharField(
+        _('crop region'), max_length=24, blank=True, editable=False
+    )
 
     class Meta:
         abstract = True
@@ -336,6 +368,7 @@ class ImageFieldResourceMixin(ImageFileResourceMixin):
     """
     Подкласс файлового ресурса изображения, доступ к которому осуществляется через Storage.
     """
+
     class Meta(ImageFileResourceMixin.Meta):
         abstract = True
 
@@ -354,6 +387,7 @@ class VariationFile(File):
     """
     Файл вариации изображения
     """
+
     def __init__(self, instance, variation_name):
         self.instance = instance
         self.variation_name = variation_name
@@ -399,11 +433,13 @@ class VariationFile(File):
             self.file.open(mode)
         else:
             self.file = self.storage.open(self.name, mode)
+
     # open() doesn't alter the file's contents, but it does reset the pointer
     open.alters_data = True
 
     def delete(self):
         self.storage.delete(self.name)
+
     delete.alters_data = True
 
     @property
@@ -439,6 +475,7 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
     осуществляется через Storage.
     Изображение и его вариации могут быть подвержены постобработке.
     """
+
     # флаг, запускающий нарезку вариаций после сохранения экземпляра модели в БД
     need_recut = False
 
@@ -499,10 +536,7 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
         if variation_name in cache:
             variation_file = cache[variation_name]
         else:
-            variation_file = VariationFile(
-                instance=self,
-                variation_name=variation_name
-            )
+            variation_file = VariationFile(instance=self, variation_name=variation_name)
             cache[variation_name] = variation_file
         return variation_file
 
@@ -569,17 +603,23 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
         Добавление задачи нарезки вариаций в django-rq.
         """
         from django_rq.queues import get_queue
+
         queue = get_queue(settings.RQ_QUEUE_NAME)
-        queue.enqueue_call(self._recut_task, kwargs={
-            'app_label': self._meta.app_label,
-            'model_name': self._meta.model_name,
-            'object_id': self.pk,
-            'using': self._state.db,
-            **kwargs,
-        })
+        queue.enqueue_call(
+            self._recut_task,
+            kwargs={
+                'app_label': self._meta.app_label,
+                'model_name': self._meta.model_name,
+                'object_id': self.pk,
+                'using': self._state.db,
+                **kwargs,
+            },
+        )
 
     @classmethod
-    def _recut_task(cls, app_label: str, model_name: str, object_id: int, using: str, **kwargs):
+    def _recut_task(
+        cls, app_label: str, model_name: str, object_id: int, using: str, **kwargs
+    ):
         """
         Задача для django-rq.
         Вызывает `recut()` экземпляра в отдельном процессе.
@@ -593,6 +633,7 @@ class ReverseFieldModelMixin(models.Model):
     Миксина, позволяющая обратиться к полю модели, которое ссылается
     на текущий объект.
     """
+
     owner_app_label = models.CharField(max_length=100, editable=False)
     owner_model_name = models.CharField(max_length=100, editable=False)
     owner_fieldname = models.CharField(max_length=255, editable=False)
@@ -607,7 +648,9 @@ class ReverseFieldModelMixin(models.Model):
         try:
             return apps.get_model(self.owner_app_label, self.owner_model_name)
         except LookupError:
-            logger.debug("Not found model: %s.%s" % (self.owner_app_label, self.owner_model_name))
+            logger.debug(
+                "Not found model: %s.%s" % (self.owner_app_label, self.owner_model_name)
+            )
 
     def get_owner_field(self) -> Optional[models.Field]:
         owner_model = self.get_owner_model()
@@ -618,9 +661,8 @@ class ReverseFieldModelMixin(models.Model):
             return owner_model._meta.get_field(self.owner_fieldname)
         except FieldDoesNotExist:
             logger.debug(
-                "Not found field '%s' in model %s.%s" % (
-                    self.owner_app_label, self.owner_model_name, self.owner_fieldname
-                )
+                "Not found field '%s' in model %s.%s"
+                % (self.owner_app_label, self.owner_model_name, self.owner_fieldname)
             )
 
 
@@ -628,6 +670,7 @@ class ReadonlyFileProxyMixin:
     """
     Проксирование некоторых свойств файла (только для чтения) на уровень модели
     """
+
     closed = property(lambda self: self.get_file().closed)
     path = property(lambda self: self.get_file().path)
     read = property(lambda self: self.get_file().read)
@@ -643,6 +686,7 @@ class ReadonlyFileProxyMixin:
 
     def open(self, mode='rb'):
         return self.get_file().open(mode)
+
     open.alters_data = True
 
     def close(self):

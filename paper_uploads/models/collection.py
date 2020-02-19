@@ -36,9 +36,13 @@ from .fields import FormattedFileField, ItemField
 from .image import VariationalFileField
 
 __all__ = [
-    'CollectionResourceItem', 'CollectionBase',
-    'FileItem', 'SVGItem', 'ImageItem',
-    'Collection', 'ImageCollection'
+    'CollectionResourceItem',
+    'CollectionBase',
+    'FileItem',
+    'SVGItem',
+    'ImageItem',
+    'Collection',
+    'ImageCollection',
 ]
 
 
@@ -55,10 +59,12 @@ class CollectionResourceItem(PolymorphicModel):
     collection = GenericForeignKey(
         ct_field='collection_content_type',
         fk_field='collection_id',
-        for_concrete_model=False
+        for_concrete_model=False,
     )
 
-    item_type = models.CharField(_('type'), max_length=32, db_index=True, editable=False)
+    item_type = models.CharField(
+        _('type'), max_length=32, db_index=True, editable=False
+    )
     order = models.IntegerField(_('order'), default=0, editable=False)
 
     class Meta(Resource.Meta):
@@ -84,7 +90,9 @@ class CollectionResourceItem(PolymorphicModel):
         if cls.change_form_class is None:
             errors.append(
                 checks.Error(
-                    "{} requires a definition of 'change_form_class'".format(cls.__name__),
+                    "{} requires a definition of 'change_form_class'".format(
+                        cls.__name__
+                    ),
                     obj=cls,
                 )
             )
@@ -95,9 +103,7 @@ class CollectionResourceItem(PolymorphicModel):
                 errors.append(
                     checks.Error(
                         "The value of 'change_form_class' refers to '%s', which does "
-                        "not exists" % (
-                            cls.change_form_class
-                        ),
+                        "not exists" % (cls.change_form_class),
                         obj=cls,
                     )
                 )
@@ -113,7 +119,9 @@ class CollectionResourceItem(PolymorphicModel):
         if cls.admin_template_name is None:
             errors.append(
                 checks.Error(
-                    "{} requires a definition of 'admin_template_name'".format(cls.__name__),
+                    "{} requires a definition of 'admin_template_name'".format(
+                        cls.__name__
+                    ),
                     obj=cls,
                 )
             )
@@ -155,7 +163,8 @@ class CollectionResourceItem(PolymorphicModel):
         Используется в случае динамического создания элементов коллекции.
         """
         self.collection_content_type = ContentType.objects.get_for_model(
-            collection, for_concrete_model=False)
+            collection, for_concrete_model=False
+        )
         self.collection_id = collection.pk
         for name, field in collection.item_types.items():
             if field.model is type(self):
@@ -176,7 +185,9 @@ class CollectionResourceItem(PolymorphicModel):
 
 
 class FilePreviewItemMixin(models.Model):
-    preview_url = models.CharField(_('preview URL'), max_length=255, blank=True, editable=False)
+    preview_url = models.CharField(
+        _('preview URL'), max_length=255, blank=True, editable=False
+    )
 
     class Meta:
         abstract = True
@@ -187,11 +198,14 @@ class FilePreviewItemMixin(models.Model):
 
     @property
     def preview(self):
-        return loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
-            'item': self,
-            'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-            'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-        })
+        return loader.render_to_string(
+            'paper_uploads/collection_item/preview/file.html',
+            {
+                'item': self,
+                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+            },
+        )
 
     def get_preview_url(self):
         icon_path_template = 'paper_uploads/dist/image/{}.svg'
@@ -202,7 +216,12 @@ class FilePreviewItemMixin(models.Model):
         return staticfiles_storage.url(icon_path)
 
 
-class FileItem(FilePreviewItemMixin, ReadonlyFileProxyMixin, CollectionResourceItem, PostprocessableFileFieldResource):
+class FileItem(
+    FilePreviewItemMixin,
+    ReadonlyFileProxyMixin,
+    CollectionResourceItem,
+    PostprocessableFileFieldResource,
+):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     admin_template_name = 'paper_uploads/collection_item/file.html'
 
@@ -210,7 +229,7 @@ class FileItem(FilePreviewItemMixin, ReadonlyFileProxyMixin, CollectionResourceI
         _('file'),
         max_length=255,
         storage=upload_storage,
-        upload_to=settings.COLLECTION_FILES_UPLOAD_TO
+        upload_to=settings.COLLECTION_FILES_UPLOAD_TO,
     )
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
@@ -250,7 +269,9 @@ class FileItem(FilePreviewItemMixin, ReadonlyFileProxyMixin, CollectionResourceI
         return True
 
 
-class SVGItem(ReadonlyFileProxyMixin, CollectionResourceItem, PostprocessableFileFieldResource):
+class SVGItem(
+    ReadonlyFileProxyMixin, CollectionResourceItem, PostprocessableFileFieldResource
+):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     admin_template_name = 'paper_uploads/collection_item/svg.html'
 
@@ -258,7 +279,7 @@ class SVGItem(ReadonlyFileProxyMixin, CollectionResourceItem, PostprocessableFil
         _('file'),
         max_length=255,
         storage=upload_storage,
-        upload_to=settings.COLLECTION_FILES_UPLOAD_TO
+        upload_to=settings.COLLECTION_FILES_UPLOAD_TO,
     )
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
@@ -294,11 +315,14 @@ class SVGItem(ReadonlyFileProxyMixin, CollectionResourceItem, PostprocessableFil
 
     @property
     def preview(self):
-        return loader.render_to_string('paper_uploads/collection_item/preview/svg.html', {
-            'item': self,
-            'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-            'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-        })
+        return loader.render_to_string(
+            'paper_uploads/collection_item/preview/svg.html',
+            {
+                'item': self,
+                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+            },
+        )
 
     @classmethod
     def file_supported(cls, file: File) -> bool:
@@ -307,8 +331,12 @@ class SVGItem(ReadonlyFileProxyMixin, CollectionResourceItem, PostprocessableFil
         return ext.lower() == '.svg'
 
 
-class ImageItem(ReadonlyFileProxyMixin, VersatileImageResourceMixin,
-                CollectionResourceItem, PostprocessableFileFieldResource):
+class ImageItem(
+    ReadonlyFileProxyMixin,
+    VersatileImageResourceMixin,
+    CollectionResourceItem,
+    PostprocessableFileFieldResource,
+):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
     change_form_class = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
     admin_template_name = 'paper_uploads/collection_item/image.html'
@@ -317,7 +345,7 @@ class ImageItem(ReadonlyFileProxyMixin, VersatileImageResourceMixin,
         _('file'),
         max_length=255,
         storage=upload_storage,
-        upload_to=settings.COLLECTION_IMAGES_UPLOAD_TO
+        upload_to=settings.COLLECTION_IMAGES_UPLOAD_TO,
     )
 
     class Meta(CollectionResourceItem.Meta):
@@ -361,7 +389,9 @@ class ImageItem(ReadonlyFileProxyMixin, VersatileImageResourceMixin,
         if not hasattr(self, '_variations_cache'):
             collection_cls = self.get_collection_class()
             itemtype_field = self.get_itemtype_field()
-            variation_configs = self._get_variation_configs(itemtype_field, collection_cls)
+            variation_configs = self._get_variation_configs(
+                itemtype_field, collection_cls
+            )
             self._variations_cache = build_variations(variation_configs)
         return self._variations_cache
 
@@ -371,17 +401,20 @@ class ImageItem(ReadonlyFileProxyMixin, VersatileImageResourceMixin,
 
     @property
     def preview(self):
-        return loader.render_to_string('paper_uploads/collection_item/preview/image.html', {
-            'item': self,
-            'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-            'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-        })
+        return loader.render_to_string(
+            'paper_uploads/collection_item/preview/image.html',
+            {
+                'item': self,
+                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+            },
+        )
 
     @classmethod
     def file_supported(cls, file: File) -> bool:
         # TODO: магический метод
         mimetype = magic.from_buffer(file.read(1024), mime=True)
-        file.seek(0)    # correct file position after mimetype detection
+        file.seek(0)  # correct file position after mimetype detection
         basetype, subtype = mimetype.split('/', 1)
         return basetype == 'image'
 
@@ -404,8 +437,7 @@ class ItemTypesDescriptor:
         if owner is None:
             owner = type(instance)
         return OrderedDict(
-            (field.name, field)
-            for field in owner._local_item_type_fields
+            (field.name, field) for field in owner._local_item_type_fields
         )
 
 
@@ -414,6 +446,7 @@ class ContentItemRelation(GenericRelation):
     FIX: cascade delete polymorphic
     https://github.com/django-polymorphic/django-polymorphic/issues/34
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -425,6 +458,7 @@ class CollectionMetaclass(ModelBase):
     """
     Хак, создающий прокси-модели вместо наследования, если явно не указано обратное.
     """
+
     def __new__(mcs, name, bases, attrs, **kwargs):
         new_attrs = {
             '_local_item_type_fields': []
@@ -453,7 +487,8 @@ class CollectionBase(ReverseFieldModelMixin, metaclass=CollectionMetaclass):
     items = ContentItemRelation(
         'paper_uploads.CollectionResourceItem',
         content_type_field='collection_content_type',
-        object_id_field='collection_id', for_concrete_model=False
+        object_id_field='collection_id',
+        for_concrete_model=False,
     )
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
 
@@ -488,29 +523,31 @@ class CollectionManager(models.Manager):
     любого из классов галереи затрагивает абсолютно все объекты галереи.
     С помощью этого менеджера можно работать только с галереями текущего типа.
     """
+
     def get_queryset(self):
-        collection_ct = ContentType.objects.get_for_model(self.model, for_concrete_model=False)
+        collection_ct = ContentType.objects.get_for_model(
+            self.model, for_concrete_model=False
+        )
         return super().get_queryset().filter(collection_content_type=collection_ct)
 
 
 class Collection(CollectionBase):
     collection_content_type = models.ForeignKey(
-        ContentType,
-        null=True,
-        on_delete=models.SET_NULL,
-        editable=False
+        ContentType, null=True, on_delete=models.SET_NULL, editable=False
     )
 
-    default_mgr = models.Manager()     # fix migrations manager
+    default_mgr = models.Manager()  # fix migrations manager
     objects = CollectionManager()
 
     class Meta:
-        proxy = False   # явно указываем, что это не прокси-модель
+        proxy = False  # явно указываем, что это не прокси-модель
         default_manager_name = 'default_mgr'
 
     def save(self, *args, **kwargs):
         if not self.collection_content_type:
-            self.collection_content_type = ContentType.objects.get_for_model(self, for_concrete_model=False)
+            self.collection_content_type = ContentType.objects.get_for_model(
+                self, for_concrete_model=False
+            )
         super().save(*args, **kwargs)
 
     def detect_file_type(self, file: File) -> str:
@@ -528,6 +565,7 @@ class ImageCollection(Collection):
     """
     Коллекция, позволяющая хранить только изображения.
     """
+
     image = ItemField(ImageItem)
 
     @classmethod

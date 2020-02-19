@@ -4,7 +4,11 @@ from .file import FileField
 from .image import ImageField, VariationalFileField
 
 __all__ = [
-    'FileFieldBase', 'FormattedFileField', 'VariationalFileField',
-    'FileField', 'ImageField',
-    'CollectionField', 'ItemField'
+    'FileFieldBase',
+    'FormattedFileField',
+    'VariationalFileField',
+    'FileField',
+    'ImageField',
+    'CollectionField',
+    'ItemField',
 ]

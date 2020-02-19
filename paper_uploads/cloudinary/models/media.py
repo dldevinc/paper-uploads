@@ -10,7 +10,9 @@ from ...models.base import ReverseFieldModelMixin
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
 
 
-class CloudinaryMedia(ReverseFieldModelMixin, ReadonlyCloudinaryFileProxyMixin, CloudinaryFileResource):
+class CloudinaryMedia(
+    ReverseFieldModelMixin, ReadonlyCloudinaryFileProxyMixin, CloudinaryFileResource
+):
     cloudinary_resource_type = 'video'
 
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
@@ -40,8 +42,7 @@ class CloudinaryMedia(ReverseFieldModelMixin, ReadonlyCloudinaryFileProxyMixin, 
             **super().as_dict(),
             'name': self.display_name,
             'file_info': '({ext}, {size})'.format(
-                ext=self.extension,
-                size=filesizeformat(self.size)
+                ext=self.extension, size=filesizeformat(self.size)
             ),
         }
 
@@ -49,5 +50,16 @@ class CloudinaryMedia(ReverseFieldModelMixin, ReadonlyCloudinaryFileProxyMixin, 
     def get_validation(cls) -> Dict[str, Any]:
         # TODO: магический метод
         return {
-            'acceptFiles': ['.3gp', '.avi', '.flv', '.mkv', '.mov', '.wmv', '.aac', '.wma', 'video/*', 'audio/*'],
+            'acceptFiles': [
+                '.3gp',
+                '.avi',
+                '.flv',
+                '.mkv',
+                '.mov',
+                '.wmv',
+                '.aac',
+                '.wma',
+                'video/*',
+                'audio/*',
+            ],
         }

@@ -47,8 +47,14 @@ class TestUploadedFile:
             assert repr(obj) == "UploadedFile('Cartman.svg')"
             assert obj.get_basename() == 'Cartman.svg'
             assert obj.get_file() is obj.file
-            assert obj.get_file_name() == f"files/{now().strftime('%Y-%m-%d')}/Cartman{suffix}.svg"
-            assert obj.get_file_url() == f"/media/files/{now().strftime('%Y-%m-%d')}/Cartman{suffix}.svg"
+            assert (
+                obj.get_file_name()
+                == f"files/{now().strftime('%Y-%m-%d')}/Cartman{suffix}.svg"
+            )
+            assert (
+                obj.get_file_url()
+                == f"/media/files/{now().strftime('%Y-%m-%d')}/Cartman{suffix}.svg"
+            )
             assert obj.is_file_exists() is True
 
             # FileFieldResource
@@ -66,7 +72,9 @@ class TestUploadedFile:
 
             # ReadonlyFileProxyMixin
             assert obj.url == obj.get_file_url()
-            assert obj.path == os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, obj.get_file_name())
+            assert obj.path == os.path.join(
+                settings.BASE_DIR, settings.MEDIA_ROOT, obj.get_file_name()
+            )
             assert obj.closed is True
             with obj.open():
                 assert obj.closed is False
@@ -145,8 +153,14 @@ class TestUploadedFile:
 
         try:
             assert obj.closed is True
-            assert obj.get_file_name() == f"files/{now().strftime('%Y-%m-%d')}/Doc{suffix}.pdf"
-            assert obj.get_file_url() == f"/media/files/{now().strftime('%Y-%m-%d')}/Doc{suffix}.pdf"
+            assert (
+                obj.get_file_name()
+                == f"files/{now().strftime('%Y-%m-%d')}/Doc{suffix}.pdf"
+            )
+            assert (
+                obj.get_file_url()
+                == f"/media/files/{now().strftime('%Y-%m-%d')}/Doc{suffix}.pdf"
+            )
             assert obj.is_file_exists() is False
         finally:
             obj.delete_file()
@@ -194,22 +208,24 @@ class TestFileField:
         assert field.postprocess is None
 
     def test_validators(self):
-        field = FileField(validators=[
-            validators.SizeValidator(10 * 1024 * 1024),
-            validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
-            validators.MimetypeValidator(['image/jpeg', 'image/bmp', 'image/Png'])
-        ])
+        field = FileField(
+            validators=[
+                validators.SizeValidator(10 * 1024 * 1024),
+                validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
+                validators.MimetypeValidator(['image/jpeg', 'image/bmp', 'image/Png']),
+            ]
+        )
         field.contribute_to_class(Page, 'file')
 
         assert field.get_validation() == {
             'sizeLimit': 10 * 1024 * 1024,
             'allowedExtensions': ('svg', 'bmp', 'jpeg'),
-            'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png')
+            'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png'),
         }
 
         formfield = field.formfield()
         assert formfield.widget.get_validation() == {
             'sizeLimit': 10 * 1024 * 1024,
             'allowedExtensions': ('svg', 'bmp', 'jpeg'),
-            'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png')
+            'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png'),
         }

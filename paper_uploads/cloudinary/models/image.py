@@ -11,8 +11,12 @@ from ...models.base import ImageFileResourceMixin, ReverseFieldModelMixin
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
 
 
-class CloudinaryImage(ReverseFieldModelMixin, ReadonlyCloudinaryFileProxyMixin,
-                      ImageFileResourceMixin, CloudinaryFileResource):
+class CloudinaryImage(
+    ReverseFieldModelMixin,
+    ReadonlyCloudinaryFileProxyMixin,
+    ImageFileResourceMixin,
+    CloudinaryFileResource,
+):
     cloudinary_resource_type = 'image'
 
     class Meta(CloudinaryFileResource.Meta):
@@ -37,8 +41,8 @@ class CloudinaryImage(ReverseFieldModelMixin, ReadonlyCloudinaryFileProxyMixin,
                 ext=self.extension,
                 width=self.width,
                 height=self.height,
-                size=filesizeformat(self.size)
-            )
+                size=filesizeformat(self.size),
+            ),
         }
 
     @classmethod

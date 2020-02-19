@@ -17,11 +17,16 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--database', action='store', dest='database', default=DEFAULT_DB_ALIAS,
+            '--database',
+            action='store',
+            dest='database',
+            default=DEFAULT_DB_ALIAS,
             help='Nominates the database to use. Defaults to the "default" database.',
         )
         parser.add_argument(
-            '--fix-missing', action='store_true', default=False,
+            '--fix-missing',
+            action='store_true',
+            default=False,
             help='Recreate all missing variation files from a source.',
         )
 
@@ -34,7 +39,9 @@ class Command(BaseCommand):
             if not total:
                 continue
 
-            for index, instance in enumerate(model._base_manager.using(self.database).iterator(), start=1):
+            for index, instance in enumerate(
+                model._base_manager.using(self.database).iterator(), start=1
+            ):
                 assert isinstance(instance, FileResource)
 
                 if self.verbosity >= 2:
@@ -42,9 +49,7 @@ class Command(BaseCommand):
 
                 invalid = False
                 message = "Errors were found in '{}.{}' #{instance.pk} ({instance}):".format(
-                    model._meta.app_label,
-                    model._meta.model_name,
-                    instance=instance
+                    model._meta.app_label, model._meta.model_name, instance=instance
                 )
 
                 if not instance.is_file_exists():
@@ -55,14 +60,17 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.ERROR(message))
 
                 if self.verbosity >= 2:
-                    self.stdout.write(self.style.SUCCESS(
-                        "Check file existence of '{}.{}' ({}/{}) ...\r".format(
-                            model._meta.app_label,
-                            model._meta.model_name,
-                            index,
-                            total
-                        )
-                    ), ending='')
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            "Check file existence of '{}.{}' ({}/{}) ...\r".format(
+                                model._meta.app_label,
+                                model._meta.model_name,
+                                index,
+                                total,
+                            )
+                        ),
+                        ending='',
+                    )
 
             if self.verbosity >= 2:
                 self.stdout.write('')
@@ -76,7 +84,9 @@ class Command(BaseCommand):
             if not total:
                 continue
 
-            for index, instance in enumerate(model._base_manager.using(self.database).iterator(), start=1):
+            for index, instance in enumerate(
+                model._base_manager.using(self.database).iterator(), start=1
+            ):
                 assert isinstance(instance, VersatileImageResourceMixin)
 
                 if self.verbosity >= 2:
@@ -84,9 +94,7 @@ class Command(BaseCommand):
 
                 invalid = False
                 message = "Errors were found in '{}.{}' #{instance.pk} ({instance}):".format(
-                    model._meta.app_label,
-                    model._meta.model_name,
-                    instance=instance
+                    model._meta.app_label, model._meta.model_name, instance=instance
                 )
 
                 missed_variations = []
@@ -96,7 +104,9 @@ class Command(BaseCommand):
 
                 if missed_variations:
                     invalid = True
-                    recreatable = self.options['fix_missing'] and instance.is_file_exists()
+                    recreatable = (
+                        self.options['fix_missing'] and instance.is_file_exists()
+                    )
                     for vname in missed_variations:
                         message += "\n  Not found variation '{}'".format(vname)
                         if recreatable:
@@ -109,14 +119,17 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.ERROR(message))
 
                 if self.verbosity >= 2:
-                    self.stdout.write(self.style.SUCCESS(
-                        "Check variation existence of '{}.{}' ({}/{}) ...\r".format(
-                            model._meta.app_label,
-                            model._meta.model_name,
-                            index,
-                            total
-                        )
-                    ), ending='')
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            "Check variation existence of '{}.{}' ({}/{}) ...\r".format(
+                                model._meta.app_label,
+                                model._meta.model_name,
+                                index,
+                                total,
+                            )
+                        ),
+                        ending='',
+                    )
 
             if self.verbosity >= 2:
                 self.stdout.write('')
@@ -133,7 +146,9 @@ class Command(BaseCommand):
             if not total:
                 continue
 
-            for index, instance in enumerate(model._base_manager.using(self.database).iterator(), start=1):
+            for index, instance in enumerate(
+                model._base_manager.using(self.database).iterator(), start=1
+            ):
                 assert isinstance(instance, ReverseFieldModelMixin)
 
                 if self.verbosity >= 2:
@@ -147,15 +162,14 @@ class Command(BaseCommand):
                 message = "Errors were found in '{}.{}' #{instance.pk} ({instance}):".format(
                     real_model._meta.app_label,
                     real_model._meta.model_name,
-                    instance=instance
+                    instance=instance,
                 )
 
                 owner_model = instance.get_owner_model()
                 if owner_model is None:
                     invalid = True
                     message += "\n  Owner model '{}.{}' doesn't exists".format(
-                        instance.owner_app_label,
-                        instance.owner_model_name,
+                        instance.owner_app_label, instance.owner_model_name,
                     )
                 else:
                     owner_field = instance.get_owner_field()
@@ -174,29 +188,33 @@ class Command(BaseCommand):
                         except owner_model.DoesNotExist:
                             invalid = True
                             message += "\n  Owner instance '{}.{}' not found".format(
-                                instance.owner_app_label,
-                                instance.owner_model_name,
+                                instance.owner_app_label, instance.owner_model_name,
                             )
 
                 if invalid:
                     self.stdout.write(self.style.ERROR(message))
 
                 if self.verbosity >= 2:
-                    self.stdout.write(self.style.SUCCESS(
-                        "Check owner of '{}.{}' ({}/{}) ...\r".format(
-                            model._meta.app_label,
-                            model._meta.model_name,
-                            index,
-                            total
-                        )
-                    ), ending='')
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            "Check owner of '{}.{}' ({}/{}) ...\r".format(
+                                model._meta.app_label,
+                                model._meta.model_name,
+                                index,
+                                total,
+                            )
+                        ),
+                        ending='',
+                    )
 
             if self.verbosity >= 2:
                 self.stdout.write('')
 
     def check_item_types(self):
         total = CollectionResourceItem.objects.using(self.database).count()
-        for index, item in enumerate(CollectionResourceItem.objects.using(self.database).iterator(), start=1):
+        for index, item in enumerate(
+            CollectionResourceItem.objects.using(self.database).iterator(), start=1
+        ):
             assert isinstance(item, CollectionResourceItem)
 
             if self.verbosity >= 2:
@@ -204,9 +222,7 @@ class Command(BaseCommand):
 
             invalid = False
             message = "Errors were found in '{}.{}' #{item.pk} ({item}):".format(
-                item._meta.app_label,
-                item._meta.model_name,
-                item=item
+                item._meta.app_label, item._meta.model_name, item=item
             )
 
             collection_cls = item.get_collection_class()
@@ -233,12 +249,14 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(message))
 
             if self.verbosity >= 2:
-                self.stdout.write(self.style.SUCCESS(
-                    "Check item_type of collection items ({}/{}) ...\r".format(
-                        index,
-                        total
-                    )
-                ), ending='')
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        "Check item_type of collection items ({}/{}) ...\r".format(
+                            index, total
+                        )
+                    ),
+                    ending='',
+                )
 
         if self.verbosity >= 2:
             self.stdout.write('')

@@ -10,8 +10,11 @@ from django.utils.translation import gettext_lazy as _
 from PIL import Image
 
 __all__ = [
-    'ExtensionValidator', 'MimetypeValidator', 'SizeValidator',
-    'ImageMinSizeValidator', 'ImageMaxSizeValidator'
+    "ExtensionValidator",
+    "MimetypeValidator",
+    "SizeValidator",
+    "ImageMinSizeValidator",
+    "ImageMaxSizeValidator",
 ]
 
 
@@ -61,7 +64,7 @@ class MimetypeValidator(HelpTextValidatorMixin):
         params = {
             'allowed': "'%s'" % "', '".join(self.allowed),
             'mimetype': mimetype,
-            'name': file.name
+            'name': file.name,
         }
         if not (mimetype in self.allowed or '{}/*'.format(basetype) in self.allowed):
             raise ValidationError(self.message, code=self.code, params=params)
@@ -84,7 +87,7 @@ class SizeValidator(HelpTextValidatorMixin):
         params = {
             'limit_value': filesizeformat(self.limit_value),
             'size': file.size,
-            'name': file.name
+            'name': file.name,
         }
         if file.size > self.limit_value:
             raise ValidationError(self.message, code=self.code, params=params)
@@ -96,9 +99,15 @@ class SizeValidator(HelpTextValidatorMixin):
 @deconstructible
 class ImageMinSizeValidator(HelpTextValidatorMixin):
     error_messages = {
-        'min_width': _('`%(name)s` is not wide enough. Minimum width is %(width_limit)s pixels.'),
-        'min_height': _('`%(name)s` is not tall enough. Minimum height is %(height_limit)s pixels.'),
-        'min_size': _('`%(name)s` is too small. Image should be at least %(width_limit)sx%(height_limit)s pixels.'),
+        'min_width': _(
+            '`%(name)s` is not wide enough. Minimum width is %(width_limit)s pixels.'
+        ),
+        'min_height': _(
+            '`%(name)s` is not tall enough. Minimum height is %(height_limit)s pixels.'
+        ),
+        'min_size': _(
+            '`%(name)s` is too small. Image should be at least %(width_limit)sx%(height_limit)s pixels.'
+        ),
     }
 
     def __init__(self, width: int = 0, height: int = 0):
@@ -120,7 +129,7 @@ class ImageMinSizeValidator(HelpTextValidatorMixin):
             'width_limit': self.width_limit,
             'height_limit': self.height_limit,
             'size': image_size,
-            'name': file.name
+            'name': file.name,
         }
 
         invalid_width = self.width_limit and image_size[0] < self.width_limit
@@ -140,7 +149,11 @@ class ImageMinSizeValidator(HelpTextValidatorMixin):
     def get_help_text(self):
         if self.width_limit:
             if self.height_limit:
-                return _('Minimum image size: {}x{}'.format(self.width_limit, self.height_limit))
+                return _(
+                    'Minimum image size: {}x{}'.format(
+                        self.width_limit, self.height_limit
+                    )
+                )
             else:
                 return _('Minimum image width: {} pixels'.format(self.width_limit))
         elif self.height_limit:
@@ -150,9 +163,15 @@ class ImageMinSizeValidator(HelpTextValidatorMixin):
 @deconstructible
 class ImageMaxSizeValidator(HelpTextValidatorMixin):
     error_messages = {
-        'max_width': _('`%(name)s` is too wide. Maximum width is %(width_limit)s pixels.'),
-        'max_height': _('`%(name)s` is too tall. Maximum height is %(height_limit)s pixels.'),
-        'max_size': _('`%(name)s` is too big. Image should be at most %(width_limit)sx%(height_limit)s pixels.'),
+        'max_width': _(
+            '`%(name)s` is too wide. Maximum width is %(width_limit)s pixels.'
+        ),
+        'max_height': _(
+            '`%(name)s` is too tall. Maximum height is %(height_limit)s pixels.'
+        ),
+        'max_size': _(
+            '`%(name)s` is too big. Image should be at most %(width_limit)sx%(height_limit)s pixels.'
+        ),
     }
 
     def __init__(self, width: int = 0, height: int = 0):
@@ -172,7 +191,7 @@ class ImageMaxSizeValidator(HelpTextValidatorMixin):
             'width_limit': self.width_limit,
             'height_limit': self.height_limit,
             'size': image_size,
-            'name': file.name
+            'name': file.name,
         }
 
         invalid_width = self.width_limit and image_size[0] > self.width_limit
@@ -192,7 +211,11 @@ class ImageMaxSizeValidator(HelpTextValidatorMixin):
     def get_help_text(self):
         if self.width_limit:
             if self.height_limit:
-                return _('Maximum image size: {}x{}'.format(self.width_limit, self.height_limit))
+                return _(
+                    'Maximum image size: {}x{}'.format(
+                        self.width_limit, self.height_limit
+                    )
+                )
             else:
                 return _('Maximum image width: {} pixels'.format(self.width_limit))
         elif self.height_limit:

@@ -40,7 +40,9 @@ def upload(request):
         # Определение модели файла
         content_type_id = request.POST.get('paperContentType')
         try:
-            model_class = helpers.get_model_class(content_type_id, base_class=FileResource)
+            model_class = helpers.get_model_class(
+                content_type_id, base_class=FileResource
+            )
         except exceptions.InvalidContentType:
             logger.exception('Error')
             return helpers.error_response('Invalid content type')
@@ -48,7 +50,7 @@ def upload(request):
         instance = model_class(
             owner_app_label=request.POST.get('paperOwnerAppLabel'),
             owner_model_name=request.POST.get('paperOwnerModelName'),
-            owner_fieldname=request.POST.get('paperOwnerFieldname')
+            owner_fieldname=request.POST.get('paperOwnerFieldname'),
         )
 
         owner_field = instance.get_owner_field()
@@ -112,7 +114,9 @@ class ChangeView(PermissionRequiredMixin, FormView):
         instance_id = self.request.GET.get('instance_id')
 
         try:
-            model_class = helpers.get_model_class(content_type_id, base_class=FileResource)
+            model_class = helpers.get_model_class(
+                content_type_id, base_class=FileResource
+            )
         except exceptions.InvalidContentType:
             raise exceptions.AjaxFormError('Invalid content type')
 
@@ -157,6 +161,10 @@ class ChangeView(PermissionRequiredMixin, FormView):
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        return helpers.success_response({
-            'form': loader.render_to_string(self.template_name, context, request=request)
-        })
+        return helpers.success_response(
+            {
+                'form': loader.render_to_string(
+                    self.template_name, context, request=request
+                )
+            }
+        )

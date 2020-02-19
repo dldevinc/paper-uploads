@@ -19,11 +19,15 @@ def get_addition_versions(name: str, config: Dict[str, Any], variation: PaperVar
     def add_retina_versions(factor: int):
         version_name = '{}_{}x'.format(name, factor)
         version_config = dict(config, name=version_name)
-        addition_variations[version_name] = create_retina_version(version_config, factor=factor)
+        addition_variations[version_name] = create_retina_version(
+            version_config, factor=factor
+        )
         if need_webp_version:
             version_name = '{}_webp_{}x'.format(name, factor)
             version_config = dict(config, name=version_name, format='webp')
-            addition_variations[version_name] = create_retina_version(version_config, factor=factor)
+            addition_variations[version_name] = create_retina_version(
+                version_config, factor=factor
+            )
 
     if '2x' in variation.versions:
         add_retina_versions(2)

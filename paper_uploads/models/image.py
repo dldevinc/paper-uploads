@@ -18,9 +18,18 @@ from .base import (
 from .fields import VariationalFileField
 
 
-class UploadedImage(ReverseFieldModelMixin, ReadonlyFileProxyMixin,
-                    VersatileImageResourceMixin, PostprocessableFileFieldResource):
-    file = VariationalFileField(_('file'), max_length=255, upload_to=settings.IMAGES_UPLOAD_TO, storage=upload_storage)
+class UploadedImage(
+    ReverseFieldModelMixin,
+    ReadonlyFileProxyMixin,
+    VersatileImageResourceMixin,
+    PostprocessableFileFieldResource,
+):
+    file = VariationalFileField(
+        _('file'),
+        max_length=255,
+        upload_to=settings.IMAGES_UPLOAD_TO,
+        storage=upload_storage,
+    )
 
     class Meta(PostprocessableFileFieldResource.Meta):
         verbose_name = _('image')
@@ -44,8 +53,8 @@ class UploadedImage(ReverseFieldModelMixin, ReadonlyFileProxyMixin,
                 ext=self.extension,
                 width=self.width,
                 height=self.height,
-                size=filesizeformat(self.size)
-            )
+                size=filesizeformat(self.size),
+            ),
         }
 
     def get_variations(self) -> Dict[str, PaperVariation]:

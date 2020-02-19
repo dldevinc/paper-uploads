@@ -21,7 +21,7 @@ class TestCloudinaryCollection:
         collection = PageCloudinaryFilesGallery.objects.create(
             owner_app_label='app',
             owner_model_name='page',
-            owner_fieldname='cloud_files'
+            owner_fieldname='cloud_files',
         )
 
         try:
@@ -31,16 +31,30 @@ class TestCloudinaryCollection:
             assert collection.item_types['file'].model is CloudinaryFileItem
 
             with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
-                assert collection.detect_file_type(File(jpeg_file, name='Image.Jpeg')) == 'image'
+                assert (
+                    collection.detect_file_type(File(jpeg_file, name='Image.Jpeg'))
+                    == 'image'
+                )
 
             with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
-                assert collection.detect_file_type(File(svg_file, name='cartman.svg')) == 'image'
+                assert (
+                    collection.detect_file_type(File(svg_file, name='cartman.svg'))
+                    == 'image'
+                )
 
             with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
-                assert collection.detect_file_type(File(pdf_file, name='Sample Document.PDF')) == 'file'
+                assert (
+                    collection.detect_file_type(
+                        File(pdf_file, name='Sample Document.PDF')
+                    )
+                    == 'file'
+                )
 
             with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
-                assert collection.detect_file_type(File(audio_file, name='audio.ogg')) == 'media'
+                assert (
+                    collection.detect_file_type(File(audio_file, name='audio.ogg'))
+                    == 'media'
+                )
 
             # ReverseFieldModelMixin
             assert collection.owner_app_label == 'app'
@@ -55,7 +69,7 @@ class TestCloudinaryCollection:
         collection = PageCloudinaryGallery.objects.create(
             owner_app_label='app',
             owner_model_name='page',
-            owner_fieldname='cloud_gallery'
+            owner_fieldname='cloud_gallery',
         )
 
         try:
@@ -66,16 +80,30 @@ class TestCloudinaryCollection:
             }
 
             with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
-                assert collection.detect_file_type(File(jpeg_file, name='Image.Jpeg')) == 'image'
+                assert (
+                    collection.detect_file_type(File(jpeg_file, name='Image.Jpeg'))
+                    == 'image'
+                )
 
             with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
-                assert collection.detect_file_type(File(svg_file, name='cartman.svg')) == 'image'
+                assert (
+                    collection.detect_file_type(File(svg_file, name='cartman.svg'))
+                    == 'image'
+                )
 
             with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
-                assert collection.detect_file_type(File(pdf_file, name='Sample Document.PDF')) == 'image'
+                assert (
+                    collection.detect_file_type(
+                        File(pdf_file, name='Sample Document.PDF')
+                    )
+                    == 'image'
+                )
 
             with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
-                assert collection.detect_file_type(File(audio_file, name='audio.ogg')) == 'image'
+                assert (
+                    collection.detect_file_type(File(audio_file, name='audio.ogg'))
+                    == 'image'
+                )
 
             # ReverseFieldModelMixin
             assert collection.owner_app_label == 'app'
@@ -110,7 +138,9 @@ class TestCloudinaryFileItem:
             assert item.file_supported(File(svg_file, name='cartman.svg')) is True
 
         with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
-            assert item.file_supported(File(pdf_file, name='Sample Document.PDF')) is True
+            assert (
+                item.file_supported(File(pdf_file, name='Sample Document.PDF')) is True
+            )
 
         with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
             assert item.file_supported(File(audio_file, name='audio.ogg')) is True
@@ -122,7 +152,7 @@ class TestCloudinaryFileItem:
             item = CloudinaryFileItem()
             # item.attach_file(xls_file)      # <- works
             item.attach_to(collection)
-            item.attach_file(xls_file)      # <- works too
+            item.attach_file(xls_file)  # <- works too
             item.full_clean()
             item.save()
 
@@ -144,7 +174,13 @@ class TestCloudinaryFileItem:
             assert item.get_basename() == 'sheet.xlsx'
             assert item.get_file() is item.file
             assert re.fullmatch(r'sheet_\w+\.xlsx', item.get_file_name()) is not None
-            assert re.fullmatch(r'http://res\.cloudinary\.com/[^/]+/raw/upload/[^/]+/sheet_\w+\.xlsx', item.get_file_url()) is not None
+            assert (
+                re.fullmatch(
+                    r'http://res\.cloudinary\.com/[^/]+/raw/upload/[^/]+/sheet_\w+\.xlsx',
+                    item.get_file_url(),
+                )
+                is not None
+            )
             assert item.is_file_exists() is True
 
             # ReadonlyFileProxyMixin
@@ -175,13 +211,21 @@ class TestCloudinaryFileItem:
             assert re.fullmatch(r'sheet_\w+\.xlsx', item.get_public_id()) is not None
 
             # CollectionResourceItem
-            assert item.change_form_class == 'paper_uploads.forms.dialogs.collection.FileItemDialog'
+            assert (
+                item.change_form_class
+                == 'paper_uploads.forms.dialogs.collection.FileItemDialog'
+            )
             assert item.admin_template_name == 'paper_uploads/collection_item/file.html'
             assert item.collection_id == collection.pk
-            assert item.collection_content_type.model_class() is PageCloudinaryFilesGallery
+            assert (
+                item.collection_content_type.model_class() is PageCloudinaryFilesGallery
+            )
             assert item.item_type == 'file'
             assert item.get_collection_class() is PageCloudinaryFilesGallery
-            assert item.get_itemtype_field() is PageCloudinaryFilesGallery.item_types['file']
+            assert (
+                item.get_itemtype_field()
+                is PageCloudinaryFilesGallery.item_types['file']
+            )
 
             # FilePreviewItemMixin
             assert item.preview_url == f"/static/paper_uploads/dist/image/xls.svg"
@@ -200,11 +244,14 @@ class TestCloudinaryFileItem:
                 'collectionId': item.collection_id,
                 'item_type': item.item_type,
                 'caption': item.get_basename(),
-                'preview': loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
-                    'item': item,
-                    'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                    'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-                })
+                'preview': loader.render_to_string(
+                    'paper_uploads/collection_item/preview/file.html',
+                    {
+                        'item': item,
+                        'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                        'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+                    },
+                ),
             }
         finally:
             item.delete_file()
@@ -224,7 +271,9 @@ class TestCloudinaryMediaItem:
             assert item.file_supported(File(svg_file, name='cartman.svg')) is False
 
         with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
-            assert item.file_supported(File(pdf_file, name='Sample Document.PDF')) is False
+            assert (
+                item.file_supported(File(pdf_file, name='Sample Document.PDF')) is False
+            )
 
         with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
             assert item.file_supported(File(audio_file, name='audio.ogg')) is True
@@ -236,7 +285,7 @@ class TestCloudinaryMediaItem:
             item = CloudinaryMediaItem()
             # item.attach_file(xls_file)      # <- works
             item.attach_to(collection)
-            item.attach_file(audio_file)      # <- works too
+            item.attach_file(audio_file)  # <- works too
             item.full_clean()
             item.save()
 
@@ -258,7 +307,13 @@ class TestCloudinaryMediaItem:
             assert item.get_basename() == 'audio.ogg'
             assert item.get_file() is item.file
             assert re.fullmatch(r'audio_\w+\.ogg', item.get_file_name()) is not None
-            assert re.fullmatch(r'http://res\.cloudinary\.com/[^/]+/video/upload/[^/]+/audio_\w+\.ogg', item.get_file_url()) is not None
+            assert (
+                re.fullmatch(
+                    r'http://res\.cloudinary\.com/[^/]+/video/upload/[^/]+/audio_\w+\.ogg',
+                    item.get_file_url(),
+                )
+                is not None
+            )
             assert item.is_file_exists() is True
 
             # ReadonlyFileProxyMixin
@@ -289,13 +344,21 @@ class TestCloudinaryMediaItem:
             assert re.fullmatch(r'audio_\w+', item.get_public_id()) is not None
 
             # CollectionResourceItem
-            assert item.change_form_class == 'paper_uploads.forms.dialogs.collection.FileItemDialog'
+            assert (
+                item.change_form_class
+                == 'paper_uploads.forms.dialogs.collection.FileItemDialog'
+            )
             assert item.admin_template_name == 'paper_uploads/collection_item/file.html'
             assert item.collection_id == collection.pk
-            assert item.collection_content_type.model_class() is PageCloudinaryFilesGallery
+            assert (
+                item.collection_content_type.model_class() is PageCloudinaryFilesGallery
+            )
             assert item.item_type == 'media'
             assert item.get_collection_class() is PageCloudinaryFilesGallery
-            assert item.get_itemtype_field() is PageCloudinaryFilesGallery.item_types['media']
+            assert (
+                item.get_itemtype_field()
+                is PageCloudinaryFilesGallery.item_types['media']
+            )
 
             # FilePreviewItemMixin
             assert item.preview_url == f"/static/paper_uploads/dist/image/audio.svg"
@@ -314,11 +377,14 @@ class TestCloudinaryMediaItem:
                 'collectionId': item.collection_id,
                 'item_type': item.item_type,
                 'caption': item.get_basename(),
-                'preview': loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
-                    'item': item,
-                    'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                    'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-                })
+                'preview': loader.render_to_string(
+                    'paper_uploads/collection_item/preview/file.html',
+                    {
+                        'item': item,
+                        'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                        'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+                    },
+                ),
             }
         finally:
             item.delete_file()
@@ -338,7 +404,9 @@ class TestCloudinaryImageItem:
             assert item.file_supported(File(svg_file, name='cartman.svg')) is True
 
         with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
-            assert item.file_supported(File(pdf_file, name='Sample Document.PDF')) is False
+            assert (
+                item.file_supported(File(pdf_file, name='Sample Document.PDF')) is False
+            )
 
         with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
             assert item.file_supported(File(audio_file, name='audio.ogg')) is False
@@ -378,7 +446,13 @@ class TestCloudinaryImageItem:
             assert item.get_basename() == 'Image.jpg'
             assert item.get_file() is item.file
             assert re.fullmatch(r'Image_\w+.jpg', item.get_file_name()) is not None
-            assert re.fullmatch(r'http://res\.cloudinary\.com/[^/]+/image/upload/[^/]+/Image_\w+\.jpg', item.get_file_url()) is not None
+            assert (
+                re.fullmatch(
+                    r'http://res\.cloudinary\.com/[^/]+/image/upload/[^/]+/Image_\w+\.jpg',
+                    item.get_file_url(),
+                )
+                is not None
+            )
             assert item.is_file_exists() is True
 
             # ReadonlyFileProxyMixin
@@ -416,13 +490,24 @@ class TestCloudinaryImageItem:
             assert re.fullmatch(r'Image_\w+', item.get_public_id()) is not None
 
             # CollectionResourceItem
-            assert item.change_form_class == 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
-            assert item.admin_template_name == 'paper_uploads_cloudinary/collection_item/image.html'
+            assert (
+                item.change_form_class
+                == 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
+            )
+            assert (
+                item.admin_template_name
+                == 'paper_uploads_cloudinary/collection_item/image.html'
+            )
             assert item.collection_id == collection.pk
-            assert item.collection_content_type.model_class() is PageCloudinaryFilesGallery
+            assert (
+                item.collection_content_type.model_class() is PageCloudinaryFilesGallery
+            )
             assert item.item_type == 'image'
             assert item.get_collection_class() is PageCloudinaryFilesGallery
-            assert item.get_itemtype_field() is PageCloudinaryFilesGallery.item_types['image']
+            assert (
+                item.get_itemtype_field()
+                is PageCloudinaryFilesGallery.item_types['image']
+            )
 
             # as_dict
             assert item.as_dict() == {
@@ -439,11 +524,14 @@ class TestCloudinaryImageItem:
                 'cropregion': item.cropregion,
                 'title': item.title,
                 'description': item.description,
-                'preview': loader.render_to_string('paper_uploads_cloudinary/collection_item/preview/image.html', {
-                    'item': item,
-                    'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                    'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-                })
+                'preview': loader.render_to_string(
+                    'paper_uploads_cloudinary/collection_item/preview/image.html',
+                    {
+                        'item': item,
+                        'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                        'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+                    },
+                ),
             }
         finally:
             item.delete_file()
@@ -460,10 +548,13 @@ class TestCollectionField:
         assert field.related_model is PageCloudinaryGallery
 
     def test_validators(self):
-        field = CollectionField(PageCloudinaryGallery, validators=[
-            validators.SizeValidator(10 * 1024 * 1024),
-            validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
-        ])
+        field = CollectionField(
+            PageCloudinaryGallery,
+            validators=[
+                validators.SizeValidator(10 * 1024 * 1024),
+                validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
+            ],
+        )
         field.contribute_to_class(Page, 'cloud_gallery')
 
         assert field.get_validation() == {
@@ -475,5 +566,5 @@ class TestCollectionField:
         assert formfield.widget.get_validation() == {
             'sizeLimit': 10 * 1024 * 1024,
             'allowedExtensions': ('svg', 'bmp', 'jpeg'),
-            'acceptFiles': ['image/*']
+            'acceptFiles': ['image/*'],
         }

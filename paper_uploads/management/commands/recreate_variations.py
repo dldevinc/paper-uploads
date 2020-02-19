@@ -17,7 +17,9 @@ def is_image(field: Field) -> bool:
     """
     Возвращает True, если поле ссылается на класс изображения с вариациями.
     """
-    return field.is_relation and issubclass(field.related_model, VersatileImageResourceMixin)
+    return field.is_relation and issubclass(
+        field.related_model, VersatileImageResourceMixin
+    )
 
 
 def is_image_item(field: ItemField) -> bool:
@@ -34,8 +36,7 @@ def is_gallery(model: Type[Union[models.Model, Collection]]) -> bool:
     хотя бы один класс элемента изображения с вариациями.
     """
     return issubclass(model, Collection) and any(
-        is_image_item(field)
-        for field in model.item_types.values()
+        is_image_item(field) for field in model.item_types.values()
     )
 
 
@@ -78,8 +79,10 @@ def get_allowed_fields(model: Type[Union[models.Model, Collection]]) -> List[str
         ]
 
 
-def get_allowed_variations(model: Type[Union[models.Model, Collection]],
-                           field: Union[VersatileImageResourceMixin, ItemField]) -> List[str]:
+def get_allowed_variations(
+    model: Type[Union[models.Model, Collection]],
+    field: Union[VersatileImageResourceMixin, ItemField],
+) -> List[str]:
     """
     Для заданного поля модели возвращает список имен вариаций
     """
@@ -113,22 +116,30 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'model', nargs='?', metavar='app_label.ModelName',
+            'model',
+            nargs='?',
+            metavar='app_label.ModelName',
             help='Specify the model to recreate variations for',
         )
         parser.add_argument(
-            'field', nargs='?',
+            'field',
+            nargs='?',
             help='Restricts recreated variations to the specified field',
         )
         parser.add_argument(
-            '--variations', dest='variations', nargs='+',
+            '--variations',
+            dest='variations',
+            nargs='+',
             help='Specify the variation names to recreate variations for',
         )
         parser.add_argument(
             '-i', '--interactive', action='store_true',
         )
         parser.add_argument(
-            '--database', action='store', dest='database', default=DEFAULT_DB_ALIAS,
+            '--database',
+            action='store',
+            dest='database',
+            default=DEFAULT_DB_ALIAS,
             help='Nominates the database to use. Defaults to the "default" database.',
         )
 
@@ -166,28 +177,37 @@ class Command(BaseCommand):
         # process
         if is_gallery(model):
             total = model.objects.using(self.database).count()  # use `objects` manager!
-            for index, collection in enumerate(model.objects.using(self.database).iterator(), start=1):
+            for index, collection in enumerate(
+                model.objects.using(self.database).iterator(), start=1
+            ):
                 if self.verbosity >= 1:
-                    self.stdout.write(self.style.SUCCESS(
-                        "Recreate variations for `{}` #{} ({}/{}) ... ".format(
-                            model_name, collection.pk, index, total
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            "Recreate variations for `{}` #{} ({}/{}) ... ".format(
+                                model_name, collection.pk, index, total
+                            )
                         )
-                    ))
+                    )
 
                 for name, field in collection.item_types.items():
                     if is_image_item(field):
                         for item in collection.get_items().iterator():
                             item.recut(names=variations)
         else:
-            instances = model._base_manager.using(self.database).exclude((fieldname, None))
+            instances = model._base_manager.using(self.database).exclude(
+                (fieldname, None)
+            )
             total = instances.count()
             for index, instance in enumerate(instances, start=1):
                 if self.verbosity >= 1:
-                    self.stdout.write(self.style.SUCCESS(
-                        "Recreate variations for `{}` #{} ({}/{}) ... ".format(
-                            model_name, instance.pk, index, total
-                        )
-                    ), ending='\r')
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            "Recreate variations for `{}` #{} ({}/{}) ... ".format(
+                                model_name, instance.pk, index, total
+                            )
+                        ),
+                        ending='\r',
+                    )
                 field = getattr(instance, fieldname)
                 field.recut(names=variations)
             self.stdout.write('')
@@ -197,14 +217,15 @@ class Command(BaseCommand):
             regular, galleries = get_allowed_models()
             allowed_models = tuple(chain(regular, galleries))
 
-            self.stdout.write(self.style.SUCCESS(
-                'Please, specify the MODEL you would like to process.'
-            ))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    'Please, specify the MODEL you would like to process.'
+                )
+            )
             for index, modelname in enumerate(allowed_models, start=1):
                 self.stdout.write(
                     '{}) Model `{}`'.format(
-                        self.style.SUCCESS('{:>2}'.format(index)),
-                        modelname
+                        self.style.SUCCESS('{:>2}'.format(index)), modelname
                     )
                 )
             self.stdout.write(' {}) Exit'.format(self.style.SUCCESS('0')))
@@ -216,12 +237,16 @@ class Command(BaseCommand):
             try:
                 answer = int(answer)
             except ValueError:
-                self.stderr.write('Invalid selection. Press Enter to try again... ', ending='')
+                self.stderr.write(
+                    'Invalid selection. Press Enter to try again... ', ending=''
+                )
                 input()
                 continue
 
             if not 1 <= answer <= len(allowed_models):
-                self.stderr.write('Invalid selection. Press Enter to try again... ', ending='')
+                self.stderr.write(
+                    'Invalid selection. Press Enter to try again... ', ending=''
+                )
                 input()
                 continue
 
@@ -231,14 +256,15 @@ class Command(BaseCommand):
         while True:
             allowed_fields = get_allowed_fields(model)
 
-            self.stdout.write(self.style.SUCCESS(
-                'Please, specify the FIELD you would like to process.'
-            ))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    'Please, specify the FIELD you would like to process.'
+                )
+            )
             for index, fieldname in enumerate(allowed_fields, start=1):
                 self.stdout.write(
                     '{}) Field `{}`'.format(
-                        self.style.SUCCESS('{:>2}'.format(index)),
-                        fieldname
+                        self.style.SUCCESS('{:>2}'.format(index)), fieldname
                     )
                 )
             self.stdout.write(' {}) Exit'.format(self.style.SUCCESS('0')))
@@ -250,12 +276,16 @@ class Command(BaseCommand):
             try:
                 answer = int(answer)
             except ValueError:
-                self.stderr.write('Invalid selection. Press Enter to try again... ', ending='')
+                self.stderr.write(
+                    'Invalid selection. Press Enter to try again... ', ending=''
+                )
                 input()
                 continue
 
             if not 1 <= answer <= len(allowed_fields):
-                self.stderr.write('Invalid selection. Press Enter to try again... ', ending='')
+                self.stderr.write(
+                    'Invalid selection. Press Enter to try again... ', ending=''
+                )
                 input()
                 continue
 
@@ -265,15 +295,16 @@ class Command(BaseCommand):
         while True:
             allowed_variations = get_allowed_variations(model, field)
 
-            self.stdout.write(self.style.SUCCESS(
-                'Please, specify the VARIATIONS you would like to process.'
-            ))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    'Please, specify the VARIATIONS you would like to process.'
+                )
+            )
             self.stdout.write(' {}) All variations'.format(self.style.SUCCESS('*')))
             for index, vname in enumerate(allowed_variations, start=1):
                 self.stdout.write(
                     '{}) Variation `{}`'.format(
-                        self.style.SUCCESS('{:>2}'.format(index)),
-                        vname
+                        self.style.SUCCESS('{:>2}'.format(index)), vname
                     )
                 )
             self.stdout.write(' {}) Exit'.format(self.style.SUCCESS('0')))
@@ -288,16 +319,17 @@ class Command(BaseCommand):
             try:
                 answers = tuple(map(int, answers))
             except ValueError:
-                self.stderr.write('Invalid selection. Press Enter to try again... ', ending='')
+                self.stderr.write(
+                    'Invalid selection. Press Enter to try again... ', ending=''
+                )
                 input()
                 continue
 
             if not all(1 <= answer <= len(allowed_variations) for answer in answers):
-                self.stderr.write('Invalid selection. Press Enter to try again... ', ending='')
+                self.stderr.write(
+                    'Invalid selection. Press Enter to try again... ', ending=''
+                )
                 input()
                 continue
 
-            return set(
-                allowed_variations[answer - 1]
-                for answer in answers
-            )
+            return set(allowed_variations[answer - 1] for answer in answers)

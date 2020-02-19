@@ -28,13 +28,12 @@ def lowercase_copy(options: Dict[str, Any]) -> Dict[str, Any]:
     """
     Возвращает копию словаря с ключами, приведенными к нижнему регистру.
     """
-    return {
-        key.lower(): value
-        for key, value in options.items()
-    }
+    return {key.lower(): value for key, value in options.items()}
 
 
-def get_instance(app_label: str, model_name: str, object_id: int, using: str = DEFAULT_DB_ALIAS):
+def get_instance(
+    app_label: str, model_name: str, object_id: int, using: str = DEFAULT_DB_ALIAS
+):
     """
     Получение экземпляра модели по названию приложения, модели и ID.
     """

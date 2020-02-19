@@ -13,8 +13,15 @@ class PaperVariation(Variation):
       * Хранение настроек постобработки
       * Хранение перечня дополнительных версий вариации
     """
-    def __init__(self, *args, name: str = '', postprocess: Union[Dict, bool] = None,
-                 versions: Iterable[str] = None, **kwargs):
+
+    def __init__(
+        self,
+        *args,
+        name: str = '',
+        postprocess: Union[Dict, bool] = None,
+        versions: Iterable[str] = None,
+        **kwargs
+    ):
         self.name = name
         self.versions = versions or set()
         self.postprocess = postprocess
@@ -41,10 +48,7 @@ class PaperVariation(Variation):
             return
         if isinstance(value, dict):
             # lowercase format names
-            self._postprocess = {
-                k.lower(): v
-                for k, v in value.items()
-            }
+            self._postprocess = {k.lower(): v for k, v in value.items()}
         else:
             raise TypeError(value)
 

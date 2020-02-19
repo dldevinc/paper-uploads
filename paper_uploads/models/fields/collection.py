@@ -24,7 +24,11 @@ class CollectionField(FileFieldBase):
         if rel_is_string:
             return []
 
-        model_name = self.remote_field.model if rel_is_string else self.remote_field.model._meta.object_name
+        model_name = (
+            self.remote_field.model
+            if rel_is_string
+            else self.remote_field.model._meta.object_name
+        )
         if not issubclass(self.remote_field.model, CollectionBase):
             return [
                 checks.Error(
@@ -47,6 +51,7 @@ class ItemField:
     Поле для подключения классов элементов галереи.
     Допустимо для использования только в подклассах галерей.
     """
+
     default_validators = []  # Default set of validators
 
     def __init__(self, to, name=None, validators=(), postprocess=None, options=None):
@@ -56,11 +61,8 @@ class ItemField:
             to._meta.model_name
         except AttributeError:
             assert isinstance(to, str), (
-                "%s(%r) is invalid. First parameter to %s must be a model" % (
-                    self.__class__.__name__,
-                    to,
-                    self.__class__.__name__,
-                )
+                "%s(%r) is invalid. First parameter to %s must be a model"
+                % (self.__class__.__name__, to, self.__class__.__name__,)
             )
 
         self.model = to

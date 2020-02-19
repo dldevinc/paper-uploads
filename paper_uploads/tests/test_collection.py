@@ -34,16 +34,30 @@ class TestCollection:
             assert collection.item_types['file'].model is FileItem
 
             with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
-                assert collection.detect_file_type(File(jpeg_file, name='Image.Jpeg')) == 'image'
+                assert (
+                    collection.detect_file_type(File(jpeg_file, name='Image.Jpeg'))
+                    == 'image'
+                )
 
             with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
-                assert collection.detect_file_type(File(svg_file, name='cartman.svg')) == 'svg'
+                assert (
+                    collection.detect_file_type(File(svg_file, name='cartman.svg'))
+                    == 'svg'
+                )
 
             with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
-                assert collection.detect_file_type(File(pdf_file, name='Sample Document.PDF')) == 'file'
+                assert (
+                    collection.detect_file_type(
+                        File(pdf_file, name='Sample Document.PDF')
+                    )
+                    == 'file'
+                )
 
             with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
-                assert collection.detect_file_type(File(audio_file, name='audio.ogg')) == 'file'
+                assert (
+                    collection.detect_file_type(File(audio_file, name='audio.ogg'))
+                    == 'file'
+                )
 
             # ReverseFieldModelMixin
             assert collection.owner_app_label == 'app'
@@ -64,21 +78,33 @@ class TestCollection:
         try:
             assert collection.item_types.keys() == {'image'}
             assert collection.item_types['image'].model is ImageItem
-            assert collection.get_validation() == {
-                'acceptFiles': ['image/*']
-            }
+            assert collection.get_validation() == {'acceptFiles': ['image/*']}
 
             with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
-                assert collection.detect_file_type(File(jpeg_file, name='Image.Jpeg')) == 'image'
+                assert (
+                    collection.detect_file_type(File(jpeg_file, name='Image.Jpeg'))
+                    == 'image'
+                )
 
             with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
-                assert collection.detect_file_type(File(svg_file, name='cartman.svg')) == 'image'
+                assert (
+                    collection.detect_file_type(File(svg_file, name='cartman.svg'))
+                    == 'image'
+                )
 
             with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
-                assert collection.detect_file_type(File(pdf_file, name='Sample Document.PDF')) == 'image'
+                assert (
+                    collection.detect_file_type(
+                        File(pdf_file, name='Sample Document.PDF')
+                    )
+                    == 'image'
+                )
 
             with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
-                assert collection.detect_file_type(File(audio_file, name='audio.ogg')) == 'image'
+                assert (
+                    collection.detect_file_type(File(audio_file, name='audio.ogg'))
+                    == 'image'
+                )
 
             # ReverseFieldModelMixin
             assert collection.owner_app_label == 'app'
@@ -113,7 +139,9 @@ class TestFileItem:
             assert item.file_supported(File(svg_file, name='cartman.svg')) is True
 
         with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
-            assert item.file_supported(File(pdf_file, name='Sample Document.PDF')) is True
+            assert (
+                item.file_supported(File(pdf_file, name='Sample Document.PDF')) is True
+            )
 
         with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
             assert item.file_supported(File(audio_file, name='audio.ogg')) is True
@@ -125,7 +153,7 @@ class TestFileItem:
             item = FileItem()
             # item.attach_file(xls_file)      # <- works
             item.attach_to(collection)
-            item.attach_file(xls_file)      # <- works too
+            item.attach_file(xls_file)  # <- works too
             item.full_clean()
             item.save()
 
@@ -150,8 +178,14 @@ class TestFileItem:
             assert repr(item) == "FileItem('sheet.xlsx')"
             assert item.get_basename() == 'sheet.xlsx'
             assert item.get_file() is item.file
-            assert item.get_file_name() == f"collections/files/{now().strftime('%Y-%m-%d')}/sheet{suffix}.xlsx"
-            assert item.get_file_url() == f"/media/collections/files/{now().strftime('%Y-%m-%d')}/sheet{suffix}.xlsx"
+            assert (
+                item.get_file_name()
+                == f"collections/files/{now().strftime('%Y-%m-%d')}/sheet{suffix}.xlsx"
+            )
+            assert (
+                item.get_file_url()
+                == f"/media/collections/files/{now().strftime('%Y-%m-%d')}/sheet{suffix}.xlsx"
+            )
             assert item.is_file_exists() is True
 
             # FileFieldResource
@@ -162,7 +196,9 @@ class TestFileItem:
 
             # ReadonlyFileProxyMixin
             assert item.url == item.get_file_url()
-            assert item.path == os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, item.get_file_name())
+            assert item.path == os.path.join(
+                settings.BASE_DIR, settings.MEDIA_ROOT, item.get_file_name()
+            )
             assert item.closed is True
             with item.open():
                 assert item.closed is False
@@ -174,7 +210,10 @@ class TestFileItem:
             assert item.closed is True
 
             # CollectionResourceItem
-            assert item.change_form_class == 'paper_uploads.forms.dialogs.collection.FileItemDialog'
+            assert (
+                item.change_form_class
+                == 'paper_uploads.forms.dialogs.collection.FileItemDialog'
+            )
             assert item.admin_template_name == 'paper_uploads/collection_item/file.html'
             assert item.collection_id == collection.pk
             assert item.collection_content_type.model_class() is PageFilesGallery
@@ -199,11 +238,14 @@ class TestFileItem:
                 'collectionId': item.collection_id,
                 'item_type': item.item_type,
                 'caption': item.get_basename(),
-                'preview': loader.render_to_string('paper_uploads/collection_item/preview/file.html', {
-                    'item': item,
-                    'preview_width': paper_settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                    'preview_height': paper_settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-                })
+                'preview': loader.render_to_string(
+                    'paper_uploads/collection_item/preview/file.html',
+                    {
+                        'item': item,
+                        'preview_width': paper_settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                        'preview_height': paper_settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+                    },
+                ),
             }
         finally:
             file_path = item.path
@@ -226,7 +268,9 @@ class TestSVGItem:
             assert item.file_supported(File(svg_file, name='cartman.svg')) is True
 
         with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
-            assert item.file_supported(File(pdf_file, name='Sample Document.PDF')) is False
+            assert (
+                item.file_supported(File(pdf_file, name='Sample Document.PDF')) is False
+            )
 
         with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
             assert item.file_supported(File(audio_file, name='audio.ogg')) is False
@@ -238,7 +282,7 @@ class TestSVGItem:
             item = SVGItem()
             # item.attach_file(svg_file)      # <- works
             item.attach_to(collection)
-            item.attach_file(svg_file)      # <- works too
+            item.attach_file(svg_file)  # <- works too
             item.full_clean()
             item.save()
 
@@ -263,8 +307,14 @@ class TestSVGItem:
             assert repr(item) == "SVGItem('cartman.svg')"
             assert item.get_basename() == 'cartman.svg'
             assert item.get_file() is item.file
-            assert item.get_file_name() == f"collections/files/{now().strftime('%Y-%m-%d')}/cartman{suffix}.svg"
-            assert item.get_file_url() == f"/media/collections/files/{now().strftime('%Y-%m-%d')}/cartman{suffix}.svg"
+            assert (
+                item.get_file_name()
+                == f"collections/files/{now().strftime('%Y-%m-%d')}/cartman{suffix}.svg"
+            )
+            assert (
+                item.get_file_url()
+                == f"/media/collections/files/{now().strftime('%Y-%m-%d')}/cartman{suffix}.svg"
+            )
             assert item.is_file_exists() is True
 
             # FileFieldResource
@@ -275,7 +325,9 @@ class TestSVGItem:
 
             # ReadonlyFileProxyMixin
             assert item.url == item.get_file_url()
-            assert item.path == os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, item.get_file_name())
+            assert item.path == os.path.join(
+                settings.BASE_DIR, settings.MEDIA_ROOT, item.get_file_name()
+            )
             assert item.closed is True
             with item.open():
                 assert item.closed is False
@@ -287,7 +339,10 @@ class TestSVGItem:
             assert item.closed is True
 
             # CollectionResourceItem
-            assert item.change_form_class == 'paper_uploads.forms.dialogs.collection.FileItemDialog'
+            assert (
+                item.change_form_class
+                == 'paper_uploads.forms.dialogs.collection.FileItemDialog'
+            )
             assert item.admin_template_name == 'paper_uploads/collection_item/svg.html'
             assert item.collection_id == collection.pk
             assert item.collection_content_type.model_class() is PageFilesGallery
@@ -308,11 +363,14 @@ class TestSVGItem:
                 'collectionId': item.collection_id,
                 'item_type': item.item_type,
                 'caption': item.get_basename(),
-                'preview': loader.render_to_string('paper_uploads/collection_item/preview/svg.html', {
-                    'item': item,
-                    'preview_width': paper_settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                    'preview_height': paper_settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-                })
+                'preview': loader.render_to_string(
+                    'paper_uploads/collection_item/preview/svg.html',
+                    {
+                        'item': item,
+                        'preview_width': paper_settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                        'preview_height': paper_settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+                    },
+                ),
             }
         finally:
             file_path = item.path
@@ -349,7 +407,9 @@ class TestImageItem:
             assert item.file_supported(File(svg_file, name='cartman.svg')) is True
 
         with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
-            assert item.file_supported(File(pdf_file, name='Sample Document.PDF')) is False
+            assert (
+                item.file_supported(File(pdf_file, name='Sample Document.PDF')) is False
+            )
 
         with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
             assert item.file_supported(File(audio_file, name='audio.ogg')) is False
@@ -390,20 +450,30 @@ class TestImageItem:
             assert repr(item) == "ImageItem('Image.jpg')"
             assert item.get_basename() == 'Image.jpg'
             assert item.get_file() is item.file
-            assert item.get_file_name() == f"collections/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
-            assert item.get_file_url() == f"/media/collections/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+            assert (
+                item.get_file_name()
+                == f"collections/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+            )
+            assert (
+                item.get_file_url()
+                == f"/media/collections/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+            )
             assert item.is_file_exists() is True
 
             # FileFieldResource
             assert os.path.isfile(item.path)
-            assert all(os.path.isfile(vfile.path) for vname, vfile in item.variation_files())
+            assert all(
+                os.path.isfile(vfile.path) for vname, vfile in item.variation_files()
+            )
 
             # PostrocessableFileFieldResource
             assert os.stat(TESTS_PATH / 'Image.Jpeg').st_size == 214779
 
             # ReadonlyFileProxyMixin
             assert item.url == item.get_file_url()
-            assert item.path == os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, item.get_file_name())
+            assert item.path == os.path.join(
+                settings.BASE_DIR, settings.MEDIA_ROOT, item.get_file_name()
+            )
             assert item.closed is True
             with item.open():
                 assert item.closed is False
@@ -423,8 +493,11 @@ class TestImageItem:
 
             # VariableImageResourceMixin
             assert item.get_variations().keys() == {
-                'mobile', 'admin_preview', 'admin_preview_2x',
-                'admin_preview_webp', 'admin_preview_webp_2x',
+                'mobile',
+                'admin_preview',
+                'admin_preview_2x',
+                'admin_preview_webp',
+                'admin_preview_webp_2x',
             }
 
             assert item._variations_attached is False
@@ -457,8 +530,13 @@ class TestImageItem:
                 item.get_variation_file('nothing')
 
             # CollectionResourceItem
-            assert item.change_form_class == 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
-            assert item.admin_template_name == 'paper_uploads/collection_item/image.html'
+            assert (
+                item.change_form_class
+                == 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
+            )
+            assert (
+                item.admin_template_name == 'paper_uploads/collection_item/image.html'
+            )
             assert item.collection_id == collection.pk
             assert item.collection_content_type.model_class() is PageFilesGallery
             assert item.item_type == 'image'
@@ -483,18 +561,18 @@ class TestImageItem:
                 'title': item.title,
                 'description': item.description,
                 'caption': item.get_basename(),
-                'preview': loader.render_to_string('paper_uploads/collection_item/preview/image.html', {
-                    'item': item,
-                    'preview_width': paper_settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                    'preview_height': paper_settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-                })
+                'preview': loader.render_to_string(
+                    'paper_uploads/collection_item/preview/image.html',
+                    {
+                        'item': item,
+                        'preview_width': paper_settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                        'preview_height': paper_settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+                    },
+                ),
             }
         finally:
             source_path = item.path
-            variation_pathes = {
-                vfile.path
-                for vname, vfile in item.variation_files()
-            }
+            variation_pathes = {vfile.path for vname, vfile in item.variation_files()}
 
             item.delete_file()
             assert os.path.isfile(source_path) is False
@@ -526,10 +604,13 @@ class TestCollectionField:
         assert field.related_model is PageGallery
 
     def test_validators(self):
-        field = CollectionField(PageGallery, validators=[
-            validators.SizeValidator(10 * 1024 * 1024),
-            validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
-        ])
+        field = CollectionField(
+            PageGallery,
+            validators=[
+                validators.SizeValidator(10 * 1024 * 1024),
+                validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
+            ],
+        )
         field.contribute_to_class(Page, 'gallery')
 
         assert field.get_validation() == {
@@ -541,5 +622,5 @@ class TestCollectionField:
         assert formfield.widget.get_validation() == {
             'sizeLimit': 10 * 1024 * 1024,
             'allowedExtensions': ('svg', 'bmp', 'jpeg'),
-            'acceptFiles': ['image/*']
+            'acceptFiles': ['image/*'],
         }
