@@ -8,7 +8,10 @@ from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.template import loader
 from django.utils.timezone import now, timedelta
-from tests.app.models import Page, PageFilesGallery, PageGallery
+from tests.app.models import (
+    DummyCollection, DummyCollectionWithMeta, DummyCollectionSubclass,
+    Page, PageFilesGallery, PageGallery
+)
 
 from .. import validators
 from ..conf import settings as paper_settings
@@ -20,6 +23,14 @@ TESTS_PATH = Path(__file__).parent / 'samples'
 
 
 class TestCollection:
+    def test_item_types_attribute(self):
+        assert list(DummyCollection.item_types.keys()) == ['image']
+        assert list(DummyCollectionWithMeta.item_types.keys()) == []
+        assert list(DummyCollectionSubclass.item_types.keys()) == ['image', 'svg']
+
+        image_field = DummyCollectionSubclass.item_types['image']
+        assert list(image_field.options['variations']) == ['preview']
+
     def test_collection(self):
         collection = PageFilesGallery.objects.create(
             owner_app_label="app",

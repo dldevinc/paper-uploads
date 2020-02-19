@@ -432,15 +432,6 @@ class ImageItem(
 # ==============================================================================
 
 
-class ItemTypesDescriptor:
-    def __get__(self, instance, owner):
-        if owner is None:
-            owner = type(instance)
-        return OrderedDict(
-            (field.name, field) for field in owner._local_item_type_fields
-        )
-
-
 class ContentItemRelation(GenericRelation):
     """
     FIX: cascade delete polymorphic
@@ -460,30 +451,49 @@ class CollectionMetaclass(ModelBase):
     """
 
     def __new__(mcs, name, bases, attrs, **kwargs):
-        new_attrs = {
-            '_local_item_type_fields': []
-        }
-        for obj_name, obj in list(attrs.items()):
-            new_attrs[obj_name] = obj
-
         # set proxy=True by default
-        meta = new_attrs.pop('Meta', None)
+        meta = attrs.pop('Meta', None)
         if meta is None:
             meta = type('Meta', (), {'proxy': True})
-        elif not hasattr(meta, 'proxy'):
-            meta = type('Meta', meta.__bases__, dict(meta.__dict__))
-        new_attrs['Meta'] = meta
+        else:
+            meta_attrs = meta.__dict__.copy()
+            meta_attrs.setdefault('proxy', True)
+            meta = type('Meta', meta.__bases__, meta_attrs)
+        attrs['Meta'] = meta
 
-        new_class = super().__new__(mcs, name, bases, new_attrs, **kwargs)
-        for base in bases:
-            item_type_fields = getattr(base, '_local_item_type_fields', [])
-            for field in item_type_fields:
-                new_class.add_to_class(field.name, field)
+        item_types_attribute = '_{}__item_types'.format(name)
+        attrs[item_types_attribute] = OrderedDict()
+        new_class = super().__new__(mcs, name, bases, attrs, **kwargs)
+
+        # дескриптор, дающий доступ к item_types в режиме только для чтения
+        new_class.item_types = ItemTypesDescriptor('item_types')
         return new_class
 
 
+class ItemTypesDescriptor:
+    def __init__(self, name):
+        self.name = name
+
+    def __get__(self, instance, cls=None):
+        if cls is None:
+            cls = type(instance)
+
+        item_types = OrderedDict()
+        for base in reversed(cls.mro()):
+            base_item_types = self.get_item_types(base)
+            if base_item_types is not None:
+                item_types.update(base_item_types)
+
+        if instance is not None:
+            instance.__dict__[self.name] = item_types
+        return item_types
+
+    def get_item_types(self, cls):
+        item_types_attribute = '_{}__item_types'.format(cls.__name__)
+        return getattr(cls, item_types_attribute, None)
+
+
 class CollectionBase(ReverseFieldModelMixin, metaclass=CollectionMetaclass):
-    item_types = ItemTypesDescriptor()
     items = ContentItemRelation(
         'paper_uploads.CollectionResourceItem',
         content_type_field='collection_content_type',
@@ -502,7 +512,7 @@ class CollectionBase(ReverseFieldModelMixin, metaclass=CollectionMetaclass):
     @classmethod
     def _check_fields(cls, **kwargs):
         errors = super()._check_fields(**kwargs)
-        for field in cls._local_item_type_fields:
+        for field in cls.item_types.values():
             errors.extend(field.check(**kwargs))
         return errors
 

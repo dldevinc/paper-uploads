@@ -84,4 +84,7 @@ class ItemField:
 
     def contribute_to_class(self, cls, name, **kwargs):
         self.name = self.name or name
-        cls._local_item_type_fields.append(self)
+        item_types_attribute = '_{}__item_types'.format(cls.__name__)
+        item_types = getattr(cls, item_types_attribute, None)
+        if item_types is not None:
+            item_types[self.name] = self

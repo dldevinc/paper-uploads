@@ -147,6 +147,22 @@ class DummyCollection(Collection):
     })
 
 
+class DummyCollectionWithMeta(Collection):
+    class Meta:
+        verbose_name = _('gallery')
+
+
+class DummyCollectionSubclass(DummyCollection):
+    image = ItemField(ImageItem, options={
+        'variations': dict(
+            preview=dict(
+                size=(200, 0),
+            )
+        )
+    })
+    svg = ItemField(SVGItem)
+
+
 class DummyCollectionBlocked(Collection):
     image = ItemField(ImageItem, postprocess=False, options={
         'variations': dict(
