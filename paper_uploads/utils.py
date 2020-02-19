@@ -1,5 +1,5 @@
 import time
-from typing import IO, Any, Dict, Iterable, Union
+from typing import IO, Any, Dict, Iterable, List, Union
 
 from django.apps import apps
 from django.core import exceptions
@@ -13,7 +13,7 @@ MAX_DB_ATTEMPTS = 3
 
 
 def run_validators(value: Union[IO, File], validators: Iterable[Any]):
-    errors = []
+    errors = []  # type: List[Any]
     for v in validators:
         try:
             v(value)

@@ -1,4 +1,5 @@
 import json
+from typing import List, Tuple
 
 from django.contrib.contenttypes.models import ContentType
 from django.forms import widgets
@@ -53,11 +54,11 @@ class FileWidgetBase(widgets.Widget):
             **self.validation,
         }
 
-    def get_validation_lines(self):
+    def get_validation_lines(self) -> List[Tuple[str, str]]:
         """
         Получение ограничений на загружаемые файлы в виде текста
         """
-        limits = []
+        limits = []  # type: List[Tuple[str, str]]
         validation = self.get_validation()
         if not validation:
             return limits

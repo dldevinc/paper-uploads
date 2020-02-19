@@ -1,5 +1,5 @@
 import posixpath
-from typing import Dict, Iterable, Set, Union
+from typing import Any, Dict, Iterable, Set, Union
 
 from variations.variation import Variation
 
@@ -18,7 +18,7 @@ class PaperVariation(Variation):
         self,
         *args,
         name: str = '',
-        postprocess: Union[Dict, bool] = None,
+        postprocess: Union[Dict, bool, None] = None,
         versions: Iterable[str] = None,
         **kwargs
     ):
@@ -28,25 +28,24 @@ class PaperVariation(Variation):
         super().__init__(*args, **kwargs)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str):
         if not isinstance(value, str):
             raise TypeError(value)
         self._name = value
 
     @property
-    def postprocess(self) -> Union[Dict, bool, None]:
+    def postprocess(self) -> Union[Dict[str, Any], bool, None]:
         return self._postprocess
 
     @postprocess.setter
-    def postprocess(self, value):
+    def postprocess(self, value: Union[Dict[str, Any], bool, None]):
         if value is None or value is False:
             self._postprocess = value
-            return
-        if isinstance(value, dict):
+        elif isinstance(value, dict):
             # lowercase format names
             self._postprocess = {k.lower(): v for k, v in value.items()}
         else:
@@ -57,7 +56,7 @@ class PaperVariation(Variation):
         return self._versions
 
     @versions.setter
-    def versions(self, value):
+    def versions(self, value: Iterable[str]):
         self._versions = set(v.lower() for v in value)
         unknown_versions = self._versions.difference(ALLOWED_VERSIONS)
         if unknown_versions:
@@ -78,7 +77,7 @@ class PaperVariation(Variation):
         name = posixpath.join(dir_name, file_name)
         return self.replace_extension(name)
 
-    def get_postprocess_options(self, format: str) -> Union[Dict, bool, None]:
+    def get_postprocess_options(self, format: str) -> Union[Dict[str, Any], bool, None]:
         """
         Получение настроек постобработки для указанного формата
         """

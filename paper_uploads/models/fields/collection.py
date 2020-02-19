@@ -1,3 +1,5 @@
+from typing import Any, List
+
 from django.core import checks
 from django.db.models import Field
 from django.utils.functional import cached_property
@@ -52,7 +54,7 @@ class ItemField:
     Допустимо для использования только в подклассах галерей.
     """
 
-    default_validators = []  # Default set of validators
+    default_validators = []     # type: List[Any]
 
     def __init__(self, to, name=None, validators=(), postprocess=None, options=None):
         self.name = name

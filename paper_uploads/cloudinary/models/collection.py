@@ -1,4 +1,4 @@
-from typing import IO, Any, Dict, Union
+from typing import IO, Any, Dict, Optional, Union
 
 import magic
 from django.core.files import File
@@ -161,5 +161,5 @@ class CloudinaryImageCollection(Collection):
             'acceptFiles': ['image/*'],
         }
 
-    def detect_file_type(self, file: File) -> str:
+    def detect_file_type(self, file: File) -> Optional[str]:
         return 'image'

@@ -1,7 +1,7 @@
 import hashlib
 import io
 import os
-from typing import IO, Any, Dict, Iterator, Optional, Sequence, Tuple, Type, Union
+from typing import IO, Any, Dict, Iterable, Optional, Sequence, Tuple, Type, Union
 
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist, ValidationError
@@ -395,12 +395,12 @@ class VariationFile(File):
         filename = self.variation.get_output_filename(instance.get_file_name())
         super().__init__(None, filename)
 
-    def _get_file(self):
+    def _get_file(self) -> File:
         if not hasattr(self, '_file') or self._file is None:
             self._file = self.storage.open(self.name, 'rb')
         return self._file
 
-    def _set_file(self, file):
+    def _set_file(self, file: File):
         self._file = file
 
     def _del_file(self):
@@ -525,7 +525,7 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
     def get_variations(self) -> Dict[str, PaperVariation]:
         raise NotImplementedError
 
-    def variation_files(self) -> Iterator[Tuple[str, VariationFile]]:
+    def variation_files(self) -> Iterable[Tuple[str, Union[VariationFile, None]]]:
         for variation_name in self.get_variations():
             yield variation_name, self.get_variation_file(variation_name)
 
@@ -544,7 +544,7 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
             cache[variation_name] = variation_file
         return variation_file
 
-    def calculate_max_size(self, source_size: Sequence[int]) -> Tuple[int, int]:
+    def calculate_max_size(self, source_size: Sequence[int]) -> Optional[Tuple[int, int]]:
         """
         Вычисление максимально возможных значений ширины и высоты изображения
         среди всех вариаций, чтобы передать их в Image.draft().
@@ -564,7 +564,7 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
         """
         raise NotImplementedError
 
-    def recut(self, names: Iterator[str] = (), **kwargs):
+    def recut(self, names: Iterable[str] = (), **kwargs):
         """
         Нарезка вариаций.
         Можно указать имена конкретных вариаций в параметре `names`.

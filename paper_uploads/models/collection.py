@@ -1,6 +1,6 @@
 import posixpath
 from collections import OrderedDict
-from typing import Any, Dict, Type
+from typing import Any, Dict, Optional, Type
 
 import magic
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -513,7 +513,7 @@ class CollectionBase(ReverseFieldModelMixin, metaclass=CollectionMetaclass):
             raise ValueError('Unsupported collection item type: %s' % item_type)
         return self.items.filter(item_type=item_type).order_by('order')
 
-    def detect_file_type(self, file: File) -> str:
+    def detect_file_type(self, file: File) -> Optional[str]:
         raise NotImplementedError
 
 
@@ -550,7 +550,7 @@ class Collection(CollectionBase):
             )
         super().save(*args, **kwargs)
 
-    def detect_file_type(self, file: File) -> str:
+    def detect_file_type(self, file: File) -> Optional[str]:
         """
         Определение класса элемента, которому нужно отнести загружаемый файл.
         """
@@ -575,5 +575,5 @@ class ImageCollection(Collection):
             'acceptFiles': ['image/*'],
         }
 
-    def detect_file_type(self, file: File) -> str:
+    def detect_file_type(self, file: File) -> Optional[str]:
         return 'image'

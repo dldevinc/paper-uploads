@@ -39,7 +39,7 @@ def error_response(
 
 
 def get_exception_messages(exception: ValidationError) -> List[str]:
-    messages = []
+    messages = []  # type: List[str]
     for msg in exception:
         if isinstance(msg, tuple):
             field, errors = msg

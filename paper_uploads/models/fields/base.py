@@ -99,7 +99,7 @@ class FileFieldBase(models.OneToOneField):
         image.minWidth и т.п. не используются из-за недостатка кастомизации
         текста об ошибках.
         """
-        validation = {}
+        validation = {}     # type: Dict[str, Any]
         for v in self.validators:
             if isinstance(v, validators.ExtensionValidator):
                 validation['allowedExtensions'] = v.allowed
