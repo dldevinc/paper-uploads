@@ -530,6 +530,9 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
             yield variation_name, self.get_variation_file(variation_name)
 
     def get_variation_file(self, variation_name: str) -> Optional[VariationFile]:
+        """
+        Если оригинального изображения нет - возвращает None
+        """
         if not self.get_file():
             return
 

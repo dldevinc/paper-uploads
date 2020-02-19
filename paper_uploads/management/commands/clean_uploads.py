@@ -114,8 +114,8 @@ class Command(BaseCommand):
                     qs = unused_qs.order_by('pk').only('file')
                     for index, item in enumerate(qs, start=1):
                         self.stdout.write(
-                            '  {}) #{} (File: {})'.format(
-                                index, item.pk, item.get_file_name()
+                            '  {}) {} #{} (File: {})'.format(
+                                index, type(item).__name__, item.pk, item.get_file_name()
                             )
                         )
                     self.stdout.write('\n')
@@ -164,8 +164,8 @@ class Command(BaseCommand):
                     )
                     for index, item in enumerate(qs, start=1):
                         self.stdout.write(
-                            '  {}) #{} (File: {})'.format(
-                                index, item.pk, item.get_file_name()
+                            '  {}) {} #{} (File: {})'.format(
+                                index, type(item).__name__, item.pk, item.get_file_name()
                             )
                         )
                     self.stdout.write('\n')
