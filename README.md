@@ -1,5 +1,7 @@
 # paper-uploads
 
+[![PyPI-Server](https://badge.fury.io/py/paper-uploads.svg)](https://pypi.org/project/paper-uploads/)
+
 ![](http://joxi.net/gmvnGZBtqKOOjm.png)
 
 Предоставляет поля для асинхронной загрузки файлов.
