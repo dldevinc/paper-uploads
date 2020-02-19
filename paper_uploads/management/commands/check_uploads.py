@@ -99,7 +99,7 @@ class Command(BaseCommand):
 
                 missed_variations = []
                 for vname, vfile in instance.variation_files():
-                    if not vfile.exists():
+                    if vfile is not None and not vfile.exists():
                         missed_variations.append(vname)
 
                 if missed_variations:

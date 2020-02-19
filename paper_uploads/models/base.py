@@ -513,7 +513,8 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
 
     def _delete_file(self):
         for vname, vfile in self.variation_files():
-            vfile.delete()
+            if vfile is not None:
+                vfile.delete()
         super()._delete_file()
 
     def _rename_file(self, new_name: str):
