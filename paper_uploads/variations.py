@@ -81,7 +81,7 @@ class PaperVariation(Variation):
         """
         Получение настроек постобработки для указанного формата
         """
-        if self.postprocess is False:
-            return False
-        elif self.postprocess is not None:
-            return self.postprocess.get(format.lower())
+        postprocess = self.postprocess
+        if isinstance(postprocess, dict):
+            return postprocess.get(format.lower())
+        return postprocess

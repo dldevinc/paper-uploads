@@ -277,8 +277,8 @@ class PostprocessableFileFieldResource(FileFieldResource):
             else:
                 self.postprocess(**kwargs)
 
-    def attach_file(self, file: Union[File, IO], **options):
-        super().attach_file(file, **options)
+    def attach_file(self, file: Union[File, IO], name: str = None, **options):
+        super().attach_file(file, name=name, **options)
         self.need_postprocess = True
 
     def postprocess(self, **kwargs):
@@ -372,8 +372,8 @@ class ImageFieldResourceMixin(ImageFileResourceMixin):
     class Meta(ImageFileResourceMixin.Meta):
         abstract = True
 
-    def attach_file(self, file: Union[File, IO], **options):
-        super().attach_file(file, **options)
+    def attach_file(self, file: Union[File, IO], name: str = None, **options):
+        super().attach_file(file, name=name, **options)
         with self.get_file().open():
             try:
                 image = Image.open(self.get_file())
@@ -506,8 +506,8 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
             else:
                 self.recut(**kwargs)
 
-    def attach_file(self, file: Union[File, IO], **options):
-        super().attach_file(file, **options)
+    def attach_file(self, file: Union[File, IO], name: str = None, **options):
+        super().attach_file(file, name=name, **options)
         self.need_recut = True
         self._variation_files_cache.clear()
 
@@ -591,9 +591,12 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
                 buffer.seek(0)
 
                 variation_filename = variation.get_output_filename(self.get_file_name())
-                self.get_file().storage.save(variation_filename, buffer)
+                file.storage.save(variation_filename, buffer)
 
                 variation_file = self.get_variation_file(name)
+                if variation_file is None:
+                    raise RuntimeError("variation file for '{}' does not exist".format(name))
+
                 self.postprocess_variation(variation_file, variation)
 
     def get_recut_kwargs(self) -> Dict[str, Any]:

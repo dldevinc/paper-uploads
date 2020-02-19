@@ -57,7 +57,7 @@ def get_postprocess_variation_options(
     variation_options = variation.get_postprocess_options(format)
     if variation_options is False:
         raise PostprocessProhibited
-    elif variation_options is not None:
+    elif isinstance(variation_options, dict):
         return lowercase_copy(variation_options)
 
     if field is not None:

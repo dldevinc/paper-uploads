@@ -27,7 +27,7 @@ def error_response(
 ) -> JsonResponse:
     if not errors:
         errors = []
-    elif not isinstance(errors, (list, tuple)):
+    elif isinstance(errors, str):
         errors = [errors]
 
     data = {
