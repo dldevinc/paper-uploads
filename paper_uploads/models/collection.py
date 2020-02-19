@@ -555,9 +555,9 @@ class Collection(CollectionBase):
         Определение класса элемента, которому нужно отнести загружаемый файл.
         """
         for item_type, field in self.item_types.items():
-            method = getattr(field.model, 'file_supported', None)
-            if method and callable(method):
-                if method(file):
+            file_supported = getattr(field.model, 'file_supported', None)
+            if file_supported is not None and callable(file_supported):
+                if file_supported(file):
                     return item_type
 
 
