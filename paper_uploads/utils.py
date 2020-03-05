@@ -12,6 +12,15 @@ from .logging import logger
 MAX_DB_ATTEMPTS = 3
 
 
+def remove_dulpicates(seq):
+    """
+    https://stackoverflow.com/questions/480214/how-do-you-remove-duplicates-from-a-list-whilst-preserving-order
+    """
+    seen = set()
+    seen_add = seen.add
+    return tuple(x for x in seq if not (x in seen or seen_add(x)))
+
+
 def run_validators(value: Union[IO, File], validators: Iterable[Any]):
     errors = []  # type: List[Any]
     for v in validators:

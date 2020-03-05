@@ -68,7 +68,7 @@ class PaperVariation(Variation):
         Имя файла может включать путь — он остается неизменным.
         """
         if not self.name:
-            raise RuntimeError('variation `name` is empty')
+            raise RuntimeError('`name` is empty')
 
         dir_name, file_name = posixpath.split(input_filename)
         file_root, file_ext = posixpath.splitext(file_name)

@@ -9,6 +9,8 @@ from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
 from PIL import Image
 
+from .utils import remove_dulpicates
+
 __all__ = [
     "ExtensionValidator",
     "MimetypeValidator",
@@ -18,18 +20,13 @@ __all__ = [
 ]
 
 
-class HelpTextValidatorMixin:
-    def get_help_text(self):
-        raise NotImplementedError
-
-
 @deconstructible
-class ExtensionValidator(HelpTextValidatorMixin):
+class ExtensionValidator:
     message = _("`%(name)s` has an invalid extension. Valid extension(s): %(allowed)s")
     code = 'invalid_extension'
 
     def __init__(self, allowed: Sequence[str], message=None):
-        self.allowed = tuple(ext.lstrip('.').lower() for ext in allowed)
+        self.allowed = remove_dulpicates(ext.lstrip('.').lower() for ext in allowed)
         if message:
             self.message = message
 
@@ -37,8 +34,9 @@ class ExtensionValidator(HelpTextValidatorMixin):
         _, ext = os.path.splitext(file.name)
         ext = ext.lstrip('.').lower()
         params = {
-            'allowed': "'%s'" % "', '".join(self.allowed),
-            'name': file.name
+            'name': file.name,
+            'ext': ext,
+            'allowed': ", ".join(self.allowed),
         }
         if ext not in self.allowed:
             raise ValidationError(self.message, code=self.code, params=params)
@@ -48,12 +46,12 @@ class ExtensionValidator(HelpTextValidatorMixin):
 
 
 @deconstructible
-class MimetypeValidator(HelpTextValidatorMixin):
+class MimetypeValidator:
     message = _("`%(name)s` has an invalid mimetype '%(mimetype)s'")
     code = 'invalid_mimetype'
 
     def __init__(self, allowed: Sequence[str], message=None):
-        self.allowed = tuple(mime.lower() for mime in allowed)
+        self.allowed = remove_dulpicates(mime.lower() for mime in allowed)
         if message:
             self.message = message
 
@@ -62,9 +60,9 @@ class MimetypeValidator(HelpTextValidatorMixin):
         file.seek(0)  # correct file position after mimetype detection
         basetype, subtype = mimetype.split('/', 1)
         params = {
-            'allowed': "'%s'" % "', '".join(self.allowed),
-            'mimetype': mimetype,
             'name': file.name,
+            'mimetype': mimetype,
+            'allowed': ", ".join(self.allowed),
         }
         if not (mimetype in self.allowed or '{}/*'.format(basetype) in self.allowed):
             raise ValidationError(self.message, code=self.code, params=params)
@@ -74,7 +72,7 @@ class MimetypeValidator(HelpTextValidatorMixin):
 
 
 @deconstructible
-class SizeValidator(HelpTextValidatorMixin):
+class SizeValidator:
     message = _("`%(name)s` is too large. Maximum file size is %(limit_value)s.")
     code = 'size_limit'
 
@@ -85,9 +83,9 @@ class SizeValidator(HelpTextValidatorMixin):
 
     def __call__(self, file: File):
         params = {
-            'limit_value': filesizeformat(self.limit_value),
-            'size': file.size,
             'name': file.name,
+            'size': file.size,
+            'limit_value': filesizeformat(self.limit_value),
         }
         if file.size > self.limit_value:
             raise ValidationError(self.message, code=self.code, params=params)
@@ -97,7 +95,7 @@ class SizeValidator(HelpTextValidatorMixin):
 
 
 @deconstructible
-class ImageMinSizeValidator(HelpTextValidatorMixin):
+class ImageMinSizeValidator:
     error_messages = {
         'min_width': _(
             '`%(name)s` is not wide enough. Minimum width is %(width_limit)s pixels.'
@@ -115,15 +113,14 @@ class ImageMinSizeValidator(HelpTextValidatorMixin):
         self.height_limit = height
 
     def __call__(self, file: File):
-        closed = file.closed
+        if file.closed:
+            raise ValidationError('`%s` is closed' % os.path.basename(file.name))
+
         try:
             img = Image.open(file)
             image_size = img.size
-        except Exception:
+        except OSError:
             raise ValidationError('`%s` is not an image' % os.path.basename(file.name))
-        finally:
-            if closed:
-                file.close()
 
         params = {
             'width_limit': self.width_limit,
@@ -161,7 +158,7 @@ class ImageMinSizeValidator(HelpTextValidatorMixin):
 
 
 @deconstructible
-class ImageMaxSizeValidator(HelpTextValidatorMixin):
+class ImageMaxSizeValidator:
     error_messages = {
         'max_width': _(
             '`%(name)s` is too wide. Maximum width is %(width_limit)s pixels.'
@@ -179,13 +176,14 @@ class ImageMaxSizeValidator(HelpTextValidatorMixin):
         self.height_limit = height
 
     def __call__(self, file: File):
-        closed = file.closed
+        if file.closed:
+            raise ValidationError('`%s` is closed' % os.path.basename(file.name))
+
         try:
             img = Image.open(file)
             image_size = img.size
-        finally:
-            if closed:
-                file.close()
+        except OSError:
+            raise ValidationError('`%s` is not an image' % os.path.basename(file.name))
 
         params = {
             'width_limit': self.width_limit,

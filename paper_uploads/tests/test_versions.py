@@ -23,7 +23,7 @@ class TestImplicitVersions:
             mobile=dict(
                 size=(640, 0),
                 clip=False,
-                versions=['WebP', '2x', '3x'],
+                versions=['WebP', '2x', '3x', '4x'],
             ),
             webp_image=dict(
                 size=(480, 0),
@@ -45,6 +45,8 @@ class TestImplicitVersions:
             'mobile_webp_2x',
             'mobile_3x',
             'mobile_webp_3x',
+            'mobile_4x',
+            'mobile_webp_4x',
             'webp_image',
             'webp_image_2x',
         }
@@ -59,6 +61,7 @@ class TestImplicitVersions:
             'mobile_webp',
             'mobile_webp_2x',
             'mobile_webp_3x',
+            'mobile_webp_4x',
             'webp_image',
             'webp_image_2x',
         }
@@ -69,6 +72,7 @@ class TestImplicitVersions:
             'mobile',
             'mobile_2x',
             'mobile_3x',
+            'mobile_4x',
         }
 
         for name in webp_variations:
