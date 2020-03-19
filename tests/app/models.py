@@ -163,7 +163,7 @@ class DummyCollectionSubclass(DummyCollection):
     svg = ItemField(SVGItem)
 
 
-class DummyCollectionBlocked(Collection):
+class DummyCollectionPostprocessProhibited(Collection):
     image = ItemField(ImageItem, postprocess=False, options={
         'variations': dict(
             mobile=dict(

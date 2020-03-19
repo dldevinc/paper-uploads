@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from tests.app.models import (
     DummyCollection,
-    DummyCollectionBlocked,
+    DummyCollectionPostprocessProhibited,
     DummyCollectionOverride,
 )
 
@@ -74,7 +74,7 @@ class TestVariation:
             }
 
 
-class TestVariationBlocked:
+class TestVariationProhibited:
     def test_options(self):
         variation = PaperVariation(
             size=(1920, 0),
@@ -159,7 +159,7 @@ class TestFileField:
             }
 
 
-class TestFileFieldBlocked:
+class TestFileFieldProhibited:
     def test_options(self):
         field = FileField(postprocess=False)
 
@@ -226,7 +226,7 @@ class TestCollectionItemField:
             postprocess.get_postprocess_common_options('exe', field)
 
 
-class TestCollectionItemFieldBlocked:
+class TestCollectionItemFieldProhibited:
     def test_options(self):
         field = ItemField(SVGItem, postprocess=False)
 
@@ -315,9 +315,9 @@ class TestRealCollection:
             collection.delete()
 
 
-class TestRealCollectionBlocked:
+class TestRealCollectionProhibited:
     def test_options(self):
-        collection = DummyCollectionBlocked.objects.create()
+        collection = DummyCollectionPostprocessProhibited.objects.create()
 
         with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
             item = ImageItem(
