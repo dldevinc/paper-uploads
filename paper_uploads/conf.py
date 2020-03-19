@@ -137,6 +137,8 @@ class Settings:
     def prepare_postprocess(self, value):
         from .utils import lowercase_copy
 
+        if value is False or value is None:
+            return value
         return lowercase_copy(value)
 
 
