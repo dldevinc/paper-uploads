@@ -1,47 +1,56 @@
 # paper-uploads
+Asynchronous file upload for Django
 
-[![PyPI-Server](https://badge.fury.io/py/paper-uploads.svg)](https://pypi.org/project/paper-uploads/)
+[![PyPI](https://img.shields.io/pypi/v/paper-uploads.svg)](https://pypi.org/project/paper-uploads/)
+[![Build Status](https://travis-ci.org/dldevinc/paper-uploads.svg?branch=master)](https://travis-ci.org/dldevinc/paper-uploads)
 
 ![](http://joxi.net/gmvnGZBtqKOOjm.png)
 
-Предоставляет поля для асинхронной загрузки файлов.
-
 ## Requirements
-* Python 3.5+
-* Django 2.1+
-* [paper-admin](https://github.com/dldevinc/paper-admin)
+* Python 3.6+
+* Django 2.0+
 * [variations](https://github.com/dldevinc/variations)
 
 ## Features
 * Каждый файл представлен своей моделью, что позволяет 
-хранить метаданные. Например, alt и title для изображения.
+хранить метаданные. Например, `alt` и `title` для изображения.
 * Загрузка файлов происходит асинхронно.
 * Поля для хранения файлов являются производными 
 от `OneToOneField` и не используют `<input type="file">`. Благодаря 
-этому, при ошибках валидации прикрепленные файлы не сбрасываются.
-* Совместимость с [django-storages](https://github.com/jschneier/django-storages).
-* Опциональная интеграция с [Cloudinary](https://cloudinary.com/documentation/cloudinary_references).
+этому, при ошибках валидации, прикрепленные файлы не сбрасываются.
+* Совместим с [django-storages](https://github.com/jschneier/django-storages).
 * Загруженные картинки можно нарезать на множество вариаций.
 Каждая вариация гибко настраивается. Можно указать размеры, 
 качество сжатия, формат, добавить дополнительные 
 [pilkit](https://github.com/matthewwithanm/pilkit)-процессоры, 
 распознавание лиц и другое. См. 
 [variations](https://github.com/dldevinc/variations).
-* Интеграция с [django-rq](https://github.com/rq/django-rq)
+* Опциональная интеграция с [django-rq](https://github.com/rq/django-rq)
 для отложенной нарезки картинок на вариации.
+* Опциональная интеграция с [Cloudinary](https://cloudinary.com/documentation/cloudinary_references).
 * Возможность постобработки изображений консольными утилитами. 
 Такими как `mozjpeg` и `pngquant`.
-* Возможность создавать коллекции файлов. В частности, галерей изображений с 
-возможностью сортировки элементов.
+* Возможность создавать коллекции файлов. В частности, галерей 
+изображений с возможностью сортировки элементов.
 
 ## Installation
+
+Install `paper-uploads`:
+```shell script
+pip install paper-uploads[full]
+```
+
+Add `paper_uploads` to `INSTALLED_APPS` in `settings.py`:
 ```python
 INSTALLED_APPS = [
     # ...
     'paper_uploads',
     # ...
 ]
+```
 
+Configure `paper-uploads` in django's `settings.py`:
+```python
 PAPER_UPLOADS = {
     'VARIATION_DEFAULTS': {
         'jpeg': dict(
@@ -607,19 +616,19 @@ class PageFiles(Collection):
 ## Variation versions
 Допустим, у нас есть изображение, которое нужно отобразить в трех 
 вариантах: `desktop`, `tablet` и `mobile`. Если мы хотим поддерживать 
-Retina дисплеи, нам нужно добавить ещё, как минимум, две вариации 
-для размера `2x`. Если мы хотим ещё и использовать формат `WebP` с
-обратной совместимостью, то общее количество вариаций умножается на 2 
-и достигает 10.
+дисплеи Retina, нам нужно добавить ещё три вариации 
+для размера `2x`. Если мы хотим использовать формат `WebP` 
+(сохранив исходные изображения для обратной совместимостьи), 
+то общее количество вариаций достигает 12.
 
 Поскольку Retina-вариации отличаются от обычных только увеличенным 
 на постоянный коэффициент размером, а `WebP`-вариации — принудительной 
 конвертацией в формат `WebP`, мы можем создавать эти вариации 
 автоматически. 
 
-Для объявления вариации, имеющей несколько версий, нужно указать 
-алиасы этих версий в параметре `versions`. Комбинируя эти алиасы 
-между собой, библиотека создаст дополнительные *неявные* вариации.
+Для этого нужно объявить перечень версий, которые нужно 
+сгенерировать, в параметре вариации `versions`. Поддерживаются 
+следующие значения: `webp`, `2x`, `3x`, `4x`.
 
 ```python
 class Page(models.Model):
@@ -643,13 +652,9 @@ class Page(models.Model):
 
 **NOTE**: Суффикс для Retina всегда следует после суффикса `WebP`.
 
-Поддерживаются следующие алиасы вариаций: `webp`, `2x`, `3x`, `4x`.
-Каждая неявная вариация является полноценной и обладает 
-точно такими же свойствами, что и любая другая вариация. 
-
 Если необходимо переопределить какие-то параметры дополнительной 
-вариации, то придётся объявлять вариацию явно — она всегда перезапишет 
-одноименную дополнительную вариацию.
+вариации, то придётся объявлять вариацию явно — она переопределит 
+одноименную сгенерированную вариацию.
 
 ```python
 class Page(models.Model):
@@ -770,6 +775,8 @@ class Page(models.Model):
 
 ```python
 PAPER_UPLOADS = {
+    'STORAGE': 'django.core.files.storage.FileSystemStorage',
+    'STORAGE_OPTIONS': {},
     'RQ_ENABLED': True,
     'VARIATION_DEFAULTS': {
         'jpeg': dict(
@@ -797,60 +804,60 @@ PAPER_UPLOADS = {
 }
 ```
 
-### STORAGE
+### `STORAGE`
 Путь к классу [хранилища Django](https://docs.djangoproject.com/en/2.2/ref/files/storage/).
 
 Значение по умолчанию: `django.core.files.storage.FileSystemStorage`
 
-### STORAGE_OPTIONS
+### `STORAGE_OPTIONS`
 Параметры инициализации хранилища.
 
 Значение по умолчанию: `{}`
 
-### FILES_UPLOAD_TO
+### `FILES_UPLOAD_TO`
 Путь к папке, в которую загружаются файлы из FileField.
 Может содержать параметры для даты и времени (см. [upload_to](https://docs.djangoproject.com/en/2.2/ref/models/fields/#django.db.models.FileField.upload_to)). 
 
 Значение по умолчанию: `files/%Y-%m-%d`
 
-### IMAGES_UPLOAD_TO
+### `IMAGES_UPLOAD_TO`
 Путь к папке, в которую загружаются файлы из ImageField.
 
 Значение по умолчанию: `images/%Y-%m-%d`
 
-### COLLECTION_FILES_UPLOAD_TO
+### `COLLECTION_FILES_UPLOAD_TO`
 Путь к папке, в которую загружаются файлы коллекций.
 
 Значение по умолчанию: `collections/files/%Y-%m-%d`
 
-### COLLECTION_IMAGES_UPLOAD_TO
+### `COLLECTION_IMAGES_UPLOAD_TO`
 Путь к папке, в которую загружаются изображения коллекций.
 
 Значение по умолчанию: `collections/images/%Y-%m-%d`
 
-### COLLECTION_ITEM_PREVIEW_WIDTH, COLLECTION_ITEM_PREVIEW_HEIGTH
+### `COLLECTION_ITEM_PREVIEW_WIDTH`, `COLLECTION_ITEM_PREVIEW_HEIGTH`
 Размеры превью элементов коллекций в админке.
 
 Значение по умолчанию: `144` x `108`
 
-### COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
+### `COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS`
 Вариации, добавляемые к каждому классу изображений коллекций 
 для отображения превью в админке. Размеры файлов должны 
 совпадать с `COLLECTION_ITEM_PREVIEW_WIDTH` и 
 `COLLECTION_ITEM_PREVIEW_HEIGTH`.
 
-### RQ_ENABLED
+### `RQ_ENABLED`
 Включает нарезку картинок на вариации через отложенные задачи.
 Требует наличие установленного пакета [django-rq](https://github.com/rq/django-rq).
 
 Значение по умолчанию: `False`
 
-### RQ_QUEUE_NAME
+### `RQ_QUEUE_NAME`
 Название очереди, в которую помещаются задачи по нарезке картинок. 
 
 Значение по умолчанию: `default`
 
-### VARIATION_DEFAULTS
+### `VARIATION_DEFAULTS`
 Параметры вариаций по умолчанию.
 
 Параметры, указанные в этом словаре, будут применены к каждой 
@@ -858,7 +865,7 @@ PAPER_UPLOADS = {
 
 Значение по умолчанию: `{}`
 
-### POSTPROCESS
+### `POSTPROCESS`
 Словарь, задающий shell-команды, запускаемые после загрузки 
 файлов. Для каждого формата можно указать свою команду.
 
@@ -867,9 +874,9 @@ PAPER_UPLOADS = {
 
 Значение по умолчанию: `{}`
 
-### CLOUDINARY
+### `CLOUDINARY`
 Словарь, задающий глобальные [параметры загрузки](https://cloudinary.com/documentation/image_upload_api_reference#required_parameters)
-для cloudinary.
+для Cloudinary.
 
 Значение по умолчанию: 
 ```python
@@ -878,4 +885,25 @@ PAPER_UPLOADS = {
     'unique_filename': True,
     'overwrite': True,
 }
+```
+
+## Development and Testing
+After cloning the Git repository, you should install this
+in a virtualenv and set up for development:
+```shell script
+virtualenv .venv
+source .venv/bin/activate
+pip install -r ./requirements_dev.txt
+pre-commit install
+```
+
+Install `npm` dependencies and build static files:
+```shell script
+npm i
+npx webpack
+```
+
+Create `.devdata.env` file:
+```.env
+CLOUDINARY_URL=cloudinary://XXXXXXXXXXXXXXX:YYYYYYYYYYYYYYYYYYYYYYYYYYY@ZZZZZZ
 ```

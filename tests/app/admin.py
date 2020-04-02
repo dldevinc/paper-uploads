@@ -1,12 +1,11 @@
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
-from paper_admin.admin.sortable import SortableAdminMixin
 
 from .models import Document, Page
 
 
 @admin.register(Page)
-class PageAdmin(SortableAdminMixin, admin.ModelAdmin):
+class PageAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             'fields': (
@@ -26,7 +25,6 @@ class PageAdmin(SortableAdminMixin, admin.ModelAdmin):
             )
         })
     )
-    sortable = 'order'
     search_fields = ['header']
 
 

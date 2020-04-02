@@ -108,10 +108,7 @@ class Page(models.Model):
         ExtensionValidator(['png'])
     ])
 
-    order = models.PositiveIntegerField(_('order'), default=0, editable=False)
-
     class Meta:
-        ordering = ['order']
         verbose_name = _('page')
         verbose_name_plural = _('pages')
 

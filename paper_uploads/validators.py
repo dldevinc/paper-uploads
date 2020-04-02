@@ -1,7 +1,7 @@
-import os
 from typing import Sequence
 
 import magic
+import os
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.template.defaultfilters import filesizeformat

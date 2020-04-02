@@ -8,45 +8,45 @@ from django.template.defaultfilters import filesizeformat
 from django.utils.timezone import now
 from tests.app.models import Page
 
-from ... import validators
-from ..models import CloudinaryFile, CloudinaryFileField
+from paper_uploads import validators
+from paper_uploads.cloudinary.models import CloudinaryMedia, CloudinaryMediaField
 
 pytestmark = pytest.mark.django_db
 TESTS_PATH = Path(__file__).parent.parent.parent / 'tests' / 'samples'
 
 
-class TestCloudinaryFile:
+class TestCloudinaryMedia:
     def test_file(self):
-        with open(str(TESTS_PATH / 'cartman.svg'), 'rb') as svg_file:
-            obj = CloudinaryFile(
+        with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as svg_file:
+            obj = CloudinaryMedia(
                 owner_app_label='app',
                 owner_model_name='page',
                 owner_fieldname='cloud_file',
             )
-            obj.attach_file(svg_file, name='Cartman.SVG')
+            obj.attach_file(svg_file, name='audio.OGG')
             obj.save()
 
         try:
             # Resource
-            assert obj.name == 'Cartman'
+            assert obj.name == 'audio'
             assert now() - obj.created_at < timedelta(seconds=10)
             assert now() - obj.uploaded_at < timedelta(seconds=10)
             assert now() - obj.modified_at < timedelta(seconds=10)
 
             # HashableResourceMixin
-            assert obj.hash == '0de603d9b61a3af301f23a0f233113119f5368f5'
+            assert obj.hash == '4fccac8855634c2dccbd806aa7fc4ac3879e5a35'
 
             # FileResource
-            assert obj.extension == 'svg'
-            assert obj.size == 1183
-            assert str(obj) == 'Cartman.svg'
-            assert repr(obj) == "CloudinaryFile('Cartman.svg')"
-            assert obj.get_basename() == 'Cartman.svg'
+            assert obj.extension == 'ogg'
+            assert obj.size == 105243
+            assert str(obj) == 'audio.ogg'
+            assert repr(obj) == "CloudinaryMedia('audio.ogg')"
+            assert obj.get_basename() == 'audio.ogg'
             assert obj.get_file() is obj.file
-            assert re.fullmatch(r'Cartman_\w+\.SVG', obj.get_file_name()) is not None
+            assert re.fullmatch(r'audio\w+\.ogg', obj.get_file_name()) is not None
             assert (
                 re.fullmatch(
-                    r'http://res\.cloudinary\.com/[^/]+/raw/upload/[^/]+/Cartman_\w+\.SVG',
+                    r'http://res\.cloudinary\.com/[^/]+/video/upload/[^/]+/audio_\w+\.ogg',
                     obj.get_file_url(),
                 )
                 is not None
@@ -69,18 +69,15 @@ class TestCloudinaryFile:
             assert obj.closed is True
             with obj.open():
                 assert obj.closed is False
-                assert obj.read(4) == b'<svg'
+                assert obj.read(4) == b'OggS'
                 assert obj.tell() == 4
                 obj.seek(0)
                 assert obj.tell() == 0
                 assert obj.closed is False
             assert obj.closed is True
 
-            with obj.open('r'):
-                assert obj.read(4) == '<svg'
-
             # CloudinaryFileResource
-            assert obj.cloudinary_resource_type == 'raw'
+            assert obj.cloudinary_resource_type == 'video'
             assert obj.cloudinary_type == 'upload'
 
             cloudinary_field = obj._meta.get_field('file')
@@ -88,10 +85,25 @@ class TestCloudinaryFile:
             assert cloudinary_field.resource_type == obj.cloudinary_resource_type
 
             obj.refresh_from_db()
-            assert re.fullmatch(r'Cartman_\w+\.SVG', obj.get_public_id()) is not None
+            assert re.fullmatch(r'audio\w+', obj.get_public_id()) is not None
 
-            # CloudinaryFile
-            assert obj.display_name == 'Cartman'
+            # CloudinaryMedia
+            assert obj.display_name == 'audio'
+
+            assert obj.get_validation() == {
+                'acceptFiles': [
+                    '.3gp',
+                    '.avi',
+                    '.flv',
+                    '.mkv',
+                    '.mov',
+                    '.wmv',
+                    '.aac',
+                    '.wma',
+                    'video/*',
+                    'audio/*',
+                ],
+            }
 
             # as_dict
             assert obj.as_dict() == {
@@ -111,9 +123,9 @@ class TestCloudinaryFile:
             obj.delete()
 
     def test_orphan_file(self):
-        with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
-            obj = CloudinaryFile()
-            obj.attach_file(pdf_file, name='Doc.PDF')
+        with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as pdf_file:
+            obj = CloudinaryMedia()
+            obj.attach_file(pdf_file)
             obj.save()
 
         try:
@@ -124,7 +136,7 @@ class TestCloudinaryFile:
             obj.delete()
 
     def test_empty_file(self):
-        obj = CloudinaryFile(
+        obj = CloudinaryMedia(
             owner_app_label="app",
             owner_model_name="page",
             owner_fieldname="cloud_file",
@@ -139,13 +151,13 @@ class TestCloudinaryFile:
             obj.delete_file()
 
     def test_missing_file(self):
-        with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
-            obj = CloudinaryFile(
+        with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as pdf_file:
+            obj = CloudinaryMedia(
                 owner_app_label='app',
                 owner_model_name='page',
                 owner_fieldname='cloud_file',
             )
-            obj.attach_file(pdf_file, name='Doc.PDF')
+            obj.attach_file(pdf_file)
             obj.save()
 
         cloudinary.uploader.destroy(
@@ -156,10 +168,10 @@ class TestCloudinaryFile:
 
         try:
             assert obj.closed is True
-            assert re.fullmatch(r'Doc_\w+\.PDF', obj.get_file_name()) is not None
+            assert re.fullmatch(r'audio\w+\.ogg', obj.get_file_name()) is not None
             assert (
                 re.fullmatch(
-                    r'http://res\.cloudinary\.com/[^/]+/raw/upload/[^/]+/Doc\w+\.PDF',
+                    r'http://res\.cloudinary\.com/[^/]+/video/upload/[^/]+/audio\w+\.ogg',
                     obj.get_file_url(),
                 )
                 is not None
@@ -170,13 +182,13 @@ class TestCloudinaryFile:
             obj.delete()
 
     def test_file_rename(self):
-        with open(str(TESTS_PATH / 'sheet.xlsx'), 'rb') as xlsx_file:
-            obj = CloudinaryFile(
+        with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as audio_file:
+            obj = CloudinaryMedia(
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='cloud_file',
+                owner_fieldname='cloud_media',
             )
-            obj.attach_file(xlsx_file)
+            obj.attach_file(audio_file)
             obj.save()
 
         old_public_id = obj.get_public_id()
@@ -206,7 +218,7 @@ class TestCloudinaryFile:
             # check new file
             new_public_id = obj.get_public_id()
             assert obj.name == 'new_name'
-            assert re.search(r'new_name_\w+\.xlsx$', obj.get_file_name()) is not None
+            assert re.search(r'new_name_\w+\.ogg$', obj.get_file_name()) is not None
             assert obj.is_file_exists()
             assert isinstance(
                 cloudinary.uploader.explicit(
@@ -227,14 +239,14 @@ class TestCloudinaryFile:
             obj.delete()
 
 
-class TestCloudinaryFileField:
+class TestCloudinaryMediaField:
     def test_rel(self):
-        field = CloudinaryFileField()
+        field = CloudinaryMediaField()
         assert field.null is True
-        assert field.related_model == 'paper_uploads_cloudinary.CloudinaryFile'
+        assert field.related_model == 'paper_uploads_cloudinary.CloudinaryMedia'
 
     def test_validators(self):
-        field = CloudinaryFileField(
+        field = CloudinaryMediaField(
             validators=[
                 validators.SizeValidator(10 * 1024 * 1024),
                 validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
@@ -257,11 +269,11 @@ class TestCloudinaryFileField:
         }
 
     def test_cloudinary_options(self):
-        field = CloudinaryFileField(cloudinary={
-            'public_id': 'myfile',
-            'folder': 'files',
+        field = CloudinaryMediaField(cloudinary={
+            'public_id': 'myimage',
+            'folder': 'media',
         })
         assert field.cloudinary_options == {
-            'public_id': 'myfile',
-            'folder': 'files',
+            'public_id': 'myimage',
+            'folder': 'media',
         }

@@ -8,10 +8,10 @@ from django.template import loader
 from django.utils.timezone import now
 from tests.app.models import Page, PageCloudinaryFilesGallery, PageCloudinaryGallery
 
-from ... import validators
-from ...conf import settings
-from ...models.fields import CollectionField
-from ..models import CloudinaryFileItem, CloudinaryImageItem, CloudinaryMediaItem
+from paper_uploads import validators
+from paper_uploads.conf import settings
+from paper_uploads.models.fields import CollectionField
+from paper_uploads.cloudinary.models import CloudinaryFileItem, CloudinaryImageItem, CloudinaryMediaItem
 
 pytestmark = pytest.mark.django_db
 TESTS_PATH = Path(__file__).parent.parent.parent / 'tests' / 'samples'
