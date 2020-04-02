@@ -1,10 +1,11 @@
 import re
 from pathlib import Path
+from datetime import timedelta
 
 import cloudinary.uploader
 import pytest
 from django.template.defaultfilters import filesizeformat
-from django.utils.timezone import now, timedelta
+from django.utils.timezone import now
 from tests.app.models import Page
 
 from ... import validators
@@ -16,7 +17,7 @@ TESTS_PATH = Path(__file__).parent.parent.parent / 'tests' / 'samples'
 
 class TestCloudinaryFile:
     def test_file(self):
-        with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
+        with open(str(TESTS_PATH / 'cartman.svg'), 'rb') as svg_file:
             obj = CloudinaryFile(
                 owner_app_label='app',
                 owner_model_name='page',
@@ -110,7 +111,7 @@ class TestCloudinaryFile:
             obj.delete()
 
     def test_orphan_file(self):
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+        with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
             obj = CloudinaryFile()
             obj.attach_file(pdf_file, name='Doc.PDF')
             obj.save()
@@ -138,7 +139,7 @@ class TestCloudinaryFile:
             obj.delete_file()
 
     def test_missing_file(self):
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+        with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
             obj = CloudinaryFile(
                 owner_app_label='app',
                 owner_model_name='page',
@@ -169,7 +170,7 @@ class TestCloudinaryFile:
             obj.delete()
 
     def test_file_rename(self):
-        with open(TESTS_PATH / 'sheet.xlsx', 'rb') as xlsx_file:
+        with open(str(TESTS_PATH / 'sheet.xlsx'), 'rb') as xlsx_file:
             obj = CloudinaryFile(
                 owner_app_label='app',
                 owner_model_name='page',

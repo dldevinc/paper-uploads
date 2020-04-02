@@ -1,5 +1,6 @@
 import os
 import re
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
@@ -7,7 +8,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.template import loader
-from django.utils.timezone import now, timedelta
+from django.utils.timezone import now
 from tests.app.models import (
     DummyCollection, DummyCollectionWithMeta, DummyCollectionSubclass,
     Page, PageFilesGallery, PageGallery
@@ -44,19 +45,19 @@ class TestCollection:
             assert collection.item_types['svg'].model is SVGItem
             assert collection.item_types['file'].model is FileItem
 
-            with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+            with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
                 assert (
                     collection.detect_file_type(File(jpeg_file, name='Image.Jpeg'))
                     == 'image'
                 )
 
-            with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
+            with open(str(TESTS_PATH / 'cartman.svg'), 'rb') as svg_file:
                 assert (
                     collection.detect_file_type(File(svg_file, name='cartman.svg'))
                     == 'svg'
                 )
 
-            with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+            with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
                 assert (
                     collection.detect_file_type(
                         File(pdf_file, name='Sample Document.PDF')
@@ -64,7 +65,7 @@ class TestCollection:
                     == 'file'
                 )
 
-            with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
+            with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as audio_file:
                 assert (
                     collection.detect_file_type(File(audio_file, name='audio.ogg'))
                     == 'file'
@@ -91,19 +92,19 @@ class TestCollection:
             assert collection.item_types['image'].model is ImageItem
             assert collection.get_validation() == {'acceptFiles': ['image/*']}
 
-            with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+            with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
                 assert (
                     collection.detect_file_type(File(jpeg_file, name='Image.Jpeg'))
                     == 'image'
                 )
 
-            with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
+            with open(str(TESTS_PATH / 'cartman.svg'), 'rb') as svg_file:
                 assert (
                     collection.detect_file_type(File(svg_file, name='cartman.svg'))
                     == 'image'
                 )
 
-            with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+            with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
                 assert (
                     collection.detect_file_type(
                         File(pdf_file, name='Sample Document.PDF')
@@ -111,7 +112,7 @@ class TestCollection:
                     == 'image'
                 )
 
-            with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
+            with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as audio_file:
                 assert (
                     collection.detect_file_type(File(audio_file, name='audio.ogg'))
                     == 'image'
@@ -143,24 +144,24 @@ class TestFileItem:
     def test_file_support(self):
         item = FileItem()
 
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
             assert item.file_supported(File(jpeg_file, name='Image.Jpeg')) is True
 
-        with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
+        with open(str(TESTS_PATH / 'cartman.svg'), 'rb') as svg_file:
             assert item.file_supported(File(svg_file, name='cartman.svg')) is True
 
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+        with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
             assert (
                 item.file_supported(File(pdf_file, name='Sample Document.PDF')) is True
             )
 
-        with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
+        with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as audio_file:
             assert item.file_supported(File(audio_file, name='audio.ogg')) is True
 
     def test_file_item(self):
         collection = PageFilesGallery.objects.create()
 
-        with open(TESTS_PATH / 'sheet.xlsx', 'rb') as xls_file:
+        with open(str(TESTS_PATH / 'sheet.xlsx'), 'rb') as xls_file:
             item = FileItem()
             # item.attach_file(xls_file)      # <- works
             item.attach_to(collection)
@@ -190,12 +191,16 @@ class TestFileItem:
             assert item.get_basename() == 'sheet.xlsx'
             assert item.get_file() is item.file
             assert (
-                item.get_file_name()
-                == f"collections/files/{now().strftime('%Y-%m-%d')}/sheet{suffix}.xlsx"
+                item.get_file_name() == "collections/files/{}/sheet{}.xlsx".format(
+                    now().strftime('%Y-%m-%d'),
+                    suffix
+                )
             )
             assert (
-                item.get_file_url()
-                == f"/media/collections/files/{now().strftime('%Y-%m-%d')}/sheet{suffix}.xlsx"
+                item.get_file_url() == "/media/collections/files/{}/sheet{}.xlsx".format(
+                    now().strftime('%Y-%m-%d'),
+                    suffix
+                )
             )
             assert item.is_file_exists() is True
 
@@ -203,7 +208,7 @@ class TestFileItem:
             assert os.path.isfile(item.path)
 
             # PostrocessableFileFieldResource
-            assert os.stat(TESTS_PATH / 'sheet.xlsx').st_size == 8628629
+            assert os.stat(str(TESTS_PATH / 'sheet.xlsx')).st_size == 8628629
 
             # ReadonlyFileProxyMixin
             assert item.url == item.get_file_url()
@@ -233,7 +238,7 @@ class TestFileItem:
             assert item.get_itemtype_field() is PageFilesGallery.item_types['file']
 
             # FilePreviewItemMixin
-            assert item.preview_url == f"/static/paper_uploads/dist/image/xls.svg"
+            assert item.preview_url == "/static/paper_uploads/dist/image/xls.svg"
             assert item.get_preview_url() == item.preview_url
 
             # FileItem
@@ -272,24 +277,24 @@ class TestSVGItem:
     def test_file_support(self):
         item = SVGItem()
 
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
             assert item.file_supported(File(jpeg_file, name='Image.Jpeg')) is False
 
-        with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
+        with open(str(TESTS_PATH / 'cartman.svg'), 'rb') as svg_file:
             assert item.file_supported(File(svg_file, name='cartman.svg')) is True
 
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+        with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
             assert (
                 item.file_supported(File(pdf_file, name='Sample Document.PDF')) is False
             )
 
-        with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
+        with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as audio_file:
             assert item.file_supported(File(audio_file, name='audio.ogg')) is False
 
     def test_svg_item(self):
         collection = PageFilesGallery.objects.create()
 
-        with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
+        with open(str(TESTS_PATH / 'cartman.svg'), 'rb') as svg_file:
             item = SVGItem()
             # item.attach_file(svg_file)      # <- works
             item.attach_to(collection)
@@ -319,12 +324,16 @@ class TestSVGItem:
             assert item.get_basename() == 'cartman.svg'
             assert item.get_file() is item.file
             assert (
-                item.get_file_name()
-                == f"collections/files/{now().strftime('%Y-%m-%d')}/cartman{suffix}.svg"
+                item.get_file_name() == "collections/files/{}/cartman{}.svg".format(
+                    now().strftime('%Y-%m-%d'),
+                    suffix
+                )
             )
             assert (
-                item.get_file_url()
-                == f"/media/collections/files/{now().strftime('%Y-%m-%d')}/cartman{suffix}.svg"
+                item.get_file_url() == "/media/collections/files/{}/cartman{}.svg".format(
+                    now().strftime('%Y-%m-%d'),
+                    suffix
+                )
             )
             assert item.is_file_exists() is True
 
@@ -332,7 +341,7 @@ class TestSVGItem:
             assert os.path.isfile(item.path)
 
             # PostrocessableFileFieldResource
-            assert os.stat(TESTS_PATH / 'cartman.svg').st_size == 1183
+            assert os.stat(str(TESTS_PATH / 'cartman.svg')).st_size == 1183
 
             # ReadonlyFileProxyMixin
             assert item.url == item.get_file_url()
@@ -395,7 +404,7 @@ class TestSVGItem:
     def test_unsupported_file(self):
         collection = PageFilesGallery.objects.create()
 
-        with open(TESTS_PATH / 'sheet.xlsx', 'rb') as svg_file:
+        with open(str(TESTS_PATH / 'sheet.xlsx'), 'rb') as svg_file:
             item = SVGItem()
             item.attach_to(collection)
             item.attach_file(svg_file)
@@ -411,24 +420,24 @@ class TestImageItem:
     def test_file_support(self):
         item = ImageItem()
 
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
             assert item.file_supported(File(jpeg_file, name='Image.Jpeg')) is True
 
-        with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
+        with open(str(TESTS_PATH / 'cartman.svg'), 'rb') as svg_file:
             assert item.file_supported(File(svg_file, name='cartman.svg')) is True
 
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+        with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
             assert (
                 item.file_supported(File(pdf_file, name='Sample Document.PDF')) is False
             )
 
-        with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
+        with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as audio_file:
             assert item.file_supported(File(audio_file, name='audio.ogg')) is False
 
     def test_image_item(self):
         collection = PageFilesGallery.objects.create()
 
-        with open(TESTS_PATH / "Image.Jpeg", "rb") as jpeg_file:
+        with open(str(TESTS_PATH / 'Image.Jpeg'), "rb") as jpeg_file:
             item = ImageItem(
                 title="Image title",
                 description="Image description",
@@ -462,12 +471,16 @@ class TestImageItem:
             assert item.get_basename() == 'Image.jpg'
             assert item.get_file() is item.file
             assert (
-                item.get_file_name()
-                == f"collections/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+                item.get_file_name() == "collections/images/{}/Image{}.jpg".format(
+                    now().strftime('%Y-%m-%d'),
+                    suffix
+                )
             )
             assert (
-                item.get_file_url()
-                == f"/media/collections/images/{now().strftime('%Y-%m-%d')}/Image{suffix}.jpg"
+                item.get_file_url() == "/media/collections/images/{}/Image{}.jpg".format(
+                    now().strftime('%Y-%m-%d'),
+                    suffix
+                )
             )
             assert item.is_file_exists() is True
 
@@ -478,7 +491,7 @@ class TestImageItem:
             )
 
             # PostrocessableFileFieldResource
-            assert os.stat(TESTS_PATH / 'Image.Jpeg').st_size == 214779
+            assert os.stat(str(TESTS_PATH / 'Image.Jpeg')).st_size == 214779
 
             # ReadonlyFileProxyMixin
             assert item.url == item.get_file_url()
@@ -526,9 +539,9 @@ class TestImageItem:
             assert item.calculate_max_size((600, 400)) == (640, 400)
 
             expected_varaition_sizes = {
-                'mobile': 39107,
-                'admin_preview': 3635,
-                'admin_preview_2x': 10175,
+                'mobile': 39098,
+                'admin_preview': 3639,
+                'admin_preview_2x': 10171,
                 'admin_preview_webp': 2532,
                 'admin_preview_webp_2x': 6448,
             }
@@ -595,7 +608,7 @@ class TestImageItem:
     def test_unsupported_file(self):
         collection = PageFilesGallery.objects.create()
 
-        with open(TESTS_PATH / 'sheet.xlsx', 'rb') as svg_file:
+        with open(str(TESTS_PATH / 'sheet.xlsx'), 'rb') as svg_file:
             item = ImageItem()
             item.attach_to(collection)
 

@@ -41,7 +41,7 @@ class CloudinaryFileResource(FileResource):
 
         name = self.get_public_id()
         if file.format and not name.endswith(file.format):
-            name += f'.{file.format}'
+            name += '.{}'.format(file.format)
         return name
 
     def get_file_url(self) -> str:
@@ -100,7 +100,7 @@ class CloudinaryFileResource(FileResource):
             random.SystemRandom().choice(string.ascii_lowercase + string.digits)
             for _ in range(6)
         )
-        new_name = posixpath.join(file_dir, f"{new_name}_{rand}")
+        new_name = posixpath.join(file_dir, "{}_{}".format(new_name, rand))
         if self.cloudinary_resource_type == 'raw':
             new_name += format
 

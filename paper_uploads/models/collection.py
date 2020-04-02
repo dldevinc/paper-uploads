@@ -450,6 +450,10 @@ class CollectionMetaclass(ModelBase):
     Хак, создающий прокси-модели вместо наследования, если явно не указано обратное.
     """
 
+    @classmethod
+    def __prepare__(self, name, bases):
+        return OrderedDict()
+
     def __new__(mcs, name, bases, attrs, **kwargs):
         # set proxy=True by default
         meta = attrs.pop('Meta', None)
@@ -462,11 +466,21 @@ class CollectionMetaclass(ModelBase):
         attrs['Meta'] = meta
 
         item_types_attribute = '_{}__item_types'.format(name)
-        attrs[item_types_attribute] = OrderedDict()
+        attrs[item_types_attribute] = original_item_types = OrderedDict()
         new_class = super().__new__(mcs, name, bases, attrs, **kwargs)
 
         # дескриптор, дающий доступ к item_types в режиме только для чтения
         new_class.item_types = ItemTypesDescriptor('item_types')
+
+        # Django использует словарь для contributable_attrs, что приводит
+        # к нарушению порядка подключения типов данных. Сортируем их сами.
+        item_types = OrderedDict()
+        for key in attrs:
+            if key in original_item_types:
+                item_types[key] = original_item_types[key]
+        original_item_types.clear()
+        original_item_types.update(item_types)
+
         return new_class
 
 

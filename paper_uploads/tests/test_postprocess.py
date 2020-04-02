@@ -256,7 +256,7 @@ class TestItemFieldOverride:
 
 class TestPostprocess:
     def test_options(self):
-        with open(TESTS_PATH / 'cartman.svg', 'rb') as fp:
+        with open(str(TESTS_PATH / 'cartman.svg'), 'rb') as fp:
             obj = UploadedFile()
             obj.attach_file(fp, name='cartman.svg')
             obj.save()
@@ -273,7 +273,7 @@ class TestRealCollection:
     def test_options(self):
         collection = DummyCollection.objects.create()
 
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
             item = ImageItem(
                 title='Image title',
                 description='Alternate text',
@@ -319,7 +319,7 @@ class TestRealCollectionProhibited:
     def test_options(self):
         collection = DummyCollectionPostprocessProhibited.objects.create()
 
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
             item = ImageItem(
                 title='Image title',
                 description='Alternate text',
@@ -353,7 +353,7 @@ class TestRealCollectionProhibited:
             ) == {'command': 'echo'}
 
             # ensure not postprocessed
-            assert item.mobile.size == 109101
+            assert item.mobile.size == 109015
         finally:
             item.delete_file()
             collection.delete()
@@ -363,7 +363,7 @@ class TestRealCollectionOverride:
     def test_options(self):
         collection = DummyCollectionOverride.objects.create()
 
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
             item = ImageItem(
                 title='Image title',
                 description='Alternate text',
@@ -398,7 +398,7 @@ class TestRealCollectionOverride:
             ) == {'command': 'man'}
 
             # ensure not postprocessed
-            assert item.mobile.size == 109101
+            assert item.mobile.size == 109015
         finally:
             item.delete_file()
             collection.delete()

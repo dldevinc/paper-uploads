@@ -1,10 +1,11 @@
 import re
 from pathlib import Path
+from datetime import timedelta
 
 import cloudinary.uploader
 import pytest
 from django.template.defaultfilters import filesizeformat
-from django.utils.timezone import now, timedelta
+from django.utils.timezone import now
 from tests.app.models import Page
 
 from ... import validators
@@ -16,7 +17,7 @@ TESTS_PATH = Path(__file__).parent.parent.parent / 'tests' / 'samples'
 
 class TestCloudinaryMedia:
     def test_file(self):
-        with open(TESTS_PATH / 'audio.ogg', 'rb') as svg_file:
+        with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as svg_file:
             obj = CloudinaryMedia(
                 owner_app_label='app',
                 owner_model_name='page',
@@ -122,7 +123,7 @@ class TestCloudinaryMedia:
             obj.delete()
 
     def test_orphan_file(self):
-        with open(TESTS_PATH / 'audio.ogg', 'rb') as pdf_file:
+        with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as pdf_file:
             obj = CloudinaryMedia()
             obj.attach_file(pdf_file)
             obj.save()
@@ -150,7 +151,7 @@ class TestCloudinaryMedia:
             obj.delete_file()
 
     def test_missing_file(self):
-        with open(TESTS_PATH / 'audio.ogg', 'rb') as pdf_file:
+        with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as pdf_file:
             obj = CloudinaryMedia(
                 owner_app_label='app',
                 owner_model_name='page',
@@ -181,7 +182,7 @@ class TestCloudinaryMedia:
             obj.delete()
 
     def test_file_rename(self):
-        with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
+        with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as audio_file:
             obj = CloudinaryMedia(
                 owner_app_label='app',
                 owner_model_name='page',

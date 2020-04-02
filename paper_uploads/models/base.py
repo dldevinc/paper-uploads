@@ -62,7 +62,10 @@ class Resource(models.Model):
         return self.name
 
     def __repr__(self):
-        return f"{type(self).__name__}('{self.name}')"
+        return "{}('{}')".format(
+            type(self).__name__,
+            self.name
+        )
 
     def as_dict(self) -> Dict[str, Any]:
         """
@@ -126,7 +129,10 @@ class FileResource(HashableResourceMixin):
         return self.get_basename()
 
     def __repr__(self):
-        return f"{type(self).__name__}('{self.get_basename()}')"
+        return "{}('{}')".format(
+            type(self).__name__,
+            self.get_basename()
+        )
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -494,7 +500,10 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
             self._variations_attached = True
             if name in self.get_variations():
                 return getattr(self, name)
-        raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+        raise AttributeError('module {!r} has no attribute {!r}'.format(
+            __name__,
+            name
+        ))
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

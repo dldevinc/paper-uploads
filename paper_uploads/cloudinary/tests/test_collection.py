@@ -1,10 +1,11 @@
 import re
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
 from django.core.files import File
 from django.template import loader
-from django.utils.timezone import now, timedelta
+from django.utils.timezone import now
 from tests.app.models import Page, PageCloudinaryFilesGallery, PageCloudinaryGallery
 
 from ... import validators
@@ -30,19 +31,19 @@ class TestCloudinaryCollection:
             assert collection.item_types['media'].model is CloudinaryMediaItem
             assert collection.item_types['file'].model is CloudinaryFileItem
 
-            with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+            with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
                 assert (
                     collection.detect_file_type(File(jpeg_file, name='Image.Jpeg'))
                     == 'image'
                 )
 
-            with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
+            with open(str(TESTS_PATH / 'cartman.svg'), 'rb') as svg_file:
                 assert (
                     collection.detect_file_type(File(svg_file, name='cartman.svg'))
                     == 'image'
                 )
 
-            with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+            with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
                 assert (
                     collection.detect_file_type(
                         File(pdf_file, name='Sample Document.PDF')
@@ -50,7 +51,7 @@ class TestCloudinaryCollection:
                     == 'file'
                 )
 
-            with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
+            with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as audio_file:
                 assert (
                     collection.detect_file_type(File(audio_file, name='audio.ogg'))
                     == 'media'
@@ -79,19 +80,19 @@ class TestCloudinaryCollection:
                 'acceptFiles': ['image/*']
             }
 
-            with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+            with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
                 assert (
                     collection.detect_file_type(File(jpeg_file, name='Image.Jpeg'))
                     == 'image'
                 )
 
-            with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
+            with open(str(TESTS_PATH / 'cartman.svg'), 'rb') as svg_file:
                 assert (
                     collection.detect_file_type(File(svg_file, name='cartman.svg'))
                     == 'image'
                 )
 
-            with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+            with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
                 assert (
                     collection.detect_file_type(
                         File(pdf_file, name='Sample Document.PDF')
@@ -99,7 +100,7 @@ class TestCloudinaryCollection:
                     == 'image'
                 )
 
-            with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
+            with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as audio_file:
                 assert (
                     collection.detect_file_type(File(audio_file, name='audio.ogg'))
                     == 'image'
@@ -131,24 +132,24 @@ class TestCloudinaryFileItem:
     def test_file_support(self):
         item = CloudinaryFileItem()
 
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
             assert item.file_supported(File(jpeg_file, name='Image.Jpeg')) is True
 
-        with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
+        with open(str(TESTS_PATH / 'cartman.svg'), 'rb') as svg_file:
             assert item.file_supported(File(svg_file, name='cartman.svg')) is True
 
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+        with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
             assert (
                 item.file_supported(File(pdf_file, name='Sample Document.PDF')) is True
             )
 
-        with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
+        with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as audio_file:
             assert item.file_supported(File(audio_file, name='audio.ogg')) is True
 
     def test_file_item(self):
         collection = PageCloudinaryFilesGallery.objects.create()
 
-        with open(TESTS_PATH / 'sheet.xlsx', 'rb') as xls_file:
+        with open(str(TESTS_PATH / 'sheet.xlsx'), 'rb') as xls_file:
             item = CloudinaryFileItem()
             # item.attach_file(xls_file)      # <- works
             item.attach_to(collection)
@@ -228,7 +229,7 @@ class TestCloudinaryFileItem:
             )
 
             # FilePreviewItemMixin
-            assert item.preview_url == f"/static/paper_uploads/dist/image/xls.svg"
+            assert item.preview_url == "/static/paper_uploads/dist/image/xls.svg"
             assert item.get_preview_url() == item.preview_url
 
             # CloudinaryFileItem
@@ -264,24 +265,24 @@ class TestCloudinaryMediaItem:
     def test_file_support(self):
         item = CloudinaryMediaItem()
 
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
             assert item.file_supported(File(jpeg_file, name='Image.Jpeg')) is False
 
-        with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
+        with open(str(TESTS_PATH / 'cartman.svg'), 'rb') as svg_file:
             assert item.file_supported(File(svg_file, name='cartman.svg')) is False
 
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+        with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
             assert (
                 item.file_supported(File(pdf_file, name='Sample Document.PDF')) is False
             )
 
-        with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
+        with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as audio_file:
             assert item.file_supported(File(audio_file, name='audio.ogg')) is True
 
     def test_file_item(self):
         collection = PageCloudinaryFilesGallery.objects.create()
 
-        with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
+        with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as audio_file:
             item = CloudinaryMediaItem()
             # item.attach_file(xls_file)      # <- works
             item.attach_to(collection)
@@ -361,7 +362,7 @@ class TestCloudinaryMediaItem:
             )
 
             # FilePreviewItemMixin
-            assert item.preview_url == f"/static/paper_uploads/dist/image/audio.svg"
+            assert item.preview_url == "/static/paper_uploads/dist/image/audio.svg"
             assert item.get_preview_url() == item.preview_url
 
             # CloudinaryMediaItem
@@ -397,24 +398,24 @@ class TestCloudinaryImageItem:
     def test_file_support(self):
         item = CloudinaryImageItem()
 
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
             assert item.file_supported(File(jpeg_file, name='Image.Jpeg')) is True
 
-        with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
+        with open(str(TESTS_PATH / 'cartman.svg'), 'rb') as svg_file:
             assert item.file_supported(File(svg_file, name='cartman.svg')) is True
 
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+        with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
             assert (
                 item.file_supported(File(pdf_file, name='Sample Document.PDF')) is False
             )
 
-        with open(TESTS_PATH / 'audio.ogg', 'rb') as audio_file:
+        with open(str(TESTS_PATH / 'audio.ogg'), 'rb') as audio_file:
             assert item.file_supported(File(audio_file, name='audio.ogg')) is False
 
     def test_file_item(self):
         collection = PageCloudinaryFilesGallery.objects.create()
 
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
             item = CloudinaryImageItem(
                 title='Image title',
                 description='Image description',

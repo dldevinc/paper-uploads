@@ -18,4 +18,5 @@ __all__ = [  # noqa: 405
     'ImageField',
     'CollectionField',
     'ItemField',
+    'VariationFile'
 ]

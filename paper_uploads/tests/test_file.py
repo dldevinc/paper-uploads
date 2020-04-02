@@ -1,11 +1,12 @@
 import os
 import re
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
 from django.conf import settings
 from django.template.defaultfilters import filesizeformat
-from django.utils.timezone import now, timedelta
+from django.utils.timezone import now
 from tests.app.models import Page
 
 from .. import validators
@@ -17,7 +18,7 @@ TESTS_PATH = Path(__file__).parent / 'samples'
 
 class TestUploadedFile:
     def test_file(self):
-        with open(TESTS_PATH / "cartman.svg", "rb") as svg_file:
+        with open(str(TESTS_PATH / "cartman.svg"), "rb") as svg_file:
             obj = UploadedFile(
                 owner_app_label="app",
                 owner_model_name="page",
@@ -48,12 +49,16 @@ class TestUploadedFile:
             assert obj.get_basename() == 'Cartman.svg'
             assert obj.get_file() is obj.file
             assert (
-                obj.get_file_name()
-                == f"files/{now().strftime('%Y-%m-%d')}/Cartman{suffix}.svg"
+                obj.get_file_name() == "files/{}/Cartman{}.svg".format(
+                    now().strftime('%Y-%m-%d'),
+                    suffix
+                )
             )
             assert (
-                obj.get_file_url()
-                == f"/media/files/{now().strftime('%Y-%m-%d')}/Cartman{suffix}.svg"
+                obj.get_file_url() == "/media/files/{}/Cartman{}.svg".format(
+                    now().strftime('%Y-%m-%d'),
+                    suffix
+                )
             )
             assert obj.is_file_exists() is True
 
@@ -61,7 +66,7 @@ class TestUploadedFile:
             assert os.path.isfile(obj.path)
 
             # PostrocessableFileFieldResource
-            assert os.stat(TESTS_PATH / 'cartman.svg').st_size == 1183
+            assert os.stat(str(TESTS_PATH / 'cartman.svg')).st_size == 1183
 
             # ReverseFieldModelMixin
             assert obj.owner_app_label == 'app'
@@ -113,7 +118,7 @@ class TestUploadedFile:
             obj.delete()
 
     def test_orphan_file(self):
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+        with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
             obj = UploadedFile()
             obj.attach_file(pdf_file, name='Doc.PDF')
             obj.save()
@@ -141,7 +146,7 @@ class TestUploadedFile:
             obj.delete_file()
 
     def test_missing_file(self):
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+        with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
             obj = UploadedFile()
             obj.attach_file(pdf_file, name='Doc.PDF')
             obj.save()
@@ -154,12 +159,16 @@ class TestUploadedFile:
         try:
             assert obj.closed is True
             assert (
-                obj.get_file_name()
-                == f"files/{now().strftime('%Y-%m-%d')}/Doc{suffix}.pdf"
+                obj.get_file_name() == "files/{}/Doc{}.pdf".format(
+                    now().strftime('%Y-%m-%d'),
+                    suffix
+                )
             )
             assert (
-                obj.get_file_url()
-                == f"/media/files/{now().strftime('%Y-%m-%d')}/Doc{suffix}.pdf"
+                obj.get_file_url() == "/media/files/{}/Doc{}.pdf".format(
+                    now().strftime('%Y-%m-%d'),
+                    suffix
+                )
             )
             assert obj.is_file_exists() is False
         finally:
@@ -167,7 +176,7 @@ class TestUploadedFile:
             obj.delete()
 
     def test_file_rename(self):
-        with open(TESTS_PATH / "sheet.xlsx", "rb") as xlsx_file:
+        with open(str(TESTS_PATH / "sheet.xlsx"), "rb") as xlsx_file:
             obj = UploadedFile(
                 owner_app_label="app",
                 owner_model_name="page",
