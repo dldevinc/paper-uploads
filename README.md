@@ -1,11 +1,13 @@
 # paper-uploads
 
+[![PyPI-Server](https://badge.fury.io/py/paper-uploads.svg)](https://pypi.org/project/paper-uploads/)
+
 ![](http://joxi.net/gmvnGZBtqKOOjm.png)
 
 Предоставляет поля для асинхронной загрузки файлов.
 
 ## Requirements
-* Python 3.6+
+* Python 3.5+
 * Django 2.1+
 * [paper-admin](https://github.com/dldevinc/paper-admin)
 * [variations](https://github.com/dldevinc/variations)

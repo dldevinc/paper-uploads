@@ -1,26 +1,34 @@
+import hashlib
 import io
 import os
-import hashlib
-from PIL import Image
-from typing import IO, Dict, Type, Any, Optional, Union, Tuple, Iterator, Sequence
+from typing import IO, Any, Dict, Iterable, Optional, Sequence, Tuple, Type, Union
+
 from django.apps import apps
-from django.db import models
-from django.core.files import File
-from django.utils.timezone import now
 from django.core.exceptions import FieldDoesNotExist, ValidationError
-from django.utils.translation import gettext_lazy as _
+from django.core.files import File
+from django.db import models
 from django.db.models.fields.files import FieldFile
+from django.utils.timezone import now
+from django.utils.translation import gettext_lazy as _
+from PIL import Image
 from variations.utils import prepare_image
-from .. import signals
+
+from .. import signals, utils
 from ..conf import settings
 from ..logging import logger
-from .. import utils
 from ..variations import PaperVariation
 
 __all__ = [
-    'Resource', 'HashableResourceMixin', 'FileResource', 'FileFieldResource',
-    'PostprocessableFileFieldResource', 'ReverseFieldModelMixin', 'ReadonlyFileProxyMixin',
-    'ImageFileResourceMixin', 'ImageFieldResourceMixin', 'VariationFile',
+    'Resource',
+    'HashableResourceMixin',
+    'FileResource',
+    'FileFieldResource',
+    'PostprocessableFileFieldResource',
+    'ReverseFieldModelMixin',
+    'ReadonlyFileProxyMixin',
+    'ImageFileResourceMixin',
+    'ImageFieldResourceMixin',
+    'VariationFile',
     'VersatileImageResourceMixin',
 ]
 
@@ -40,6 +48,7 @@ class Resource(models.Model):
     """
     Базовый класс ресурса, который может хранить модуль.
     """
+
     name = models.CharField(_('name'), max_length=255, editable=False)
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
     uploaded_at = models.DateTimeField(_('uploaded at'), default=now, editable=False)
@@ -53,7 +62,10 @@ class Resource(models.Model):
         return self.name
 
     def __repr__(self):
-        return f"{type(self).__name__}('{self.name}')"
+        return "{}('{}')".format(
+            type(self).__name__,
+            self.name
+        )
 
     def as_dict(self) -> Dict[str, Any]:
         """
@@ -71,7 +83,13 @@ class HashableResourceMixin(Resource):
     Подкласс ресурса, который содержит хэш своего контента.
     Хэш может быть использован для поиска дубликатов и других целей.
     """
-    hash = models.CharField(_('hash'), max_length=40, editable=False, help_text=_('SHA-1 checksum of a resource'))
+
+    hash = models.CharField(
+        _('hash'),
+        max_length=40,
+        editable=False,
+        help_text=_('SHA-1 checksum of a resource'),
+    )
 
     class Meta(Resource.Meta):
         abstract = True
@@ -95,7 +113,13 @@ class FileResource(HashableResourceMixin):
     """
     Подкласс ресурса, представляющего файл.
     """
-    extension = models.CharField(_('extension'), max_length=32, editable=False, help_text=_('Lowercase, without leading dot'))
+
+    extension = models.CharField(
+        _('extension'),
+        max_length=32,
+        editable=False,
+        help_text=_('Lowercase, without leading dot'),
+    )
     size = models.PositiveIntegerField(_('size'), default=0, editable=False)
 
     class Meta(HashableResourceMixin.Meta):
@@ -105,7 +129,10 @@ class FileResource(HashableResourceMixin):
         return self.get_basename()
 
     def __repr__(self):
-        return f"{type(self).__name__}('{self.get_basename()}')"
+        return "{}('{}')".format(
+            type(self).__name__,
+            self.get_basename()
+        )
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -166,7 +193,9 @@ class FileResource(HashableResourceMixin):
         self.update_hash(file)
         file.seek(0)
 
-        signals.pre_attach_file.send(type(self), instance=self, file=file, options=options)
+        signals.pre_attach_file.send(
+            type(self), instance=self, file=file, options=options
+        )
         response = self._attach_file(file, **options)
         signals.post_attach_file.send(type(self), instance=self, response=response)
 
@@ -201,6 +230,7 @@ class FileFieldResource(FileResource):
     """
     Подкласс файлового ресурса, доступ к которому осуществляется через Storage.
     """
+
     class Meta(FileResource.Meta):
         abstract = True
 
@@ -236,6 +266,7 @@ class PostprocessableFileFieldResource(FileFieldResource):
     Подкласс файлового ресурса, который может быть обработан локальными утилитами.
     Используемый Django Storage должен быть подклассом FileSystemStorage.
     """
+
     # флаг, запускающий постобработку после сохранения экземпляра модели в БД
     need_postprocess = False
 
@@ -252,8 +283,8 @@ class PostprocessableFileFieldResource(FileFieldResource):
             else:
                 self.postprocess(**kwargs)
 
-    def attach_file(self, file: Union[File, IO], **options):
-        super().attach_file(file, **options)
+    def attach_file(self, file: Union[File, IO], name: str = None, **options):
+        super().attach_file(file, name=name, **options)
         self.need_postprocess = True
 
     def postprocess(self, **kwargs):
@@ -273,17 +304,23 @@ class PostprocessableFileFieldResource(FileFieldResource):
         Добавление задачи постобработки в django-rq.
         """
         from django_rq.queues import get_queue
+
         queue = get_queue(settings.RQ_QUEUE_NAME)
-        queue.enqueue_call(self._postprocess_task, kwargs={
-            'app_label': self._meta.app_label,
-            'model_name': self._meta.model_name,
-            'object_id': self.pk,
-            'using': self._state.db,
-            **kwargs,
-        })
+        queue.enqueue_call(
+            self._postprocess_task,
+            kwargs={
+                'app_label': self._meta.app_label,
+                'model_name': self._meta.model_name,
+                'object_id': self.pk,
+                'using': self._state.db,
+                **kwargs,
+            },
+        )
 
     @classmethod
-    def _postprocess_task(cls, app_label: str, model_name: str, object_id: int, using: str, **kwargs):
+    def _postprocess_task(
+        cls, app_label: str, model_name: str, object_id: int, using: str, **kwargs
+    ):
         """
         Задача для django-rq.
         Вызывает `postprocess()` экземпляра в отдельном процессе.
@@ -296,15 +333,28 @@ class ImageFileResourceMixin(models.Model):
     """
     Подкласс файлового ресурса для изображений
     """
-    title = models.CharField(_('title'), max_length=255, blank=True,
-        help_text=_('The title is being used as a tooltip when the user hovers '
-                    'the mouse over the image'))
-    description = models.CharField(_('description'), max_length=255, blank=True,
-        help_text=_('This text will be used by screen readers, search engines, '
-                    'or when the image cannot be loaded'))
+
+    title = models.CharField(
+        _('title'),
+        max_length=255,
+        blank=True,
+        help_text=_(
+            'The title is being used as a tooltip when the user hovers the mouse over the image'
+        ),
+    )
+    description = models.CharField(
+        _('description'),
+        max_length=255,
+        blank=True,
+        help_text=_(
+            'This text will be used by screen readers, search engines, or when the image cannot be loaded'
+        ),
+    )
     width = models.PositiveSmallIntegerField(_('width'), default=0, editable=False)
     height = models.PositiveSmallIntegerField(_('height'), default=0, editable=False)
-    cropregion = models.CharField(_('crop region'), max_length=24, blank=True, editable=False)
+    cropregion = models.CharField(
+        _('crop region'), max_length=24, blank=True, editable=False
+    )
 
     class Meta:
         abstract = True
@@ -324,11 +374,12 @@ class ImageFieldResourceMixin(ImageFileResourceMixin):
     """
     Подкласс файлового ресурса изображения, доступ к которому осуществляется через Storage.
     """
+
     class Meta(ImageFileResourceMixin.Meta):
         abstract = True
 
-    def attach_file(self, file: Union[File, IO], **options):
-        super().attach_file(file, **options)
+    def attach_file(self, file: Union[File, IO], name: str = None, **options):
+        super().attach_file(file, name=name, **options)
         with self.get_file().open():
             try:
                 image = Image.open(self.get_file())
@@ -342,6 +393,7 @@ class VariationFile(File):
     """
     Файл вариации изображения
     """
+
     def __init__(self, instance, variation_name):
         self.instance = instance
         self.variation_name = variation_name
@@ -349,12 +401,12 @@ class VariationFile(File):
         filename = self.variation.get_output_filename(instance.get_file_name())
         super().__init__(None, filename)
 
-    def _get_file(self):
+    def _get_file(self) -> File:
         if not hasattr(self, '_file') or self._file is None:
             self._file = self.storage.open(self.name, 'rb')
         return self._file
 
-    def _set_file(self, file):
+    def _set_file(self, file: File):
         self._file = file
 
     def _del_file(self):
@@ -387,11 +439,13 @@ class VariationFile(File):
             self.file.open(mode)
         else:
             self.file = self.storage.open(self.name, mode)
+
     # open() doesn't alter the file's contents, but it does reset the pointer
     open.alters_data = True
 
     def delete(self):
         self.storage.delete(self.name)
+
     delete.alters_data = True
 
     @property
@@ -427,6 +481,7 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
     осуществляется через Storage.
     Изображение и его вариации могут быть подвержены постобработке.
     """
+
     # флаг, запускающий нарезку вариаций после сохранения экземпляра модели в БД
     need_recut = False
 
@@ -445,7 +500,10 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
             self._variations_attached = True
             if name in self.get_variations():
                 return getattr(self, name)
-        raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+        raise AttributeError('module {!r} has no attribute {!r}'.format(
+            __name__,
+            name
+        ))
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -457,14 +515,15 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
             else:
                 self.recut(**kwargs)
 
-    def attach_file(self, file: Union[File, IO], **options):
-        super().attach_file(file, **options)
+    def attach_file(self, file: Union[File, IO], name: str = None, **options):
+        super().attach_file(file, name=name, **options)
         self.need_recut = True
         self._variation_files_cache.clear()
 
     def _delete_file(self):
         for vname, vfile in self.variation_files():
-            vfile.delete()
+            if vfile is not None:
+                vfile.delete()
         super()._delete_file()
 
     def _rename_file(self, new_name: str):
@@ -475,11 +534,14 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
     def get_variations(self) -> Dict[str, PaperVariation]:
         raise NotImplementedError
 
-    def variation_files(self) -> Iterator[Tuple[str, VariationFile]]:
+    def variation_files(self) -> Iterable[Tuple[str, Union[VariationFile, None]]]:
         for variation_name in self.get_variations():
             yield variation_name, self.get_variation_file(variation_name)
 
     def get_variation_file(self, variation_name: str) -> Optional[VariationFile]:
+        """
+        Если оригинального изображения нет - возвращает None
+        """
         if not self.get_file():
             return
 
@@ -487,14 +549,11 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
         if variation_name in cache:
             variation_file = cache[variation_name]
         else:
-            variation_file = VariationFile(
-                instance=self,
-                variation_name=variation_name
-            )
+            variation_file = VariationFile(instance=self, variation_name=variation_name)
             cache[variation_name] = variation_file
         return variation_file
 
-    def calculate_max_size(self, source_size: Sequence[int]) -> Tuple[int, int]:
+    def calculate_max_size(self, source_size: Sequence[int]) -> Optional[Tuple[int, int]]:
         """
         Вычисление максимально возможных значений ширины и высоты изображения
         среди всех вариаций, чтобы передать их в Image.draft().
@@ -514,7 +573,7 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
         """
         raise NotImplementedError
 
-    def recut(self, names: Iterator[str] = (), **kwargs):
+    def recut(self, names: Iterable[str] = (), **kwargs):
         """
         Нарезка вариаций.
         Можно указать имена конкретных вариаций в параметре `names`.
@@ -541,9 +600,12 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
                 buffer.seek(0)
 
                 variation_filename = variation.get_output_filename(self.get_file_name())
-                self.get_file().storage.save(variation_filename, buffer)
+                file.storage.save(variation_filename, buffer)
 
                 variation_file = self.get_variation_file(name)
+                if variation_file is None:
+                    raise RuntimeError("variation file for '{}' does not exist".format(name))
+
                 self.postprocess_variation(variation_file, variation)
 
     def get_recut_kwargs(self) -> Dict[str, Any]:
@@ -557,17 +619,23 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
         Добавление задачи нарезки вариаций в django-rq.
         """
         from django_rq.queues import get_queue
+
         queue = get_queue(settings.RQ_QUEUE_NAME)
-        queue.enqueue_call(self._recut_task, kwargs={
-            'app_label': self._meta.app_label,
-            'model_name': self._meta.model_name,
-            'object_id': self.pk,
-            'using': self._state.db,
-            **kwargs,
-        })
+        queue.enqueue_call(
+            self._recut_task,
+            kwargs={
+                'app_label': self._meta.app_label,
+                'model_name': self._meta.model_name,
+                'object_id': self.pk,
+                'using': self._state.db,
+                **kwargs,
+            },
+        )
 
     @classmethod
-    def _recut_task(cls, app_label: str, model_name: str, object_id: int, using: str, **kwargs):
+    def _recut_task(
+        cls, app_label: str, model_name: str, object_id: int, using: str, **kwargs
+    ):
         """
         Задача для django-rq.
         Вызывает `recut()` экземпляра в отдельном процессе.
@@ -581,6 +649,7 @@ class ReverseFieldModelMixin(models.Model):
     Миксина, позволяющая обратиться к полю модели, которое ссылается
     на текущий объект.
     """
+
     owner_app_label = models.CharField(max_length=100, editable=False)
     owner_model_name = models.CharField(max_length=100, editable=False)
     owner_fieldname = models.CharField(max_length=255, editable=False)
@@ -595,7 +664,9 @@ class ReverseFieldModelMixin(models.Model):
         try:
             return apps.get_model(self.owner_app_label, self.owner_model_name)
         except LookupError:
-            logger.debug("Not found model: %s.%s" % (self.owner_app_label, self.owner_model_name))
+            logger.debug(
+                "Not found model: %s.%s" % (self.owner_app_label, self.owner_model_name)
+            )
 
     def get_owner_field(self) -> Optional[models.Field]:
         owner_model = self.get_owner_model()
@@ -606,9 +677,8 @@ class ReverseFieldModelMixin(models.Model):
             return owner_model._meta.get_field(self.owner_fieldname)
         except FieldDoesNotExist:
             logger.debug(
-                "Not found field '%s' in model %s.%s" % (
-                    self.owner_app_label, self.owner_model_name, self.owner_fieldname
-                )
+                "Not found field '%s' in model %s.%s"
+                % (self.owner_app_label, self.owner_model_name, self.owner_fieldname)
             )
 
 
@@ -616,6 +686,7 @@ class ReadonlyFileProxyMixin:
     """
     Проксирование некоторых свойств файла (только для чтения) на уровень модели
     """
+
     closed = property(lambda self: self.get_file().closed)
     path = property(lambda self: self.get_file().path)
     read = property(lambda self: self.get_file().read)
@@ -631,6 +702,7 @@ class ReadonlyFileProxyMixin:
 
     def open(self, mode='rb'):
         return self.get_file().open(mode)
+
     open.alters_data = True
 
     def close(self):

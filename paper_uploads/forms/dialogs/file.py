@@ -1,5 +1,5 @@
-from .base import UploadedFileBaseForm
 from ...models.file import UploadedFile
+from .base import UploadedFileBaseForm
 
 
 class UploadedFileDialog(UploadedFileBaseForm):

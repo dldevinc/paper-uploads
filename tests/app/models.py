@@ -1,9 +1,9 @@
-from pilkit import processors
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from paper_uploads.cloudinary.models import *
 from paper_uploads.models import *
 from paper_uploads.validators import *
-from paper_uploads.cloudinary.models import *
+from pilkit import processors
 
 
 class PageGallery(ImageCollection):
@@ -147,7 +147,23 @@ class DummyCollection(Collection):
     })
 
 
-class DummyCollectionBlocked(Collection):
+class DummyCollectionWithMeta(Collection):
+    class Meta:
+        verbose_name = _('gallery')
+
+
+class DummyCollectionSubclass(DummyCollection):
+    image = ItemField(ImageItem, options={
+        'variations': dict(
+            preview=dict(
+                size=(200, 0),
+            )
+        )
+    })
+    svg = ItemField(SVGItem)
+
+
+class DummyCollectionPostprocessProhibited(Collection):
     image = ItemField(ImageItem, postprocess=False, options={
         'variations': dict(
             mobile=dict(

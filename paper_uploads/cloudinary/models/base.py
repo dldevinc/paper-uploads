@@ -1,15 +1,17 @@
-import string
-import random
-import requests
-import tempfile
 import posixpath
-import cloudinary.uploader
+import random
+import string
+import tempfile
 from typing import IO
-from django.core.files import File
-from django.core.exceptions import ValidationError
-from django.utils.translation import ugettext_lazy as _
+
+import cloudinary.uploader
+import requests
 from cloudinary import CloudinaryResource
 from cloudinary.models import CloudinaryField
+from django.core.exceptions import ValidationError
+from django.core.files import File
+from django.utils.translation import ugettext_lazy as _
+
 from ...logging import logger
 from ...models import FileResource
 
@@ -39,7 +41,7 @@ class CloudinaryFileResource(FileResource):
 
         name = self.get_public_id()
         if file.format and not name.endswith(file.format):
-            name += f'.{file.format}'
+            name += '.{}'.format(file.format)
         return name
 
     def get_file_url(self) -> str:
@@ -73,15 +75,18 @@ class CloudinaryFileResource(FileResource):
                 file,
                 type=self.cloudinary_type,
                 resource_type=self.cloudinary_resource_type,
-                **cloudinary_options
+                **cloudinary_options,
             )
         except cloudinary.exceptions.Error as e:
             raise ValidationError(*e.args)
 
         resource = cloudinary.CloudinaryResource(
-            result["public_id"], version=str(result["version"]),
-            format=result.get("format"), type=result["type"],
-            resource_type=result["resource_type"], metadata=result
+            result["public_id"],
+            version=str(result["version"]),
+            format=result.get("format"),
+            type=result["type"],
+            resource_type=result["resource_type"],
+            metadata=result,
         )
         self.file = resource
         return result
@@ -91,8 +96,11 @@ class CloudinaryFileResource(FileResource):
 
         file_dir, file_name = posixpath.split(old_public_id)
         _, format = posixpath.splitext(file_name)
-        rand = ''.join(random.SystemRandom().choice(string.ascii_lowercase + string.digits) for _ in range(6))
-        new_name = posixpath.join(file_dir, f"{new_name}_{rand}")
+        rand = ''.join(
+            random.SystemRandom().choice(string.ascii_lowercase + string.digits)
+            for _ in range(6)
+        )
+        new_name = posixpath.join(file_dir, "{}_{}".format(new_name, rand))
         if self.cloudinary_resource_type == 'raw':
             new_name += format
 
@@ -104,13 +112,18 @@ class CloudinaryFileResource(FileResource):
                 resource_type=self.cloudinary_resource_type,
             )
         except cloudinary.exceptions.Error:
-            logger.exception("Couldn't rename Cloudinary file: {}".format(self.get_file_name()))
+            logger.exception(
+                "Couldn't rename Cloudinary file: {}".format(self.get_file_name())
+            )
             return
         else:
             resource = cloudinary.CloudinaryResource(
-                result["public_id"], version=str(result["version"]),
-                format=result.get("format"), type=result["type"],
-                resource_type=result["resource_type"], metadata=result
+                result["public_id"],
+                version=str(result["version"]),
+                format=result.get("format"),
+                type=result["type"],
+                resource_type=result["resource_type"],
+                metadata=result,
             )
             self.file = resource
 
@@ -122,10 +135,12 @@ class CloudinaryFileResource(FileResource):
             result = cloudinary.uploader.destroy(
                 self.get_public_id(),
                 type=self.cloudinary_type,
-                resource_type=self.cloudinary_resource_type
+                resource_type=self.cloudinary_resource_type,
             )
         except cloudinary.exceptions.Error:
-            logger.exception("Couldn't delete Cloudinary file: {}".format(self.get_file_name()))
+            logger.exception(
+                "Couldn't delete Cloudinary file: {}".format(self.get_file_name())
+            )
             return
 
         status = result.get('result')
@@ -134,8 +149,7 @@ class CloudinaryFileResource(FileResource):
         else:
             logger.warning(
                 "Unable to delete Cloudinary file `{}`: {}".format(
-                    self.get_file_name(),
-                    status
+                    self.get_file_name(), status
                 )
             )
         self.file = None
@@ -162,8 +176,9 @@ class ReadonlyCloudinaryFileProxyMixin:
     """
     Проксирование некоторых свойств файла (только для чтения) на уровень модели
     """
+
     _wrapped_file = None
-    SPOOL_SIZE = 10*1024*1024
+    SPOOL_SIZE = 10 * 1024 * 1024
 
     read = property(lambda self: self._wrapped_file.read)
     seek = property(lambda self: self._wrapped_file.seek)
@@ -179,6 +194,7 @@ class ReadonlyCloudinaryFileProxyMixin:
     def open(self, mode='rb'):
         self.require_file(mode)
         return self
+
     open.alters_data = True
 
     def close(self):

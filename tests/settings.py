@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+
 from django.utils.translation import ugettext_lazy as _
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -184,3 +185,7 @@ PAPER_UPLOADS = {
         'webp': False
     }
 }
+
+
+from dotenv import load_dotenv
+load_dotenv()

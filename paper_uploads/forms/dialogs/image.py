@@ -1,5 +1,5 @@
-from .base import UploadedFileBaseForm
 from ...models.image import UploadedImage
+from .base import UploadedFileBaseForm
 
 
 class UploadedImageDialog(UploadedFileBaseForm):

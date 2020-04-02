@@ -1,14 +1,16 @@
 import os
-import uuid
+import posixpath
 import shutil
 import tempfile
-import posixpath
-from typing import Optional, Dict, Any, Iterable, Union, List, Type, TypeVar
+import uuid
+from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar, Union
+
 from django.conf import settings
-from django.http import JsonResponse
-from django.core.files.uploadedfile import UploadedFile
-from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
+from django.core.files.uploadedfile import UploadedFile
+from django.http import JsonResponse
+
 from .. import exceptions
 
 T = TypeVar('T')
@@ -20,10 +22,12 @@ def success_response(data: Optional[Dict[str, Any]] = None) -> JsonResponse:
     return JsonResponse(data)
 
 
-def error_response(errors: Union[str, Iterable[str]] = '', prevent_retry: bool = True) -> JsonResponse:
+def error_response(
+    errors: Union[str, Iterable[str]] = '', prevent_retry: bool = True
+) -> JsonResponse:
     if not errors:
         errors = []
-    elif not isinstance(errors, (list, tuple)):
+    elif isinstance(errors, str):
         errors = [errors]
 
     data = {
@@ -35,7 +39,7 @@ def error_response(errors: Union[str, Iterable[str]] = '', prevent_retry: bool =
 
 
 def get_exception_messages(exception: ValidationError) -> List[str]:
-    messages = []
+    messages = []  # type: List[str]
     for msg in exception:
         if isinstance(msg, tuple):
             field, errors = msg
@@ -43,9 +47,7 @@ def get_exception_messages(exception: ValidationError) -> List[str]:
                 for error in reversed(errors):
                     messages.insert(0, error)
             else:
-                messages.extend(
-                    "'{}': {}".format(field, error) for error in errors
-                )
+                messages.extend("'{}': {}".format(field, error) for error in errors)
         else:
             messages.append(msg)
     return messages
@@ -88,7 +90,7 @@ def read_file(request) -> UploadedFile:
 
     tempfilepath = os.path.join(tempdir, 'upload_{}'.format(uid))
     file = request.FILES.get('qqfile')
-    if file is None:    # бывает при отмене загрузки на медленном интернете
+    if file is None:  # бывает при отмене загрузки на медленном интернете
         if os.path.isfile(tempfilepath):
             os.unlink(tempfilepath)
         raise exceptions.UncompleteUpload
@@ -104,7 +106,9 @@ def read_file(request) -> UploadedFile:
         basename = posixpath.basename(qqfilename)
 
         fp = open(tempfilepath, 'rb')
-        file = TemporaryUploadedFile(fp, name=basename, size=os.path.getsize(tempfilepath))
+        file = TemporaryUploadedFile(
+            fp, name=basename, size=os.path.getsize(tempfilepath)
+        )
 
     return file
 

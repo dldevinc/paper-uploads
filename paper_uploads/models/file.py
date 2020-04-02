@@ -1,19 +1,31 @@
-from typing import Dict, Any
+from typing import Any, Dict
+
 from django.db import models
-from django.utils.timezone import now
 from django.db.models.fields.files import FieldFile
-from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
+from django.utils.timezone import now
+from django.utils.translation import gettext_lazy as _
+
 from ..conf import settings
-from ..storage import upload_storage
 from ..postprocess import postprocess_common_file
-from .base import PostprocessableFileFieldResource, ReverseFieldModelMixin, ReadonlyFileProxyMixin
+from ..storage import upload_storage
+from .base import (
+    PostprocessableFileFieldResource,
+    ReadonlyFileProxyMixin,
+    ReverseFieldModelMixin,
+)
 from .fields import FormattedFileField
 
 
-class UploadedFile(ReverseFieldModelMixin, ReadonlyFileProxyMixin, PostprocessableFileFieldResource):
-    file = FormattedFileField(_('file'), max_length=255, storage=upload_storage,
-        upload_to=settings.FILES_UPLOAD_TO)
+class UploadedFile(
+    ReverseFieldModelMixin, ReadonlyFileProxyMixin, PostprocessableFileFieldResource
+):
+    file = FormattedFileField(
+        _('file'),
+        max_length=255,
+        storage=upload_storage,
+        upload_to=settings.FILES_UPLOAD_TO,
+    )
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
     class Meta(PostprocessableFileFieldResource.Meta):
@@ -33,8 +45,7 @@ class UploadedFile(ReverseFieldModelMixin, ReadonlyFileProxyMixin, Postprocessab
             **super().as_dict(),
             'name': self.display_name,
             'file_info': '({ext}, {size})'.format(
-                ext=self.extension,
-                size=filesizeformat(self.size)
+                ext=self.extension, size=filesizeformat(self.size)
             ),
         }
 

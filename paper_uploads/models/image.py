@@ -1,20 +1,35 @@
-from typing import Dict, Any
+from typing import Any, Dict
+
 from django.db.models.fields.files import FieldFile
-from django.utils.translation import gettext_lazy as _
 from django.template.defaultfilters import filesizeformat
+from django.utils.translation import gettext_lazy as _
+
 from ..conf import settings
-from ..storage import upload_storage
 from ..postprocess import postprocess_variation
+from ..storage import upload_storage
 from ..variations import PaperVariation
-from .fields import VariationalFileField
 from .base import (
-    VariationFile, ReverseFieldModelMixin, ReadonlyFileProxyMixin,
-    VersatileImageResourceMixin, PostprocessableFileFieldResource
+    PostprocessableFileFieldResource,
+    ReadonlyFileProxyMixin,
+    ReverseFieldModelMixin,
+    VariationFile,
+    VersatileImageResourceMixin,
 )
+from .fields import VariationalFileField
 
 
-class UploadedImage(ReverseFieldModelMixin, ReadonlyFileProxyMixin, VersatileImageResourceMixin, PostprocessableFileFieldResource):
-    file = VariationalFileField(_('file'), max_length=255, upload_to=settings.IMAGES_UPLOAD_TO, storage=upload_storage)
+class UploadedImage(
+    ReverseFieldModelMixin,
+    ReadonlyFileProxyMixin,
+    VersatileImageResourceMixin,
+    PostprocessableFileFieldResource,
+):
+    file = VariationalFileField(
+        _('file'),
+        max_length=255,
+        upload_to=settings.IMAGES_UPLOAD_TO,
+        storage=upload_storage,
+    )
 
     class Meta(PostprocessableFileFieldResource.Meta):
         verbose_name = _('image')
@@ -38,8 +53,8 @@ class UploadedImage(ReverseFieldModelMixin, ReadonlyFileProxyMixin, VersatileIma
                 ext=self.extension,
                 width=self.width,
                 height=self.height,
-                size=filesizeformat(self.size)
-            )
+                size=filesizeformat(self.size),
+            ),
         }
 
     def get_variations(self) -> Dict[str, PaperVariation]:

@@ -1,5 +1,5 @@
-from .base import FileFieldBase
 from ..widgets import ImageWidget
+from .base import FileFieldBase
 
 
 class ImageField(FileFieldBase):

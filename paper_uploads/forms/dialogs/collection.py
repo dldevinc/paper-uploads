@@ -1,5 +1,5 @@
-from .base import UploadedFileBaseForm
 from ...models.collection import FileItem, ImageItem
+from .base import UploadedFileBaseForm
 
 
 class FileItemDialog(UploadedFileBaseForm):

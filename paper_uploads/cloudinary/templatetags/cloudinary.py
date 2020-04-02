@@ -1,7 +1,8 @@
 from functools import partial
-from cloudinary.templatetags.cloudinary import cloudinary_url
-from ..models.base import CloudinaryFileResource
 
+from cloudinary.templatetags.cloudinary import cloudinary_url
+
+from ..models.base import CloudinaryFileResource
 
 try:
     import jinja2
@@ -17,12 +18,13 @@ if jinja2 is not None:
         Декоратор для функций модуля cloudinary, позволяющий передавать в качестве
         source экземпляры CloudinaryContainerMixin.
         """
+
         def inner(ctx, source, *args, **kwargs):
             if isinstance(source, CloudinaryFileResource):
                 source = source.file
             return func(ctx, source, *args, **kwargs)
-        return inner
 
+        return inner
 
     class CloudinaryExtension(Extension):
         tags = {'cloudinary_url'}
@@ -32,19 +34,23 @@ if jinja2 is not None:
             args = [nodes.ContextReference()]
             kwargs = []
             while parser.stream.current.type != 'block_end':
-                if parser.stream.current.type == 'name' and parser.stream.look().type == 'assign':
+                if (
+                    parser.stream.current.type == 'name'
+                    and parser.stream.look().type == 'assign'
+                ):
                     name = parser.stream.expect('name')
                     parser.stream.expect('assign')
                     value = parser.parse_expression()
                     kwargs.append(nodes.Keyword(name.value, value, lineno=value.lineno))
                 else:
                     args.append(parser.parse_expression())
-            return nodes.CallBlock(self.call_method('_cloudinary_url', args, kwargs), [], [], []).set_lineno(lineno)
+            return nodes.CallBlock(
+                self.call_method('_cloudinary_url', args, kwargs), [], [], []
+            ).set_lineno(lineno)
 
         @staticmethod
         def _cloudinary_url(ctx, *args, caller=None, **kwargs):
             return paper_cloudinary(cloudinary_url)(ctx, *args, **kwargs)
-
 
     # django-jinja support
     try:

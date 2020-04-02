@@ -1,5 +1,6 @@
 import posixpath
-from typing import Union, Dict, Set, Iterable
+from typing import Any, Dict, Iterable, Set, Union
+
 from variations.variation import Variation
 
 ALLOWED_VERSIONS = {'webp', '2x', '3x', '4x'}
@@ -12,38 +13,41 @@ class PaperVariation(Variation):
       * Хранение настроек постобработки
       * Хранение перечня дополнительных версий вариации
     """
-    def __init__(self, *args, name: str = '', postprocess: Union[Dict, bool] = None,
-            versions: Iterable[str] = None, **kwargs):
+
+    def __init__(
+        self,
+        *args,
+        name: str = '',
+        postprocess: Union[Dict, bool, None] = None,
+        versions: Iterable[str] = None,
+        **kwargs
+    ):
         self.name = name
         self.versions = versions or set()
         self.postprocess = postprocess
         super().__init__(*args, **kwargs)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str):
         if not isinstance(value, str):
             raise TypeError(value)
         self._name = value
 
     @property
-    def postprocess(self) -> Union[Dict, bool, None]:
+    def postprocess(self) -> Union[Dict[str, Any], bool, None]:
         return self._postprocess
 
     @postprocess.setter
-    def postprocess(self, value):
+    def postprocess(self, value: Union[Dict[str, Any], bool, None]):
         if value is None or value is False:
             self._postprocess = value
-            return
-        if isinstance(value, dict):
+        elif isinstance(value, dict):
             # lowercase format names
-            self._postprocess = {
-                k.lower(): v
-                for k, v in value.items()
-            }
+            self._postprocess = {k.lower(): v for k, v in value.items()}
         else:
             raise TypeError(value)
 
@@ -52,7 +56,7 @@ class PaperVariation(Variation):
         return self._versions
 
     @versions.setter
-    def versions(self, value):
+    def versions(self, value: Iterable[str]):
         self._versions = set(v.lower() for v in value)
         unknown_versions = self._versions.difference(ALLOWED_VERSIONS)
         if unknown_versions:
@@ -64,7 +68,7 @@ class PaperVariation(Variation):
         Имя файла может включать путь — он остается неизменным.
         """
         if not self.name:
-            raise RuntimeError('variation `name` is empty')
+            raise RuntimeError('`name` is empty')
 
         dir_name, file_name = posixpath.split(input_filename)
         file_root, file_ext = posixpath.splitext(file_name)
@@ -73,11 +77,11 @@ class PaperVariation(Variation):
         name = posixpath.join(dir_name, file_name)
         return self.replace_extension(name)
 
-    def get_postprocess_options(self, format: str) -> Union[Dict, bool, None]:
+    def get_postprocess_options(self, format: str) -> Union[Dict[str, Any], bool, None]:
         """
         Получение настроек постобработки для указанного формата
         """
-        if self.postprocess is False:
-            return False
-        elif self.postprocess is not None:
-            return self.postprocess.get(format.lower())
+        postprocess = self.postprocess
+        if isinstance(postprocess, dict):
+            return postprocess.get(format.lower())
+        return postprocess

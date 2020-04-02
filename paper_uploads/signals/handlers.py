@@ -11,6 +11,7 @@ class RenameFileField(migrations.RunPython):
 
     def _rename(self, apps, schema_editor, old_name, new_name):
         from ..models.fields import FileFieldBase
+
         db = schema_editor.connection.alias
         state_model = apps.get_model(self.app_label, self.model_name)
         for field in state_model._meta.fields:
@@ -22,10 +23,8 @@ class RenameFileField(migrations.RunPython):
                     field.related_model.objects.db_manager(db).filter(
                         owner_app_label=self.app_label,
                         owner_model_name=self.model_name,
-                        owner_fieldname=old_name
-                    ).update(
-                        owner_fieldname=new_name
-                    )
+                        owner_fieldname=old_name,
+                    ).update(owner_fieldname=new_name)
 
     def rename_forward(self, apps, schema_editor):
         self._rename(apps, schema_editor, self.old_name, self.new_name)
@@ -43,6 +42,7 @@ class RenameFileModel(migrations.RunPython):
 
     def _rename(self, apps, schema_editor, old_name, new_name, backward=False):
         from ..models.fields import FileFieldBase
+
         old_name = old_name.lower()
         new_name = new_name.lower()
         db = schema_editor.connection.alias
@@ -53,10 +53,8 @@ class RenameFileModel(migrations.RunPython):
                     field.related_model.objects.db_manager(db).filter(
                         owner_app_label=self.app_label,
                         owner_model_name=old_name,
-                        owner_fieldname=field.name
-                    ).update(
-                        owner_model_name=new_name
-                    )
+                        owner_fieldname=field.name,
+                    ).update(owner_model_name=new_name)
 
     def rename_forward(self, apps, schema_editor):
         self._rename(apps, schema_editor, self.old_name, self.new_name)
@@ -77,7 +75,7 @@ def inject_rename_filefield_operations(plan=None, **kwargs):
                     migration.app_label,
                     operation.model_name,
                     operation.old_name_lower,
-                    operation.new_name_lower
+                    operation.new_name_lower,
                 )
                 inserts.append((index + 1, operation))
             elif isinstance(operation, migrations.RenameModel):

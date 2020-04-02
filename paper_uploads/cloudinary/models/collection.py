@@ -1,18 +1,27 @@
+from typing import IO, Any, Dict, Optional, Union
+
 import magic
-from typing import Dict, Any, Union, IO
+from django.core.files import File
 from django.db import models
 from django.template import loader
-from django.core.files import File
 from django.utils.translation import gettext_lazy as _
+
 from ...conf import settings
-from ...models.fields import ItemField
 from ...models.base import ImageFileResourceMixin
-from ...models.collection import FilePreviewItemMixin, CollectionResourceItem, Collection
+from ...models.collection import (
+    Collection,
+    CollectionResourceItem,
+    FilePreviewItemMixin,
+)
+from ...models.fields import ItemField
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
 
 __all__ = [
-    'CloudinaryFileItem', 'CloudinaryMediaItem', 'CloudinaryImageItem',
-    'CloudinaryCollection', 'CloudinaryImageCollection'
+    'CloudinaryFileItem',
+    'CloudinaryMediaItem',
+    'CloudinaryImageItem',
+    'CloudinaryCollection',
+    'CloudinaryImageCollection',
 ]
 
 
@@ -36,7 +45,11 @@ class CollectionCloudinaryFileResource(CollectionResourceItem, CloudinaryFileRes
         return self.get_basename()
 
 
-class CloudinaryFileItem(FilePreviewItemMixin, ReadonlyCloudinaryFileProxyMixin, CollectionCloudinaryFileResource):
+class CloudinaryFileItem(
+    FilePreviewItemMixin,
+    ReadonlyCloudinaryFileProxyMixin,
+    CollectionCloudinaryFileResource,
+):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     admin_template_name = 'paper_uploads/collection_item/file.html'
 
@@ -63,7 +76,11 @@ class CloudinaryFileItem(FilePreviewItemMixin, ReadonlyCloudinaryFileProxyMixin,
         return True
 
 
-class CloudinaryMediaItem(FilePreviewItemMixin, ReadonlyCloudinaryFileProxyMixin, CollectionCloudinaryFileResource):
+class CloudinaryMediaItem(
+    FilePreviewItemMixin,
+    ReadonlyCloudinaryFileProxyMixin,
+    CollectionCloudinaryFileResource,
+):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     admin_template_name = 'paper_uploads/collection_item/file.html'
     cloudinary_resource_type = 'video'
@@ -89,12 +106,16 @@ class CloudinaryMediaItem(FilePreviewItemMixin, ReadonlyCloudinaryFileProxyMixin
     def file_supported(cls, file: File) -> bool:
         # TODO: магический метод
         mimetype = magic.from_buffer(file.read(1024), mime=True)
-        file.seek(0)    # correct file position after mimetype detection
+        file.seek(0)  # correct file position after mimetype detection
         basetype, subtype = mimetype.split('/', 1)
         return basetype in {'video', 'audio'}
 
 
-class CloudinaryImageItem(ReadonlyCloudinaryFileProxyMixin, ImageFileResourceMixin, CollectionCloudinaryFileResource):
+class CloudinaryImageItem(
+    ReadonlyCloudinaryFileProxyMixin,
+    ImageFileResourceMixin,
+    CollectionCloudinaryFileResource,
+):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
     change_form_class = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
     admin_template_name = 'paper_uploads_cloudinary/collection_item/image.html'
@@ -106,17 +127,20 @@ class CloudinaryImageItem(ReadonlyCloudinaryFileProxyMixin, ImageFileResourceMix
 
     @property
     def preview(self):
-        return loader.render_to_string('paper_uploads_cloudinary/collection_item/preview/image.html', {
-            'item': self,
-            'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-            'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-        })
+        return loader.render_to_string(
+            'paper_uploads_cloudinary/collection_item/preview/image.html',
+            {
+                'item': self,
+                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+            },
+        )
 
     @classmethod
     def file_supported(cls, file: File) -> bool:
         # TODO: магический метод
         mimetype = magic.from_buffer(file.read(1024), mime=True)
-        file.seek(0)    # correct file position after mimetype detection
+        file.seek(0)  # correct file position after mimetype detection
         basetype, subtype = mimetype.split('/', 1)
         return basetype == 'image'
 
@@ -137,5 +161,5 @@ class CloudinaryImageCollection(Collection):
             'acceptFiles': ['image/*'],
         }
 
-    def detect_file_type(self, file: File) -> str:
+    def detect_file_type(self, file: File) -> Optional[str]:
         return 'image'

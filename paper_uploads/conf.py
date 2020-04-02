@@ -1,7 +1,6 @@
 from django import conf
 from django.utils.module_loading import import_string
 
-
 DEFAULTS = {
     'STORAGE': 'django.core.files.storage.FileSystemStorage',
     'STORAGE_OPTIONS': {},
@@ -89,7 +88,12 @@ def import_from_string(val, setting_name):
     try:
         return import_string(val)
     except ImportError as e:
-        msg = "Could not import '%s' for API setting '%s'. %s: %s." % (val, setting_name, e.__class__.__name__, e)
+        msg = "Could not import '%s' for API setting '%s'. %s: %s." % (
+            val,
+            setting_name,
+            e.__class__.__name__,
+            e,
+        )
         raise ImportError(msg)
 
 
@@ -99,6 +103,7 @@ class Settings:
     Any setting with string import paths will be automatically resolved
     and return the class, rather than the string literal.
     """
+
     def __init__(self, user_settings=None, defaults=None, import_strings=None):
         self.user_settings = user_settings
         self.defaults = defaults or DEFAULTS
@@ -131,6 +136,9 @@ class Settings:
 
     def prepare_postprocess(self, value):
         from .utils import lowercase_copy
+
+        if value is False or value is None:
+            return value
         return lowercase_copy(value)
 
 

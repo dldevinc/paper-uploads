@@ -1,13 +1,16 @@
-import re
 import os
-import pytest
+import re
+from datetime import timedelta
 from pathlib import Path
+
+import pytest
 from django.conf import settings
-from django.utils.timezone import now, timedelta
 from django.template.defaultfilters import filesizeformat
-from .. import validators
-from ..models import UploadedFile, FileField
+from django.utils.timezone import now
 from tests.app.models import Page
+
+from .. import validators
+from ..models import FileField, UploadedFile
 
 pytestmark = pytest.mark.django_db
 TESTS_PATH = Path(__file__).parent / 'samples'
@@ -15,16 +18,18 @@ TESTS_PATH = Path(__file__).parent / 'samples'
 
 class TestUploadedFile:
     def test_file(self):
-        with open(TESTS_PATH / 'cartman.svg', 'rb') as svg_file:
+        with open(str(TESTS_PATH / "cartman.svg"), "rb") as svg_file:
             obj = UploadedFile(
-                owner_app_label='app',
-                owner_model_name='page',
-                owner_fieldname='file'
+                owner_app_label="app",
+                owner_model_name="page",
+                owner_fieldname="file",
             )
-            obj.attach_file(svg_file, name='Cartman.SVG')
+            obj.attach_file(svg_file, name="Cartman.SVG")
             obj.save()
 
-        suffix = re.match(r'Cartman((?:_\w+)?)', os.path.basename(obj.file.name)).group(1)
+        suffix_match = re.match(r"Cartman((?:_\w+)?)", os.path.basename(obj.file.name))
+        assert suffix_match is not None
+        suffix = suffix_match.group(1)
 
         try:
             # Resource
@@ -43,15 +48,25 @@ class TestUploadedFile:
             assert repr(obj) == "UploadedFile('Cartman.svg')"
             assert obj.get_basename() == 'Cartman.svg'
             assert obj.get_file() is obj.file
-            assert obj.get_file_name() == f"files/{now().strftime('%Y-%m-%d')}/Cartman{suffix}.svg"
-            assert obj.get_file_url() == f"/media/files/{now().strftime('%Y-%m-%d')}/Cartman{suffix}.svg"
+            assert (
+                obj.get_file_name() == "files/{}/Cartman{}.svg".format(
+                    now().strftime('%Y-%m-%d'),
+                    suffix
+                )
+            )
+            assert (
+                obj.get_file_url() == "/media/files/{}/Cartman{}.svg".format(
+                    now().strftime('%Y-%m-%d'),
+                    suffix
+                )
+            )
             assert obj.is_file_exists() is True
 
             # FileFieldResource
             assert os.path.isfile(obj.path)
 
             # PostrocessableFileFieldResource
-            assert os.stat(TESTS_PATH / 'cartman.svg').st_size == 1183
+            assert os.stat(str(TESTS_PATH / 'cartman.svg')).st_size == 1183
 
             # ReverseFieldModelMixin
             assert obj.owner_app_label == 'app'
@@ -62,7 +77,9 @@ class TestUploadedFile:
 
             # ReadonlyFileProxyMixin
             assert obj.url == obj.get_file_url()
-            assert obj.path == os.path.join(settings.BASE_DIR, settings.MEDIA_ROOT, obj.get_file_name())
+            assert obj.path == os.path.join(
+                settings.BASE_DIR, settings.MEDIA_ROOT, obj.get_file_name()
+            )
             assert obj.closed is True
             with obj.open():
                 assert obj.closed is False
@@ -101,7 +118,7 @@ class TestUploadedFile:
             obj.delete()
 
     def test_orphan_file(self):
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+        with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
             obj = UploadedFile()
             obj.attach_file(pdf_file, name='Doc.PDF')
             obj.save()
@@ -114,7 +131,11 @@ class TestUploadedFile:
             obj.delete()
 
     def test_empty_file(self):
-        obj = UploadedFile()
+        obj = UploadedFile(
+            owner_app_label="app",
+            owner_model_name="page",
+            owner_fieldname="file",
+        )
         try:
             assert obj.closed is True
             assert bool(obj.file) is False
@@ -125,29 +146,41 @@ class TestUploadedFile:
             obj.delete_file()
 
     def test_missing_file(self):
-        with open(TESTS_PATH / 'Sample Document.PDF', 'rb') as pdf_file:
+        with open(str(TESTS_PATH / 'Sample Document.PDF'), 'rb') as pdf_file:
             obj = UploadedFile()
             obj.attach_file(pdf_file, name='Doc.PDF')
             obj.save()
 
         os.unlink(obj.path)
-        suffix = re.match(r'Doc((?:_\w+)?)', os.path.basename(obj.file.name)).group(1)
+        suffix_match = re.match(r"Doc((?:_\w+)?)", os.path.basename(obj.file.name))
+        assert suffix_match is not None
+        suffix = suffix_match.group(1)
 
         try:
             assert obj.closed is True
-            assert obj.get_file_name() == f"files/{now().strftime('%Y-%m-%d')}/Doc{suffix}.pdf"
-            assert obj.get_file_url() == f"/media/files/{now().strftime('%Y-%m-%d')}/Doc{suffix}.pdf"
+            assert (
+                obj.get_file_name() == "files/{}/Doc{}.pdf".format(
+                    now().strftime('%Y-%m-%d'),
+                    suffix
+                )
+            )
+            assert (
+                obj.get_file_url() == "/media/files/{}/Doc{}.pdf".format(
+                    now().strftime('%Y-%m-%d'),
+                    suffix
+                )
+            )
             assert obj.is_file_exists() is False
         finally:
             obj.delete_file()
             obj.delete()
 
     def test_file_rename(self):
-        with open(TESTS_PATH / 'sheet.xlsx', 'rb') as xlsx_file:
+        with open(str(TESTS_PATH / "sheet.xlsx"), "rb") as xlsx_file:
             obj = UploadedFile(
-                owner_app_label='app',
-                owner_model_name='page',
-                owner_fieldname='file'
+                owner_app_label="app",
+                owner_model_name="page",
+                owner_fieldname="file",
             )
             obj.attach_file(xlsx_file)
             obj.save()
@@ -184,22 +217,24 @@ class TestFileField:
         assert field.postprocess is None
 
     def test_validators(self):
-        field = FileField(validators=[
-            validators.SizeValidator(10 * 1024 * 1024),
-            validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
-            validators.MimetypeValidator(['image/jpeg', 'image/bmp', 'image/Png'])
-        ])
+        field = FileField(
+            validators=[
+                validators.SizeValidator(10 * 1024 * 1024),
+                validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
+                validators.MimetypeValidator(['image/jpeg', 'image/bmp', 'image/Png']),
+            ]
+        )
         field.contribute_to_class(Page, 'file')
 
         assert field.get_validation() == {
             'sizeLimit': 10 * 1024 * 1024,
             'allowedExtensions': ('svg', 'bmp', 'jpeg'),
-            'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png')
+            'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png'),
         }
 
         formfield = field.formfield()
         assert formfield.widget.get_validation() == {
             'sizeLimit': 10 * 1024 * 1024,
             'allowedExtensions': ('svg', 'bmp', 'jpeg'),
-            'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png')
+            'acceptFiles': ('image/jpeg', 'image/bmp', 'image/png'),
         }

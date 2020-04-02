@@ -1,5 +1,5 @@
-from .base import FileFieldBase
 from ... import forms
+from .base import FileFieldBase
 
 
 class FileField(FileFieldBase):

@@ -1,13 +1,16 @@
 import re
-import pytest
 from pathlib import Path
+from datetime import timedelta
+
 import cloudinary.uploader
+import pytest
 from django.core.exceptions import ValidationError
-from django.utils.timezone import now, timedelta
 from django.template.defaultfilters import filesizeformat
+from django.utils.timezone import now
+from tests.app.models import Page
+
 from ... import validators
 from ..models import CloudinaryImage, CloudinaryImageField
-from tests.app.models import Page
 
 pytestmark = pytest.mark.django_db
 TESTS_PATH = Path(__file__).parent.parent.parent / 'tests' / 'samples'
@@ -15,13 +18,13 @@ TESTS_PATH = Path(__file__).parent.parent.parent / 'tests' / 'samples'
 
 class TestCloudinaryImage:
     def test_image(self):
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
             obj = CloudinaryImage(
                 title='Image title',
                 description='Image description',
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='cloud_image'
+                owner_fieldname='cloud_image',
             )
             obj.attach_file(jpeg_file, name='Image.Jpeg')
             obj.save()
@@ -44,7 +47,13 @@ class TestCloudinaryImage:
             assert obj.get_basename() == 'Image.jpg'
             assert obj.get_file() is obj.file
             assert re.fullmatch(r'Image_\w+\.jpg', obj.get_file_name()) is not None
-            assert re.fullmatch(r'http://res\.cloudinary\.com/[^/]+/image/upload/[^/]+/Image_\w+\.jpg', obj.get_file_url()) is not None
+            assert (
+                re.fullmatch(
+                    r'http://res\.cloudinary\.com/[^/]+/image/upload/[^/]+/Image_\w+\.jpg',
+                    obj.get_file_url(),
+                )
+                is not None
+            )
             assert obj.is_file_exists() is True
 
             # ReverseFieldModelMixin
@@ -108,8 +117,8 @@ class TestCloudinaryImage:
                     ext=obj.extension,
                     width=obj.width,
                     height=obj.height,
-                    size=filesizeformat(obj.size)
-                )
+                    size=filesizeformat(obj.size),
+                ),
             }
         finally:
             obj.delete_file()
@@ -118,7 +127,7 @@ class TestCloudinaryImage:
             obj.delete()
 
     def test_orphan_image(self):
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_image:
+        with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_image:
             obj = CloudinaryImage()
             obj.attach_file(jpeg_image, name='Image.Jpeg')
             obj.save()
@@ -131,14 +140,18 @@ class TestCloudinaryImage:
             obj.delete()
 
     def test_not_image(self):
-        with open(TESTS_PATH / 'sheet.xlsx', 'rb') as pdf_file:
+        with open(str(TESTS_PATH / 'sheet.xlsx'), 'rb') as pdf_file:
             obj = CloudinaryImage()
             with pytest.raises(ValidationError, match='Unsupported .*'):
                 obj.attach_file(pdf_file)
             obj.delete_file()
 
     def test_empty_file(self):
-        obj = CloudinaryImage()
+        obj = CloudinaryImage(
+            owner_app_label="app",
+            owner_model_name="page",
+            owner_fieldname="cloud_image",
+        )
         try:
             assert obj.closed is True
             assert bool(obj.file) is False
@@ -149,11 +162,11 @@ class TestCloudinaryImage:
             obj.delete_file()
 
     def test_missing_file(self):
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as jpeg_file:
+        with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as jpeg_file:
             obj = CloudinaryImage(
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='cloud_image'
+                owner_fieldname='cloud_image',
             )
             obj.attach_file(jpeg_file, name='Image.Jpeg')
             obj.save()
@@ -161,24 +174,30 @@ class TestCloudinaryImage:
         cloudinary.uploader.destroy(
             obj.get_public_id(),
             type=obj.cloudinary_type,
-            resource_type=obj.cloudinary_resource_type
+            resource_type=obj.cloudinary_resource_type,
         )
 
         try:
             assert obj.closed is True
             assert re.fullmatch(r'Image\w+\.jpg', obj.get_file_name()) is not None
-            assert re.fullmatch(r'http://res\.cloudinary\.com/[^/]+/image/upload/[^/]+/Image\w+\.jpg', obj.get_file_url()) is not None
+            assert (
+                re.fullmatch(
+                    r'http://res\.cloudinary\.com/[^/]+/image/upload/[^/]+/Image\w+\.jpg',
+                    obj.get_file_url(),
+                )
+                is not None
+            )
             assert obj.is_file_exists() is False
         finally:
             obj.delete_file()
             obj.delete()
 
     def test_file_rename(self):
-        with open(TESTS_PATH / 'Image.Jpeg', 'rb') as audio_file:
+        with open(str(TESTS_PATH / 'Image.Jpeg'), 'rb') as audio_file:
             obj = CloudinaryImage(
                 owner_app_label='app',
                 owner_model_name='page',
-                owner_fieldname='cloud_image'
+                owner_fieldname='cloud_image',
             )
             obj.attach_file(audio_file)
             obj.save()
@@ -187,11 +206,14 @@ class TestCloudinaryImage:
 
         try:
             # check old file
-            assert isinstance(cloudinary.uploader.explicit(
-                old_public_id,
-                type=obj.cloudinary_type,
-                resource_type=obj.cloudinary_resource_type
-            ), dict)
+            assert isinstance(
+                cloudinary.uploader.explicit(
+                    old_public_id,
+                    type=obj.cloudinary_type,
+                    resource_type=obj.cloudinary_resource_type,
+                ),
+                dict,
+            )
             assert obj.is_file_exists()
 
             obj.rename_file('new_name')
@@ -209,16 +231,19 @@ class TestCloudinaryImage:
             assert obj.name == 'new_name'
             assert re.search(r'new_name_\w+\.jpg$', obj.get_file_name()) is not None
             assert obj.is_file_exists()
-            assert isinstance(cloudinary.uploader.explicit(
-                new_public_id,
-                type=obj.cloudinary_type,
-                resource_type=obj.cloudinary_resource_type
-            ), dict)
+            assert isinstance(
+                cloudinary.uploader.explicit(
+                    new_public_id,
+                    type=obj.cloudinary_type,
+                    resource_type=obj.cloudinary_resource_type,
+                ),
+                dict,
+            )
         finally:
             cloudinary.uploader.destroy(
                 old_public_id,
                 type=obj.cloudinary_type,
-                resource_type=obj.cloudinary_resource_type
+                resource_type=obj.cloudinary_resource_type,
             )
 
             obj.delete_file()
@@ -232,13 +257,15 @@ class TestCloudinaryImageField:
         assert field.related_model == 'paper_uploads_cloudinary.CloudinaryImage'
 
     def test_validators(self):
-        field = CloudinaryImageField(validators=[
-            validators.SizeValidator(10 * 1024 * 1024),
-            validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
-            validators.ImageMinSizeValidator(640, 480),
-            validators.ImageMaxSizeValidator(1920, 1440),
-        ])
-        field.contribute_to_class(Page, 'cloud_image')    # resets varaitions
+        field = CloudinaryImageField(
+            validators=[
+                validators.SizeValidator(10 * 1024 * 1024),
+                validators.ExtensionValidator(['svg', 'BmP', 'Jpeg']),
+                validators.ImageMinSizeValidator(640, 480),
+                validators.ImageMaxSizeValidator(1920, 1440),
+            ]
+        )
+        field.contribute_to_class(Page, 'cloud_image')  # resets varaitions
 
         assert field.get_validation() == {
             'sizeLimit': 10 * 1024 * 1024,

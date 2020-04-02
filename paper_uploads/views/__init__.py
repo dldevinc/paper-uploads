@@ -1,3 +1,1 @@
-from . import file
-from . import image
-from . import collection
+from . import collection, file, image  # noqa: 401

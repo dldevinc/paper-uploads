@@ -1,8 +1,11 @@
+from typing import Any, List
+
 from django.core import checks
 from django.db.models import Field
 from django.utils.functional import cached_property
-from .base import FileFieldBase
+
 from ... import forms
+from .base import FileFieldBase
 
 
 class CollectionField(FileFieldBase):
@@ -23,7 +26,11 @@ class CollectionField(FileFieldBase):
         if rel_is_string:
             return []
 
-        model_name = self.remote_field.model if rel_is_string else self.remote_field.model._meta.object_name
+        model_name = (
+            self.remote_field.model
+            if rel_is_string
+            else self.remote_field.model._meta.object_name
+        )
         if not issubclass(self.remote_field.model, CollectionBase):
             return [
                 checks.Error(
@@ -46,7 +53,8 @@ class ItemField:
     Поле для подключения классов элементов галереи.
     Допустимо для использования только в подклассах галерей.
     """
-    default_validators = []  # Default set of validators
+
+    default_validators = []     # type: List[Any]
 
     def __init__(self, to, name=None, validators=(), postprocess=None, options=None):
         self.name = name
@@ -55,11 +63,8 @@ class ItemField:
             to._meta.model_name
         except AttributeError:
             assert isinstance(to, str), (
-                "%s(%r) is invalid. First parameter to %s must be a model" % (
-                    self.__class__.__name__,
-                    to,
-                    self.__class__.__name__,
-                )
+                "%s(%r) is invalid. First parameter to %s must be a model"
+                % (self.__class__.__name__, to, self.__class__.__name__,)
             )
 
         self.model = to
@@ -79,4 +84,7 @@ class ItemField:
 
     def contribute_to_class(self, cls, name, **kwargs):
         self.name = self.name or name
-        cls._local_item_type_fields.append(self)
+        item_types_attribute = '_{}__item_types'.format(cls.__name__)
+        item_types = getattr(cls, item_types_attribute, None)
+        if item_types is not None:
+            item_types[self.name] = self

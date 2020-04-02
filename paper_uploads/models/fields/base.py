@@ -1,8 +1,10 @@
 import os
-from typing import Dict, Any
-from django.db import models
+from typing import Any, Dict
+
 from django.core import checks
+from django.db import models
 from django.db.models.signals import post_delete
+
 from ... import validators
 
 
@@ -10,6 +12,7 @@ class FileFieldBase(models.OneToOneField):
     """
     Базовый класс для ссылок на модели файлов.
     """
+
     def __init__(self, verbose_name=None, **kwargs):
         kwargs.setdefault('null', True)
         kwargs.setdefault('related_name', '+')
@@ -30,16 +33,20 @@ class FileFieldBase(models.OneToOneField):
         if rel_is_string:
             return []
 
-        model_name = self.remote_field.model if rel_is_string else self.remote_field.model._meta.object_name
+        model_name = (
+            self.remote_field.model
+            if rel_is_string
+            else self.remote_field.model._meta.object_name
+        )
 
-        if (
-            not issubclass(self.remote_field.model, FileResource)
-            or not issubclass(self.remote_field.model, ReverseFieldModelMixin)
+        if not issubclass(self.remote_field.model, FileResource) or not issubclass(
+            self.remote_field.model, ReverseFieldModelMixin
         ):
             return [
                 checks.Error(
                     "Field defines a relation with model '%s', which is not "
-                    "subclass of both FileResource and ReverseFieldModelMixin" % model_name,
+                    "subclass of both FileResource and ReverseFieldModelMixin"
+                    % model_name,
                     obj=self,
                 )
             ]
@@ -54,13 +61,15 @@ class FileFieldBase(models.OneToOneField):
         return name, path, args, kwargs
 
     def formfield(self, **kwargs):
-        return super().formfield(**{
-            'owner_app_label': self.opts.app_label.lower(),
-            'owner_model_name': self.opts.model_name.lower(),
-            'owner_fieldname': self.name,
-            'validation': self.get_validation(),
-            **kwargs
-        })
+        return super().formfield(
+            **{
+                'owner_app_label': self.opts.app_label.lower(),
+                'owner_model_name': self.opts.model_name.lower(),
+                'owner_fieldname': self.name,
+                'validation': self.get_validation(),
+                **kwargs,
+            }
+        )
 
     def contribute_to_class(self, cls, *args, **kwargs):
         super().contribute_to_class(cls, *args, **kwargs)
@@ -90,7 +99,7 @@ class FileFieldBase(models.OneToOneField):
         image.minWidth и т.п. не используются из-за недостатка кастомизации
         текста об ошибках.
         """
-        validation = {}
+        validation = {}     # type: Dict[str, Any]
         for v in self.validators:
             if isinstance(v, validators.ExtensionValidator):
                 validation['allowedExtensions'] = v.allowed
@@ -111,6 +120,7 @@ class FormattedFileField(models.FileField):
     """
     Обертка над стандартным файловым полем, форматирующее расширение файлов.
     """
+
     def generate_filename(self, instance, filename):
         file_root, file_ext = os.path.splitext(filename)
         file_ext = file_ext.lower()

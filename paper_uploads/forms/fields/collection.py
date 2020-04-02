@@ -1,5 +1,5 @@
-from .base import FileFieldBase
 from ..widgets import CollectionWidget
+from .base import FileFieldBase
 
 
 class CollectionField(FileFieldBase):

@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 from paper_admin.admin.sortable import SortableAdminMixin
-from .models import Page, Document
+
+from .models import Document, Page
 
 
 @admin.register(Page)
