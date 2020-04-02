@@ -185,3 +185,7 @@ PAPER_UPLOADS = {
         'webp': False
     }
 }
+
+
+from dotenv import load_dotenv
+load_dotenv()
