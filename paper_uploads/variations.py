@@ -1,6 +1,6 @@
-from typing import Any, Dict, Iterable, Set, Union
-
 import posixpath
+from typing import Any, Dict, Union
+
 from variations.variation import Variation
 
 from .utils import lowercased_dict_keys
@@ -61,12 +61,3 @@ class PaperVariation(Variation):
         file_name = ''.join((new_file_root, file_ext))
         name = posixpath.join(dir_name, file_name)
         return self.replace_extension(name)
-
-    def get_postprocess_options(self, format: str) -> Union[Dict[str, Any], bool, None]:
-        """
-        Получение настроек постобработки для указанного формата
-        """
-        postprocess = self.postprocess
-        if isinstance(postprocess, dict):
-            return postprocess.get(format.lower())
-        return postprocess
