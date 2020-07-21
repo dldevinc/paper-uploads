@@ -9,7 +9,7 @@ from ..postprocess import postprocess_variation
 from ..storage import upload_storage
 from ..variations import PaperVariation
 from .base import (
-    PostprocessableFileFieldResource,
+    PostProcessableFileFieldResource,
     ReadonlyFileProxyMixin,
     ReverseFieldModelMixin,
     VariationFile,
@@ -22,7 +22,7 @@ class UploadedImage(
     ReverseFieldModelMixin,
     ReadonlyFileProxyMixin,
     VersatileImageResourceMixin,
-    PostprocessableFileFieldResource,
+    PostProcessableFileFieldResource,
 ):
     file = VariationalFileField(
         _('file'),
@@ -31,7 +31,7 @@ class UploadedImage(
         storage=upload_storage,
     )
 
-    class Meta(PostprocessableFileFieldResource.Meta):
+    class Meta(PostProcessableFileFieldResource.Meta):
         verbose_name = _('image')
         verbose_name_plural = _('images')
 

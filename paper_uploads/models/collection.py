@@ -25,7 +25,7 @@ from ..postprocess import postprocess_common_file, postprocess_variation
 from ..storage import upload_storage
 from ..variations import PaperVariation
 from .base import (
-    PostprocessableFileFieldResource,
+    PostProcessableFileFieldResource,
     ReadonlyFileProxyMixin,
     Resource,
     ReverseFieldModelMixin,
@@ -38,6 +38,7 @@ from .image import VariationalFileField
 __all__ = [
     'CollectionResourceItem',
     'CollectionBase',
+    'FilePreviewItemMixin',
     'FileItem',
     'SVGItem',
     'ImageItem',
@@ -220,7 +221,7 @@ class FileItem(
     FilePreviewItemMixin,
     ReadonlyFileProxyMixin,
     CollectionResourceItem,
-    PostprocessableFileFieldResource,
+    PostProcessableFileFieldResource,
 ):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     admin_template_name = 'paper_uploads/collection_item/file.html'
@@ -270,7 +271,7 @@ class FileItem(
 
 
 class SVGItem(
-    ReadonlyFileProxyMixin, CollectionResourceItem, PostprocessableFileFieldResource
+    ReadonlyFileProxyMixin, CollectionResourceItem, PostProcessableFileFieldResource
 ):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     admin_template_name = 'paper_uploads/collection_item/svg.html'
@@ -335,7 +336,7 @@ class ImageItem(
     ReadonlyFileProxyMixin,
     VersatileImageResourceMixin,
     CollectionResourceItem,
-    PostprocessableFileFieldResource,
+    PostProcessableFileFieldResource,
 ):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
     change_form_class = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'

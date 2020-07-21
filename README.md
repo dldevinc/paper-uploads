@@ -18,13 +18,13 @@ Asynchronous file upload for Django
 * Поля для хранения файлов являются производными 
 от `OneToOneField` и не используют `<input type="file">`. Благодаря 
 этому, при ошибках валидации, прикрепленные файлы не сбрасываются.
-* Совместим с [django-storages](https://github.com/jschneier/django-storages).
 * Загруженные картинки можно нарезать на множество вариаций.
 Каждая вариация гибко настраивается. Можно указать размеры, 
 качество сжатия, формат, добавить дополнительные 
 [pilkit](https://github.com/matthewwithanm/pilkit)-процессоры, 
 распознавание лиц и другое. См. 
 [variations](https://github.com/dldevinc/variations).
+* Совместим с [django-storages](https://github.com/jschneier/django-storages).
 * Опциональная интеграция с [django-rq](https://github.com/rq/django-rq)
 для отложенной нарезки картинок на вариации.
 * Опциональная интеграция с [Cloudinary](https://cloudinary.com/documentation/cloudinary_references).

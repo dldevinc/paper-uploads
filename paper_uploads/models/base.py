@@ -24,7 +24,7 @@ __all__ = [
     'HashableResourceMixin',
     'FileResource',
     'FileFieldResource',
-    'PostprocessableFileFieldResource',
+    'PostProcessableFileFieldResource',
     'ReverseFieldModelMixin',
     'ReadonlyFileProxyMixin',
     'ImageFileResourceMixin',
@@ -161,6 +161,8 @@ class FileResource(HashableResourceMixin):
     def get_file_name(self) -> str:
         """
         Получение имени загруженного файла.
+        В отличие от `self.name` это имя может содержать суффиксы, добавляемые
+        файловым хранилищем.
         """
         raise NotImplementedError
 
@@ -262,10 +264,9 @@ class FileFieldResource(FileResource):
         self.get_file().delete(save=False)
 
 
-class PostprocessableFileFieldResource(FileFieldResource):
+class PostProcessableFileFieldResource(FileFieldResource):
     """
     Подкласс файлового ресурса, который может быть обработан локальными утилитами.
-    Используемый Django Storage должен быть подклассом FileSystemStorage.
     """
 
     # флаг, запускающий постобработку после сохранения экземпляра модели в БД

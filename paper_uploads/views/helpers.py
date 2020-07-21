@@ -138,4 +138,4 @@ def get_instance(model_class: Type[T], instance_id: int) -> T:
     except (ValueError, TypeError):
         raise exceptions.InvalidObjectId(instance_id)
     else:
-        return model_class._default_manager.get(pk=instance_id)
+        return model_class._default_manager.get(pk=instance_id)  # noqa

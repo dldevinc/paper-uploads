@@ -144,7 +144,6 @@ PAPER_UPLOADS = {
             'command': 'svgo',
             'arguments': '--precision=4 --disable=convertPathData "{file}"',
         },
-        'webp': False
     }
 }
 

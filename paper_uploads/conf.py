@@ -1,6 +1,8 @@
 from django import conf
 from django.utils.module_loading import import_string
 
+from .utils import lowercased_dict_keys
+
 DEFAULTS = {
     'STORAGE': 'django.core.files.storage.FileSystemStorage',
     'STORAGE_OPTIONS': {},
@@ -135,8 +137,6 @@ class Settings:
         return value
 
     def prepare_postprocess(self, value):
-        from .utils import lowercased_dict_keys
-
         if value is False or value is None:
             return value
         return lowercased_dict_keys(value)

@@ -10,7 +10,7 @@ from ..conf import settings
 from ..postprocess import postprocess_common_file
 from ..storage import upload_storage
 from .base import (
-    PostprocessableFileFieldResource,
+    PostProcessableFileFieldResource,
     ReadonlyFileProxyMixin,
     ReverseFieldModelMixin,
 )
@@ -18,7 +18,7 @@ from .fields import FormattedFileField
 
 
 class UploadedFile(
-    ReverseFieldModelMixin, ReadonlyFileProxyMixin, PostprocessableFileFieldResource
+    ReverseFieldModelMixin, ReadonlyFileProxyMixin, PostProcessableFileFieldResource
 ):
     file = FormattedFileField(
         _('file'),
@@ -28,7 +28,7 @@ class UploadedFile(
     )
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
-    class Meta(PostprocessableFileFieldResource.Meta):
+    class Meta(PostProcessableFileFieldResource.Meta):
         verbose_name = _('file')
         verbose_name_plural = _('files')
 
