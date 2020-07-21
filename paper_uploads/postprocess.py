@@ -10,7 +10,7 @@ from .conf import settings
 from .exceptions import PostprocessProhibited
 from .logging import logger
 from .models import VariationFile
-from .utils import lowercase_copy
+from .utils import lowercased_dict_keys
 from .variations import PaperVariation
 
 
@@ -58,7 +58,7 @@ def get_postprocess_variation_options(
     if variation_options is False:
         raise PostprocessProhibited
     elif isinstance(variation_options, dict):
-        return lowercase_copy(variation_options)
+        return lowercased_dict_keys(variation_options)
 
     if field is not None:
         field_options = getattr(field, 'postprocess', None)
@@ -69,7 +69,7 @@ def get_postprocess_variation_options(
             if field_format_options is False:
                 raise PostprocessProhibited
             elif field_format_options is not None:
-                return lowercase_copy(field_format_options)
+                return lowercased_dict_keys(field_format_options)
 
     global_options = getattr(settings, 'POSTPROCESS', {})
     if global_options is False:
@@ -79,7 +79,7 @@ def get_postprocess_variation_options(
         if global_format_options is False:
             raise PostprocessProhibited
         elif global_format_options is not None:
-            return lowercase_copy(global_format_options)
+            return lowercased_dict_keys(global_format_options)
 
     raise PostprocessProhibited
 
@@ -117,7 +117,7 @@ def get_postprocess_common_options(format: str, field: Any = None) -> Dict[str, 
             if field_format_options is False:
                 raise PostprocessProhibited
             elif field_format_options is not None:
-                return lowercase_copy(field_format_options)
+                return lowercased_dict_keys(field_format_options)
 
     global_options = getattr(settings, 'POSTPROCESS', {})
     if global_options is False:
@@ -127,7 +127,7 @@ def get_postprocess_common_options(format: str, field: Any = None) -> Dict[str, 
         if global_format_options is False:
             raise PostprocessProhibited
         elif global_format_options is not None:
-            return lowercase_copy(global_format_options)
+            return lowercased_dict_keys(global_format_options)
 
     raise PostprocessProhibited
 

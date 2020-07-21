@@ -1,45 +1,71 @@
-from typing import Any, Dict
+import time
+from typing import IO, Any, Dict, Iterable, Iterator, List, Set, Union
+
+from django.apps import apps
+from django.core import exceptions
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.files import File
+from django.db import DEFAULT_DB_ALIAS
 
 from .conf import settings
-from .utils import lowercase_copy
+from .logging import logger
+from .utils import lowercased_dict_keys
 from .variations import PaperVariation
 
+# Перечень допустимых версий вариаций
+ALLOWED_VERSIONS = {'webp', '2x', '3x', '4x'}
 
-def create_retina_version(config: Dict[str, Any], *, factor=2):
-    varaition_size = config.get('size', (0, 0))
-    version_size = tuple(x * factor for x in varaition_size)
-    version_config = dict(config, size=version_size)
-    return PaperVariation(**version_config)
+# Максимальное количество попыток чтения из БД при получении
+# экземпляра модели.
+# TODO: уточнить необходимость ткаого подхода
+MAX_DB_READ_ATTEMPTS = 3
 
 
-def get_addition_versions(name: str, config: Dict[str, Any], variation: PaperVariation):
-    addition_variations = {}
-    need_webp_version = 'webp' in variation.versions and variation.format != 'WEBP'
+def generate_scaled_versions(
+    name: str,
+    config: Dict[str, Any],
+    scale_factor: int = 1,
+    webp: bool = False
+) -> Iterator[PaperVariation]:
+    """Геренирует масштабированную версию вариации с опциональной WebP-версией"""
+    variation_size = tuple(x * scale_factor for x in config.get('size', (0, 0)))
 
-    def add_retina_versions(factor: int):
-        version_name = '{}_{}x'.format(name, factor)
-        version_config = dict(config, name=version_name)
-        addition_variations[version_name] = create_retina_version(
-            version_config, factor=factor
+    if scale_factor == 1:
+        variation_name = name
+    else:
+        variation_name = '{}_{}x'.format(name, scale_factor)
+    variation_config = dict(config, name=variation_name, size=variation_size)
+    yield PaperVariation(**variation_config)
+
+    if webp:
+        if scale_factor == 1:
+            variation_name = '{}_webp'.format(name)
+        else:
+            variation_name = '{}_webp_{}x'.format(name, scale_factor)
+        variation_config = dict(
+            config,
+            name=variation_name,
+            size=variation_size,
+            format='webp'
         )
-        if need_webp_version:
-            version_name = '{}_webp_{}x'.format(name, factor)
-            version_config = dict(config, name=version_name, format='webp')
-            addition_variations[version_name] = create_retina_version(
-                version_config, factor=factor
-            )
+        yield PaperVariation(**variation_config)
 
-    if '2x' in variation.versions:
-        add_retina_versions(2)
-    if '3x' in variation.versions:
-        add_retina_versions(3)
-    if '4x' in variation.versions:
-        add_retina_versions(4)
-    if need_webp_version:
-        version_name = '{}_webp'.format(name)
-        version_config = dict(config, name=version_name, format='webp')
-        addition_variations[version_name] = PaperVariation(**version_config)
-    return addition_variations
+
+def generate_all_versions(
+    name: str,
+    config: Dict[str, Any],
+    versions: Set[str],
+) -> Iterator[PaperVariation]:
+    """Геренирует все перечисленные версии вариации"""
+    webp = 'webp' in versions and config.get('format', '').upper() != 'WEBP'
+
+    yield from generate_scaled_versions(name, config, scale_factor=1, webp=webp)
+    if '2x' in versions:
+        yield from generate_scaled_versions(name, config, scale_factor=2, webp=webp)
+    if '3x' in versions:
+        yield from generate_scaled_versions(name, config, scale_factor=3, webp=webp)
+    if '4x' in versions:
+        yield from generate_scaled_versions(name, config, scale_factor=4, webp=webp)
 
 
 def build_variations(options: Dict[str, Any]) -> Dict[str, PaperVariation]:
@@ -47,14 +73,59 @@ def build_variations(options: Dict[str, Any]) -> Dict[str, PaperVariation]:
     Создание объектов вариаций из словаря конфигурации.
     """
     variations = {}
-    for vname, config in options.items():
-        new_config = lowercase_copy(settings.VARIATION_DEFAULTS)
+    for name, config in options.items():
+        new_config = lowercased_dict_keys(settings.VARIATION_DEFAULTS)
         new_config.update(config)
-        new_config['name'] = vname
 
-        variations[vname] = variation = PaperVariation(**new_config)
-        additional_variations = get_addition_versions(vname, new_config, variation)
-        for name, version in additional_variations.items():
-            variations.setdefault(name, version)
+        versions = set(v.lower() for v in new_config.get('versions', ()))
+        unknown_versions = versions.difference(ALLOWED_VERSIONS)
+        if unknown_versions:
+            raise ValueError(
+                'unknown variation versions: {}'.format(', '.join(unknown_versions))
+            )
+
+        all_versions = generate_all_versions(name, new_config, versions)
+        for variation in all_versions:
+            if name == variation.name:
+                # явно заданная вариация переопредеяет любую неявную
+                variations[name] = variation
+            else:
+                variations.setdefault(variation.name, variation)
 
     return variations
+
+
+def get_instance(
+    app_label: str, model_name: str, object_id: int, using: str = DEFAULT_DB_ALIAS
+):
+    """
+    Получение экземпляра модели по названию приложения, модели и ID.
+    """
+    model_class = apps.get_model(app_label, model_name)
+    attempts = 1
+    while True:
+        try:
+            return model_class._base_manager.using(using).get(pk=object_id)  # noqa
+        except ObjectDoesNotExist:
+            # delay recheck if transaction not committed yet
+            attempts += 1
+            if attempts > MAX_DB_READ_ATTEMPTS:
+                logger.exception('Instance #%s not found' % object_id)
+                raise
+            else:
+                time.sleep(1)
+
+
+def run_validators(value: Union[IO, File], validators: Iterable[Any]):
+    """
+    Based on `django.forms.fields.run_validators` method.
+    """
+    errors = []  # type: List[Any]
+    for v in validators:
+        try:
+            v(value)
+        except exceptions.ValidationError as e:
+            errors.extend(e.error_list)
+
+    if errors:
+        raise exceptions.ValidationError(errors)

@@ -15,8 +15,8 @@ from django.views.generic import FormView
 
 from .. import exceptions, signals
 from ..logging import logger
+from ..helpers import run_validators
 from ..models.collection import CollectionBase, CollectionResourceItem
-from ..utils import run_validators
 from . import helpers
 
 

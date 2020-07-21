@@ -13,7 +13,7 @@ from django.utils.translation import gettext_lazy as _
 from PIL import Image
 from variations.utils import prepare_image
 
-from .. import signals, utils
+from .. import signals, helpers
 from ..conf import settings
 from ..logging import logger
 from ..variations import PaperVariation
@@ -325,7 +325,7 @@ class PostprocessableFileFieldResource(FileFieldResource):
         Задача для django-rq.
         Вызывает `postprocess()` экземпляра в отдельном процессе.
         """
-        instance = utils.get_instance(app_label, model_name, object_id, using=using)
+        instance = helpers.get_instance(app_label, model_name, object_id, using=using)
         instance.postprocess(**kwargs)
 
 
@@ -640,7 +640,7 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
         Задача для django-rq.
         Вызывает `recut()` экземпляра в отдельном процессе.
         """
-        instance = utils.get_instance(app_label, model_name, object_id, using=using)
+        instance = helpers.get_instance(app_label, model_name, object_id, using=using)
         instance.recut(**kwargs)
 
 

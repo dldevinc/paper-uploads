@@ -13,7 +13,7 @@ from .. import exceptions
 from ..forms.dialogs.file import UploadedFileDialog
 from ..logging import logger
 from ..models import FileResource
-from ..utils import run_validators
+from ..helpers import run_validators
 from . import helpers
 
 

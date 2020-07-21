@@ -1,17 +1,16 @@
-import posixpath
 from typing import Any, Dict, Iterable, Set, Union
 
+import posixpath
 from variations.variation import Variation
 
-ALLOWED_VERSIONS = {'webp', '2x', '3x', '4x'}
+from .utils import lowercased_dict_keys
 
 
 class PaperVariation(Variation):
     """
-    Расширение возможностей вариации.
+    Расширение возможностей вариации:
       * Хранение имени вариации
       * Хранение настроек постобработки
-      * Хранение перечня дополнительных версий вариации
     """
 
     def __init__(
@@ -19,11 +18,9 @@ class PaperVariation(Variation):
         *args,
         name: str = '',
         postprocess: Union[Dict, bool, None] = None,
-        versions: Iterable[str] = None,
         **kwargs
     ):
         self.name = name
-        self.versions = versions or set()
         self.postprocess = postprocess
         super().__init__(*args, **kwargs)
 
@@ -46,21 +43,9 @@ class PaperVariation(Variation):
         if value is None or value is False:
             self._postprocess = value
         elif isinstance(value, dict):
-            # lowercase format names
-            self._postprocess = {k.lower(): v for k, v in value.items()}
+            self._postprocess = lowercased_dict_keys(value)
         else:
             raise TypeError(value)
-
-    @property
-    def versions(self) -> Set:
-        return self._versions
-
-    @versions.setter
-    def versions(self, value: Iterable[str]):
-        self._versions = set(v.lower() for v in value)
-        unknown_versions = self._versions.difference(ALLOWED_VERSIONS)
-        if unknown_versions:
-            raise ValueError('unknown versions: {}'.format(', '.join(unknown_versions)))
 
     def get_output_filename(self, input_filename: str) -> str:
         """

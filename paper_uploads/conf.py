@@ -135,11 +135,11 @@ class Settings:
         return value
 
     def prepare_postprocess(self, value):
-        from .utils import lowercase_copy
+        from .utils import lowercased_dict_keys
 
         if value is False or value is None:
             return value
-        return lowercase_copy(value)
+        return lowercased_dict_keys(value)
 
 
 settings = Settings(
