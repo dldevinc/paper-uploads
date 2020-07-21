@@ -74,7 +74,7 @@ def build_variations(options: Dict[str, Any]) -> Dict[str, PaperVariation]:
     """
     variations = {}
     for name, config in options.items():
-        new_config = lowercased_dict_keys(settings.VARIATION_DEFAULTS)
+        new_config = lowercased_dict_keys(settings.VARIATION_DEFAULTS or {})
         new_config.update(config)
 
         versions = set(v.lower() for v in new_config.get('versions', ()))

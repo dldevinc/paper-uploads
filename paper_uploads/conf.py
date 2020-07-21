@@ -29,7 +29,7 @@ DEFAULTS = {
     'RQ_ENABLED': False,
     'RQ_QUEUE_NAME': 'default',
 
-    'VARIATION_DEFAULTS': {},
+    'VARIATION_DEFAULTS': None,
     'POSTPROCESS': {},
     'CLOUDINARY': {
         'use_filename': True,
