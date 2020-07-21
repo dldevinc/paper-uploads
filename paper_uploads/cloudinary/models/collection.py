@@ -1,4 +1,4 @@
-from typing import IO, Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 import magic
 from django.core.files import File
@@ -8,12 +8,9 @@ from django.utils.translation import gettext_lazy as _
 
 from ...conf import settings
 from ...models.base import ImageFileResourceMixin
-from ...models.collection import (
-    Collection,
-    CollectionResourceItem,
-    FilePreviewItemMixin,
-)
+from ...models.collection import Collection, CollectionResourceItem, FilePreviewItemMixin
 from ...models.fields import ItemField
+from ...typing import FileLike
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
 
 __all__ = [
@@ -29,7 +26,7 @@ class CollectionCloudinaryFileResource(CollectionResourceItem, CloudinaryFileRes
     class Meta(CollectionResourceItem.Meta):
         abstract = True
 
-    def attach_file(self, file: Union[File, IO], name: str = None, **options):
+    def attach_file(self, file: FileLike, name: str = None, **options):
         """
         Установка опций загрузки файла из параметров поля
         """

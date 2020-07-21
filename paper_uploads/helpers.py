@@ -1,14 +1,14 @@
 import time
-from typing import IO, Any, Dict, Iterable, Iterator, List, Set, Union
+from typing import Any, Dict, Iterable, Iterator, List, Set
 
 from django.apps import apps
 from django.core import exceptions
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.files import File
 from django.db import DEFAULT_DB_ALIAS
 
 from .conf import settings
 from .logging import logger
+from .typing import FileLike, VariationConfig
 from .utils import lowercased_dict_keys
 from .variations import PaperVariation
 
@@ -23,7 +23,7 @@ MAX_DB_READ_ATTEMPTS = 3
 
 def generate_scaled_versions(
     name: str,
-    config: Dict[str, Any],
+    config: VariationConfig,
     scale_factor: int = 1,
     webp: bool = False
 ) -> Iterator[PaperVariation]:
@@ -53,7 +53,7 @@ def generate_scaled_versions(
 
 def generate_all_versions(
     name: str,
-    config: Dict[str, Any],
+    config: VariationConfig,
     versions: Set[str],
 ) -> Iterator[PaperVariation]:
     """Геренирует все перечисленные версии вариации"""
@@ -68,7 +68,7 @@ def generate_all_versions(
         yield from generate_scaled_versions(name, config, scale_factor=4, webp=webp)
 
 
-def build_variations(options: Dict[str, Any]) -> Dict[str, PaperVariation]:
+def build_variations(options: Dict[str, VariationConfig]) -> Dict[str, PaperVariation]:
     """
     Создание объектов вариаций из словаря конфигурации.
     """
@@ -116,7 +116,7 @@ def get_instance(
                 time.sleep(1)
 
 
-def run_validators(value: Union[IO, File], validators: Iterable[Any]):
+def run_validators(value: FileLike, validators: Iterable[Any]):
     """
     Based on `django.forms.fields.run_validators` method.
     """

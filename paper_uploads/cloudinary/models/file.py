@@ -1,12 +1,12 @@
-from typing import IO, Any, Dict, Union
+from typing import Any, Dict
 
-from django.core.files import File
 from django.db import models
 from django.template.defaultfilters import filesizeformat
 from django.utils.translation import gettext_lazy as _
 
 from ...conf import settings
 from ...models.base import ReverseFieldModelMixin
+from ...typing import FileLike
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
 
 
@@ -26,7 +26,7 @@ class CloudinaryFile(
             self.display_name = self.name
         super().save(*args, **kwargs)
 
-    def attach_file(self, file: Union[File, IO], name: str = None, **options):
+    def attach_file(self, file: FileLike, name: str = None, **options):
         """
         Установка опций загрузки файла из параметров поля
         """

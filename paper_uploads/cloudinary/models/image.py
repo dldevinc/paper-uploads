@@ -1,6 +1,5 @@
-from typing import IO, Any, Dict, Union
+from typing import Any, Dict
 
-from django.core.files import File
 from django.dispatch import receiver
 from django.template.defaultfilters import filesizeformat
 from django.utils.translation import gettext_lazy as _
@@ -8,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from ... import signals
 from ...conf import settings
 from ...models.base import ImageFileResourceMixin, ReverseFieldModelMixin
+from ...typing import FileLike
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
 
 
@@ -23,7 +23,7 @@ class CloudinaryImage(
         verbose_name = _('image')
         verbose_name_plural = _('images')
 
-    def attach_file(self, file: Union[File, IO], name: str = None, **options):
+    def attach_file(self, file: FileLike, name: str = None, **options):
         """
         Установка опций загрузки файла из параметров поля
         """

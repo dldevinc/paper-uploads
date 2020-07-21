@@ -1,7 +1,7 @@
 import hashlib
 import io
 import os
-from typing import IO, Any, Dict, Iterable, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Type
 
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist, ValidationError
@@ -16,6 +16,7 @@ from variations.utils import prepare_image
 from .. import signals, helpers
 from ..conf import settings
 from ..logging import logger
+from ..typing import FileLike
 from ..variations import PaperVariation
 
 __all__ = [
@@ -94,10 +95,10 @@ class HashableResourceMixin(Resource):
     class Meta(Resource.Meta):
         abstract = True
 
-    def get_hash(self, file: File) -> str:
+    def get_hash(self, file: FileLike) -> str:
         raise NotImplementedError
 
-    def update_hash(self, file: File) -> bool:
+    def update_hash(self, file: FileLike) -> bool:
         """
         :return: updated
         """
@@ -142,7 +143,7 @@ class FileResource(HashableResourceMixin):
             'url': self.get_file_url(),
         }
 
-    def get_hash(self, file: File) -> str:
+    def get_hash(self, file: FileLike) -> str:
         sha1 = hashlib.sha1()
         if file.multiple_chunks():
             for chunk in file.chunks():
@@ -175,7 +176,7 @@ class FileResource(HashableResourceMixin):
         """
         raise NotImplementedError
 
-    def attach_file(self, file: Union[File, IO], name: str = None, **options):
+    def attach_file(self, file: FileLike, name: str = None, **options):
         if not isinstance(file, File):
             name = name or getattr(file, 'name', None)
             if name:
@@ -378,7 +379,7 @@ class ImageFieldResourceMixin(ImageFileResourceMixin):
     class Meta(ImageFileResourceMixin.Meta):
         abstract = True
 
-    def attach_file(self, file: Union[File, IO], name: str = None, **options):
+    def attach_file(self, file: FileLike, name: str = None, **options):
         super().attach_file(file, name=name, **options)
         with self.get_file().open():
             try:
@@ -515,7 +516,7 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
             else:
                 self.recut(**kwargs)
 
-    def attach_file(self, file: Union[File, IO], name: str = None, **options):
+    def attach_file(self, file: FileLike, name: str = None, **options):
         super().attach_file(file, name=name, **options)
         self.need_recut = True
         self._variation_files_cache.clear()
@@ -534,7 +535,7 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
     def get_variations(self) -> Dict[str, PaperVariation]:
         raise NotImplementedError
 
-    def variation_files(self) -> Iterable[Tuple[str, Union[VariationFile, None]]]:
+    def variation_files(self) -> Iterable[Tuple[str, Optional[VariationFile]]]:
         for variation_name in self.get_variations():
             yield variation_name, self.get_variation_file(variation_name)
 

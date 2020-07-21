@@ -1,14 +1,14 @@
+import os
 from typing import Sequence
 
 import magic
-import os
 from django.core.exceptions import ValidationError
-from django.core.files import File
 from django.template.defaultfilters import filesizeformat
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
 from PIL import Image
 
+from .typing import FileLike
 from .utils import remove_dulpicates
 
 __all__ = [
@@ -30,7 +30,7 @@ class ExtensionValidator:
         if message:
             self.message = message
 
-    def __call__(self, file: File):
+    def __call__(self, file: FileLike):
         _, ext = os.path.splitext(file.name)
         ext = ext.lstrip('.').lower()
         params = {
@@ -55,7 +55,7 @@ class MimetypeValidator:
         if message:
             self.message = message
 
-    def __call__(self, file: File):
+    def __call__(self, file: FileLike):
         mimetype = magic.from_buffer(file.read(1024), mime=True)
         file.seek(0)  # correct file position after mimetype detection
         basetype, subtype = mimetype.split('/', 1)
@@ -81,7 +81,7 @@ class SizeValidator:
         if message:
             self.message = message
 
-    def __call__(self, file: File):
+    def __call__(self, file: FileLike):
         params = {
             'name': file.name,
             'size': file.size,
@@ -112,7 +112,7 @@ class ImageMinSizeValidator:
         self.width_limit = width
         self.height_limit = height
 
-    def __call__(self, file: File):
+    def __call__(self, file: FileLike):
         if file.closed:
             raise ValidationError('`%s` is closed' % os.path.basename(file.name))
 
@@ -175,7 +175,7 @@ class ImageMaxSizeValidator:
         self.width_limit = width
         self.height_limit = height
 
-    def __call__(self, file: File):
+    def __call__(self, file: FileLike):
         if file.closed:
             raise ValidationError('`%s` is closed' % os.path.basename(file.name))
 
