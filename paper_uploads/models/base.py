@@ -103,7 +103,11 @@ class HashableResourceMixin(Resource):
         """
         new_hash = self.get_hash(file)
         if new_hash and new_hash != self.hash:
-            signals.hash_updated.send(type(self), instance=self, hash=new_hash)
+            signals.hash_updated.send(
+                sender=type(self),
+                instance=self,
+                hash=new_hash
+            )
             self.hash = new_hash
             return True
         return False
@@ -196,10 +200,19 @@ class FileResource(HashableResourceMixin):
         file.seek(0)
 
         signals.pre_attach_file.send(
-            type(self), instance=self, file=file, options=options
+            sender=type(self),
+            instance=self,
+            file=file,
+            options=options
         )
         response = self._attach_file(file, **options)
-        signals.post_attach_file.send(type(self), instance=self, response=response)
+        signals.post_attach_file.send(
+            sender=type(self),
+            instance=self,
+            file=result_file,
+            options=options,
+            response=response
+        )
 
         # запоминаем расширение файла после загрузки файла, т.к. при загрузке
         # оно может быть отформатировано.
@@ -212,17 +225,31 @@ class FileResource(HashableResourceMixin):
 
     def rename_file(self, new_name: str):
         self.name = new_name
-        signals.pre_rename_file.send(type(self), instance=self, new_name=new_name)
+        signals.pre_rename_file.send(
+            sender=type(self),
+            instance=self,
+            new_name=new_name
+        )
         self._rename_file(new_name)
-        signals.post_rename_file.send(type(self), instance=self, new_name=new_name)
+        signals.post_rename_file.send(
+            sender=type(self),
+            instance=self,
+            new_name=new_name
+        )
 
     def _rename_file(self, new_name: str):
         raise NotImplementedError
 
     def delete_file(self):
-        signals.pre_delete_file.send(type(self), instance=self)
+        signals.pre_delete_file.send(
+            sender=type(self),
+            instance=self
+        )
         self._delete_file()
-        signals.post_delete_file.send(type(self), instance=self)
+        signals.post_delete_file.send(
+            sender=type(self),
+            instance=self
+        )
 
     def _delete_file(self):
         raise NotImplementedError
@@ -532,6 +559,12 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
                 variation_file = self.get_variation_file(name)
                 if variation_file is None:
                     raise RuntimeError("variation file for '{}' does not exist".format(name))
+
+                signals.variation_created.send(
+                    sender=type(self),
+                    instance=self,
+                    file=variation_file
+                )
 
     def get_recut_kwargs(self) -> Dict[str, Any]:
         """

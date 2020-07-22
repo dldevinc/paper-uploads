@@ -256,7 +256,10 @@ def sort_items(request):
                     order=2 ** 32 - 1
                 )
 
-    signals.collection_reordered.send(collection_cls, instance=instance)
+    signals.collection_reordered.send(
+        sender=collection_cls,
+        instance=instance
+    )
     return helpers.success_response()
 
 
