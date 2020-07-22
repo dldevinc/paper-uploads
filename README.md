@@ -28,8 +28,6 @@ Asynchronous file upload for Django
 * Опциональная интеграция с [django-rq](https://github.com/rq/django-rq)
 для отложенной нарезки картинок на вариации.
 * Опциональная интеграция с [Cloudinary](https://cloudinary.com/documentation/cloudinary_references).
-* Возможность постобработки изображений консольными утилитами. 
-Такими как `mozjpeg` и `pngquant`.
 * Возможность создавать коллекции файлов. В частности, галерей 
 изображений с возможностью сортировки элементов.
 
@@ -60,20 +58,6 @@ PAPER_UPLOADS = {
         'webp': dict(
             quality=75,
         )
-    },
-    'POSTPROCESS': {
-        'jpeg': {
-            'command': 'jpeg-recompress',
-            'arguments': '--quality high "{file}" "{file}"',
-        },
-        'png': {
-            'command': 'pngquant',
-            'arguments': '--force --skip-if-larger --output "{file}" "{file}"'
-        },
-        'svg': {
-            'command': 'svgo',
-            'arguments': '--precision=4 --disable=convertPathData "{file}"',
-        },   
     }
 }
 ```
@@ -469,150 +453,6 @@ class PageGallery(Collection):
     ])
 ```
 
-## Postprocessing
-
-Библиотека `paper-uploads` предоставляет возможность выполнения 
-консольных команд над загруженными файлами. Для каждого отдельного 
-формата указывается своя команда. Это позволяет произвести 
-оптимизации, которые выходят за рамки стандартных средств Python.
-
-**Постобработка выполняется только при использовании локального
-хранилища `django.core.files.storage.FileSystemStorage`**.
-
-Постобработка разделена на две группы: 
-* изображения
-* остальные файлы
-
-### Options
-Команды постобработки оформляются в виде словаря. 
-
-Ключом словаря является название формата файла. Для изображений 
-в качестве имени формата принято название, используемое в 
-библиотеке [Pillow](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html).
-В частности, это означает что нужно писать `jpeg`, а не `jpg`.
-Для остальных файлов, имя формата — это расширение файла.
-
-Значением является словарь, в котором *должен* присутствовать 
-ключ `command`, содержащий путь к исполняемому файлу. 
-Опционально, в ключе `arguments` можно указать дополнительные 
-аргументы для команды. В строке аргументов можно использовать 
-шаблонную переменную `{file}`, которая будет заменена на 
-абсолютный путь к файлу вариации.
-
-Команды постобработки могут быть указаны глобально - в словаре
-`POSTPROCESS` настроек библиотеки:
-```python
-PAPER_UPLOADS = {
-    'POSTPROCESS': {
-        'jpeg': {
-            'command': 'jpeg-recompress',
-            'arguments': '--quality high "{file}" "{file}"',
-        },
-        'png': {
-            'command': 'pngquant',
-            'arguments': '--force --skip-if-larger --output "{file}" "{file}"'
-        },
-    }
-}
-```
-
-Для отмены постобработки необходимо указать значение `False`
-в качестве значения параметра `postprocess` вариации.
-
-### Image postprocessing
-
-Постобработка применяется только к вариациям. Исходники изображений 
-и изображения без вариаций остаются нетронутыми.
-
-Вариация может переопределить глобальные команды постобработки.
-Например, отменить любую постобработку:
-```python
-class Page(models.Model):
-    image = ImageField(_('image'), blank=True,
-        variations=dict(
-            desktop=dict(
-                # ...
-                postprocess=False,
-            )
-        )
-    )
-```
-
-Или переопределить постобработку для каждого формата отдельно:
-```python
-class Page(models.Model):
-    image = ImageField(_('image'), blank=True,
-        variations=dict(
-            desktop=dict(
-                # ...
-                postprocess=dict(
-                    jpeg=False,     # disable
-                    webp={          # override
-                        'command': 'echo',
-                        'arguments': '"{file}"',
-                    }                
-                )
-            )
-        )
-    )
-```
-
-**NOTE**: не путайте настройки постобработки `postprocess`
-с `pilkit`-процессорами, указываемыми в параметре `postprocessors`.
-
-В коллекциях переопределить команду можно через 
-псевдо-поле `ItemField`:
-```python
-class PageFiles(Collection):
-    image = ItemField(ImageItem, postprocess={
-        'jpeg': {
-            'command': 'jpegtran',     
-            'arguments': '"{file}"', 
-        }              
-    })
-    file = ItemField(FileItem)
-```
-
-### Common postprocessing
-
-Для файлов, которые не относятся к изображениям, тоже доступны 
-команды постобработки. В этом случае "форматом" является расширение 
-файла.
-
-В отличие от изображений, где постобработка применяются только к 
-вариациям, для остальных файлов обрабатывается сам загруженный файл.
-Поэтому есть риск **безвозвратного повреждения** загруженного файла.
-
-**NOTE**: при использовании [django-rq](https://github.com/rq/django-rq)
-постобработка файлов будет происходить через отложенные задачи.
-Из-за этого, при первоначальной загрузке, виджет будет отображать 
-размер файла **до** обработки.
-
-Переопределить команду постобработки можно в параметре `postprocess` 
-поля `FileField`:
-```python
-class Page(models.Model):
-    file = FileField(_('file'), postprocess={
-        'svg': {
-            'command': 'svgo',        
-            'arguments': '--precision=4 "{file}"',        
-        }           
-    })
-```
-
-В коллекциях переопределить команду можно через 
-псевдо-поле `ItemField`:
-```python
-class PageFiles(Collection):
-    svg = ItemField(SVGItem, postprocess={
-        'svg': {
-            'command': 'svgo',     
-            'arguments': '--precision=4 "{file}"', 
-        }              
-    })
-    file = ItemField(FileItem)
-```
-
 ## Variation versions
 Допустим, у нас есть изображение, которое нужно отобразить в трех 
 вариантах: `desktop`, `tablet` и `mobile`. Если мы хотим поддерживать 
@@ -786,20 +626,6 @@ PAPER_UPLOADS = {
         'webp': dict(
             quality=75,
         )
-    },
-    'POSTPROCESS': {
-        'jpeg': {
-            'command': 'jpeg-recompress',
-            'arguments': '--quality high "{file}" "{file}"',
-        },
-        'png': {
-            'command': 'pngquant',
-            'arguments': '--force --skip-if-larger --output "{file}" "{file}"'
-        },
-        'svg': {
-            'command': 'svgo',
-            'arguments': '--precision=4 "{file}"',
-        },   
     }
 }
 ```
@@ -864,15 +690,6 @@ PAPER_UPLOADS = {
 вариации, если только вариация их явно не переопределяет.
 
 Значение по умолчанию: `None`
-
-### `POSTPROCESS`
-Словарь, задающий shell-команды, запускаемые после загрузки 
-файлов. Для каждого формата можно указать свою команду.
-
-Ключами словаря являются названия форматов файлов.
-Например: `jpeg`, `png`, `gif`, `webp`, `svg`.
-
-Значение по умолчанию: `{}`
 
 ### `CLOUDINARY`
 Словарь, задающий глобальные [параметры загрузки](https://cloudinary.com/documentation/image_upload_api_reference#required_parameters)

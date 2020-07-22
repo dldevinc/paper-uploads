@@ -1,27 +1,16 @@
 import posixpath
-from typing import Any, Dict, Union
 
 from variations.variation import Variation
-
-from .utils import lowercased_dict_keys
 
 
 class PaperVariation(Variation):
     """
     Расширение возможностей вариации:
       * Хранение имени вариации
-      * Хранение настроек постобработки
     """
 
-    def __init__(
-        self,
-        *args,
-        name: str = '',
-        postprocess: Union[Dict, bool, None] = None,
-        **kwargs
-    ):
+    def __init__(self, *args, name: str = '', **kwargs):
         self.name = name
-        self.postprocess = postprocess
         super().__init__(*args, **kwargs)
 
     @property
@@ -33,19 +22,6 @@ class PaperVariation(Variation):
         if not isinstance(value, str):
             raise TypeError(value)
         self._name = value
-
-    @property
-    def postprocess(self) -> Union[Dict[str, Any], bool, None]:
-        return self._postprocess
-
-    @postprocess.setter
-    def postprocess(self, value: Union[Dict[str, Any], bool, None]):
-        if value is None or value is False:
-            self._postprocess = value
-        elif isinstance(value, dict):
-            self._postprocess = lowercased_dict_keys(value)
-        else:
-            raise TypeError(value)
 
     def get_output_filename(self, input_filename: str) -> str:
         """

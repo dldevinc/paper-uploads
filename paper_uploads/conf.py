@@ -1,8 +1,6 @@
 from django import conf
 from django.utils.module_loading import import_string
 
-from .utils import lowercased_dict_keys
-
 DEFAULTS = {
     'STORAGE': 'django.core.files.storage.FileSystemStorage',
     'STORAGE_OPTIONS': {},
@@ -32,7 +30,6 @@ DEFAULTS = {
     'RQ_QUEUE_NAME': 'default',
 
     'VARIATION_DEFAULTS': None,
-    'POSTPROCESS': {},
     'CLOUDINARY': {
         'use_filename': True,
         'unique_filename': True,
@@ -135,11 +132,6 @@ class Settings:
         if name in self.import_strings:
             return perform_import(value, name)
         return value
-
-    def prepare_postprocess(self, value):
-        if value is False or value is None:
-            return value
-        return lowercased_dict_keys(value)
 
 
 settings = Settings(

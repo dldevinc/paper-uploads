@@ -11,9 +11,6 @@ class PageGallery(ImageCollection):
         wide_raw=dict(
             size=(1600, 0),
             clip=False,
-            jpeg=dict(
-                postprocess=None
-            )
         ),
         wide=dict(
             size=(1600, 0),
@@ -158,49 +155,3 @@ class DummyCollectionSubclass(DummyCollection):
         )
     })
     svg = ItemField(SVGItem)
-
-
-class DummyCollectionPostprocessProhibited(Collection):
-    image = ItemField(ImageItem, postprocess=False, options={
-        'variations': dict(
-            mobile=dict(
-                size=(640, 0),
-                jpeg=dict(
-                    quality=88
-                ),
-                postprocess=dict(
-                    webp={
-                        'command': 'echo'
-                    }
-                )
-            )
-        )
-    })
-
-
-class DummyCollectionOverride(Collection):
-    image = ItemField(
-        ImageItem,
-        postprocess=dict(
-            jpeg=False,
-            png={
-                'command': 'echo'
-            },
-            webp=False
-        ),
-        options={
-            'variations': dict(
-                mobile=dict(
-                    size=(640, 0),
-                    jpeg=dict(
-                        quality=88
-                    ),
-                    postprocess=dict(
-                        webp={
-                            'command': 'man'
-                        }
-                    )
-                )
-            )
-        }
-    )

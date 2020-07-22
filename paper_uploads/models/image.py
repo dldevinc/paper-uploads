@@ -5,11 +5,10 @@ from django.template.defaultfilters import filesizeformat
 from django.utils.translation import gettext_lazy as _
 
 from ..conf import settings
-from ..postprocess import postprocess_variation
 from ..storage import upload_storage
 from ..variations import PaperVariation
 from .base import (
-    PostProcessableFileFieldResource,
+    FileFieldResource,
     ReadonlyFileProxyMixin,
     ReverseFieldModelMixin,
     VariationFile,
@@ -22,7 +21,7 @@ class UploadedImage(
     ReverseFieldModelMixin,
     ReadonlyFileProxyMixin,
     VersatileImageResourceMixin,
-    PostProcessableFileFieldResource,
+    FileFieldResource
 ):
     file = VariationalFileField(
         _('file'),
@@ -31,20 +30,12 @@ class UploadedImage(
         storage=upload_storage,
     )
 
-    class Meta(PostProcessableFileFieldResource.Meta):
+    class Meta(FileFieldResource.Meta):
         verbose_name = _('image')
         verbose_name_plural = _('images')
 
     def get_file(self) -> FieldFile:
         return self.file
-
-    def postprocess(self, **kwargs):
-        # Исходник изображения не обрабатываем
-        pass
-
-    def postprocess_variation(self, file: VariationFile, variation: PaperVariation):
-        owner_field = self.get_owner_field()
-        postprocess_variation(file, variation, field=owner_field)
 
     def as_dict(self) -> Dict[str, Any]:
         return {

@@ -21,15 +21,13 @@ from polymorphic.models import PolymorphicModel
 
 from ..conf import FILE_ICON_DEFAULT, FILE_ICON_OVERRIDES, settings
 from ..helpers import build_variations
-from ..postprocess import postprocess_common_file, postprocess_variation
 from ..storage import upload_storage
 from ..variations import PaperVariation
 from .base import (
-    PostProcessableFileFieldResource,
+    FileFieldResource,
     ReadonlyFileProxyMixin,
     Resource,
     ReverseFieldModelMixin,
-    VariationFile,
     VersatileImageResourceMixin,
 )
 from .fields import FormattedFileField, ItemField
@@ -221,7 +219,7 @@ class FileItem(
     FilePreviewItemMixin,
     ReadonlyFileProxyMixin,
     CollectionResourceItem,
-    PostProcessableFileFieldResource,
+    FileFieldResource
 ):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     admin_template_name = 'paper_uploads/collection_item/file.html'
@@ -246,20 +244,6 @@ class FileItem(
     def get_file(self) -> FieldFile:
         return self.file
 
-    def postprocess(self, **kwargs):
-        itemtype_field = self.get_itemtype_field()
-        if itemtype_field is None:
-            return
-
-        postprocess_common_file(self.get_file(), field=itemtype_field)
-
-        # обновление данных после обработки файла
-        with self.get_file().open() as file:
-            if self.update_hash(file):
-                self.size = file.size
-                self.modified_at = now()
-                self.save(update_fields=['hash', 'size', 'modified_at'])
-
     @property
     def caption(self):
         return self.get_basename()
@@ -270,9 +254,7 @@ class FileItem(
         return True
 
 
-class SVGItem(
-    ReadonlyFileProxyMixin, CollectionResourceItem, PostProcessableFileFieldResource
-):
+class SVGItem(ReadonlyFileProxyMixin, CollectionResourceItem, FileFieldResource):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
     admin_template_name = 'paper_uploads/collection_item/svg.html'
 
@@ -295,20 +277,6 @@ class SVGItem(
 
     def get_file(self) -> FieldFile:
         return self.file
-
-    def postprocess(self, **kwargs):
-        itemtype_field = self.get_itemtype_field()
-        if itemtype_field is None:
-            return
-
-        postprocess_common_file(self.get_file(), field=itemtype_field)
-
-        # обновление данных после обработки файла
-        with self.get_file().open() as file:
-            if self.update_hash(file):
-                self.size = file.size
-                self.modified_at = now()
-                self.save(update_fields=['hash', 'size', 'modified_at'])
 
     @property
     def caption(self):
@@ -336,7 +304,7 @@ class ImageItem(
     ReadonlyFileProxyMixin,
     VersatileImageResourceMixin,
     CollectionResourceItem,
-    PostProcessableFileFieldResource,
+    FileFieldResource
 ):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
     change_form_class = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
@@ -355,14 +323,6 @@ class ImageItem(
 
     def get_file(self) -> FieldFile:
         return self.file
-
-    def postprocess(self, **kwargs):
-        # Исходник изображения не обрабатываем
-        pass
-
-    def postprocess_variation(self, file: VariationFile, variation: PaperVariation):
-        itemtype_field = self.get_itemtype_field()
-        postprocess_variation(file, variation, field=itemtype_field)
 
     def recut_async(self, **kwargs):
         """

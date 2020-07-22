@@ -3,23 +3,15 @@ from typing import Any, Dict
 from django.db import models
 from django.db.models.fields.files import FieldFile
 from django.template.defaultfilters import filesizeformat
-from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 
 from ..conf import settings
-from ..postprocess import postprocess_common_file
 from ..storage import upload_storage
-from .base import (
-    PostProcessableFileFieldResource,
-    ReadonlyFileProxyMixin,
-    ReverseFieldModelMixin,
-)
+from .base import FileFieldResource, ReadonlyFileProxyMixin, ReverseFieldModelMixin
 from .fields import FormattedFileField
 
 
-class UploadedFile(
-    ReverseFieldModelMixin, ReadonlyFileProxyMixin, PostProcessableFileFieldResource
-):
+class UploadedFile(ReverseFieldModelMixin, ReadonlyFileProxyMixin, FileFieldResource):
     file = FormattedFileField(
         _('file'),
         max_length=255,
@@ -28,7 +20,7 @@ class UploadedFile(
     )
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
-    class Meta(PostProcessableFileFieldResource.Meta):
+    class Meta(FileFieldResource.Meta):
         verbose_name = _('file')
         verbose_name_plural = _('files')
 
@@ -48,14 +40,3 @@ class UploadedFile(
                 ext=self.extension, size=filesizeformat(self.size)
             ),
         }
-
-    def postprocess(self, **kwargs):
-        owner_field = self.get_owner_field()
-        postprocess_common_file(self.get_file(), field=owner_field)
-
-        # обновление данных после обработки файла
-        with self.get_file().open() as file:
-            if self.update_hash(file):
-                self.size = file.size
-                self.modified_at = now()
-                self.save(update_fields=['hash', 'size', 'modified_at'])

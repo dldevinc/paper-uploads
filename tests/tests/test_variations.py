@@ -13,33 +13,7 @@ class TestName:
             PaperVariation(name=42)
 
 
-class TestPostprocess:
-    def test_default_value(self):
-        variation = PaperVariation()
-        assert variation.postprocess is None
-
-    def test_false_value(self):
-        variation = PaperVariation(postprocess=False)
-        assert variation.postprocess is False
-
-    def test_dict_value(self):
-        variation = PaperVariation(
-            postprocess={
-                'JpeG': {'command': 'echo'}
-            }
-        )
-
-        # keys lowercased
-        assert variation.postprocess == {
-            'jpeg': {'command': 'echo'}
-        }
-
-    def test_invalid_type(self):
-        with pytest.raises(TypeError):
-            PaperVariation(postprocess='False')
-
-
-class TestOuptputFileName:
+class TestOutputFileName:
     def test_unnamed(self):
         with pytest.raises(RuntimeError):
             PaperVariation().get_output_filename('source.Jpeg')

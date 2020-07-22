@@ -13,7 +13,7 @@ from django.utils.translation import gettext_lazy as _
 from PIL import Image
 from variations.utils import prepare_image
 
-from .. import signals, helpers
+from .. import helpers, signals
 from ..conf import settings
 from ..logging import logger
 from ..typing import FileLike
@@ -24,7 +24,6 @@ __all__ = [
     'HashableResourceMixin',
     'FileResource',
     'FileFieldResource',
-    'PostProcessableFileFieldResource',
     'ReverseFieldModelMixin',
     'ReadonlyFileProxyMixin',
     'ImageFileResourceMixin',
@@ -47,7 +46,7 @@ class Permissions(models.Model):
 
 class Resource(models.Model):
     """
-    Базовый класс ресурса, который может хранить модуль.
+    Базовый класс ресурса, который может хранится системой.
     """
 
     name = models.CharField(_('name'), max_length=255, editable=False)
@@ -264,73 +263,6 @@ class FileFieldResource(FileResource):
         self.get_file().delete(save=False)
 
 
-class PostProcessableFileFieldResource(FileFieldResource):
-    """
-    Подкласс файлового ресурса, который может быть обработан локальными утилитами.
-    """
-
-    # флаг, запускающий постобработку после сохранения экземпляра модели в БД
-    need_postprocess = False
-
-    class Meta(FileFieldResource.Meta):
-        abstract = True
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        if self.need_postprocess:
-            self.need_postprocess = False
-            kwargs = self.get_postprocess_kwargs()
-            if settings.RQ_ENABLED:
-                self.postprocess_async(**kwargs)
-            else:
-                self.postprocess(**kwargs)
-
-    def attach_file(self, file: Union[File, IO], name: str = None, **options):
-        super().attach_file(file, name=name, **options)
-        self.need_postprocess = True
-
-    def postprocess(self, **kwargs):
-        """
-        Метод постобработки загруженного файла.
-        """
-        raise NotImplementedError
-
-    def get_postprocess_kwargs(self) -> Dict[str, Any]:
-        """
-        Возвращает дополнительные аргументы для метода `postprocess()`.
-        """
-        return {}
-
-    def postprocess_async(self, **kwargs):
-        """
-        Добавление задачи постобработки в django-rq.
-        """
-        from django_rq.queues import get_queue
-
-        queue = get_queue(settings.RQ_QUEUE_NAME)
-        queue.enqueue_call(
-            self._postprocess_task,
-            kwargs={
-                'app_label': self._meta.app_label,
-                'model_name': self._meta.model_name,
-                'object_id': self.pk,
-                'using': self._state.db,
-                **kwargs,
-            },
-        )
-
-    @classmethod
-    def _postprocess_task(
-        cls, app_label: str, model_name: str, object_id: int, using: str, **kwargs
-    ):
-        """
-        Задача для django-rq.
-        Вызывает `postprocess()` экземпляра в отдельном процессе.
-        """
-        instance = helpers.get_instance(app_label, model_name, object_id, using=using)
-        instance.postprocess(**kwargs)
-
-
 class ImageFileResourceMixin(models.Model):
     """
     Подкласс файлового ресурса для изображений
@@ -481,7 +413,6 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
     """
     Подкласс файлового ресурса вариативного изображения, доступ к которому
     осуществляется через Storage.
-    Изображение и его вариации могут быть подвержены постобработке.
     """
 
     # флаг, запускающий нарезку вариаций после сохранения экземпляра модели в БД
@@ -569,12 +500,6 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
         if max_width and max_height:
             return max_width, max_height
 
-    def postprocess_variation(self, file: VariationFile, variation: PaperVariation):
-        """
-        Метод постобработки вариации
-        """
-        raise NotImplementedError
-
     def recut(self, names: Iterable[str] = (), **kwargs):
         """
         Нарезка вариаций.
@@ -607,8 +532,6 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
                 variation_file = self.get_variation_file(name)
                 if variation_file is None:
                     raise RuntimeError("variation file for '{}' does not exist".format(name))
-
-                self.postprocess_variation(variation_file, variation)
 
     def get_recut_kwargs(self) -> Dict[str, Any]:
         """
