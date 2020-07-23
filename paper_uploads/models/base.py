@@ -103,7 +103,7 @@ class HashableResourceMixin(Resource):
         """
         new_hash = self.get_hash(file)
         if new_hash and new_hash != self.hash:
-            signals.hash_updated.send(
+            signals.content_hash_update.send(
                 sender=type(self),
                 instance=self,
                 hash=new_hash
