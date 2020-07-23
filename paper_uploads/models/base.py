@@ -21,7 +21,7 @@ from ..variations import PaperVariation
 
 __all__ = [
     'Resource',
-    'HashableResourceMixin',
+    'HashableResource',
     'FileResource',
     'FileFieldResource',
     'ReverseFieldModelMixin',
@@ -78,7 +78,7 @@ class Resource(models.Model):
         }
 
 
-class HashableResourceMixin(Resource):
+class HashableResource(Resource):
     """
     Подкласс ресурса, который содержит хэш своего контента.
     Хэш может быть использован для поиска дубликатов и других целей.
@@ -113,7 +113,7 @@ class HashableResourceMixin(Resource):
         return False
 
 
-class FileResource(HashableResourceMixin):
+class FileResource(HashableResource):
     """
     Подкласс ресурса, представляющего файл.
     """
@@ -126,7 +126,7 @@ class FileResource(HashableResourceMixin):
     )
     size = models.PositiveIntegerField(_('size'), default=0, editable=False)
 
-    class Meta(HashableResourceMixin.Meta):
+    class Meta(HashableResource.Meta):
         abstract = True
 
     def __str__(self):
