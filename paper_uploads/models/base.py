@@ -81,36 +81,46 @@ class Resource(models.Model):
 class HashableResource(Resource):
     """
     Подкласс ресурса, который содержит хэш своего контента.
-    Хэш может быть использован для поиска дубликатов и других целей.
     """
+    BLOCK_SIZE = 4 * 1024 * 1024
 
-    hash = models.CharField(
-        _('hash'),
-        max_length=40,
+    content_hash = models.CharField(
+        _('content hash'),
+        max_length=64,
         editable=False,
-        help_text=_('SHA-1 checksum of a resource'),
+        help_text=_('hash of the contents of a file'),
     )
 
     class Meta(Resource.Meta):
         abstract = True
 
     def get_hash(self, file: FileLike) -> str:
-        raise NotImplementedError
+        """
+        DropBox checksum realization.
+        https://www.dropbox.com/developers/reference/content-hash
+        """
+        blocks = []
+        file.seek(0)
+        while True:
+            data = file.read(self.BLOCK_SIZE)
+            if not data:
+                break
+            blocks.append(
+                hashlib.sha256(data).digest()
+            )
+        return hashlib.sha256(b''.join(blocks)).hexdigest()
 
     def update_hash(self, file: FileLike) -> bool:
-        """
-        :return: updated
-        """
+        old_hash = self.content_hash
         new_hash = self.get_hash(file)
-        if new_hash and new_hash != self.hash:
+        if new_hash and new_hash != old_hash:
             signals.content_hash_update.send(
                 sender=type(self),
                 instance=self,
-                hash=new_hash
+                content_hash=new_hash
             )
-            self.hash = new_hash
-            return True
-        return False
+            self.content_hash = new_hash
+        return old_hash != new_hash
 
 
 class FileResource(HashableResource):
@@ -145,15 +155,6 @@ class FileResource(HashableResource):
             'size': self.size,
             'url': self.get_file_url(),
         }
-
-    def get_hash(self, file: FileLike) -> str:
-        sha1 = hashlib.sha1()
-        if file.multiple_chunks():
-            for chunk in file.chunks():
-                sha1.update(chunk)
-        else:
-            sha1.update(file.read())
-        return sha1.hexdigest()
 
     def get_basename(self) -> str:
         return '{}.{}'.format(self.name, self.extension)
