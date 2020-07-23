@@ -11,7 +11,6 @@ from .base import (
     FileFieldResource,
     ReadonlyFileProxyMixin,
     ReverseFieldModelMixin,
-    VariationFile,
     VersatileImageResourceMixin,
 )
 from .fields import VariationalFileField

@@ -12,7 +12,7 @@ from django.views.generic import FormView
 from .. import exceptions
 from ..forms.dialogs.image import UploadedImageDialog
 from ..logging import logger
-from ..models import FileResource
+from ..models.base import FileResource
 from ..helpers import run_validators
 from . import helpers
 

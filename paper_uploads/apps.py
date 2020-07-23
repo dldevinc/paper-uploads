@@ -10,7 +10,7 @@ class Config(AppConfig):
 
     def ready(self):
         from .signals import handlers
-        from .models import CollectionBase
+        from .models.collection import CollectionBase
         from .admin import CollectionAdminBase
 
         # Переименование поля файла или модели-владельца файла,

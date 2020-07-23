@@ -13,7 +13,7 @@ from django.core.files import File
 from django.utils.translation import ugettext_lazy as _
 
 from ...logging import logger
-from ...models import FileResource
+from ...models.base import FileResource
 
 
 class CloudinaryFileResource(FileResource):
