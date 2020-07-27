@@ -7,11 +7,9 @@ from django.db import models
 from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
 
-# from paper_uploads.cloudinary.models import *
 from paper_uploads.models import *
 from paper_uploads.models.base import *
 from paper_uploads.typing import *
-# from paper_uploads.validators import *
 from paper_uploads.variations import PaperVariation
 
 
@@ -119,6 +117,24 @@ class DummyReadonlyFileProxyResource(ReadonlyFileProxyMixin, FileFieldResource):
 
     def get_file(self) -> FieldFile:
         return self.file
+
+
+class FileExample(models.Model):
+    file = FileField(_('file'))
+
+
+class ImageExample(models.Model):
+    image = ImageField(_('image'), variations=dict(
+        desktop=dict(
+            size=(800, 0),
+            clip=False
+        ),
+        mobile=dict(
+            size=(0, 600),
+            clip=False
+        ),
+    ))
+
 
 
 # class PageGallery(ImageCollection):
