@@ -47,7 +47,7 @@ class CloudinaryFileResource(FileResource):
     def get_file_url(self) -> str:
         return self.get_file().url
 
-    def is_file_exists(self) -> bool:
+    def file_exists(self) -> bool:
         file = self.get_file()
         if file is None:
             return False

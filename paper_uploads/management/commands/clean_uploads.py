@@ -132,7 +132,7 @@ class Command(BaseCommand):
         sourceless_items = set()
         related_model = queryset.model
         for instance in queryset.iterator():
-            if not instance.is_file_exists():
+            if not instance.file_exists():
                 sourceless_items.add(instance.pk)
 
         if not sourceless_items:

@@ -52,7 +52,7 @@ class Command(BaseCommand):
                     model._meta.app_label, model._meta.model_name, instance=instance
                 )
 
-                if not instance.is_file_exists():
+                if not instance.file_exists():
                     invalid = True
                     message += "\n  Not found source file"
 
@@ -105,7 +105,7 @@ class Command(BaseCommand):
                 if missed_variations:
                     invalid = True
                     recreatable = (
-                        self.options['fix_missing'] and instance.is_file_exists()
+                        self.options['fix_missing'] and instance.file_exists()
                     )
                     for vname in missed_variations:
                         message += "\n  Not found variation '{}'".format(vname)

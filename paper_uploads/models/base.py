@@ -1,7 +1,6 @@
 import hashlib
-import io
 import os
-from typing import Any, Dict, Iterable, Optional, Sequence, Tuple, Type
+from typing import Any, Dict, Iterable, Optional, Tuple, Type
 
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist, ValidationError
@@ -11,6 +10,7 @@ from django.db.models.fields.files import FieldFile
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from PIL import Image
+from variations.typing import Size
 from variations.utils import prepare_image
 
 from .. import helpers, signals
@@ -27,7 +27,6 @@ __all__ = [
     'ReverseFieldModelMixin',
     'ReadonlyFileProxyMixin',
     'ImageFileResourceMixin',
-    'ImageFieldResourceMixin',
     'VariationFile',
     'VersatileImageResourceMixin',
 ]
@@ -49,7 +48,7 @@ class Resource(models.Model):
     Базовый класс ресурса, который может хранится системой.
     """
 
-    name = models.CharField(_('name'), max_length=255, editable=False)
+    name = models.CharField(_('name'), max_length=255, editable=False, help_text=_('human readable resource name'))
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
     uploaded_at = models.DateTimeField(_('uploaded at'), default=now, editable=False)
     modified_at = models.DateTimeField(_('changed at'), auto_now=True, editable=False)
@@ -82,6 +81,7 @@ class HashableResource(Resource):
     """
     Подкласс ресурса, который содержит хэш своего контента.
     """
+
     BLOCK_SIZE = 4 * 1024 * 1024
 
     content_hash = models.CharField(
@@ -157,6 +157,10 @@ class FileResource(HashableResource):
         }
 
     def get_basename(self) -> str:
+        """
+        Человекопонятное имя файла.
+        Не содержит суффикса, которое может быть добавлено файловым хранилищем.
+        """
         return '{}.{}'.format(self.name, self.extension)
 
     def get_file(self) -> File:
@@ -176,29 +180,47 @@ class FileResource(HashableResource):
         """
         raise NotImplementedError
 
-    def is_file_exists(self) -> bool:
+    def file_exists(self) -> bool:
         """
         Проверка существования файла.
         """
         raise NotImplementedError
 
+    def _update_name(self, filename: str):
+        """
+        Получение имени файла из начальных данных, переданных в метод загрузки или
+        переименования, т.к. после соответствующей операции к имени может добавиться
+        суффикс
+        """
+        basename = os.path.basename(filename)
+        self.name, _ = os.path.splitext(basename)
+
+    def _update_extension(self):
+        """
+        Получение расширения файла из уже обработанного файла (после загрузки или
+        переименования), т.к. соответствующие методы могут изменить его.
+        """
+        basename = os.path.basename(self.get_file_name())
+        _, extension = os.path.splitext(basename)
+        self.extension = extension.lower().lstrip('.')
+
     def attach_file(self, file: FileLike, name: str = None, **options):
+        """
+        Присоединение файла к экземпляру ресурса.
+        В действительности, сохранение файла происходит в методе `_attach_file`.
+        Не переопределяйте этот метод, если не уверены в том, что вы делаете.
+        """
         if not isinstance(file, File):
             name = name or getattr(file, 'name', None)
             if name:
                 name = os.path.basename(name)
             file = File(file, name=name)
+        elif name:
+            file.name = name
 
-        # запоминаем оригинальное имя файла, т.к. финальное имя может
-        # включать в себя суффикс от Django Storage или другого источника.
-        basename = os.path.basename(file.name)
-        self.name, _ = os.path.splitext(basename)
-
-        self.size = file.size
-        self.uploaded_at = now()
-        self.modified_at = now()
-        self.update_hash(file)
-        file.seek(0)
+        # имя файла берем из исходного файла, а расширение - из результата
+        # загрузки, т.к. они могут быть модифицированы методом `_attach_file`.
+        self._update_name(file.name)
 
         signals.pre_attach_file.send(
             sender=type(self),
@@ -206,7 +228,16 @@ class FileResource(HashableResource):
             file=file,
             options=options
         )
+
         response = self._attach_file(file, **options)
+
+        self._update_extension()
+        result_file = self.get_file()
+        self.size = result_file.size
+        self.uploaded_at = now()
+        self.modified_at = now()
+        self.update_hash(result_file)
+
         signals.post_attach_file.send(
             sender=type(self),
             instance=self,
@@ -215,33 +246,61 @@ class FileResource(HashableResource):
             response=response
         )
 
-        # запоминаем расширение файла после загрузки файла, т.к. при загрузке
-        # оно может быть отформатировано.
-        basename = os.path.basename(self.get_file_name())
-        _, extension = os.path.splitext(basename)
-        self.extension = extension.lower().lstrip('.')
-
     def _attach_file(self, file: File, **options):
         raise NotImplementedError
 
-    def rename_file(self, new_name: str):
-        self.name = new_name
+    def rename_file(self, new_name: str, **options):
+        """
+        Переименование файла.
+        В действительности, переименование файла происходит в методе `_rename_file`.
+        Не переопределяйте этот метод, если не уверены в том, что вы делаете.
+        """
+        if not self.file_exists():
+            raise FileNotFoundError
+
+        old_name = self.get_file_name()
+
+        basename = os.path.basename(new_name)
+        name, extension = os.path.splitext(basename)
+        extension = extension.lower().lstrip('.')
+
+        # если новое имя идентично прежнему - ничего не делаем
+        if name == self.name and extension == self.extension:
+            return
+
         signals.pre_rename_file.send(
             sender=type(self),
             instance=self,
-            new_name=new_name
+            old_name=old_name,
+            new_name=new_name,
+            options=options
         )
-        self._rename_file(new_name)
+
+        response = self._rename_file(new_name, **options)
+
+        # имя файла берем из переданного значения, а расширение - из результата
+        # переименования, т.к. они могут быть модифицированы методом `_rename_file`.
+        self._update_name(new_name)
+        self._update_extension()
+
         signals.post_rename_file.send(
             sender=type(self),
             instance=self,
-            new_name=new_name
+            old_name=old_name,
+            new_name=new_name,
+            options=options,
+            response=response
         )
 
-    def _rename_file(self, new_name: str):
+    def _rename_file(self, new_name: str, **options):
         raise NotImplementedError
 
     def delete_file(self):
+        """
+        Удаление файла.
+        В действительности, удаление файла происходит в методе `_delete_file`.
+        Не переопределяйте этот метод, если не уверены в том, что вы делаете.
+        """
         signals.pre_delete_file.send(
             sender=type(self),
             instance=self
@@ -268,24 +327,27 @@ class FileFieldResource(FileResource):
         raise NotImplementedError
 
     def get_file_name(self) -> str:
+        if not self.file_exists():
+            raise FileNotFoundError
         return self.get_file().name
 
     def get_file_url(self) -> str:
+        if not self.file_exists():
+            raise FileNotFoundError
         return self.get_file().url
 
-    def is_file_exists(self) -> bool:
+    def file_exists(self) -> bool:
         file = self.get_file()
-        if file is None or not file.name:
+        if not file:
             return False
         return file.storage.exists(file.name)
 
     def _attach_file(self, file: File, **options):
         self.get_file().save(file.name, file, save=False)
 
-    def _rename_file(self, new_name: str):
-        name = '.'.join((new_name, self.extension))
+    def _rename_file(self, new_name: str, **options):
         with self.get_file().open() as fp:
-            self.get_file().save(name, fp, save=False)
+            self.get_file().save(new_name, fp, save=False)
 
     def _delete_file(self):
         self.get_file().delete(save=False)
@@ -323,7 +385,7 @@ class ImageFileResourceMixin(models.Model):
 
     def as_dict(self) -> Dict[str, Any]:
         return {
-            **super().as_dict(),
+            **super().as_dict(),  # noqa
             'width': self.width,
             'height': self.height,
             'cropregion': self.cropregion,
@@ -331,22 +393,13 @@ class ImageFileResourceMixin(models.Model):
             'description': self.description,
         }
 
-
-class ImageFieldResourceMixin(ImageFileResourceMixin):
-    """
-    Подкласс файлового ресурса изображения, доступ к которому осуществляется через Storage.
-    """
-
-    class Meta(ImageFileResourceMixin.Meta):
-        abstract = True
-
     def attach_file(self, file: FileLike, name: str = None, **options):
-        super().attach_file(file, name=name, **options)
-        with self.get_file().open():
+        super().attach_file(file, name=name, **options)  # noqa
+        with self.get_file().open() as fp:  # noqa
             try:
-                image = Image.open(self.get_file())
+                image = Image.open(fp)
             except OSError:
-                raise ValidationError('`%s` is not an image' % self.get_basename())
+                raise ValidationError('`%s` is not an image' % self.get_basename())  # noqa
             else:
                 self.width, self.height = image.size
 
@@ -363,8 +416,21 @@ class VariationFile(File):
         filename = self.variation.get_output_filename(instance.get_file_name())
         super().__init__(None, filename)
 
+    def __eq__(self, other):
+        if hasattr(other, 'name'):
+            return self.name == other.name
+        return self.name == other
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def _require_file(self):
+        if not self:
+            raise ValueError("Variation '%s' has no file associated with it." % self.variation_name)
+
     def _get_file(self) -> File:
-        if not hasattr(self, '_file') or self._file is None:
+        self._require_file()
+        if getattr(self, '_file', None) is None:
             self._file = self.storage.open(self.name, 'rb')
         return self._file
 
@@ -383,31 +449,44 @@ class VariationFile(File):
 
     @property
     def path(self) -> str:
+        self._require_file()
         return self.storage.path(self.name)
 
     @property
     def url(self) -> str:
+        self._require_file()
         return self.storage.url(self.name)
 
     @property
     def size(self) -> int:
+        self._require_file()
         return self.storage.size(self.name)
 
     def exists(self) -> bool:
+        if not self:
+            return False
         return self.storage.exists(self.name)
 
     def open(self, mode: str = 'rb'):
-        if hasattr(self, '_file') and self._file is not None:
-            self.file.open(mode)
-        else:
+        self._require_file()
+        if getattr(self, '_file', None) is None:
             self.file = self.storage.open(self.name, mode)
-
+        else:
+            self.file.open(mode)
+        return self
     # open() doesn't alter the file's contents, but it does reset the pointer
     open.alters_data = True
 
     def delete(self):
-        self.storage.delete(self.name)
+        if not self:
+            return
 
+        if hasattr(self, '_file'):
+            self.close()
+            del self.file
+
+        self.storage.delete(self.name)
+        self.name = None
     delete.alters_data = True
 
     @property
@@ -437,84 +516,87 @@ class VariationFile(File):
         return self._dimensions_cache
 
 
-class VersatileImageResourceMixin(ImageFieldResourceMixin):
+class VersatileImageResourceMixin(ImageFileResourceMixin):
     """
-    Подкласс файлового ресурса вариативного изображения, доступ к которому
-    осуществляется через Storage.
+    Подкласс файлового ресурса для вариативного изображения.
     """
+    # класс файла вариации
+    variation_class = VariationFile
 
     # флаг, запускающий нарезку вариаций после сохранения экземпляра модели в БД
     need_recut = False
 
-    class Meta(ImageFieldResourceMixin.Meta):
+    class Meta(ImageFileResourceMixin.Meta):
         abstract = True
 
     def __init__(self, *args, **kwargs):
-        self._variations_attached = False
-        self._variation_files_cache = {}
         super().__init__(*args, **kwargs)
+        self._reset_variation_files()
 
-    def __getattr__(self, name):
-        if not name.startswith('_') and not self._variations_attached:
-            for vname, vfile in self.variation_files():
-                setattr(self, vname, vfile)
-            self._variations_attached = True
-            if name in self.get_variations():
-                return getattr(self, name)
-        raise AttributeError('module {!r} has no attribute {!r}'.format(
-            __name__,
-            name
-        ))
+    def __getattr__(self, item):
+        # реализация-заглушка, чтобы PyCharm не ругался на атрибуты-вариации
+        raise AttributeError(
+            "{!r} object has no attribute {!r}".format(self.__class__.__name__, item)
+        )
+
+    def _reset_variation_files(self):
+        self._variation_files_cache = {}
+        for vname in self.get_variations():
+            if vname in self.__dict__:
+                del self.__dict__[vname]
+
+    def _setup_variation_files(self):
+        self._variation_files_cache.clear()
+        for vname, vfile in self.variation_files():
+            self.__dict__[vname] = vfile
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if self.need_recut:
             self.need_recut = False
-            kwargs = self.get_recut_kwargs()
             if settings.RQ_ENABLED:
-                self.recut_async(**kwargs)
+                self.recut_async()
             else:
-                self.recut(**kwargs)
+                self.recut()
 
     def attach_file(self, file: FileLike, name: str = None, **options):
         super().attach_file(file, name=name, **options)
         self.need_recut = True
-        self._variation_files_cache.clear()
+        self._setup_variation_files()
 
     def _delete_file(self):
         for vname, vfile in self.variation_files():
             if vfile is not None:
                 vfile.delete()
-        super()._delete_file()
+        super()._delete_file()  # noqa
+        self._reset_variation_files()
 
-    def _rename_file(self, new_name: str):
-        super()._rename_file(new_name)
+    def _rename_file(self, new_name: str, **options):
+        super()._rename_file(new_name)  # noqa
         self.recut()
-        self._variation_files_cache.clear()
+        self._setup_variation_files()
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         raise NotImplementedError
 
-    def variation_files(self) -> Iterable[Tuple[str, Optional[VariationFile]]]:
-        for variation_name in self.get_variations():
-            yield variation_name, self.get_variation_file(variation_name)
+    def variation_files(self) -> Iterable[Tuple[str, VariationFile]]:
+        if not self._variation_files_cache:
+            if not self.get_file():
+                return
 
-    def get_variation_file(self, variation_name: str) -> Optional[VariationFile]:
-        """
-        Если оригинального изображения нет - возвращает None
-        """
-        if not self.get_file():
-            return
+            self._variation_files_cache = {
+                vname: self.get_variation_file(vname)
+                for vname in self.get_variations()
+            }
+        yield from self._variation_files_cache.items()
 
-        cache = self._variation_files_cache
-        if variation_name in cache:
-            variation_file = cache[variation_name]
-        else:
-            variation_file = VariationFile(instance=self, variation_name=variation_name)
-            cache[variation_name] = variation_file
-        return variation_file
+    def get_variation_file(self, variation_name: str) -> VariationFile:
+        return self.variation_class(
+            instance=self,
+            variation_name=variation_name
+        )
 
-    def calculate_max_size(self, source_size: Sequence[int]) -> Optional[Tuple[int, int]]:
+    def calculate_max_size(self, source_size: Size) -> Optional[Tuple[int, int]]:
         """
         Вычисление максимально возможных значений ширины и высоты изображения
         среди всех вариаций, чтобы передать их в Image.draft().
@@ -528,11 +610,22 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
         if max_width and max_height:
             return max_width, max_height
 
-    def recut(self, names: Iterable[str] = (), **kwargs):
+    def _save_variation(self, name: str, variation: PaperVariation, image: Image):
+        """
+        Запись изображения в файловое хранилище
+        """
+        variation_file = self.get_variation_file(name)
+        with variation_file.open('wb') as fp:
+            variation.save(image, fp)
+
+    def recut(self, names: Iterable[str] = ()):
         """
         Нарезка вариаций.
         Можно указать имена конкретных вариаций в параметре `names`.
         """
+        if not self.file_exists():
+            raise FileNotFoundError
+
         file = self.get_file()
         if not file:
             return
@@ -547,33 +640,15 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
                     continue
 
                 image = variation.process(img)
-
-                # не все удаленные storage поддерживают запись в открытые файлы,
-                # поэтому используем метод save и буфер.
-                buffer = io.BytesIO()
-                variation.save(image, buffer)
-                buffer.seek(0)
-
-                variation_filename = variation.get_output_filename(self.get_file_name())
-                file.storage.save(variation_filename, buffer)
-
-                variation_file = self.get_variation_file(name)
-                if variation_file is None:
-                    raise RuntimeError("variation file for '{}' does not exist".format(name))
+                self._save_variation(name, variation, image)
 
                 signals.variation_created.send(
                     sender=type(self),
                     instance=self,
-                    file=variation_file
+                    file=self.get_variation_file(name)
                 )
 
-    def get_recut_kwargs(self) -> Dict[str, Any]:
-        """
-        Возвращает дополнительные аргументы для метода `recut()`.
-        """
-        return {}
-
-    def recut_async(self, **kwargs):
+    def recut_async(self):
         """
         Добавление задачи нарезки вариаций в django-rq.
         """
@@ -587,20 +662,19 @@ class VersatileImageResourceMixin(ImageFieldResourceMixin):
                 'model_name': self._meta.model_name,
                 'object_id': self.pk,
                 'using': self._state.db,
-                **kwargs,
             },
         )
 
     @classmethod
     def _recut_task(
-        cls, app_label: str, model_name: str, object_id: int, using: str, **kwargs
+        cls, app_label: str, model_name: str, object_id: int, using: str
     ):
         """
         Задача для django-rq.
         Вызывает `recut()` экземпляра в отдельном процессе.
         """
         instance = helpers.get_instance(app_label, model_name, object_id, using=using)
-        instance.recut(**kwargs)
+        instance.recut()
 
 
 class ReverseFieldModelMixin(models.Model):
@@ -654,15 +728,19 @@ class ReadonlyFileProxyMixin:
     url = property(lambda self: self.get_file().url)
 
     def __enter__(self):
-        return self.get_file()
+        return self.get_file()  # noqa
 
     def __exit__(self, exc_type, exc_value, tb):
         self.close()
 
     def open(self, mode='rb'):
-        return self.get_file().open(mode)
+        if not self.file_exists():  # noqa
+            raise FileNotFoundError
+        return self.get_file().open(mode)  # noqa
 
     open.alters_data = True
 
     def close(self):
-        self.get_file().close()
+        if not self.file_exists():  # noqa
+            raise FileNotFoundError
+        self.get_file().close()  # noqa

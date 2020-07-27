@@ -12,8 +12,8 @@ pre_attach_file = Signal(providing_args=["instance", "file", "options"])
 post_attach_file = Signal(providing_args=["instance", "file", "options", "response"])
 
 # переименование файла
-pre_rename_file = Signal(providing_args=["instance", "new_name"])
-post_rename_file = Signal(providing_args=["instance", "new_name"])
+pre_rename_file = Signal(providing_args=["instance", "old_name", "new_name", "options"])
+post_rename_file = Signal(providing_args=["instance", "old_name", "new_name", "options", "response"])
 
 # удаление файла
 pre_delete_file = Signal(providing_args=["instance"])

@@ -6,7 +6,7 @@ from django.core.files.base import File
 from PIL import Image
 from variations import processors
 
-from app.models import Page
+from app.models import DummyResource
 from paper_uploads import helpers, validators
 
 
@@ -164,13 +164,13 @@ class TestImplicitVariations:
 
 @pytest.mark.django_db
 def test_get_instance():
-    page = Page.objects.create(id=1, header='Testing', )
+    resource = DummyResource.objects.create(id=1, name='Testing')
 
-    assert helpers.get_instance('app', 'page', 1) == page
-    assert helpers.get_instance('app', 'page', 1, using='default') == page
+    assert helpers.get_instance('app', 'dummyresource', 1) == resource
+    assert helpers.get_instance('app', 'dummyresource', 1, using='default') == resource
 
     with pytest.raises(ObjectDoesNotExist):
-        assert helpers.get_instance('app', 'page', 2)
+        assert helpers.get_instance('app', 'dummyresource', 2)
 
 
 def test_run_validators():
