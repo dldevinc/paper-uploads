@@ -20,7 +20,7 @@ from django.utils.translation import gettext_lazy as _
 from polymorphic.models import PolymorphicModel
 
 from ..conf import FILE_ICON_DEFAULT, FILE_ICON_OVERRIDES, settings
-from ..helpers import build_variations
+from ..helpers import build_variations, _get_item_types, _set_item_types
 from ..storage import upload_storage
 from ..variations import PaperVariation
 from .base import (
@@ -46,6 +46,40 @@ __all__ = [
 ]
 
 
+class ItemTypesDescriptor:
+    """
+    Дескриптор, добавляемый к моделям коллекций.
+    Возвращает упорядоченый словарь типов элементов коллекции.
+    """
+    def __init__(self, name):
+        self.name = name
+
+    def __get__(self, instance, cls=None):
+        if cls is None:
+            cls = type(instance)
+
+        cache_attname = '_{}__item_type_cache'.format(cls.__name__)
+        if hasattr(cls, cache_attname):
+            return OrderedDict(getattr(cls, cache_attname))
+
+        item_types = OrderedDict()
+        parents = [base for base in cls.mro() if issubclass(base, CollectionBase)]
+        for base in reversed(parents):
+            base_item_types = _get_item_types(base)
+            if base_item_types is not None:
+                undefined_item_types = set(item_types.keys()).difference(base_item_types)
+                item_types.update(base_item_types)
+
+                # delete overridden item types
+                for item_type_name in undefined_item_types:
+                    if hasattr(base, item_type_name):
+                        del item_types[item_type_name]
+
+        # cache result in class object
+        setattr(cls, cache_attname, tuple(item_types.items()))
+        return item_types
+
+
 class CollectionMetaclass(ModelBase):
     """
     Хак, создающий прокси-модели вместо наследования, если явно не указано обратное.
@@ -66,46 +100,17 @@ class CollectionMetaclass(ModelBase):
             meta = type('Meta', meta.__bases__, meta_attrs)
         attrs['Meta'] = meta
 
-        item_types_attribute = '_{}__item_types'.format(name)
-        attrs[item_types_attribute] = original_item_types = OrderedDict()
+        # сохраняем явно объявленные (не унаследованные) типы элементов коллекции
+        # в приватное поле класса
+        item_types = OrderedDict()
+        for key, value in list(attrs.items()):
+            if isinstance(value, CollectionItem):
+                item_types[key] = value
+
         new_class = super().__new__(mcs, name, bases, attrs, **kwargs)
-
-        # дескриптор, дающий доступ к item_types в режиме только для чтения
+        _set_item_types(new_class, item_types)
         new_class.item_types = ItemTypesDescriptor('item_types')
-
-        # Django использует словарь для contributable_attrs, что приводит
-        # к нарушению порядка подключения типов данных. Сортируем их сами.
-        item_types = OrderedDict()
-        for key in attrs:
-            if key in original_item_types:
-                item_types[key] = original_item_types[key]
-        original_item_types.clear()
-        original_item_types.update(item_types)
-
         return new_class
-
-
-class ItemTypesDescriptor:
-    def __init__(self, name):
-        self.name = name
-
-    def __get__(self, instance, cls=None):
-        if cls is None:
-            cls = type(instance)
-
-        item_types = OrderedDict()
-        for base in reversed(cls.mro()):
-            base_item_types = self.get_item_types(base)
-            if base_item_types is not None:
-                item_types.update(base_item_types)
-
-        if instance is not None:
-            instance.__dict__[self.name] = item_types
-        return item_types
-
-    def get_item_types(self, cls):
-        item_types_attribute = '_{}__item_types'.format(cls.__name__)
-        return getattr(cls, item_types_attribute, None)
 
 
 class CollectionBase(ReverseFieldModelMixin, metaclass=CollectionMetaclass):

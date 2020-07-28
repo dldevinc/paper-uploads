@@ -129,3 +129,17 @@ def run_validators(value: FileLike, validators: Iterable[Any]):
 
     if errors:
         raise exceptions.ValidationError(errors)
+
+
+def _get_item_types(cls):
+    """
+    Получение явно объявленных (не унаследованных) типов элементов коллекции
+    из её класса.
+    """
+    attname = '_{}__item_types'.format(cls.__name__)
+    return getattr(cls, attname, None)
+
+
+def _set_item_types(cls, value):
+    attname = '_{}__item_types'.format(cls.__name__)
+    setattr(cls, attname, value)

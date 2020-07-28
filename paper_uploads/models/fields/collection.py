@@ -7,6 +7,7 @@ from django.db.models import Field
 from django.utils.functional import cached_property
 
 from ... import forms
+from ...helpers import _get_item_types
 from .base import FileFieldBase
 
 
@@ -98,7 +99,6 @@ class CollectionItem:
 
     def contribute_to_class(self, cls, name, **kwargs):
         self.name = self.name or name
-        item_types_attribute = '_{}__item_types'.format(cls.__name__)
-        item_types = getattr(cls, item_types_attribute, None)
+        item_types = _get_item_types(cls)
         if item_types is not None:
             item_types[self.name] = self
