@@ -30,7 +30,7 @@ from .base import (
     ReverseFieldModelMixin,
     VersatileImageResourceMixin,
 )
-from .fields import FormattedFileField, ItemField
+from .fields import FormattedFileField, CollectionItem
 from .image import VariationalFileField
 
 __all__ = [
@@ -150,7 +150,7 @@ class CollectionResourceItem(PolymorphicModel):
     def get_collection_class(self) -> Type['CollectionBase']:
         return self.collection_content_type.model_class()
 
-    def get_itemtype_field(self) -> ItemField:
+    def get_itemtype_field(self) -> CollectionItem:
         collection_cls = self.get_collection_class()
         for name, field in collection_cls.item_types.items():
             if field.model is type(self):
@@ -184,6 +184,9 @@ class CollectionResourceItem(PolymorphicModel):
 
 
 class FilePreviewItemMixin(models.Model):
+    """
+    Миксина модели, добавляющая иконку для файла
+    """
     preview_url = models.CharField(
         _('preview URL'), max_length=255, blank=True, editable=False
     )
@@ -343,7 +346,7 @@ class ImageItem(
         """
         Перебираем возможные места вероятного определения вариаций и берем
         первое непустое значение. Порядок проверки:
-            1) параметр `variations` поля `ItemField`
+            1) параметр `variations` поля `CollectionItem`
             2) член класса галереи VARIATIONS
         К найденному словарю примешиваются вариации для админки.
         """
@@ -551,7 +554,7 @@ class ImageCollection(Collection):
     Коллекция, позволяющая хранить только изображения.
     """
 
-    image = ItemField(ImageItem)
+    image = CollectionItem(ImageItem)
 
     @classmethod
     def get_validation(cls) -> Dict[str, Any]:

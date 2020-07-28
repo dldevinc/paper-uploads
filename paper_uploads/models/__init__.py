@@ -1,11 +1,5 @@
-from .collection import (
-    Collection,
-    FileItem,
-    ImageCollection,
-    ImageItem,
-    SVGItem,
-)
-from .fields import CollectionField, FileField, ImageField, ItemField
+from .collection import Collection, FileItem, ImageCollection, ImageItem, SVGItem
+from .fields import CollectionField, CollectionItem, FileField, ImageField
 from .file import UploadedFile
 from .image import UploadedImage
 
@@ -15,10 +9,10 @@ __all__ = [
     'FileField',
     'ImageField',
     'CollectionField',
+    'CollectionItem',
 
     'Collection',
     'ImageCollection',
-    'ItemField',
     'FileItem',
     'SVGItem',
     'ImageItem',

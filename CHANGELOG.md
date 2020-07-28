@@ -1,6 +1,7 @@
 # Change Log
 
 ## [0.3.0](https://github.com/dldevinc/paper-uploads/tree/v0.3.0) - 2020-07-22
+- Rename `ItemField` to `CollectionItem`
 - Use DropBox checksum realization.
 - Rename `HashableResourceMixin` to `HashableResource`
 - Rename `hash_updated` signal to `content_hash_update`

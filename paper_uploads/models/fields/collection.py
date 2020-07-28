@@ -48,10 +48,10 @@ class CollectionField(FileFieldBase):
         })
 
 
-class ItemField:
+class CollectionItem:
     """
-    Поле для подключения классов элементов галереи.
-    Допустимо для использования только в подклассах галерей.
+    Поле для подключения классов элементов коллекции.
+    Может использоваться только в подклассах CollectionBase.
     """
 
     default_validators = []     # type: List[Any]

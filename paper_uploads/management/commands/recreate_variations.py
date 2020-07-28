@@ -7,7 +7,7 @@ from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS, models
 from django.db.models.fields import Field
 from django.db.models.utils import make_model_tuple
-from paper_uploads.models import ItemField
+from paper_uploads.models import CollectionItem
 
 from ...models.base import VersatileImageResourceMixin
 from ...models.collection import Collection
@@ -22,7 +22,7 @@ def is_image(field: Field) -> bool:
     )
 
 
-def is_image_item(field: ItemField) -> bool:
+def is_image_item(field: CollectionItem) -> bool:
     """
     Возвращает True, если поле коллекции подключает класс элемента
     изображения с вариациями.
@@ -81,7 +81,7 @@ def get_allowed_fields(model: Type[Union[models.Model, Collection]]) -> List[str
 
 def get_allowed_variations(
     model: Type[Union[models.Model, Collection]],
-    field: Union[VersatileImageResourceMixin, ItemField],
+    field: Union[VersatileImageResourceMixin, CollectionItem],
 ) -> List[str]:
     """
     Для заданного поля модели возвращает список имен вариаций
@@ -103,7 +103,7 @@ def get_regular_field(model: Type[models.Model], fieldname: str) -> Field:
     return model._meta.get_field(fieldname)
 
 
-def get_itemtype_field(model: Type[Collection], fieldname: str) -> ItemField:
+def get_itemtype_field(model: Type[Collection], fieldname: str) -> CollectionItem:
     """
     Получение поля коллекции
     """

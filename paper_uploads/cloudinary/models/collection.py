@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from ...conf import settings
 from ...models.base import ImageFileResourceMixin
 from ...models.collection import Collection, CollectionResourceItem, FilePreviewItemMixin
-from ...models.fields import ItemField
+from ...models.fields import CollectionItem
 from ...typing import FileLike
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
 
@@ -143,13 +143,13 @@ class CloudinaryImageItem(
 
 
 class CloudinaryCollection(Collection):
-    image = ItemField(CloudinaryImageItem)
-    media = ItemField(CloudinaryMediaItem)
-    file = ItemField(CloudinaryFileItem)
+    image = CollectionItem(CloudinaryImageItem)
+    media = CollectionItem(CloudinaryMediaItem)
+    file = CollectionItem(CloudinaryFileItem)
 
 
 class CloudinaryImageCollection(Collection):
-    image = ItemField(CloudinaryImageItem)
+    image = CollectionItem(CloudinaryImageItem)
 
     @classmethod
     def get_validation(cls) -> Dict[str, Any]:

@@ -188,19 +188,19 @@ from paper_uploads.models import *
 
 
 class PageFiles(Collection):
-    svg = ItemField(SVGItem)
-    image = ItemField(ImageItem)
-    file = ItemField(FileItem)
-``` 
+    svg = CollectionItem(SVGItem)
+    image = CollectionItem(ImageItem)
+    file = CollectionItem(FileItem)
+```
 
-Псевдо-поле `ItemField` подключает модель 
+Псевдо-поле `CollectionItem` подключает модель 
 элемента к коллекции под заданным именем, которое сохраняется 
 в базу данных (в поле `item_type`) вместе с загруженным файлом. 
 При изменении имен псевдо-полей или при добавлении новых классов 
 элементов к существующим коллекциям, разработчик должен самостоятельно 
 обеспечить согласованное состояние БД.
 
-Вместе с моделью элемента, в поле `ItemField` можно указать 
+Вместе с моделью элемента, в поле `CollectionItem` можно указать 
 [валидаторы](#Validators) и дополнительные параметры 
 (в словаре `options`), которые могут быть использованы для 
 более детальной настройки элемента коллекции.
@@ -219,9 +219,9 @@ from paper_uploads.models import *
 
 
 class PageFiles(Collection):
-    svg = ItemField(SVGItem)
-    image = ItemField(ImageItem)
-    file = ItemField(FileItem)
+    svg = CollectionItem(SVGItem)
+    image = CollectionItem(ImageItem)
+    file = CollectionItem(FileItem)
 
 
 class Page(models.Model):
@@ -251,16 +251,16 @@ class Page(models.Model):
                 clip=False            
             )        
         )       
-        image = ItemField(ImageItem)
+        image = CollectionItem(ImageItem)
     ```
    
-2) в дополнительных параметрах поля `ItemField` по ключу `variations`:
+2) в дополнительных параметрах поля `CollectionItem` по ключу `variations`:
 
     ```python
     from paper_uploads.models import *
     
     class PageGallery(Collection):
-        image = ItemField(ImageItem, options={
+        image = CollectionItem(ImageItem, options={
             'variations': dict(
                 mobile=dict(
                     size=(640, 0),
@@ -448,7 +448,7 @@ class Page(models.Model):
 
 
 class PageGallery(Collection):
-    file = ItemField(FileItem, validators=[
+    file = CollectionItem(FileItem, validators=[
         SizeValidator(10 * 1024 * 1024), 
     ])
 ```
@@ -567,8 +567,8 @@ from paper_uploads.cloudinary.models import *
 
 
 class PageFiles(Collection):
-    image = ItemField(CloudinaryImageItem)
-    file = ItemField(CloudinaryFileItem)
+    image = CollectionItem(CloudinaryImageItem)
+    file = CollectionItem(CloudinaryFileItem)
 
 
 class Page(models.Model):
