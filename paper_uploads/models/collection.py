@@ -46,6 +46,149 @@ __all__ = [
 ]
 
 
+class CollectionMetaclass(ModelBase):
+    """
+    Хак, создающий прокси-модели вместо наследования, если явно не указано обратное.
+    """
+
+    @classmethod
+    def __prepare__(self, name, bases):
+        return OrderedDict()
+
+    def __new__(mcs, name, bases, attrs, **kwargs):
+        # set proxy=True by default
+        meta = attrs.pop('Meta', None)
+        if meta is None:
+            meta = type('Meta', (), {'proxy': True})
+        else:
+            meta_attrs = meta.__dict__.copy()
+            meta_attrs.setdefault('proxy', True)
+            meta = type('Meta', meta.__bases__, meta_attrs)
+        attrs['Meta'] = meta
+
+        item_types_attribute = '_{}__item_types'.format(name)
+        attrs[item_types_attribute] = original_item_types = OrderedDict()
+        new_class = super().__new__(mcs, name, bases, attrs, **kwargs)
+
+        # дескриптор, дающий доступ к item_types в режиме только для чтения
+        new_class.item_types = ItemTypesDescriptor('item_types')
+
+        # Django использует словарь для contributable_attrs, что приводит
+        # к нарушению порядка подключения типов данных. Сортируем их сами.
+        item_types = OrderedDict()
+        for key in attrs:
+            if key in original_item_types:
+                item_types[key] = original_item_types[key]
+        original_item_types.clear()
+        original_item_types.update(item_types)
+
+        return new_class
+
+
+class ItemTypesDescriptor:
+    def __init__(self, name):
+        self.name = name
+
+    def __get__(self, instance, cls=None):
+        if cls is None:
+            cls = type(instance)
+
+        item_types = OrderedDict()
+        for base in reversed(cls.mro()):
+            base_item_types = self.get_item_types(base)
+            if base_item_types is not None:
+                item_types.update(base_item_types)
+
+        if instance is not None:
+            instance.__dict__[self.name] = item_types
+        return item_types
+
+    def get_item_types(self, cls):
+        item_types_attribute = '_{}__item_types'.format(cls.__name__)
+        return getattr(cls, item_types_attribute, None)
+
+
+class CollectionBase(ReverseFieldModelMixin, metaclass=CollectionMetaclass):
+    items = ContentItemRelation(
+        'paper_uploads.CollectionResourceItem',
+        content_type_field='collection_content_type',
+        object_id_field='collection_id',
+        for_concrete_model=False,
+    )
+    created_at = models.DateTimeField(_('created at'), default=now, editable=False)
+
+    class Meta:
+        proxy = False
+        abstract = True
+        default_permissions = ()
+        verbose_name = _('collection')
+        verbose_name_plural = _('collectionы')
+
+    @classmethod
+    def _check_fields(cls, **kwargs):
+        errors = super()._check_fields(**kwargs)
+        for field in cls.item_types.values():
+            errors.extend(field.check(**kwargs))
+        return errors
+
+    def get_items(self, item_type: str = None):
+        if item_type is None:
+            return self.items.order_by('order')
+        if item_type not in self.item_types:
+            raise ValueError('Unsupported collection item type: %s' % item_type)
+        return self.items.filter(item_type=item_type).order_by('order')
+
+    def detect_file_type(self, file: File) -> Optional[str]:
+        raise NotImplementedError
+
+
+class CollectionManager(models.Manager):
+    """
+    Из-за того, что все галереи являются прокси-моделями, запросы от имени
+    любого из классов галереи затрагивает абсолютно все объекты галереи.
+    С помощью этого менеджера можно работать только с галереями текущего типа.
+    """
+
+    def get_queryset(self):
+        collection_ct = ContentType.objects.get_for_model(
+            self.model, for_concrete_model=False
+        )
+        return super().get_queryset().filter(collection_content_type=collection_ct)
+
+
+class Collection(CollectionBase):
+    collection_content_type = models.ForeignKey(
+        ContentType, null=True, on_delete=models.SET_NULL, editable=False
+    )
+
+    default_mgr = models.Manager()  # fix migrations manager
+    objects = CollectionManager()
+
+    class Meta:
+        proxy = False  # явно указываем, что это не прокси-модель
+        default_manager_name = 'default_mgr'
+
+    def save(self, *args, **kwargs):
+        if not self.collection_content_type:
+            self.collection_content_type = ContentType.objects.get_for_model(
+                self, for_concrete_model=False
+            )
+        super().save(*args, **kwargs)
+
+    def detect_file_type(self, file: File) -> Optional[str]:
+        """
+        Определение класса элемента, которому нужно отнести загружаемый файл.
+        """
+        for item_type, field in self.item_types.items():
+            file_supported = getattr(field.model, 'file_supported', None)
+            if file_supported is not None and callable(file_supported):
+                if file_supported(file):
+                    return item_type
+
+
+# ======================================================================================
+
+
 class CollectionResourceItem(PolymorphicModel):
     # Флаг для индикации базового класса элемента коллекции.
     # См. метод _check_form_class()
@@ -395,146 +538,6 @@ class ImageItem(
 
 
 # ==============================================================================
-
-
-class CollectionMetaclass(ModelBase):
-    """
-    Хак, создающий прокси-модели вместо наследования, если явно не указано обратное.
-    """
-
-    @classmethod
-    def __prepare__(self, name, bases):
-        return OrderedDict()
-
-    def __new__(mcs, name, bases, attrs, **kwargs):
-        # set proxy=True by default
-        meta = attrs.pop('Meta', None)
-        if meta is None:
-            meta = type('Meta', (), {'proxy': True})
-        else:
-            meta_attrs = meta.__dict__.copy()
-            meta_attrs.setdefault('proxy', True)
-            meta = type('Meta', meta.__bases__, meta_attrs)
-        attrs['Meta'] = meta
-
-        item_types_attribute = '_{}__item_types'.format(name)
-        attrs[item_types_attribute] = original_item_types = OrderedDict()
-        new_class = super().__new__(mcs, name, bases, attrs, **kwargs)
-
-        # дескриптор, дающий доступ к item_types в режиме только для чтения
-        new_class.item_types = ItemTypesDescriptor('item_types')
-
-        # Django использует словарь для contributable_attrs, что приводит
-        # к нарушению порядка подключения типов данных. Сортируем их сами.
-        item_types = OrderedDict()
-        for key in attrs:
-            if key in original_item_types:
-                item_types[key] = original_item_types[key]
-        original_item_types.clear()
-        original_item_types.update(item_types)
-
-        return new_class
-
-
-class ItemTypesDescriptor:
-    def __init__(self, name):
-        self.name = name
-
-    def __get__(self, instance, cls=None):
-        if cls is None:
-            cls = type(instance)
-
-        item_types = OrderedDict()
-        for base in reversed(cls.mro()):
-            base_item_types = self.get_item_types(base)
-            if base_item_types is not None:
-                item_types.update(base_item_types)
-
-        if instance is not None:
-            instance.__dict__[self.name] = item_types
-        return item_types
-
-    def get_item_types(self, cls):
-        item_types_attribute = '_{}__item_types'.format(cls.__name__)
-        return getattr(cls, item_types_attribute, None)
-
-
-class CollectionBase(ReverseFieldModelMixin, metaclass=CollectionMetaclass):
-    items = ContentItemRelation(
-        'paper_uploads.CollectionResourceItem',
-        content_type_field='collection_content_type',
-        object_id_field='collection_id',
-        for_concrete_model=False,
-    )
-    created_at = models.DateTimeField(_('created at'), default=now, editable=False)
-
-    class Meta:
-        proxy = False
-        abstract = True
-        default_permissions = ()
-        verbose_name = _('collection')
-        verbose_name_plural = _('collectionы')
-
-    @classmethod
-    def _check_fields(cls, **kwargs):
-        errors = super()._check_fields(**kwargs)
-        for field in cls.item_types.values():
-            errors.extend(field.check(**kwargs))
-        return errors
-
-    def get_items(self, item_type: str = None):
-        if item_type is None:
-            return self.items.order_by('order')
-        if item_type not in self.item_types:
-            raise ValueError('Unsupported collection item type: %s' % item_type)
-        return self.items.filter(item_type=item_type).order_by('order')
-
-    def detect_file_type(self, file: File) -> Optional[str]:
-        raise NotImplementedError
-
-
-class CollectionManager(models.Manager):
-    """
-    Из-за того, что все галереи являются прокси-моделями, запросы от имени
-    любого из классов галереи затрагивает абсолютно все объекты галереи.
-    С помощью этого менеджера можно работать только с галереями текущего типа.
-    """
-
-    def get_queryset(self):
-        collection_ct = ContentType.objects.get_for_model(
-            self.model, for_concrete_model=False
-        )
-        return super().get_queryset().filter(collection_content_type=collection_ct)
-
-
-class Collection(CollectionBase):
-    collection_content_type = models.ForeignKey(
-        ContentType, null=True, on_delete=models.SET_NULL, editable=False
-    )
-
-    default_mgr = models.Manager()  # fix migrations manager
-    objects = CollectionManager()
-
-    class Meta:
-        proxy = False  # явно указываем, что это не прокси-модель
-        default_manager_name = 'default_mgr'
-
-    def save(self, *args, **kwargs):
-        if not self.collection_content_type:
-            self.collection_content_type = ContentType.objects.get_for_model(
-                self, for_concrete_model=False
-            )
-        super().save(*args, **kwargs)
-
-    def detect_file_type(self, file: File) -> Optional[str]:
-        """
-        Определение класса элемента, которому нужно отнести загружаемый файл.
-        """
-        for item_type, field in self.item_types.items():
-            file_supported = getattr(field.model, 'file_supported', None)
-            if file_supported is not None and callable(file_supported):
-                if file_supported(file):
-                    return item_type
 
 
 class ImageCollection(Collection):
