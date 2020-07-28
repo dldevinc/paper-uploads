@@ -3,13 +3,13 @@ from collections import OrderedDict
 from typing import Any, Dict, Optional, Type
 
 import magic
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.finders import find
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core import checks
 from django.core.files import File
-from django.db import DEFAULT_DB_ALIAS, models
+from django.db import models
 from django.db.models import functions
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
@@ -31,6 +31,7 @@ from .base import (
     VersatileImageResourceMixin,
 )
 from .fields import FormattedFileField, CollectionItem
+from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
 
 __all__ = [
@@ -394,19 +395,6 @@ class ImageItem(
 
 
 # ==============================================================================
-
-
-class ContentItemRelation(GenericRelation):
-    """
-    FIX: cascade delete polymorphic
-    https://github.com/django-polymorphic/django-polymorphic/issues/34
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def bulk_related_objects(self, objs, using=DEFAULT_DB_ALIAS):
-        return super().bulk_related_objects(objs).non_polymorphic()
 
 
 class CollectionMetaclass(ModelBase):

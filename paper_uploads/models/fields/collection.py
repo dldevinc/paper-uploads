@@ -1,11 +1,26 @@
 from typing import Any, List
 
+from django.contrib.contenttypes.fields import GenericRelation
 from django.core import checks
+from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Field
 from django.utils.functional import cached_property
 
 from ... import forms
 from .base import FileFieldBase
+
+
+class ContentItemRelation(GenericRelation):
+    """
+    FIX: cascade delete polymorphic
+    https://github.com/django-polymorphic/django-polymorphic/issues/34
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def bulk_related_objects(self, objs, using=DEFAULT_DB_ALIAS):
+        return super().bulk_related_objects(objs).non_polymorphic()
 
 
 class CollectionField(FileFieldBase):
