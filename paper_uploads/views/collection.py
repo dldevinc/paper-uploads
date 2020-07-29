@@ -16,7 +16,7 @@ from django.views.generic import FormView
 from .. import exceptions, signals
 from ..logging import logger
 from ..helpers import run_validators
-from ..models.collection import CollectionBase, CollectionResourceItem
+from ..models.collection import CollectionBase, CollectionItemBase
 from . import helpers
 
 
@@ -250,9 +250,9 @@ def sort_items(request):
     with transaction.atomic():
         for index, item_id in enumerate(item_ids):
             if item_id in set(instance.items.values_list('pk', flat=True)):
-                CollectionResourceItem.objects.filter(pk=item_id).update(order=index)
+                CollectionItemBase.objects.filter(pk=item_id).update(order=index)
             else:
-                CollectionResourceItem.objects.filter(pk=item_id).update(
+                CollectionItemBase.objects.filter(pk=item_id).update(
                     order=2 ** 32 - 1
                 )
 

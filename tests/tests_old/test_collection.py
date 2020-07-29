@@ -225,7 +225,7 @@ class TestFileItem:
                 assert item.closed is False
             assert item.closed is True
 
-            # CollectionResourceItem
+            # CollectionItemBase
             assert (
                 item.change_form_class
                 == 'paper_uploads.forms.dialogs.collection.FileItemDialog'
@@ -358,7 +358,7 @@ class TestSVGItem:
                 assert item.closed is False
             assert item.closed is True
 
-            # CollectionResourceItem
+            # CollectionItemBase
             assert (
                 item.change_form_class
                 == 'paper_uploads.forms.dialogs.collection.FileItemDialog'
@@ -553,7 +553,7 @@ class TestImageItem:
             with pytest.raises(KeyError):
                 item.get_variation_file('nothing')
 
-            # CollectionResourceItem
+            # CollectionItemBase
             assert (
                 item.change_form_class
                 == 'paper_uploads.forms.dialogs.collection.ImageItemDialog'

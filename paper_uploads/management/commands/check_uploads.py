@@ -7,7 +7,7 @@ from ...models.base import (
     ReverseFieldModelMixin,
     VersatileImageResourceMixin,
 )
-from ...models.collection import Collection, CollectionResourceItem
+from ...models.collection import Collection, CollectionItemBase
 
 
 class Command(BaseCommand):
@@ -211,11 +211,11 @@ class Command(BaseCommand):
                 self.stdout.write('')
 
     def check_item_types(self):
-        total = CollectionResourceItem.objects.using(self.database).count()
+        total = CollectionItemBase.objects.using(self.database).count()
         for index, item in enumerate(
-            CollectionResourceItem.objects.using(self.database).iterator(), start=1
+            CollectionItemBase.objects.using(self.database).iterator(), start=1
         ):
-            assert isinstance(item, CollectionResourceItem)
+            assert isinstance(item, CollectionItemBase)
 
             if self.verbosity >= 2:
                 self.stdout.write('\r' + (' ' * 80), ending='\r')

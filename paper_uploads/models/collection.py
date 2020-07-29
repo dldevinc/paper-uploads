@@ -34,7 +34,7 @@ from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
 
 __all__ = [
-    'CollectionResourceItem',
+    'CollectionItemBase',
     'CollectionBase',
     'FilePreviewMixin',
     'FileItem',
@@ -115,7 +115,7 @@ class CollectionMetaclass(ModelBase):
 
 class CollectionBase(ReverseFieldModelMixin, metaclass=CollectionMetaclass):
     items = ContentItemRelation(
-        'paper_uploads.CollectionResourceItem',
+        'paper_uploads.CollectionItemBase',
         content_type_field='collection_content_type',
         object_id_field='collection_id',
         for_concrete_model=False,
@@ -136,7 +136,7 @@ class CollectionBase(ReverseFieldModelMixin, metaclass=CollectionMetaclass):
             errors.extend(field.check(**kwargs))
         return errors
 
-    def get_items(self, item_type: str = None) -> 'models.QuerySet[CollectionResourceItem]':
+    def get_items(self, item_type: str = None) -> 'models.QuerySet[CollectionItemBase]':
         # TODO: что если класс элемента был удален из коллекции, но элементы остались?
         if item_type is None:
             return self.items.order_by('order')
@@ -199,7 +199,7 @@ class Collection(CollectionBase):
 # ======================================================================================
 
 
-class CollectionResourceItem(PolymorphicModel):
+class CollectionItemBase(PolymorphicModel):
     """
     Базовый класс элемента коллекции.
     """
@@ -354,7 +354,7 @@ class CollectionResourceItem(PolymorphicModel):
         }
 
 
-class CollectionFileItemBase(ReadonlyFileProxyMixin, CollectionResourceItem, FileFieldResource):
+class CollectionFileItemBase(ReadonlyFileProxyMixin, CollectionItemBase, FileFieldResource):
     """
     Базовый класс элемента галереи, содержащего файл.
     """
@@ -411,7 +411,7 @@ class FileItem(FilePreviewMixin, CollectionFileItemBase):
     )
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
-    class Meta(CollectionResourceItem.Meta):
+    class Meta(CollectionItemBase.Meta):
         verbose_name = _('File item')
         verbose_name_plural = _('File items')
 
@@ -444,7 +444,7 @@ class SVGItem(CollectionFileItemBase):
     )
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
-    class Meta(CollectionResourceItem.Meta):
+    class Meta(CollectionItemBase.Meta):
         verbose_name = _('SVG item')
         verbose_name_plural = _('SVG items')
 
@@ -478,7 +478,7 @@ class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
         upload_to=settings.COLLECTION_IMAGES_UPLOAD_TO,
     )
 
-    class Meta(CollectionResourceItem.Meta):
+    class Meta(CollectionItemBase.Meta):
         verbose_name = _('Image item')
         verbose_name_plural = _('Image items')
 

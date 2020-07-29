@@ -211,7 +211,7 @@ class TestCloudinaryFileItem:
             item.refresh_from_db()
             assert re.fullmatch(r'sheet_\w+\.xlsx', item.get_public_id()) is not None
 
-            # CollectionResourceItem
+            # CollectionItemBase
             assert (
                 item.change_form_class
                 == 'paper_uploads.forms.dialogs.collection.FileItemDialog'
@@ -344,7 +344,7 @@ class TestCloudinaryMediaItem:
             item.refresh_from_db()
             assert re.fullmatch(r'audio_\w+', item.get_public_id()) is not None
 
-            # CollectionResourceItem
+            # CollectionItemBase
             assert (
                 item.change_form_class
                 == 'paper_uploads.forms.dialogs.collection.FileItemDialog'
@@ -490,7 +490,7 @@ class TestCloudinaryImageItem:
             item.refresh_from_db()
             assert re.fullmatch(r'Image_\w+', item.get_public_id()) is not None
 
-            # CollectionResourceItem
+            # CollectionItemBase
             assert (
                 item.change_form_class
                 == 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
