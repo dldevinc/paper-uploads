@@ -531,7 +531,10 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._reset_variation_files()
+
+        # нельзя использовать `_reset_variation_files`, т.к. он обращается
+        # к `get_variations`, что может быть неопределено для элементов коллекций.
+        self._variation_files_cache = {}
 
     def __getattr__(self, item):
         # реализация-заглушка, чтобы PyCharm не ругался на атрибуты-вариации
