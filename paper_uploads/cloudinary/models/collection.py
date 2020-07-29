@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 
 from ...conf import settings
 from ...models.base import ImageFileResourceMixin
-from ...models.collection import Collection, CollectionResourceItem, FilePreviewItemMixin
+from ...models.collection import Collection, CollectionItemBase, FilePreviewMixin
 from ...models.fields import CollectionItem
 from ...typing import FileLike
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
@@ -22,8 +22,9 @@ __all__ = [
 ]
 
 
-class CollectionCloudinaryFileResource(CollectionResourceItem, CloudinaryFileResource):
-    class Meta(CollectionResourceItem.Meta):
+# TODO: readonly mixin
+class CollectionCloudinaryFileResource(CollectionItemBase, CloudinaryFileResource):
+    class Meta(CollectionItemBase.Meta):
         abstract = True
 
     def attach_file(self, file: FileLike, name: str = None, **options):
@@ -43,12 +44,13 @@ class CollectionCloudinaryFileResource(CollectionResourceItem, CloudinaryFileRes
 
 
 class CloudinaryFileItem(
-    FilePreviewItemMixin,
+    FilePreviewMixin,
     ReadonlyCloudinaryFileProxyMixin,
     CollectionCloudinaryFileResource,
 ):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
-    admin_template_name = 'paper_uploads/collection_item/file.html'
+    template_name = 'paper_uploads/collection_item/file.html'
+    preview_template_name = 'paper_uploads/collection_item/preview/file.html'
 
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
@@ -74,12 +76,13 @@ class CloudinaryFileItem(
 
 
 class CloudinaryMediaItem(
-    FilePreviewItemMixin,
+    FilePreviewMixin,
     ReadonlyCloudinaryFileProxyMixin,
     CollectionCloudinaryFileResource,
 ):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
-    admin_template_name = 'paper_uploads/collection_item/file.html'
+    template_name = 'paper_uploads/collection_item/file.html'
+    preview_template_name = 'paper_uploads/collection_item/preview/file.html'
     cloudinary_resource_type = 'video'
 
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
@@ -115,7 +118,7 @@ class CloudinaryImageItem(
 ):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
     change_form_class = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
-    admin_template_name = 'paper_uploads_cloudinary/collection_item/image.html'
+    template_name = 'paper_uploads_cloudinary/collection_item/image.html'
     cloudinary_resource_type = 'image'
 
     class Meta(CollectionCloudinaryFileResource.Meta):

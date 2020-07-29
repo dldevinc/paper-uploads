@@ -651,7 +651,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
                     file=self.get_variation_file(name)
                 )
 
-    def recut_async(self):
+    def recut_async(self, names: Iterable[str] = ()):
         """
         Добавление задачи нарезки вариаций в django-rq.
         """
@@ -665,19 +665,25 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
                 'model_name': self._meta.model_name,
                 'object_id': self.pk,
                 'using': self._state.db,
+                'names': names,
             },
         )
 
     @classmethod
     def _recut_task(
-        cls, app_label: str, model_name: str, object_id: int, using: str
+        cls,
+        app_label: str,
+        model_name: str,
+        object_id: int,
+        using: str,
+        names: Iterable[str]
     ):
         """
         Задача для django-rq.
         Вызывает `recut()` экземпляра в отдельном процессе.
         """
         instance = helpers.get_instance(app_label, model_name, object_id, using=using)
-        instance.recut()
+        instance.recut(names)
 
 
 class ReverseFieldModelMixin(models.Model):

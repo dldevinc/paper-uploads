@@ -4,7 +4,7 @@
   <source srcset="{% if item %}{{ item.admin_preview_2x.url }} 2x, {{ item.admin_preview.url }} 1x{% endif %}">
   <img class="collection__item-image"
        src="{% if item %}{{ item.admin_preview.url }}{% endif %}"
-       width="{{ preview_width }}"
-       height="{{ preview_height }}"
+       width="{{ width }}"
+       height="{{ height }}"
        alt="{% if item %}{{ item.alt }}{% endif %}">
 </picture>

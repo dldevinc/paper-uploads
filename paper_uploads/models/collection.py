@@ -1,6 +1,6 @@
 import posixpath
 from collections import OrderedDict
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Iterable, Optional, Type
 
 import magic
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -36,7 +36,7 @@ from .image import VariationalFileField
 __all__ = [
     'CollectionResourceItem',
     'CollectionBase',
-    'FilePreviewItemMixin',
+    'FilePreviewMixin',
     'FileItem',
     'SVGItem',
     'ImageItem',
@@ -191,9 +191,8 @@ class Collection(CollectionBase):
         Определение класса элемента, которому нужно отнести загружаемый файл.
         """
         for item_type, field in self.item_types.items():
-            file_supported = getattr(field.model, 'file_supported', None)
-            if file_supported is not None and callable(file_supported):
-                if file_supported(file):
+            if isinstance(field.model, CollectionFileItemBase):
+                if field.model.file_supported(file):
                     return item_type
 
 
@@ -210,7 +209,12 @@ class CollectionResourceItem(PolymorphicModel):
     __BaseCollectionItem = True
 
     change_form_class = None
-    admin_template_name = None
+
+    # путь к шаблону, представляющему элемент коллекции в админке
+    template_name = None
+
+    # путь к шаблону, представляющему картинку-превью элемента коллекции в админке
+    preview_template_name = None
 
     collection_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     collection_id = models.IntegerField()
@@ -277,10 +281,10 @@ class CollectionResourceItem(PolymorphicModel):
             return []
 
         errors = []
-        if cls.admin_template_name is None:
+        if cls.template_name is None:
             errors.append(
                 checks.Error(
-                    "{} requires a definition of 'admin_template_name'".format(
+                    "{} requires a definition of 'template_name'".format(
                         cls.__name__
                     ),
                     obj=cls,
@@ -305,14 +309,14 @@ class CollectionResourceItem(PolymorphicModel):
             **super().as_dict(),
             'collectionId': self.collection_id,
             'item_type': self.item_type,
-            'caption': self.caption,
-            'preview': self.preview,
+            'caption': self.get_caption(),
+            'preview': self.render_preview(),
         }
 
     def get_collection_class(self) -> Type[CollectionBase]:
         return self.collection_content_type.model_class()
 
-    def get_itemtype_field(self) -> CollectionItem:
+    def get_itemtype_field(self) -> Optional[CollectionItem]:
         collection_cls = self.get_collection_class()
         for name, field in collection_cls.item_types.items():
             if field.model is type(self):
@@ -321,7 +325,6 @@ class CollectionResourceItem(PolymorphicModel):
     def attach_to(self, collection: CollectionBase):
         """
         Подключение элемента к коллекции.
-        Используется в случае динамического создания элементов коллекции.
         """
         self.collection_content_type = ContentType.objects.get_for_model(
             collection, for_concrete_model=False
@@ -334,61 +337,71 @@ class CollectionResourceItem(PolymorphicModel):
         else:
             raise ValueError('Unsupported collection item: %s' % type(self).__name__)
 
-    @property
-    def caption(self):
+    def get_caption(self):
         """ Заголовок для виджета в админке """
         raise NotImplementedError
 
-    @property
-    def preview(self):
-        """ Картинка-превью для виджета в админке """
-        raise NotImplementedError
+    def render_preview(self):
+        """ Отображение элемента коллекции в админке """
+        context = self.get_preview_context()
+        return loader.render_to_string(self.preview_template_name, context)
+
+    def get_preview_context(self):
+        return {
+            'item': self,
+            'width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+            'height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+        }
 
 
-class FilePreviewItemMixin(models.Model):
+class CollectionFileItemBase(ReadonlyFileProxyMixin, CollectionResourceItem, FileFieldResource):
     """
-    Миксина модели, добавляющая иконку для файла
+    Базовый класс элемента галереи, содержащего файл.
     """
-
-    preview_url = models.CharField(
-        _('preview URL'), max_length=255, blank=True, editable=False
-    )
 
     class Meta:
         abstract = True
 
-    def save(self, *args, **kwargs):
-        self.preview_url = self.get_preview_url()
-        super().save(*args, **kwargs)
+    @classmethod
+    def file_supported(cls, file: File) -> bool:
+        """
+        Проверка возможности представления загруженного файла
+        текущим классом элемента в коллекции.
+        """
+        raise NotImplementedError
 
-    @property
-    def preview(self):
-        return loader.render_to_string(
-            'paper_uploads/collection_item/preview/file.html',
-            {
-                'item': self,
-                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-            },
-        )
+
+class FilePreviewMixin(models.Model):
+    """
+    Миксина элемента коллекции, добавляющая иконку для файла в админке
+    """
+
+    class Meta:
+        abstract = True
 
     def get_preview_url(self):
+        extension = FILE_ICON_OVERRIDES.get(self.extension, self.extension)  # noqa
         icon_path_template = 'paper_uploads/dist/image/{}.svg'
-        extension = FILE_ICON_OVERRIDES.get(self.extension, self.extension)
         icon_path = icon_path_template.format(extension)
         if find(icon_path) is None:
             icon_path = icon_path_template.format(FILE_ICON_DEFAULT)
         return staticfiles_storage.url(icon_path)
 
+    def get_preview_context(self):
+        context = super().get_preview_context()  # noqa
+        context.update(
+            preview_url=self.get_preview_url()
+        )
+        return context
 
-class FileItem(
-    FilePreviewItemMixin,
-    ReadonlyFileProxyMixin,
-    CollectionResourceItem,
-    FileFieldResource
-):
+
+# ======================================================================================
+
+
+class FileItem(FilePreviewMixin, CollectionFileItemBase):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
-    admin_template_name = 'paper_uploads/collection_item/file.html'
+    template_name = 'paper_uploads/collection_item/file.html'
+    preview_template_name = 'paper_uploads/collection_item/preview/file.html'
 
     file = FormattedFileField(
         _('file'),
@@ -410,19 +423,18 @@ class FileItem(
     def get_file(self) -> FieldFile:
         return self.file
 
-    @property
-    def caption(self):
+    def get_caption(self):
         return self.get_basename()
 
     @classmethod
     def file_supported(cls, file: File) -> bool:
-        # TODO: магический метод
         return True
 
 
-class SVGItem(ReadonlyFileProxyMixin, CollectionResourceItem, FileFieldResource):
+class SVGItem(CollectionFileItemBase):
     change_form_class = 'paper_uploads.forms.dialogs.collection.FileItemDialog'
-    admin_template_name = 'paper_uploads/collection_item/svg.html'
+    template_name = 'paper_uploads/collection_item/svg.html'
+    preview_template_name = 'paper_uploads/collection_item/preview/svg.html'
 
     file = FormattedFileField(
         _('file'),
@@ -444,37 +456,20 @@ class SVGItem(ReadonlyFileProxyMixin, CollectionResourceItem, FileFieldResource)
     def get_file(self) -> FieldFile:
         return self.file
 
-    @property
-    def caption(self):
+    def get_caption(self):
         return self.get_basename()
-
-    @property
-    def preview(self):
-        return loader.render_to_string(
-            'paper_uploads/collection_item/preview/svg.html',
-            {
-                'item': self,
-                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-            },
-        )
 
     @classmethod
     def file_supported(cls, file: File) -> bool:
-        # TODO: магический метод
         filename, ext = posixpath.splitext(file.name)
         return ext.lower() == '.svg'
 
 
-class ImageItem(
-    ReadonlyFileProxyMixin,
-    VersatileImageResourceMixin,
-    CollectionResourceItem,
-    FileFieldResource
-):
+class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
     change_form_class = 'paper_uploads.forms.dialogs.collection.ImageItemDialog'
-    admin_template_name = 'paper_uploads/collection_item/image.html'
+    template_name = 'paper_uploads/collection_item/image.html'
+    preview_template_name = 'paper_uploads/collection_item/preview/image.html'
 
     file = VariationalFileField(
         _('file'),
@@ -490,64 +485,50 @@ class ImageItem(
     def get_file(self) -> FieldFile:
         return self.file
 
-    def recut_async(self, **kwargs):
+    def recut_async(self, names: Iterable[str] = ()):
         """
         Превью для админки режутся сразу, а остальное — потом.
         """
         preview_variations = tuple(self.PREVIEW_VARIATIONS.keys())
         self._recut_sync(names=preview_variations)
 
-        names = tuple(
-            name
-            for name in kwargs.get('names', None) or self.get_variations().keys()
-            if name not in preview_variations
-        )
-        kwargs['names'] = names
-        super().recut_async(**kwargs)
+        names = tuple(set(names).difference(preview_variations))
+        super().recut_async(names)
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         """
         Перебираем возможные места вероятного определения вариаций и берем
         первое непустое значение. Порядок проверки:
-            1) параметр `variations` поля `CollectionItem`
+            1) параметр `variations` псевдо-поля `CollectionItem`
             2) член класса галереи VARIATIONS
         К найденному словарю примешиваются вариации для админки.
         """
         if not hasattr(self, '_variations_cache'):
             collection_cls = self.get_collection_class()
             itemtype_field = self.get_itemtype_field()
-            variation_configs = self._get_variation_configs(
+            variation_config = self.get_variation_config(
                 itemtype_field, collection_cls
             )
-            self._variations_cache = build_variations(variation_configs)
+            self._variations_cache = build_variations(variation_config)
         return self._variations_cache
 
-    @property
-    def caption(self):
+    def get_caption(self):
         return self.get_basename()
-
-    @property
-    def preview(self):
-        return loader.render_to_string(
-            'paper_uploads/collection_item/preview/image.html',
-            {
-                'item': self,
-                'preview_width': settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                'preview_height': settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
-            },
-        )
 
     @classmethod
     def file_supported(cls, file: File) -> bool:
-        # TODO: магический метод
         mimetype = magic.from_buffer(file.read(1024), mime=True)
         file.seek(0)  # correct file position after mimetype detection
         basetype, subtype = mimetype.split('/', 1)
         return basetype == 'image'
 
     @classmethod
-    def _get_variation_configs(cls, field, collection_cls) -> Dict[str, Any]:
-        if 'variations' in field.options:
+    def get_variation_config(
+        cls,
+        field: Optional[CollectionItem],
+        collection_cls: Type[CollectionBase]
+    ) -> Dict[str, Any]:
+        if field is not None and 'variations' in field.options:
             variations = field.options['variations']
         else:
             variations = getattr(collection_cls, 'VARIATIONS', None)

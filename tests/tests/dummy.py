@@ -51,28 +51,28 @@ def make_collection(model=None, extra_file=True, images=True, svg=True):
     file_item = FileItem()
     file_item.attach_to(collection)
     with open(DOCUMENT_FILEPATH, 'rb') as fp:
-        file_item.attach_file(fp)
+        file_item.attach_file(fp, name='collection_file1.pdf')
     file_item.save()
 
     if extra_file:
         file_item = FileItem()
         file_item.attach_to(collection)
         with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            file_item.attach_file(fp)
+            file_item.attach_file(fp, name='collection_file2.jpg')
         file_item.save()
 
     if images:
         image_item = ImageItem()
         image_item.attach_to(collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            image_item.attach_file(fp)
+            image_item.attach_file(fp, name='collection_image1.jpg')
         image_item.save()
 
     if svg:
         svg_item = SVGItem()
         svg_item.attach_to(collection)
         with open(MEDITATION_FILEPATH, 'rb') as fp:
-            svg_item.attach_file(fp)
+            svg_item.attach_file(fp, name='collection_svg1.svg')
         svg_item.save()
 
     yield collection
