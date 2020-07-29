@@ -4,12 +4,10 @@ from django.utils.module_loading import import_string
 DEFAULTS = {
     'STORAGE': 'django.core.files.storage.FileSystemStorage',
     'STORAGE_OPTIONS': {},
-
     'FILES_UPLOAD_TO': 'files/%Y-%m-%d',
     'IMAGES_UPLOAD_TO': 'images/%Y-%m-%d',
     'COLLECTION_FILES_UPLOAD_TO': 'collections/files/%Y-%m-%d',
     'COLLECTION_IMAGES_UPLOAD_TO': 'collections/images/%Y-%m-%d',
-
     'COLLECTION_ITEM_PREVIEW_WIDTH': 144,
     'COLLECTION_ITEM_PREVIEW_HEIGTH': 108,
     'COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS': dict(
@@ -22,25 +20,21 @@ DEFAULTS = {
             ),
             webp=dict(
                 quality=65
-            )
+            ),
         ),
     ),
-
     'RQ_ENABLED': False,
     'RQ_QUEUE_NAME': 'default',
-
     'VARIATION_DEFAULTS': None,
     'CLOUDINARY': {
         'use_filename': True,
         'unique_filename': True,
-        'overwrite': True,
-    }
+        'overwrite': True
+    },
 }
 
 # List of settings that may be in string import notation.
-IMPORT_STRINGS = (
-    'STORAGE',
-)
+IMPORT_STRINGS = ('STORAGE',)
 
 # Иконки для файлов в галерее
 FILE_ICON_DEFAULT = 'unknown'
@@ -135,7 +129,5 @@ class Settings:
 
 
 settings = Settings(
-    getattr(conf.settings, 'PAPER_UPLOADS', {}),
-    DEFAULTS,
-    IMPORT_STRINGS
+    getattr(conf.settings, 'PAPER_UPLOADS', {}), DEFAULTS, IMPORT_STRINGS
 )

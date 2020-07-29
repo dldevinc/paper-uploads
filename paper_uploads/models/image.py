@@ -20,7 +20,7 @@ class UploadedImage(
     ReverseFieldModelMixin,
     ReadonlyFileProxyMixin,
     VersatileImageResourceMixin,
-    FileFieldResource
+    FileFieldResource,
 ):
     file = VariationalFileField(
         _('file'),

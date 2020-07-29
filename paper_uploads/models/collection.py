@@ -51,6 +51,7 @@ class ItemTypesDescriptor:
     Возвращает упорядоченый словарь типов элементов коллекции,
     учитывая наследование.
     """
+
     def __init__(self, name):
         self.name = name
 
@@ -67,7 +68,9 @@ class ItemTypesDescriptor:
         for base in reversed(parents):
             base_item_types = _get_item_types(base)
             if base_item_types is not None:
-                undefined_item_types = set(item_types.keys()).difference(base_item_types)
+                undefined_item_types = set(item_types.keys()).difference(
+                    base_item_types
+                )
                 item_types.update(base_item_types)
 
                 # delete overridden item types
@@ -157,18 +160,14 @@ class CollectionManager(models.Manager):
 
     def get_queryset(self):
         collection_ct = ContentType.objects.get_for_model(
-            self.model,
-            for_concrete_model=False
+            self.model, for_concrete_model=False
         )
         return super().get_queryset().filter(collection_content_type=collection_ct)
 
 
 class Collection(CollectionBase):
     collection_content_type = models.ForeignKey(
-        ContentType,
-        null=True,
-        on_delete=models.SET_NULL,
-        editable=False
+        ContentType, null=True, on_delete=models.SET_NULL, editable=False
     )
 
     default_mgr = models.Manager()  # fix migrations manager
@@ -181,8 +180,7 @@ class Collection(CollectionBase):
     def save(self, *args, **kwargs):
         if not self.collection_content_type:
             self.collection_content_type = ContentType.objects.get_for_model(
-                self,
-                for_concrete_model=False
+                self, for_concrete_model=False
             )
         super().save(*args, **kwargs)
 
@@ -208,13 +206,13 @@ class CollectionItemBase(PolymorphicModel):
     # См. метод _check_form_class()
     __BaseCollectionItem = True
 
-    change_form_class = None
+    change_form_class: Optional[str] = None
 
     # путь к шаблону, представляющему элемент коллекции в админке
-    template_name = None
+    template_name: Optional[str] = None
 
     # путь к шаблону, представляющему картинку-превью элемента коллекции в админке
-    preview_template_name = None
+    preview_template_name: Optional[str] = None
 
     collection_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     collection_id = models.IntegerField()
@@ -225,10 +223,7 @@ class CollectionItemBase(PolymorphicModel):
     )
 
     item_type = models.CharField(
-        _('type'),
-        max_length=32,
-        db_index=True,
-        editable=False
+        _('type'), max_length=32, db_index=True, editable=False
     )
     order = models.IntegerField(_('order'), default=0, editable=False)
 
@@ -284,9 +279,7 @@ class CollectionItemBase(PolymorphicModel):
         if cls.template_name is None:
             errors.append(
                 checks.Error(
-                    "{} requires a definition of 'template_name'".format(
-                        cls.__name__
-                    ),
+                    "{} requires a definition of 'template_name'".format(cls.__name__),
                     obj=cls,
                 )
             )
@@ -354,7 +347,9 @@ class CollectionItemBase(PolymorphicModel):
         }
 
 
-class CollectionFileItemBase(ReadonlyFileProxyMixin, CollectionItemBase, FileFieldResource):
+class CollectionFileItemBase(
+    ReadonlyFileProxyMixin, CollectionItemBase, FileFieldResource
+):
     """
     Базовый класс элемента галереи, содержащего файл.
     """
@@ -389,9 +384,7 @@ class FilePreviewMixin(models.Model):
 
     def get_preview_context(self):
         context = super().get_preview_context()  # noqa
-        context.update(
-            preview_url=self.get_preview_url()
-        )
+        context.update(preview_url=self.get_preview_url())
         return context
 
 
@@ -506,9 +499,7 @@ class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
         if not hasattr(self, '_variations_cache'):
             collection_cls = self.get_collection_class()
             itemtype_field = self.get_itemtype_field()
-            variation_config = self.get_variation_config(
-                itemtype_field, collection_cls
-            )
+            variation_config = self.get_variation_config(itemtype_field, collection_cls)
             self._variations_cache = build_variations(variation_config)
         return self._variations_cache
 
@@ -524,9 +515,7 @@ class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
 
     @classmethod
     def get_variation_config(
-        cls,
-        field: Optional[CollectionItem],
-        collection_cls: Type[CollectionBase]
+        cls, field: Optional[CollectionItem], collection_cls: Type[CollectionBase]
     ) -> Dict[str, Any]:
         if field is not None and 'variations' in field.options:
             variations = field.options['variations']

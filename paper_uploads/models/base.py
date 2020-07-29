@@ -48,7 +48,12 @@ class Resource(models.Model):
     Базовый класс ресурса, который может хранится системой.
     """
 
-    name = models.CharField(_('name'), max_length=255, editable=False, help_text=_('human readable resource name'))
+    name = models.CharField(
+        _('name'),
+        max_length=255,
+        editable=False,
+        help_text=_('human readable resource name'),
+    )
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
     uploaded_at = models.DateTimeField(_('uploaded at'), default=now, editable=False)
     modified_at = models.DateTimeField(_('changed at'), auto_now=True, editable=False)
@@ -61,10 +66,7 @@ class Resource(models.Model):
         return self.name
 
     def __repr__(self):
-        return "{}('{}')".format(
-            type(self).__name__,
-            self.name
-        )
+        return "{}('{}')".format(type(self).__name__, self.name)
 
     def as_dict(self) -> Dict[str, Any]:
         """
@@ -105,9 +107,7 @@ class HashableResource(Resource):
             data = file.read(self.BLOCK_SIZE)
             if not data:
                 break
-            blocks.append(
-                hashlib.sha256(data).digest()
-            )
+            blocks.append(hashlib.sha256(data).digest())
         return hashlib.sha256(b''.join(blocks)).hexdigest()
 
     def update_hash(self, file: FileLike) -> bool:
@@ -115,9 +115,7 @@ class HashableResource(Resource):
         new_hash = self.get_hash(file)
         if new_hash and new_hash != old_hash:
             signals.content_hash_update.send(
-                sender=type(self),
-                instance=self,
-                content_hash=new_hash
+                sender=type(self), instance=self, content_hash=new_hash
             )
             self.content_hash = new_hash
         return old_hash != new_hash
@@ -143,10 +141,7 @@ class FileResource(HashableResource):
         return self.get_basename()
 
     def __repr__(self):
-        return "{}('{}')".format(
-            type(self).__name__,
-            self.get_basename()
-        )
+        return "{}('{}')".format(type(self).__name__, self.get_basename())
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -223,10 +218,7 @@ class FileResource(HashableResource):
         self._update_name(file.name)
 
         signals.pre_attach_file.send(
-            sender=type(self),
-            instance=self,
-            file=file,
-            options=options
+            sender=type(self), instance=self, file=file, options=options
         )
 
         response = self._attach_file(file, **options)
@@ -243,7 +235,7 @@ class FileResource(HashableResource):
             instance=self,
             file=result_file,
             options=options,
-            response=response
+            response=response,
         )
 
     def _attach_file(self, file: File, **options):
@@ -273,7 +265,7 @@ class FileResource(HashableResource):
             instance=self,
             old_name=old_name,
             new_name=new_name,
-            options=options
+            options=options,
         )
 
         response = self._rename_file(new_name, **options)
@@ -289,7 +281,7 @@ class FileResource(HashableResource):
             old_name=old_name,
             new_name=new_name,
             options=options,
-            response=response
+            response=response,
         )
 
     def _rename_file(self, new_name: str, **options):
@@ -301,15 +293,9 @@ class FileResource(HashableResource):
         В действительности, удаление файла происходит в методе `_delete_file`.
         Не переопределяйте этот метод, если не уверены в том, что вы делаете.
         """
-        signals.pre_delete_file.send(
-            sender=type(self),
-            instance=self
-        )
+        signals.pre_delete_file.send(sender=type(self), instance=self)
         self._delete_file()
-        signals.post_delete_file.send(
-            sender=type(self),
-            instance=self
-        )
+        signals.post_delete_file.send(sender=type(self), instance=self)
 
     def _delete_file(self):
         raise NotImplementedError
@@ -399,7 +385,9 @@ class ImageFileResourceMixin(models.Model):
             try:
                 image = Image.open(fp)
             except OSError:
-                raise ValidationError('`%s` is not an image' % self.get_basename())  # noqa
+                raise ValidationError(
+                    '`%s` is not an image' % self.get_basename()
+                )  # noqa
             else:
                 self.width, self.height = image.size
 
@@ -426,7 +414,9 @@ class VariationFile(File):
 
     def _require_file(self):
         if not self:
-            raise ValueError("Variation '%s' has no file associated with it." % self.variation_name)
+            raise ValueError(
+                "Variation '%s' has no file associated with it." % self.variation_name
+            )
 
     def _get_file(self) -> File:
         self._require_file()
@@ -474,6 +464,7 @@ class VariationFile(File):
         else:
             self.file.open(mode)
         return self
+
     # open() doesn't alter the file's contents, but it does reset the pointer
     open.alters_data = True
 
@@ -487,6 +478,7 @@ class VariationFile(File):
 
         self.storage.delete(self.name)
         self.name = None
+
     delete.alters_data = True
 
     @property
@@ -520,6 +512,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
     """
     Подкласс файлового ресурса для вариативного изображения.
     """
+
     # класс файла вариации
     variation_class = VariationFile
 
@@ -588,16 +581,12 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
                 return
 
             self._variation_files_cache = {
-                vname: self.get_variation_file(vname)
-                for vname in self.get_variations()
+                vname: self.get_variation_file(vname) for vname in self.get_variations()
             }
         yield from self._variation_files_cache.items()
 
     def get_variation_file(self, variation_name: str) -> VariationFile:
-        return self.variation_class(
-            instance=self,
-            variation_name=variation_name
-        )
+        return self.variation_class(instance=self, variation_name=variation_name)
 
     def calculate_max_size(self, source_size: Size) -> Optional[Tuple[int, int]]:
         """
@@ -646,9 +635,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
                 self._save_variation(name, variation, image)
 
                 signals.variation_created.send(
-                    sender=type(self),
-                    instance=self,
-                    file=self.get_variation_file(name)
+                    sender=type(self), instance=self, file=self.get_variation_file(name)
                 )
 
     def recut_async(self, names: Iterable[str] = ()):
@@ -676,7 +663,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         model_name: str,
         object_id: int,
         using: str,
-        names: Iterable[str]
+        names: Iterable[str],
     ):
         """
         Задача для django-rq.

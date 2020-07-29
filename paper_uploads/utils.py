@@ -1,11 +1,11 @@
-from typing import Any, Dict, Tuple, Iterable
+from typing import Any, Dict, Iterable, Set, Tuple
 
 
 def remove_dulpicates(seq: Iterable) -> Tuple:
     """
     https://stackoverflow.com/questions/480214/how-do-you-remove-duplicates-from-a-list-whilst-preserving-order
     """
-    seen = set()
+    seen = set()  # type: Set[Any]
     seen_add = seen.add
     return tuple(x for x in seq if not (x in seen or seen_add(x)))
 

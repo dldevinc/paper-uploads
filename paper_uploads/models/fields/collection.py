@@ -58,10 +58,7 @@ class CollectionField(FileFieldBase):
         return []
 
     def formfield(self, **kwargs):
-        return super().formfield(**{
-            'form_class': forms.CollectionField,
-            **kwargs
-        })
+        return super().formfield(**{'form_class': forms.CollectionField, **kwargs})
 
 
 class CollectionItem:
@@ -70,7 +67,7 @@ class CollectionItem:
     Может использоваться только в подклассах CollectionBase.
     """
 
-    default_validators = []     # type: List[Any]
+    default_validators = []  # type: List[Any]
 
     def __init__(self, to, name=None, validators=(), options=None):
         self.name = name

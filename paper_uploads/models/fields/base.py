@@ -21,10 +21,7 @@ class FileFieldBase(models.OneToOneField):
         super().__init__(**kwargs)
 
     def check(self, **kwargs):
-        return [
-            *super().check(**kwargs),
-            *self._check_relation_class()
-        ]
+        return [*super().check(**kwargs), *self._check_relation_class()]
 
     def _check_relation_class(self):
         from ...models.base import FileResource, ReverseFieldModelMixin
@@ -99,7 +96,7 @@ class FileFieldBase(models.OneToOneField):
         image.minWidth и т.п. не используются из-за недостатка кастомизации
         текста об ошибках.
         """
-        validation = {}     # type: Dict[str, Any]
+        validation = {}  # type: Dict[str, Any]
         for v in self.validators:
             if isinstance(v, validators.ExtensionValidator):
                 validation['allowedExtensions'] = v.allowed

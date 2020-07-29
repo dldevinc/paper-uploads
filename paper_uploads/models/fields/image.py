@@ -66,10 +66,7 @@ class ImageField(FileFieldBase):
         super().__init__(*args, **kwargs)
 
     def check(self, **kwargs):
-        return [
-            *super().check(**kwargs),
-            *self._check_variations(**kwargs)
-        ]
+        return [*super().check(**kwargs), *self._check_variations(**kwargs)]
 
     def _check_variations(self, **kwargs):
         if not self.variations:
@@ -90,7 +87,4 @@ class ImageField(FileFieldBase):
         return name, path, args, kwargs
 
     def formfield(self, **kwargs):
-        return super().formfield(**{
-            'form_class': forms.ImageField,
-            **kwargs
-        })
+        return super().formfield(**{'form_class': forms.ImageField, **kwargs})

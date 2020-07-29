@@ -22,10 +22,7 @@ MAX_DB_READ_ATTEMPTS = 3
 
 
 def generate_scaled_versions(
-    name: str,
-    config: VariationConfig,
-    scale_factor: int = 1,
-    webp: bool = False
+    name: str, config: VariationConfig, scale_factor: int = 1, webp: bool = False
 ) -> Iterator[PaperVariation]:
     """Геренирует масштабированную версию вариации с опциональной WebP-версией"""
     variation_size = tuple(x * scale_factor for x in config.get('size', (0, 0)))
@@ -43,18 +40,13 @@ def generate_scaled_versions(
         else:
             variation_name = '{}_webp_{}x'.format(name, scale_factor)
         variation_config = dict(
-            config,
-            name=variation_name,
-            size=variation_size,
-            format='webp'
+            config, name=variation_name, size=variation_size, format='webp'
         )
         yield PaperVariation(**variation_config)
 
 
 def generate_all_versions(
-    name: str,
-    config: VariationConfig,
-    versions: Set[str],
+    name: str, config: VariationConfig, versions: Set[str],
 ) -> Iterator[PaperVariation]:
     """Геренирует все перечисленные версии вариации"""
     webp = 'webp' in versions and config.get('format', '').upper() != 'WEBP'

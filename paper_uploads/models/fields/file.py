@@ -8,7 +8,4 @@ class FileField(FileFieldBase):
         super().__init__(*args, **kwargs)
 
     def formfield(self, **kwargs):
-        return super().formfield(**{
-            'form_class': forms.FileField,
-            **kwargs
-        })
+        return super().formfield(**{'form_class': forms.FileField, **kwargs})
