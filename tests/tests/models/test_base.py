@@ -21,9 +21,7 @@ from app.models import (
 from paper_uploads import signals
 from paper_uploads.variations import PaperVariation
 
-NASA_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/milky-way-nasa.jpg')
-CALLIPHORA_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/calliphora.jpg')
-NATURE_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/nature.jpeg')
+from ..dummy import *
 
 
 @pytest.fixture(scope='class')
@@ -958,7 +956,7 @@ class TestReadonlyFileProxyResource:
         with open(NATURE_FILEPATH, 'rb') as fp:
             resource.attach_file(fp)
 
-        with resource.open() as fp:
+        with resource as fp:
             assert fp.read(4) == b'\xff\xd8\xff\xe0'
 
         resource.delete_file()

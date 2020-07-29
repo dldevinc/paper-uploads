@@ -1,14 +1,11 @@
 import os
 
 import pytest
-from django.conf import settings
 from django.utils.timezone import now
 
 from paper_uploads.models import UploadedImage
 
-NASA_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/milky-way-nasa.jpg')
-CALLIPHORA_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/calliphora.jpg')
-NATURE_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/nature.jpeg')
+from ..dummy import *
 
 
 @pytest.fixture(scope='class')
@@ -55,6 +52,12 @@ class TestUploadedImage:
     def test_get_file_url(self, uploaded_image):
         date = now().date().strftime('%Y-%m-%d')
         assert uploaded_image.get_file_url() == '/media/images/{}/calliphora.jpg'.format(date)
+
+    def test_width(self, uploaded_image):
+        assert uploaded_image.width == 804
+
+    def test_height(self, uploaded_image):
+        assert uploaded_image.height == 1198
 
     def test_as_dict(self, uploaded_image):
         date = now().date().strftime('%Y-%m-%d')

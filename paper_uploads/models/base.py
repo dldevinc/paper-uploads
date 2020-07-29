@@ -731,7 +731,7 @@ class ReadonlyFileProxyMixin:
     url = property(lambda self: self.get_file().url)
 
     def __enter__(self):
-        return self.get_file()  # noqa
+        return self.open()  # noqa
 
     def __exit__(self, exc_type, exc_value, tb):
         self.close()

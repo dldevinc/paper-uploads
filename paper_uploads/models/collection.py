@@ -20,17 +20,16 @@ from django.utils.translation import gettext_lazy as _
 from polymorphic.models import PolymorphicModel
 
 from ..conf import FILE_ICON_DEFAULT, FILE_ICON_OVERRIDES, settings
-from ..helpers import build_variations, _get_item_types, _set_item_types
+from ..helpers import _get_item_types, _set_item_types, build_variations
 from ..storage import upload_storage
 from ..variations import PaperVariation
 from .base import (
     FileFieldResource,
     ReadonlyFileProxyMixin,
-    Resource,
     ReverseFieldModelMixin,
     VersatileImageResourceMixin,
 )
-from .fields import FormattedFileField, CollectionItem
+from .fields import CollectionItem, FormattedFileField
 from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
 
@@ -49,7 +48,8 @@ __all__ = [
 class ItemTypesDescriptor:
     """
     Дескриптор, добавляемый к моделям коллекций.
-    Возвращает упорядоченый словарь типов элементов коллекции.
+    Возвращает упорядоченый словарь типов элементов коллекции,
+    учитывая наследование.
     """
     def __init__(self, name):
         self.name = name
@@ -136,7 +136,8 @@ class CollectionBase(ReverseFieldModelMixin, metaclass=CollectionMetaclass):
             errors.extend(field.check(**kwargs))
         return errors
 
-    def get_items(self, item_type: str = None):
+    def get_items(self, item_type: str = None) -> 'models.QuerySet[CollectionResourceItem]':
+        # TODO: что если класс элемента был удален из коллекции, но элементы остались?
         if item_type is None:
             return self.items.order_by('order')
         if item_type not in self.item_types:
@@ -156,14 +157,18 @@ class CollectionManager(models.Manager):
 
     def get_queryset(self):
         collection_ct = ContentType.objects.get_for_model(
-            self.model, for_concrete_model=False
+            self.model,
+            for_concrete_model=False
         )
         return super().get_queryset().filter(collection_content_type=collection_ct)
 
 
 class Collection(CollectionBase):
     collection_content_type = models.ForeignKey(
-        ContentType, null=True, on_delete=models.SET_NULL, editable=False
+        ContentType,
+        null=True,
+        on_delete=models.SET_NULL,
+        editable=False
     )
 
     default_mgr = models.Manager()  # fix migrations manager
@@ -176,7 +181,8 @@ class Collection(CollectionBase):
     def save(self, *args, **kwargs):
         if not self.collection_content_type:
             self.collection_content_type = ContentType.objects.get_for_model(
-                self, for_concrete_model=False
+                self,
+                for_concrete_model=False
             )
         super().save(*args, **kwargs)
 
@@ -195,6 +201,10 @@ class Collection(CollectionBase):
 
 
 class CollectionResourceItem(PolymorphicModel):
+    """
+    Базовый класс элемента коллекции.
+    """
+
     # Флаг для индикации базового класса элемента коллекции.
     # См. метод _check_form_class()
     __BaseCollectionItem = True
@@ -211,11 +221,14 @@ class CollectionResourceItem(PolymorphicModel):
     )
 
     item_type = models.CharField(
-        _('type'), max_length=32, db_index=True, editable=False
+        _('type'),
+        max_length=32,
+        db_index=True,
+        editable=False
     )
     order = models.IntegerField(_('order'), default=0, editable=False)
 
-    class Meta(Resource.Meta):
+    class Meta:
         default_permissions = ()
         verbose_name = _('item')
         verbose_name_plural = _('items')
@@ -251,7 +264,7 @@ class CollectionResourceItem(PolymorphicModel):
                 errors.append(
                     checks.Error(
                         "The value of 'change_form_class' refers to '%s', which does "
-                        "not exists" % (cls.change_form_class),
+                        "not exists" % cls.change_form_class,
                         obj=cls,
                     )
                 )
@@ -296,7 +309,7 @@ class CollectionResourceItem(PolymorphicModel):
             'preview': self.preview,
         }
 
-    def get_collection_class(self) -> Type['CollectionBase']:
+    def get_collection_class(self) -> Type[CollectionBase]:
         return self.collection_content_type.model_class()
 
     def get_itemtype_field(self) -> CollectionItem:
@@ -305,7 +318,7 @@ class CollectionResourceItem(PolymorphicModel):
             if field.model is type(self):
                 return field
 
-    def attach_to(self, collection: 'CollectionBase'):
+    def attach_to(self, collection: CollectionBase):
         """
         Подключение элемента к коллекции.
         Используется в случае динамического создания элементов коллекции.
@@ -336,6 +349,7 @@ class FilePreviewItemMixin(models.Model):
     """
     Миксина модели, добавляющая иконку для файла
     """
+
     preview_url = models.CharField(
         _('preview URL'), max_length=255, blank=True, editable=False
     )
