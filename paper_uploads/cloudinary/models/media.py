@@ -5,14 +5,11 @@ from django.template.defaultfilters import filesizeformat
 from django.utils.translation import gettext_lazy as _
 
 from ...conf import settings
-from ...models.base import BacklinkModelMixin
 from ...typing import FileLike
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
 
 
-class CloudinaryMedia(
-    BacklinkModelMixin, ReadonlyCloudinaryFileProxyMixin, CloudinaryFileResource
-):
+class CloudinaryMedia(ReadonlyCloudinaryFileProxyMixin, CloudinaryFileResource):
     cloudinary_resource_type = 'video'
 
     display_name = models.CharField(_('display name'), max_length=255, blank=True)

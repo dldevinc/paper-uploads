@@ -6,16 +6,13 @@ from django.utils.translation import gettext_lazy as _
 
 from ... import signals
 from ...conf import settings
-from ...models.base import BacklinkModelMixin, ImageFileResourceMixin
+from ...models.base import ImageFileResourceMixin
 from ...typing import FileLike
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
 
 
 class CloudinaryImage(
-    BacklinkModelMixin,
-    ReadonlyCloudinaryFileProxyMixin,
-    ImageFileResourceMixin,
-    CloudinaryFileResource,
+    ReadonlyCloudinaryFileProxyMixin, ImageFileResourceMixin, CloudinaryFileResource,
 ):
     cloudinary_resource_type = 'image'
 

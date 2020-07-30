@@ -8,7 +8,6 @@ from django.core.files import File
 from django.utils.timezone import now
 
 from app.models import (
-    DummyBacklinkResource,
     DummyFileFieldResource,
     DummyFileResource,
     DummyImageFieldResource,
@@ -106,47 +105,79 @@ class TestResource:
             'name': 'Milky Way'
         }
 
+    def test_get_owner_model(self):
+        resource = DummyResource(
+            owner_app_label='app',
+            owner_model_name='dummyfilefieldresource',
+            owner_fieldname='file'
+        )
+        assert resource.get_owner_model() is DummyFileFieldResource
+
+    def test_missing_owner_model(self):
+        resource = DummyResource(
+            owner_app_label='app',
+            owner_model_name='noexistent',
+            owner_fieldname='file'
+        )
+        assert resource.get_owner_model() is None
+
+    def test_get_owner_field(self):
+        resource = DummyResource(
+            owner_app_label='app',
+            owner_model_name='dummyfilefieldresource',
+            owner_fieldname='file'
+        )
+        assert resource.get_owner_field() is DummyFileFieldResource._meta.get_field('file')
+
+    def test_missing_owner_field(self):
+        resource = DummyResource(
+            owner_app_label='app',
+            owner_model_name='noexistent',
+            owner_fieldname='file'
+        )
+        assert resource.get_owner_field() is None
+
 
 @pytest.mark.django_db
 class TestFileResource:
-    def test_get_hash(self, resource):
+    def test_get_hash(self, file_resource):
         with open(NASA_FILEPATH, 'rb') as fp:
-            content_hash = resource.get_hash(fp)
+            content_hash = file_resource.get_hash(fp)
         assert content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
 
-    def test_django_file_get_hash(self, resource):
+    def test_django_file_get_hash(self, file_resource):
         with open(NASA_FILEPATH, 'rb') as fp:
             file = File(fp)
-            content_hash = resource.get_hash(file)
+            content_hash = file_resource.get_hash(file)
         assert content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
 
-    def test_update_hash(self, resource):
-        resource.content_hash = ''
+    def test_update_hash(self, file_resource):
+        file_resource.content_hash = ''
 
         with open(NASA_FILEPATH, 'rb') as fp:
-            assert resource.update_hash(fp) is True
-            assert resource.content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
+            assert file_resource.update_hash(fp) is True
+            assert file_resource.content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
 
         with open(NASA_FILEPATH, 'rb') as fp:
-            assert resource.update_hash(fp) is False
-            assert resource.content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
+            assert file_resource.update_hash(fp) is False
+            assert file_resource.content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
 
-    def test_update_hash_signal(self, resource):
+    def test_update_hash_signal(self, file_resource):
         signal_fired = False
-        resource.content_hash = ''
+        file_resource.content_hash = ''
 
         def signal_handler(sender, instance, content_hash, **kwargs):
             nonlocal signal_fired
             signal_fired = True
-            assert sender is DummyResource
-            assert instance is resource
+            assert sender is DummyFileResource
+            assert instance is file_resource
             assert content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
 
         signals.content_hash_update.connect(signal_handler)
 
         with open(NASA_FILEPATH, 'rb') as fp:
             assert signal_fired is False
-            assert resource.update_hash(fp) is True
+            assert file_resource.update_hash(fp) is True
             assert signal_fired is True
 
     def test_str(self, file_resource):
@@ -901,41 +932,6 @@ class TestEmptyVersatileImageResource:
         resource = DummyVersatileImageResource()
         with pytest.raises(AttributeError):
             resource.desktop  # noqa
-
-
-@pytest.mark.django_db
-class TestBacklinkFieldResource:
-    def test_get_owner_model(self):
-        resource = DummyBacklinkResource(
-            owner_app_label='app',
-            owner_model_name='dummyfilefieldresource',
-            owner_fieldname='file'
-        )
-        assert resource.get_owner_model() is DummyFileFieldResource
-
-    def test_missing_owner_model(self):
-        resource = DummyBacklinkResource(
-            owner_app_label='app',
-            owner_model_name='noexistent',
-            owner_fieldname='file'
-        )
-        assert resource.get_owner_model() is None
-
-    def test_get_owner_field(self):
-        resource = DummyBacklinkResource(
-            owner_app_label='app',
-            owner_model_name='dummyfilefieldresource',
-            owner_fieldname='file'
-        )
-        assert resource.get_owner_field() is DummyFileFieldResource._meta.get_field('file')
-
-    def test_missing_owner_field(self):
-        resource = DummyBacklinkResource(
-            owner_app_label='app',
-            owner_model_name='noexistent',
-            owner_fieldname='file'
-        )
-        assert resource.get_owner_field() is None
 
 
 @pytest.mark.django_db

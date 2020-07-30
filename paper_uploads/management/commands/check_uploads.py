@@ -2,8 +2,9 @@ from django.apps import apps
 from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 
-from ...models.base import BacklinkModelMixin, FileResource, VersatileImageResourceMixin
+from ...models.base import FileResource, VersatileImageResourceMixin
 from ...models.collection import Collection, CollectionItemBase
+from ...models.mixins import BacklinkModelMixin
 
 
 class Command(BaseCommand):

@@ -9,6 +9,7 @@ from django.utils.translation import gettext_lazy as _
 
 from paper_uploads.models import *
 from paper_uploads.models.base import *
+from paper_uploads.models.mixins import ReadonlyFileProxyMixin
 from paper_uploads.typing import *
 from paper_uploads.variations import PaperVariation
 
@@ -99,13 +100,6 @@ class DummyVersatileImageResource(VersatileImageResourceMixin, FileFieldResource
                 clip=False
             ),
         }
-
-
-class DummyBacklinkResource(BacklinkModelMixin, FileFieldResource):
-    file = models.FileField(_('file'), upload_to='reverse_file')
-
-    def get_file(self) -> FieldFile:
-        return self.file
 
 
 class DummyReadonlyFileProxyResource(ReadonlyFileProxyMixin, FileFieldResource):

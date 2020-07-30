@@ -7,17 +7,12 @@ from django.utils.translation import gettext_lazy as _
 from ..conf import settings
 from ..storage import upload_storage
 from ..variations import PaperVariation
-from .base import (
-    BacklinkModelMixin,
-    FileFieldResource,
-    ReadonlyFileProxyMixin,
-    VersatileImageResourceMixin,
-)
+from .base import FileFieldResource, VersatileImageResourceMixin
 from .fields import VariationalFileField
+from .mixins import ReadonlyFileProxyMixin
 
 
 class UploadedImage(
-    BacklinkModelMixin,
     ReadonlyFileProxyMixin,
     VersatileImageResourceMixin,
     FileFieldResource,

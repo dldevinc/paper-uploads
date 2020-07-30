@@ -23,12 +23,8 @@ from ..conf import FILE_ICON_DEFAULT, FILE_ICON_OVERRIDES, settings
 from ..helpers import _get_item_types, _set_item_types, build_variations
 from ..storage import upload_storage
 from ..variations import PaperVariation
-from .base import (
-    BacklinkModelMixin,
-    FileFieldResource,
-    ReadonlyFileProxyMixin,
-    VersatileImageResourceMixin,
-)
+from .mixins import BacklinkModelMixin, ReadonlyFileProxyMixin
+from .base import FileFieldResource, VersatileImageResourceMixin
 from .fields import CollectionItem, FormattedFileField
 from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
