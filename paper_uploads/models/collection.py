@@ -24,9 +24,9 @@ from ..helpers import _get_item_types, _set_item_types, build_variations
 from ..storage import upload_storage
 from ..variations import PaperVariation
 from .base import (
+    BacklinkModelMixin,
     FileFieldResource,
     ReadonlyFileProxyMixin,
-    ReverseFieldModelMixin,
     VersatileImageResourceMixin,
 )
 from .fields import CollectionItem, FormattedFileField
@@ -116,7 +116,7 @@ class CollectionMetaclass(ModelBase):
         return new_class
 
 
-class CollectionBase(ReverseFieldModelMixin, metaclass=CollectionMetaclass):
+class CollectionBase(BacklinkModelMixin, metaclass=CollectionMetaclass):
     items = ContentItemRelation(
         'paper_uploads.CollectionItemBase',
         content_type_field='collection_content_type',

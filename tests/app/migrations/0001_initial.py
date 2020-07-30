@@ -123,7 +123,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='DummyReverseFieldResource',
+            name='DummyBacklinkResource',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(editable=False, help_text='human readable resource name', max_length=255, verbose_name='name')),

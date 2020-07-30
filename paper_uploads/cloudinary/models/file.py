@@ -5,13 +5,13 @@ from django.template.defaultfilters import filesizeformat
 from django.utils.translation import gettext_lazy as _
 
 from ...conf import settings
-from ...models.base import ReverseFieldModelMixin
+from ...models.base import BacklinkModelMixin
 from ...typing import FileLike
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
 
 
 class CloudinaryFile(
-    ReverseFieldModelMixin, ReadonlyCloudinaryFileProxyMixin, CloudinaryFileResource
+    BacklinkModelMixin, ReadonlyCloudinaryFileProxyMixin, CloudinaryFileResource
 ):
     cloudinary_resource_type = 'raw'
 

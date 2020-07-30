@@ -6,13 +6,13 @@ from django.utils.translation import gettext_lazy as _
 
 from ... import signals
 from ...conf import settings
-from ...models.base import ImageFileResourceMixin, ReverseFieldModelMixin
+from ...models.base import BacklinkModelMixin, ImageFileResourceMixin
 from ...typing import FileLike
 from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
 
 
 class CloudinaryImage(
-    ReverseFieldModelMixin,
+    BacklinkModelMixin,
     ReadonlyCloudinaryFileProxyMixin,
     ImageFileResourceMixin,
     CloudinaryFileResource,

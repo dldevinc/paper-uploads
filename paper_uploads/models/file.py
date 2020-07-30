@@ -7,11 +7,11 @@ from django.utils.translation import gettext_lazy as _
 
 from ..conf import settings
 from ..storage import upload_storage
-from .base import FileFieldResource, ReadonlyFileProxyMixin, ReverseFieldModelMixin
+from .base import BacklinkModelMixin, FileFieldResource, ReadonlyFileProxyMixin
 from .fields import FormattedFileField
 
 
-class UploadedFile(ReverseFieldModelMixin, ReadonlyFileProxyMixin, FileFieldResource):
+class UploadedFile(BacklinkModelMixin, ReadonlyFileProxyMixin, FileFieldResource):
     file = FormattedFileField(
         _('file'),
         max_length=255,

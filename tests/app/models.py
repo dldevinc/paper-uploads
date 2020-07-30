@@ -105,7 +105,7 @@ class DummyVersatileImageResource(VersatileImageResourceMixin, FileFieldResource
         }
 
 
-class DummyReverseFieldResource(ReverseFieldModelMixin, FileFieldResource):
+class DummyBacklinkResource(BacklinkModelMixin, FileFieldResource):
     file = models.FileField(_('file'), upload_to='reverse_file')
 
     def get_file(self) -> FieldFile:

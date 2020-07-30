@@ -24,7 +24,7 @@ __all__ = [
     'HashableResource',
     'FileResource',
     'FileFieldResource',
-    'ReverseFieldModelMixin',
+    'BacklinkModelMixin',
     'ReadonlyFileProxyMixin',
     'ImageFileResourceMixin',
     'VariationFile',
@@ -673,7 +673,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         instance.recut(names)
 
 
-class ReverseFieldModelMixin(models.Model):
+class BacklinkModelMixin(models.Model):
     """
     Миксина, позволяющая обратиться к полю модели, которое ссылается
     на текущий объект.

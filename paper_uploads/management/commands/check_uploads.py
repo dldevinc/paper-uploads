@@ -2,11 +2,7 @@ from django.apps import apps
 from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 
-from ...models.base import (
-    FileResource,
-    ReverseFieldModelMixin,
-    VersatileImageResourceMixin,
-)
+from ...models.base import BacklinkModelMixin, FileResource, VersatileImageResourceMixin
 from ...models.collection import Collection, CollectionItemBase
 
 
@@ -136,7 +132,7 @@ class Command(BaseCommand):
 
     def check_owners(self):
         for model in apps.get_models():
-            if not issubclass(model, ReverseFieldModelMixin):
+            if not issubclass(model, BacklinkModelMixin):
                 continue
 
             if model._meta.proxy:
@@ -149,7 +145,7 @@ class Command(BaseCommand):
             for index, instance in enumerate(
                 model._base_manager.using(self.database).iterator(), start=1
             ):
-                assert isinstance(instance, ReverseFieldModelMixin)
+                assert isinstance(instance, BacklinkModelMixin)
 
                 if self.verbosity >= 2:
                     self.stdout.write('\r' + (' ' * 80), ending='\r')

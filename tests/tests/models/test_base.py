@@ -8,13 +8,13 @@ from django.core.files import File
 from django.utils.timezone import now
 
 from app.models import (
+    DummyBacklinkResource,
     DummyFileFieldResource,
     DummyFileResource,
     DummyHashableResource,
     DummyImageFieldResource,
     DummyReadonlyFileProxyResource,
     DummyResource,
-    DummyReverseFieldResource,
     DummyVersatileImageResource,
     VariationFile,
 )
@@ -915,9 +915,9 @@ class TestEmptyVersatileImageResource:
 
 
 @pytest.mark.django_db
-class TestReverseFieldResource:
+class TestBacklinkFieldResource:
     def test_get_owner_model(self):
-        resource = DummyReverseFieldResource(
+        resource = DummyBacklinkResource(
             owner_app_label='app',
             owner_model_name='dummyfilefieldresource',
             owner_fieldname='file'
@@ -925,7 +925,7 @@ class TestReverseFieldResource:
         assert resource.get_owner_model() is DummyFileFieldResource
 
     def test_missing_owner_model(self):
-        resource = DummyReverseFieldResource(
+        resource = DummyBacklinkResource(
             owner_app_label='app',
             owner_model_name='noexistent',
             owner_fieldname='file'
@@ -933,7 +933,7 @@ class TestReverseFieldResource:
         assert resource.get_owner_model() is None
 
     def test_get_owner_field(self):
-        resource = DummyReverseFieldResource(
+        resource = DummyBacklinkResource(
             owner_app_label='app',
             owner_model_name='dummyfilefieldresource',
             owner_fieldname='file'
@@ -941,7 +941,7 @@ class TestReverseFieldResource:
         assert resource.get_owner_field() is DummyFileFieldResource._meta.get_field('file')
 
     def test_missing_owner_field(self):
-        resource = DummyReverseFieldResource(
+        resource = DummyBacklinkResource(
             owner_app_label='app',
             owner_model_name='noexistent',
             owner_fieldname='file'

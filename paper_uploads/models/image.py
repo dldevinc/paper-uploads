@@ -8,16 +8,16 @@ from ..conf import settings
 from ..storage import upload_storage
 from ..variations import PaperVariation
 from .base import (
+    BacklinkModelMixin,
     FileFieldResource,
     ReadonlyFileProxyMixin,
-    ReverseFieldModelMixin,
     VersatileImageResourceMixin,
 )
 from .fields import VariationalFileField
 
 
 class UploadedImage(
-    ReverseFieldModelMixin,
+    BacklinkModelMixin,
     ReadonlyFileProxyMixin,
     VersatileImageResourceMixin,
     FileFieldResource,
