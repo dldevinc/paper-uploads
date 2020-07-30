@@ -8,9 +8,9 @@ from django.db.models.signals import post_delete
 from ... import validators
 
 
-class FileResourceFieldBase(models.OneToOneField):
+class ResourceFieldBase(models.OneToOneField):
     """
-    Базовый класс для ссылок на модели файлов.
+    Базовый класс для ссылок на подклассы модели Resource.
     """
 
     def __init__(self, verbose_name=None, **kwargs):
@@ -20,12 +20,26 @@ class FileResourceFieldBase(models.OneToOneField):
         kwargs['verbose_name'] = verbose_name
         super().__init__(**kwargs)
 
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+        if 'null' in kwargs and self.null:
+            del kwargs['null']
+        if 'related_name' in kwargs and kwargs['related_name'] == '+':
+            del kwargs['related_name']
+        return name, path, args, kwargs
+
     def check(self, **kwargs):
-        return [*super().check(**kwargs), *self._check_relation_class()]
+        return [*super().check(**kwargs), *self._check_relation()]
 
-    def _check_relation_class(self):
-        from ...models.base import BacklinkModelMixin, FileResource
+    def _check_relation(self):
+        from ...models.base import Resource
+        return self._check_relation_class(
+            Resource,
+            "Field defines a relation with model '%s', "
+            "which is not subclass of Resource model"
+        )
 
+    def _check_relation_class(self, base, error_message):
         rel_is_string = isinstance(self.remote_field.model, str)
         if rel_is_string:
             return []
@@ -36,26 +50,31 @@ class FileResourceFieldBase(models.OneToOneField):
             else self.remote_field.model._meta.object_name
         )
 
-        if not issubclass(self.remote_field.model, FileResource) or not issubclass(
-            self.remote_field.model, BacklinkModelMixin
-        ):
+        if not issubclass(self.remote_field.model, base):
             return [
-                checks.Error(
-                    "Field defines a relation with model '%s', which is not "
-                    "subclass of both FileResource and BacklinkModelMixin"
-                    % model_name,
-                    obj=self,
-                )
+                checks.Error(error_message % model_name, obj=self)
             ]
         return []
 
-    def deconstruct(self):
-        name, path, args, kwargs = super().deconstruct()
-        if 'null' in kwargs and self.null:
-            del kwargs['null']
-        if 'related_name' in kwargs and kwargs['related_name'] == '+':
-            del kwargs['related_name']
-        return name, path, args, kwargs
+    def contribute_to_class(self, cls, *args, **kwargs):
+        super().contribute_to_class(cls, *args, **kwargs)
+        if not cls._meta.abstract:
+            post_delete.connect(self.post_delete_callback, sender=cls)
+
+    def post_delete_callback(self, **kwargs):
+        """
+        При удалении модели-владельца поля, удаляем и связанный
+        в ним экземпляр ресурса.
+        """
+        resource = getattr(kwargs['instance'], self.name)
+        if resource:
+            resource.delete()
+
+
+class FileResourceFieldBase(ResourceFieldBase):
+    """
+    Базовый класс для ссылок на модели файлов.
+    """
 
     def formfield(self, **kwargs):
         return super().formfield(
@@ -67,26 +86,6 @@ class FileResourceFieldBase(models.OneToOneField):
                 **kwargs,
             }
         )
-
-    def contribute_to_class(self, cls, *args, **kwargs):
-        super().contribute_to_class(cls, *args, **kwargs)
-        if not cls._meta.abstract:
-            post_delete.connect(self.post_delete_callback, sender=cls)
-
-    def post_delete_callback(self, **kwargs):
-        """
-        Удаление модели файла при удалении владельца
-        """
-        uploaded = getattr(kwargs['instance'], self.name)
-        if uploaded:
-            uploaded.delete()
-
-    def run_validators(self, value):
-        """
-        Отключение валидаторов для файловых полей, т.к. нам нужно валидировать
-        не ID OneToOneField, а загружаемые файлы.
-        """
-        return
 
     def get_validation(self) -> Dict[str, Any]:
         """
