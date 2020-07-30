@@ -11,7 +11,6 @@ from app.models import (
     DummyBacklinkResource,
     DummyFileFieldResource,
     DummyFileResource,
-    DummyHashableResource,
     DummyImageFieldResource,
     DummyReadonlyFileProxyResource,
     DummyResource,
@@ -29,13 +28,6 @@ def resource(class_scoped_db):
     resource = DummyResource.objects.create(
         name='Milky Way'
     )
-    yield resource
-    resource.delete()
-
-
-@pytest.fixture(scope='class')
-def hasheable_resource(class_scoped_db):
-    resource = DummyHashableResource.objects.create()
     yield resource
     resource.delete()
 
@@ -116,50 +108,47 @@ class TestResource:
 
 
 @pytest.mark.django_db
-class TestHashableResource:
-    def test_get_hash(self, hasheable_resource):
+class TestFileResource:
+    def test_get_hash(self, resource):
         with open(NASA_FILEPATH, 'rb') as fp:
-            content_hash = hasheable_resource.get_hash(fp)
+            content_hash = resource.get_hash(fp)
         assert content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
 
-    def test_django_file_get_hash(self, hasheable_resource):
+    def test_django_file_get_hash(self, resource):
         with open(NASA_FILEPATH, 'rb') as fp:
             file = File(fp)
-            content_hash = hasheable_resource.get_hash(file)
+            content_hash = resource.get_hash(file)
         assert content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
 
-    def test_update_hash(self, hasheable_resource):
-        hasheable_resource.content_hash = ''
+    def test_update_hash(self, resource):
+        resource.content_hash = ''
 
         with open(NASA_FILEPATH, 'rb') as fp:
-            assert hasheable_resource.update_hash(fp) is True
-            assert hasheable_resource.content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
+            assert resource.update_hash(fp) is True
+            assert resource.content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
 
         with open(NASA_FILEPATH, 'rb') as fp:
-            assert hasheable_resource.update_hash(fp) is False
-            assert hasheable_resource.content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
+            assert resource.update_hash(fp) is False
+            assert resource.content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
 
-    def test_update_hash_signal(self, hasheable_resource):
+    def test_update_hash_signal(self, resource):
         signal_fired = False
-        hasheable_resource.content_hash = ''
+        resource.content_hash = ''
 
         def signal_handler(sender, instance, content_hash, **kwargs):
             nonlocal signal_fired
             signal_fired = True
-            assert sender is DummyHashableResource
-            assert instance is hasheable_resource
+            assert sender is DummyResource
+            assert instance is resource
             assert content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
 
         signals.content_hash_update.connect(signal_handler)
 
         with open(NASA_FILEPATH, 'rb') as fp:
             assert signal_fired is False
-            assert hasheable_resource.update_hash(fp) is True
+            assert resource.update_hash(fp) is True
             assert signal_fired is True
 
-
-@pytest.mark.django_db
-class TestFileResource:
     def test_str(self, file_resource):
         assert str(file_resource) == 'Dummy File.pdf'
 

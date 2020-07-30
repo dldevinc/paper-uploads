@@ -17,10 +17,6 @@ class DummyResource(Resource):
     pass
 
 
-class DummyHashableResource(HashableResource):
-    pass
-
-
 class DummyFileResource(FileResource):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

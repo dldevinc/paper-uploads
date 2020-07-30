@@ -21,7 +21,6 @@ from ..variations import PaperVariation
 
 __all__ = [
     'Resource',
-    'HashableResource',
     'FileResource',
     'FileFieldResource',
     'BacklinkModelMixin',
@@ -79,22 +78,42 @@ class Resource(models.Model):
         }
 
 
-class HashableResource(Resource):
+class FileResource(Resource):
     """
-    Подкласс ресурса, который содержит хэш своего контента.
+    Подкласс ресурса, представляющего файл.
     """
-
     BLOCK_SIZE = 4 * 1024 * 1024
 
+    extension = models.CharField(
+        _('extension'),
+        max_length=32,
+        editable=False,
+        help_text=_('Lowercase, without leading dot'),
+    )
+    size = models.PositiveIntegerField(_('Size'), default=0, editable=False)
     content_hash = models.CharField(
         _('content hash'),
         max_length=64,
         editable=False,
-        help_text=_('hash of the contents of a file'),
+        help_text=_('Hash of the contents of a file'),
     )
 
     class Meta(Resource.Meta):
         abstract = True
+
+    def __str__(self):
+        return self.get_basename()
+
+    def __repr__(self):
+        return "{}('{}')".format(type(self).__name__, self.get_basename())
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            **super().as_dict(),
+            'extension': self.extension,
+            'size': self.size,
+            'url': self.get_file_url(),
+        }
 
     def get_hash(self, file: FileLike) -> str:
         """
@@ -119,37 +138,6 @@ class HashableResource(Resource):
             )
             self.content_hash = new_hash
         return old_hash != new_hash
-
-
-class FileResource(HashableResource):
-    """
-    Подкласс ресурса, представляющего файл.
-    """
-
-    extension = models.CharField(
-        _('extension'),
-        max_length=32,
-        editable=False,
-        help_text=_('Lowercase, without leading dot'),
-    )
-    size = models.PositiveIntegerField(_('size'), default=0, editable=False)
-
-    class Meta(HashableResource.Meta):
-        abstract = True
-
-    def __str__(self):
-        return self.get_basename()
-
-    def __repr__(self):
-        return "{}('{}')".format(type(self).__name__, self.get_basename())
-
-    def as_dict(self) -> Dict[str, Any]:
-        return {
-            **super().as_dict(),
-            'extension': self.extension,
-            'size': self.size,
-            'url': self.get_file_url(),
-        }
 
     def get_basename(self) -> str:
         """
@@ -386,7 +374,7 @@ class ImageFileResourceMixin(models.Model):
                 image = Image.open(fp)
             except OSError:
                 raise ValidationError(
-                    '`%s` is not an image' % self.get_basename()
+                    '`%s` is not an image' % self.get_basename()  # noqa
                 )  # noqa
             else:
                 self.width, self.height = image.size
