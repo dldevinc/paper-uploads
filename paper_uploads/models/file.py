@@ -9,10 +9,9 @@ from ..conf import settings
 from ..storage import upload_storage
 from .base import FileFieldResource
 from .fields import FormattedFileField
-from .mixins import ReadonlyFileProxyMixin
 
 
-class UploadedFile(ReadonlyFileProxyMixin, FileFieldResource):
+class UploadedFile(FileFieldResource):
     file = FormattedFileField(
         _('file'),
         max_length=255,

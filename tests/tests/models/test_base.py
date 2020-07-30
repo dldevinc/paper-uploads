@@ -11,7 +11,6 @@ from app.models import (
     DummyFileFieldResource,
     DummyFileResource,
     DummyImageFieldResource,
-    DummyReadonlyFileProxyResource,
     DummyResource,
     DummyVersatileImageResource,
     VariationFile,
@@ -476,6 +475,26 @@ class TestFileResource:
         resource.delete_file()
         assert signal_fired is True
 
+    def test_open(self):
+        resource = DummyFileResource()
+        with resource as fp:
+            assert fp.read(4) == b'This'
+
+    def test_close(self):
+        resource = DummyFileResource()
+
+        assert resource.closed is False
+        resource.close()
+        assert resource.closed is True
+
+    def test_proxied_attributes(self, file_resource):
+        file_resource.seek(0, os.SEEK_END)
+        assert file_resource.tell() == 28
+        file_resource.seek(0)
+        assert file_resource.tell() == 0
+        assert file_resource.read(4) == b'This'
+        file_resource.seek(0)
+
 
 @pytest.mark.django_db
 class TestFileFieldResource:
@@ -553,6 +572,24 @@ class TestFileFieldResource:
         assert os.path.exists(source_path) is False
 
         resource.delete()
+
+    def test_reopen(self):
+        resource = DummyFileFieldResource()
+        with open(CALLIPHORA_FILEPATH, 'rb') as fp:
+            resource.attach_file(fp)
+
+        resource.close()
+
+        assert resource.closed is True
+        with resource.open():
+            assert resource.closed is False
+        assert resource.closed is True
+
+        resource.delete_file()
+
+    def test_proxied_attributes(self, file_field_resource):
+        assert file_field_resource.path.endswith('/media/file_field/nature.jpeg')
+        assert file_field_resource.url == '/media/file_field/nature.jpeg'
 
 
 @pytest.mark.django_db
@@ -932,49 +969,3 @@ class TestEmptyVersatileImageResource:
         resource = DummyVersatileImageResource()
         with pytest.raises(AttributeError):
             resource.desktop  # noqa
-
-
-@pytest.mark.django_db
-class TestReadonlyFileProxyResource:
-    def test_open(self):
-        resource = DummyReadonlyFileProxyResource()
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
-
-        with resource as fp:
-            assert fp.read(4) == b'\xff\xd8\xff\xe0'
-
-        resource.delete_file()
-
-    def test_closed(self):
-        resource = DummyReadonlyFileProxyResource()
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
-        resource.save()
-
-        resource.file.close()  # close file explicitly
-
-        assert resource.closed is True
-        with resource.open():
-            assert resource.closed is False
-        assert resource.closed is True
-
-        resource.delete_file()
-        resource.delete()
-
-    def test_properties(self):
-        resource = DummyReadonlyFileProxyResource()
-        with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
-        resource.save()
-
-        assert resource.path.endswith('/media/readonly_file/calliphora.jpg')
-        assert resource.url == '/media/readonly_file/calliphora.jpg'
-
-        assert resource.tell() == 254766
-        resource.seek(0)
-        assert resource.tell() == 0
-        assert resource.read(4) == b'\xff\xd8\xff\xe0'
-
-        resource.delete_file()
-        resource.delete()

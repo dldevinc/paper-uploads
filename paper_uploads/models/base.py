@@ -16,7 +16,7 @@ from .. import helpers, signals
 from ..conf import settings
 from ..typing import FileLike
 from ..variations import PaperVariation
-from .mixins import BacklinkModelMixin
+from .mixins import BacklinkModelMixin, FileProxyMixin, FileFieldProxyMixin
 
 __all__ = [
     'Resource',
@@ -86,7 +86,7 @@ class Resource(BacklinkModelMixin, ResourceBase):
         abstract = True
 
 
-class FileResource(Resource):
+class FileResource(FileProxyMixin, Resource):
     """
     Подкласс ресурса, представляющего файл.
     """
@@ -298,7 +298,7 @@ class FileResource(Resource):
         raise NotImplementedError
 
 
-class FileFieldResource(FileResource):
+class FileFieldResource(FileFieldProxyMixin, FileResource):
     """
     Подкласс файлового ресурса, доступ к которому осуществляется через Storage.
     """

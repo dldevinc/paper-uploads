@@ -45,17 +45,15 @@ class BacklinkModelMixin(models.Model):
             )
 
 
-class ReadonlyFileProxyMixin:
+class FileProxyMixin:
     """
-    Проксирование некоторых свойств файла (только для чтения) на уровень модели
+    Проксирование некоторых свойств файла на уровень модели
     """
 
     closed = property(lambda self: self.get_file().closed)
-    path = property(lambda self: self.get_file().path)
     read = property(lambda self: self.get_file().read)
     seek = property(lambda self: self.get_file().seek)
     tell = property(lambda self: self.get_file().tell)
-    url = property(lambda self: self.get_file().url)
 
     def __enter__(self):
         return self.open()  # noqa
@@ -74,3 +72,12 @@ class ReadonlyFileProxyMixin:
         if not self.file_exists():  # noqa
             raise FileNotFoundError
         self.get_file().close()  # noqa
+
+
+class FileFieldProxyMixin:
+    """
+    Проксирование некоторых свойств файла (только для чтения) на уровень модели
+    """
+
+    path = property(lambda self: self.get_file().path)
+    url = property(lambda self: self.get_file().url)

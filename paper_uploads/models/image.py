@@ -9,14 +9,9 @@ from ..storage import upload_storage
 from ..variations import PaperVariation
 from .base import FileFieldResource, VersatileImageResourceMixin
 from .fields import VariationalFileField
-from .mixins import ReadonlyFileProxyMixin
 
 
-class UploadedImage(
-    ReadonlyFileProxyMixin,
-    VersatileImageResourceMixin,
-    FileFieldResource,
-):
+class UploadedImage(VersatileImageResourceMixin, FileFieldResource):
     file = VariationalFileField(
         _('file'),
         max_length=255,

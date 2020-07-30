@@ -9,7 +9,6 @@ from django.utils.translation import gettext_lazy as _
 
 from paper_uploads.models import *
 from paper_uploads.models.base import *
-from paper_uploads.models.mixins import ReadonlyFileProxyMixin
 from paper_uploads.typing import *
 from paper_uploads.variations import PaperVariation
 
@@ -24,10 +23,13 @@ class DummyFileResource(FileResource):
         self.__name = 'File_ABCD.jpg'
 
     def get_file(self) -> File:
-        buffer = io.BytesIO()
-        buffer.write(b'This is example file content')
-        buffer.seek(0)
-        return File(buffer, name=self.name)
+        file = getattr(self, '_file', None)
+        if file is None:
+            buffer = io.BytesIO()
+            buffer.write(b'This is example file content')
+            buffer.seek(0)
+            file = self._file = File(buffer, name=self.name)
+        return file
 
     def get_file_name(self) -> str:
         return self.__name
@@ -100,13 +102,6 @@ class DummyVersatileImageResource(VersatileImageResourceMixin, FileFieldResource
                 clip=False
             ),
         }
-
-
-class DummyReadonlyFileProxyResource(ReadonlyFileProxyMixin, FileFieldResource):
-    file = models.FileField(_('file'), upload_to='readonly_file')
-
-    def get_file(self) -> FieldFile:
-        return self.file
 
 
 class FileExample(models.Model):
