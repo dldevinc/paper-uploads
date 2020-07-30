@@ -164,3 +164,30 @@ class CompleteCollection(Collection):
             clip=False
         ),
     )
+
+
+# ======================================================================================
+
+
+class Page(models.Model):
+    header = models.CharField(_('header'), max_length=255)
+    file = FileField(_('simple file'), blank=True)
+    # image = ImageField(_('simple image'), blank=True)
+
+    class Meta:
+        verbose_name = _('page')
+        verbose_name_plural = _('pages')
+
+    def __str__(self):
+        return self.header
+
+
+class Document(models.Model):
+    page = models.ForeignKey(Page, null=True, blank=True, on_delete=models.CASCADE)
+    title = models.CharField(_('title'), max_length=255)
+    file = FileField(_('simple file'), blank=True)
+    # image = ImageField(_('simple image'), blank=True)
+
+    class Meta:
+        verbose_name = _('document')
+        verbose_name_plural = _('documents')
