@@ -8,7 +8,7 @@ from django.utils.functional import cached_property
 
 from ... import forms
 from ...helpers import _get_item_types
-from .base import FileFieldBase
+from .base import FileResourceFieldBase
 
 
 class ContentItemRelation(GenericRelation):
@@ -24,7 +24,7 @@ class ContentItemRelation(GenericRelation):
         return super().bulk_related_objects(objs).non_polymorphic()
 
 
-class CollectionField(FileFieldBase):
+class CollectionField(FileResourceFieldBase):
     def __init__(self, to, **kwargs):
         kwargs['blank'] = True
         super().__init__(to=to, **kwargs)

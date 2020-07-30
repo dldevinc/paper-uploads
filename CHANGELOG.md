@@ -1,6 +1,7 @@
 # Change Log
 
 ## [0.3.0](https://github.com/dldevinc/paper-uploads/tree/v0.3.0) - 2020-07-22
+- Rename `FileFieldBase` to `FileResourceFieldBase`
 - Rename `ReverseFieldModelMixin` to `BacklinkModelMixin`
 - Rename `ItemField` to `CollectionItem`
 - Rename `HashableResourceMixin` to `HashableResource`

@@ -1,8 +1,8 @@
 from ... import forms
-from .base import FileFieldBase
+from .base import FileResourceFieldBase
 
 
-class FileField(FileFieldBase):
+class FileField(FileResourceFieldBase):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('to', 'paper_uploads.UploadedFile')
         super().__init__(*args, **kwargs)

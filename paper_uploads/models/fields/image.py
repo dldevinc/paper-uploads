@@ -7,7 +7,7 @@ from django.utils.crypto import get_random_string
 from ... import forms
 from ...helpers import build_variations
 from ...typing import VariationConfig
-from .base import FileFieldBase, FormattedFileField
+from .base import FileResourceFieldBase, FormattedFileField
 
 
 class VariationalFileField(FormattedFileField):
@@ -59,7 +59,7 @@ class VariationalFileField(FormattedFileField):
         return name
 
 
-class ImageField(FileFieldBase):
+class ImageField(FileResourceFieldBase):
     def __init__(self, *args, variations: VariationConfig = None, **kwargs):
         kwargs.setdefault('to', 'paper_uploads.UploadedImage')
         self.variations = build_variations(variations or {})

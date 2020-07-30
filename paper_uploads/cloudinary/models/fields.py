@@ -1,5 +1,5 @@
 from ... import forms
-from ...models.fields import FileFieldBase
+from ...models.fields import FileResourceFieldBase
 
 
 class CloudinaryOptionsMixin:
@@ -14,7 +14,7 @@ class CloudinaryOptionsMixin:
         return name, path, args, kwargs
 
 
-class CloudinaryFileField(CloudinaryOptionsMixin, FileFieldBase):
+class CloudinaryFileField(CloudinaryOptionsMixin, FileResourceFieldBase):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('to', 'paper_uploads_cloudinary.CloudinaryFile')
         super().__init__(*args, **kwargs)
@@ -26,7 +26,7 @@ class CloudinaryFileField(CloudinaryOptionsMixin, FileFieldBase):
         })
 
 
-class CloudinaryImageField(CloudinaryOptionsMixin, FileFieldBase):
+class CloudinaryImageField(CloudinaryOptionsMixin, FileResourceFieldBase):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('to', 'paper_uploads_cloudinary.CloudinaryImage')
         super().__init__(*args, **kwargs)
@@ -38,7 +38,7 @@ class CloudinaryImageField(CloudinaryOptionsMixin, FileFieldBase):
         })
 
 
-class CloudinaryMediaField(CloudinaryOptionsMixin, FileFieldBase):
+class CloudinaryMediaField(CloudinaryOptionsMixin, FileResourceFieldBase):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('to', 'paper_uploads_cloudinary.CloudinaryMedia')
         super().__init__(*args, **kwargs)

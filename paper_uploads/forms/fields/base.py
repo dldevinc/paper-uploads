@@ -1,7 +1,7 @@
 from django import forms
 
 
-class FileFieldBase(forms.ModelChoiceField):
+class FileResourceFieldBase(forms.ModelChoiceField):
     def __init__(
         self,
         *args,

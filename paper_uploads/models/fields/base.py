@@ -8,7 +8,7 @@ from django.db.models.signals import post_delete
 from ... import validators
 
 
-class FileFieldBase(models.OneToOneField):
+class FileResourceFieldBase(models.OneToOneField):
     """
     Базовый класс для ссылок на модели файлов.
     """
