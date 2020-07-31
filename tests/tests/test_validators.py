@@ -48,27 +48,27 @@ class TestExtensionValidator:
 
 class TestMimetypeValidator:
     def test_allowed_mimetypes(self):
-        validator = validators.MimetypeValidator(
+        validator = validators.MimeTypeValidator(
             allowed=['image/*', 'video/mp4', 'video/ogg', 'image/jpg', 'Video/MP4']
         )
         assert validator.allowed == ('image/*', 'video/mp4', 'video/ogg', 'image/jpg')
 
     def test_case_insensitive(self):
-        validator = validators.MimetypeValidator(allowed=['iMaGe/Jpeg'])
+        validator = validators.MimeTypeValidator(allowed=['iMaGe/Jpeg'])
 
         # dummy file with JPEG signature
         with make_dummy_file(content=b'\xff\xd8\xff') as fp:
             validator(fp)
 
     def test_asterisk(self):
-        validator = validators.MimetypeValidator(allowed=['image/*'])
+        validator = validators.MimeTypeValidator(allowed=['image/*'])
 
         # dummy file with JPEG signature
         with make_dummy_file(content=b'\xff\xd8\xff') as fp:
             validator(fp)
 
     def test_fail(self):
-        validator = validators.MimetypeValidator(allowed=['image/*'])
+        validator = validators.MimeTypeValidator(allowed=['image/*'])
         with make_dummy_file(content=b'Hello') as fp:
             with pytest.raises(ValidationError) as exc:
                 validator(fp)
@@ -79,7 +79,7 @@ class TestMimetypeValidator:
             )
 
     def test_custom_message(self):
-        validator = validators.MimetypeValidator(allowed=['image/*'], message='invalid mimetype: %(mimetype)s')
+        validator = validators.MimeTypeValidator(allowed=['image/*'], message='invalid mimetype: %(mimetype)s')
         with pytest.raises(ValidationError) as exc:
             with make_dummy_file(content=b'Hello') as fp:
                 validator(fp)
@@ -88,7 +88,7 @@ class TestMimetypeValidator:
         )
 
     def test_help_text(self):
-        validator = validators.MimetypeValidator(allowed=['video/mp4', 'video/ogg', 'image/*'])
+        validator = validators.MimeTypeValidator(allowed=['video/mp4', 'video/ogg', 'image/*'])
         assert str(validator.get_help_text()) == 'Allowed MIME types: video/mp4, video/ogg, image/*'
 
 

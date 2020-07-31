@@ -433,7 +433,7 @@ for image in page.gallery.get_items('image'):
 * `SizeValidator` - задает максимально допустимый размер 
 файла в байтах.
 * `ExtensionValidator` - задает допустимые расширения файлов.
-* `MimetypeValidator` - задает допустимые MIME типы файлов.
+* `MimeTypeValidator` - задает допустимые MIME типы файлов.
 * `ImageMinSizeValidator` - устанавливает минимальный размер 
 загружаемых изображений.
 * `ImageMaxSizeValidator` - устанавливает максимальный размер 

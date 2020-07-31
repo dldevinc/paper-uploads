@@ -102,7 +102,7 @@ class FileResourceFieldBase(ResourceFieldBase):
         for v in self.validators:
             if isinstance(v, validators.ExtensionValidator):
                 validation['allowedExtensions'] = v.allowed
-            elif isinstance(v, validators.MimetypeValidator):
+            elif isinstance(v, validators.MimeTypeValidator):
                 validation['acceptFiles'] = v.allowed
             elif isinstance(v, validators.SizeValidator):
                 validation['sizeLimit'] = v.limit_value

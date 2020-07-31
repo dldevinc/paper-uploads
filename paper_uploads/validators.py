@@ -13,7 +13,7 @@ from .utils import remove_dulpicates
 
 __all__ = [
     "ExtensionValidator",
-    "MimetypeValidator",
+    "MimeTypeValidator",
     "SizeValidator",
     "ImageMinSizeValidator",
     "ImageMaxSizeValidator",
@@ -46,7 +46,7 @@ class ExtensionValidator:
 
 
 @deconstructible
-class MimetypeValidator:
+class MimeTypeValidator:
     message = _("`%(name)s` has an invalid mimetype '%(mimetype)s'")
     code = 'invalid_mimetype'
 
