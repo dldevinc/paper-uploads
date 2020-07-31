@@ -1,5 +1,5 @@
 from ... import forms
-from ...models.fields import FileResourceFieldBase
+from ...models.fields.base import FileResourceFieldBase
 
 
 class CloudinaryOptionsMixin:

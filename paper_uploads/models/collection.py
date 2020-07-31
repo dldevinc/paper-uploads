@@ -23,11 +23,12 @@ from ..conf import FILE_ICON_DEFAULT, FILE_ICON_OVERRIDES, settings
 from ..helpers import _get_item_types, _set_item_types, build_variations
 from ..storage import upload_storage
 from ..variations import PaperVariation
-from .mixins import BacklinkModelMixin
 from .base import FileFieldResource, VersatileImageResourceMixin
-from .fields import CollectionItem, FormattedFileField
+from .fields import CollectionItem
+from .fields.base import FormattedFileField
 from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
+from .mixins import BacklinkModelMixin
 
 __all__ = [
     'CollectionItemBase',
