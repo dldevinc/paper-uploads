@@ -25,7 +25,6 @@ from ..storage import upload_storage
 from ..variations import PaperVariation
 from .base import FileFieldResource, VersatileImageResourceMixin
 from .fields import CollectionItem
-from .fields.base import FormattedFileField
 from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
 from .mixins import BacklinkModelMixin
@@ -391,7 +390,7 @@ class FileItem(FilePreviewMixin, CollectionFileItemBase):
     template_name = 'paper_uploads/collection_item/file.html'
     preview_template_name = 'paper_uploads/collection_item/preview/file.html'
 
-    file = FormattedFileField(
+    file = models.FileField(
         _('file'),
         max_length=255,
         storage=upload_storage,
@@ -424,7 +423,7 @@ class SVGItem(CollectionFileItemBase):
     template_name = 'paper_uploads/collection_item/svg.html'
     preview_template_name = 'paper_uploads/collection_item/preview/svg.html'
 
-    file = FormattedFileField(
+    file = models.FileField(
         _('file'),
         max_length=255,
         storage=upload_storage,

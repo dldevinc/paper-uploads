@@ -113,17 +113,3 @@ class FileResourceFieldBase(ResourceFieldBase):
                 validation['maxImageWidth'] = v.width_limit
                 validation['maxImageHeight'] = v.height_limit
         return validation
-
-
-class FormattedFileField(models.FileField):
-    """
-    Обертка над стандартным файловым полем, форматирующее расширение файлов.
-    """
-
-    def generate_filename(self, instance, filename):
-        file_root, file_ext = os.path.splitext(filename)
-        file_ext = file_ext.lower()
-        if file_ext == '.jpeg':
-            file_ext = '.jpg'
-        filename = ''.join([file_root, file_ext])
-        return super().generate_filename(instance, filename)

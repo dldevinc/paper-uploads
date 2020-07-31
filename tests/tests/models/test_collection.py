@@ -270,7 +270,7 @@ class TestImageItem:
         assert image_item.name == 'nature'
 
     def test_extension(self, image_item):
-        assert image_item.extension == 'jpg'
+        assert image_item.extension == 'jpeg'
 
     def test_size(self, image_item):
         assert image_item.size == 672759
@@ -282,15 +282,15 @@ class TestImageItem:
         assert image_item.file_exists() is True
 
     def test_get_basename(self, image_item):
-        assert image_item.get_basename() == 'nature.jpg'
+        assert image_item.get_basename() == 'nature.jpeg'
 
     def test_get_file_name(self, image_item):
         date = now().date().strftime('%Y-%m-%d')
-        assert image_item.get_file_name() == 'collections/images/{}/nature.jpg'.format(date)
+        assert image_item.get_file_name() == 'collections/images/{}/nature.jpeg'.format(date)
 
     def test_get_file_url(self, image_item):
         date = now().date().strftime('%Y-%m-%d')
-        assert image_item.get_file_url() == '/media/collections/images/{}/nature.jpg'.format(date)
+        assert image_item.get_file_url() == '/media/collections/images/{}/nature.jpeg'.format(date)
 
     def test_width(self, image_item):
         assert image_item.width == 1534
@@ -308,7 +308,7 @@ class TestImageItem:
             'extension': 'jpg',
             'caption': 'nature.jpg',
             'size': 672759,
-            'url': '/media/collections/images/{}/nature.jpg'.format(date),
+            'url': '/media/collections/images/{}/nature.jpeg'.format(date),
             'width': 1534,
             'height': 2301,
             'cropregion': '',

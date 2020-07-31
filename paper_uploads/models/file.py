@@ -8,11 +8,10 @@ from django.utils.translation import gettext_lazy as _
 from ..conf import settings
 from ..storage import upload_storage
 from .base import FileFieldResource
-from .fields.base import FormattedFileField
 
 
 class UploadedFile(FileFieldResource):
-    file = FormattedFileField(
+    file = models.FileField(
         _('file'),
         max_length=255,
         storage=upload_storage,

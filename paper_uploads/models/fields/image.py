@@ -1,5 +1,6 @@
 import os
 
+from django.db import models
 from django.core import checks
 from django.core.exceptions import SuspiciousFileOperation
 from django.utils.crypto import get_random_string
@@ -7,10 +8,10 @@ from django.utils.crypto import get_random_string
 from ... import forms
 from ...helpers import build_variations
 from ...typing import VariationConfig
-from .base import FileResourceFieldBase, FormattedFileField
+from .base import FileResourceFieldBase
 
 
-class VariationalFileField(FormattedFileField):
+class VariationalFileField(models.FileField):
     """
     Из-за того, что вариация может самостоятельно установить свой формат,
     возможна ситуация, когда вариации одного изображения перезапишут вариации
