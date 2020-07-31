@@ -1,5 +1,5 @@
 import os
-from typing import Sequence
+from typing import Sequence, Union
 
 import magic
 from django.core.exceptions import ValidationError
@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from PIL import Image
 
 from .typing import FileLike
-from .utils import remove_dulpicates
+from .utils import remove_dulpicates, parse_filesize
 
 __all__ = [
     "ExtensionValidator",
@@ -76,8 +76,12 @@ class SizeValidator:
     message = _("`%(name)s` is too large. Maximum file size is %(limit_value)s.")
     code = 'size_limit'
 
-    def __init__(self, limit_value: int, message=None):
-        self.limit_value = limit_value
+    def __init__(self, limit_value: Union[int, str], message=None):
+        if isinstance(limit_value, str):
+            self.limit_value = parse_filesize(limit_value)
+        else:
+            self.limit_value = limit_value
+
         if message:
             self.message = message
 

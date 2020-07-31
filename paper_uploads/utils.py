@@ -1,4 +1,8 @@
+import re
 from typing import Any, Dict, Iterable, Set, Tuple
+
+filesize_regex = re.compile(r'^([.\d]+)\s*([KMGT])?B?$')
+filesize_units = {"K": 2 ** 10, "M": 2 ** 20, "G": 2 ** 30, "T": 2 ** 40}
 
 
 def remove_dulpicates(seq: Iterable) -> Tuple:
@@ -15,3 +19,13 @@ def lowercased_dict_keys(options: Dict[str, Any]) -> Dict[str, Any]:
     Возвращает копию словаря с ключами, приведенными к нижнему регистру.
     """
     return {key.lower(): value for key, value in options.items()}
+
+
+def parse_filesize(value: str) -> int:
+    """
+    Парсинг человеко-понятного значения размера файла.
+    Допустимые форматы значения: 4k, 4kb, 4KB, 4 K, 4 Kb
+    """
+    match = filesize_regex.match(value.upper().strip())
+    number, unit = match.groups()
+    return int(float(number) * filesize_units.get(unit, 1))

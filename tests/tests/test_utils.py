@@ -12,3 +12,12 @@ def test_lowercased_dict_keys():
         'fruit': 'banana',
         'color': 'Red',
     }
+
+
+def test_parse_filesize():
+    assert utils.parse_filesize('45') == 45
+    assert utils.parse_filesize('8k') == 8 * 1024
+    assert utils.parse_filesize('26.5kb') == 26.5 * 1024
+    assert utils.parse_filesize('32 mB') == 32 * 1024 * 1024
+    assert utils.parse_filesize('9M') == 9 * 1024 * 1024
+    assert utils.parse_filesize('2.25 GB') == 2.25 * 1024 * 1024 * 1024
