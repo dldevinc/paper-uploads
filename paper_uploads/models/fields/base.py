@@ -81,7 +81,7 @@ class ResourceFieldBase(models.OneToOneField):
 
 class FileResourceFieldBase(ResourceFieldBase):
     """
-    Базовый класс для ссылок на модели файлов.
+    Базовый класс для полей, которые загружаемы файлы.
     """
 
     def formfield(self, **kwargs):
@@ -95,8 +95,8 @@ class FileResourceFieldBase(ResourceFieldBase):
         Возвращает конфигурацию валидации загружаемых файлов FineUploader.
         см. https://docs.fineuploader.com/branch/master/api/options.html#validation
 
-        image.minWidth и т.п. не используются из-за недостатка кастомизации
-        текста об ошибках.
+        image.minWidth и т.п. не используются из-за отсутствия возможности
+        кастомизировать текст об ошибках.
         """
         validation = {}  # type: Dict[str, Any]
         for v in self.validators:

@@ -10,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from paper_uploads.models import *
 from paper_uploads.models.base import *
 from paper_uploads.typing import *
+from paper_uploads.validators import *
 from paper_uploads.variations import PaperVariation
 
 
@@ -158,25 +159,16 @@ class CompleteCollection(Collection):
 # ======================================================================================
 
 
-class Page(models.Model):
-    header = models.CharField(_('header'), max_length=255)
-    file = FileField(_('simple file'), blank=True)
-    # image = ImageField(_('simple image'), blank=True)
+class FileFieldObject(models.Model):
+    file = FileField(_('file'), blank=True)
+    file_required = FileField(_('required file'))
 
-    class Meta:
-        verbose_name = _('page')
-        verbose_name_plural = _('pages')
-
-    def __str__(self):
-        return self.header
-
-
-class Document(models.Model):
-    page = models.ForeignKey(Page, null=True, blank=True, on_delete=models.CASCADE)
-    title = models.CharField(_('title'), max_length=255)
-    file = FileField(_('simple file'), blank=True)
-    # image = ImageField(_('simple image'), blank=True)
-
-    class Meta:
-        verbose_name = _('document')
-        verbose_name_plural = _('documents')
+    file_extensions = FileField(_('Extension'), blank=True, validators=[
+        ExtensionValidator(['.pdf', '.txt', '.doc'])
+    ], help_text=_('Only `pdf`, `txt` and `doc` allowed'))
+    file_mimetypes = FileField(_('MimeType'), blank=True, validators=[
+        MimeTypeValidator(['image/svg', 'image/gif'])
+    ], help_text=_('Only `image/svg` and `image/gif` allowed'))
+    file_size = FileField(_('Size'), blank=True, validators=[
+        SizeValidator('16kb')
+    ], help_text=_('Maximum file size is 16Kb'))

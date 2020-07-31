@@ -1,20 +1,20 @@
 from django.contrib import admin
+from django.utils.translation import ugettext_lazy as _
 
-from .models import Page, Document
-
-
-class DocumentInline(admin.StackedInline):
-    model = Document
-    extra = 0
+from .models import FileFieldObject
 
 
-@admin.register(Page)
-class PageAdmin(admin.ModelAdmin):
+@admin.register(FileFieldObject)
+class FileFieldObjectAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             'fields': (
-                'header', 'file',
+                'file', 'file_required',
+            ),
+        }),
+        (_('Validators'), {
+            'fields': (
+                'file_extensions',
             ),
         }),
     )
-    inlines = (DocumentInline, )
