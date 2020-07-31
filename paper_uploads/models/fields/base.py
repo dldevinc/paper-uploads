@@ -10,7 +10,7 @@ from ... import validators
 
 class ResourceFieldBase(models.OneToOneField):
     """
-    Базовый класс для ссылок на подклассы модели Resource.
+    Базовый класс для ссылок на ресурсы.
     """
 
     def __init__(self, verbose_name=None, **kwargs):
@@ -19,14 +19,6 @@ class ResourceFieldBase(models.OneToOneField):
         kwargs.setdefault('on_delete', models.SET_NULL)
         kwargs['verbose_name'] = verbose_name
         super().__init__(**kwargs)
-
-    def deconstruct(self):
-        name, path, args, kwargs = super().deconstruct()
-        if 'null' in kwargs and self.null:
-            del kwargs['null']
-        if 'related_name' in kwargs and kwargs['related_name'] == '+':
-            del kwargs['related_name']
-        return name, path, args, kwargs
 
     def check(self, **kwargs):
         return [*super().check(**kwargs), *self._check_relation()]
@@ -56,6 +48,22 @@ class ResourceFieldBase(models.OneToOneField):
             ]
         return []
 
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+        if 'null' in kwargs and self.null:
+            del kwargs['null']
+        if 'related_name' in kwargs and kwargs['related_name'] == '+':
+            del kwargs['related_name']
+        return name, path, args, kwargs
+
+    def formfield(self, **kwargs):
+        return super().formfield(**{
+            'owner_app_label': self.opts.app_label.lower(),
+            'owner_model_name': self.opts.model_name.lower(),
+            'owner_fieldname': self.name,
+            **kwargs,
+        })
+
     def contribute_to_class(self, cls, *args, **kwargs):
         super().contribute_to_class(cls, *args, **kwargs)
         if not cls._meta.abstract:
@@ -77,15 +85,10 @@ class FileResourceFieldBase(ResourceFieldBase):
     """
 
     def formfield(self, **kwargs):
-        return super().formfield(
-            **{
-                'owner_app_label': self.opts.app_label.lower(),
-                'owner_model_name': self.opts.model_name.lower(),
-                'owner_fieldname': self.name,
-                'validation': self.get_validation(),
-                **kwargs,
-            }
-        )
+        return super().formfield(**{
+            'validation': self.get_validation(),
+            **kwargs,
+        })
 
     def get_validation(self) -> Dict[str, Any]:
         """
