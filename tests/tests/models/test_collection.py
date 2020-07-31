@@ -267,7 +267,7 @@ class TestFileItemFilesExists:
 @pytest.mark.django_db
 class TestImageItem:
     def test_name(self, image_item):
-        assert image_item.name == 'nature'
+        assert image_item.name == 'Nature Tree'
 
     def test_extension(self, image_item):
         assert image_item.extension == 'jpeg'
@@ -282,15 +282,15 @@ class TestImageItem:
         assert image_item.file_exists() is True
 
     def test_get_basename(self, image_item):
-        assert image_item.get_basename() == 'nature.jpeg'
+        assert image_item.get_basename() == 'Nature Tree.jpeg'
 
     def test_get_file_name(self, image_item):
         date = now().date().strftime('%Y-%m-%d')
-        assert image_item.get_file_name() == 'collections/images/{}/nature.jpeg'.format(date)
+        assert image_item.get_file_name() == 'collections/images/{}/Nature_Tree.Jpeg'.format(date)
 
     def test_get_file_url(self, image_item):
         date = now().date().strftime('%Y-%m-%d')
-        assert image_item.get_file_url() == '/media/collections/images/{}/nature.jpeg'.format(date)
+        assert image_item.get_file_url() == '/media/collections/images/{}/Nature_Tree.Jpeg'.format(date)
 
     def test_width(self, image_item):
         assert image_item.width == 1534
@@ -304,11 +304,11 @@ class TestImageItem:
             'id': 1,
             'collectionId': 1,
             'item_type': 'image',
-            'name': 'nature',
-            'extension': 'jpg',
-            'caption': 'nature.jpg',
+            'name': 'Nature Tree',
+            'extension': 'jpeg',
+            'caption': 'Nature Tree.jpeg',
             'size': 672759,
-            'url': '/media/collections/images/{}/nature.jpeg'.format(date),
+            'url': '/media/collections/images/{}/Nature_Tree.Jpeg'.format(date),
             'width': 1534,
             'height': 2301,
             'cropregion': '',

@@ -44,7 +44,7 @@ def file_resource(class_scoped_db):
 @pytest.fixture(scope='class')
 def file_field_resource(class_scoped_db):
     resource = DummyFileFieldResource()
-    with open(NATURE_FILEPATH, 'rb') as fp:
+    with open(DOCUMENT_FILEPATH, 'rb') as fp:
         resource.attach_file(fp)
     resource.save()
     yield resource
@@ -499,43 +499,43 @@ class TestFileResource:
 @pytest.mark.django_db
 class TestFileFieldResource:
     def test_name(self, file_field_resource):
-        assert file_field_resource.name == 'nature'
+        assert file_field_resource.name == 'document'
 
     def test_extension(self, file_field_resource):
-        assert file_field_resource.extension == 'jpeg'
+        assert file_field_resource.extension == 'pdf'
 
     def test_size(self, file_field_resource):
-        assert file_field_resource.size == 672759
+        assert file_field_resource.size == 3028
 
     def test_content_hash(self, file_field_resource):
-        assert file_field_resource.content_hash == 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+        assert file_field_resource.content_hash == '93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e'
 
     def test_file_exists(self, file_field_resource):
         assert file_field_resource.file_exists() is True
 
     def test_get_basename(self, file_field_resource):
-        assert file_field_resource.get_basename() == 'nature.jpeg'
+        assert file_field_resource.get_basename() == 'document.pdf'
 
     def test_get_file_name(self, file_field_resource):
         file_name = file_field_resource.get_file_name()
-        match = re.match(r'file_field/nature(_\w+)?\.jpeg', file_name)
+        match = re.match(r'file_field/document(_\w+)?\.pdf', file_name)
         assert match is not None
 
     def test_get_file_url(self, file_field_resource):
         file_url = file_field_resource.get_file_url()
-        match = re.match(r'/media/file_field/nature(_\w+)?\.jpeg', file_url)
+        match = re.match(r'/media/file_field/document(_\w+)?\.pdf', file_url)
         assert match is not None
 
     def test_as_dict(self, file_field_resource):
         file_url = file_field_resource.get_file_url()
-        match = re.match(r'/media/file_field/nature(_\w+)?\.jpeg', file_url)
+        match = re.match(r'/media/file_field/document(_\w+)?\.pdf', file_url)
         suffix = match.group(1) or ''
         assert file_field_resource.as_dict() == {
             'id': 1,
-            'name': 'nature',
-            'extension': 'jpeg',
-            'size': 672759,
-            'url': '/media/file_field/nature{}.jpeg'.format(suffix)
+            'name': 'document',
+            'extension': 'pdf',
+            'size': 3028,
+            'url': '/media/file_field/document{}.pdf'.format(suffix)
         }
 
     def test_rename_file(self):
@@ -588,8 +588,8 @@ class TestFileFieldResource:
         resource.delete_file()
 
     def test_proxied_attributes(self, file_field_resource):
-        assert file_field_resource.path.endswith('/media/file_field/nature.jpeg')
-        assert file_field_resource.url == '/media/file_field/nature.jpeg'
+        assert file_field_resource.path.endswith('/media/file_field/document.pdf')
+        assert file_field_resource.url == '/media/file_field/document.pdf'
 
 
 @pytest.mark.django_db

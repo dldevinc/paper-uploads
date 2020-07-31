@@ -11,7 +11,7 @@ from paper_uploads.models.collection import *
 
 NASA_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/milky-way-nasa.jpg')
 CALLIPHORA_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/calliphora.jpg')
-NATURE_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/nature.jpeg')
+NATURE_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/Nature Tree.Jpeg')
 DOCUMENT_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/document.pdf')
 MEDITATION_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/Meditation.svg')
 

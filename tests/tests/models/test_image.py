@@ -15,7 +15,7 @@ def uploaded_image(class_scoped_db):
         owner_model_name='imageexample',
         owner_fieldname='image',
     )
-    with open(CALLIPHORA_FILEPATH, 'rb') as fp:
+    with open(NATURE_FILEPATH, 'rb') as fp:
         resource.attach_file(fp)
     resource.save()
 
@@ -28,48 +28,48 @@ def uploaded_image(class_scoped_db):
 @pytest.mark.django_db
 class TestUploadedImage:
     def test_name(self, uploaded_image):
-        assert uploaded_image.name == 'calliphora'
+        assert uploaded_image.name == 'Nature Tree'
 
     def test_extension(self, uploaded_image):
-        assert uploaded_image.extension == 'jpg'
+        assert uploaded_image.extension == 'jpeg'
 
     def test_size(self, uploaded_image):
-        assert uploaded_image.size == 254766
+        assert uploaded_image.size == 672759
 
     def test_content_hash(self, uploaded_image):
-        assert uploaded_image.content_hash == 'd4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386'
+        assert uploaded_image.content_hash == 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
 
     def test_file_exists(self, uploaded_image):
         assert uploaded_image.file_exists() is True
 
     def test_get_basename(self, uploaded_image):
-        assert uploaded_image.get_basename() == 'calliphora.jpg'
+        assert uploaded_image.get_basename() == 'Nature Tree.jpeg'
 
     def test_get_file_name(self, uploaded_image):
         date = now().date().strftime('%Y-%m-%d')
-        assert uploaded_image.get_file_name() == 'images/{}/calliphora.jpg'.format(date)
+        assert uploaded_image.get_file_name() == 'images/{}/Nature_Tree.Jpeg'.format(date)
 
     def test_get_file_url(self, uploaded_image):
         date = now().date().strftime('%Y-%m-%d')
-        assert uploaded_image.get_file_url() == '/media/images/{}/calliphora.jpg'.format(date)
+        assert uploaded_image.get_file_url() == '/media/images/{}/Nature_Tree.Jpeg'.format(date)
 
     def test_width(self, uploaded_image):
-        assert uploaded_image.width == 804
+        assert uploaded_image.width == 1534
 
     def test_height(self, uploaded_image):
-        assert uploaded_image.height == 1198
+        assert uploaded_image.height == 2301
 
     def test_as_dict(self, uploaded_image):
         date = now().date().strftime('%Y-%m-%d')
         assert uploaded_image.as_dict() == {
             'id': 1,
-            'name': 'calliphora',
-            'extension': 'jpg',
-            'size': 254766,
-            'url': '/media/images/{}/calliphora.jpg'.format(date),
-            'file_info': '(jpg, 804x1198, 248.8\xa0KB)',
-            'width': 804,
-            'height': 1198,
+            'name': 'Nature Tree',
+            'extension': 'jpeg',
+            'size': 672759,
+            'url': '/media/images/{}/Nature_Tree.Jpeg'.format(date),
+            'file_info': '(jpeg, 1534x2301, 657.0\xa0KB)',
+            'width': 1534,
+            'height': 2301,
             'cropregion': '',
             'title': '',
             'description': ''
