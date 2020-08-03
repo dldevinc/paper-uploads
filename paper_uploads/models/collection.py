@@ -185,7 +185,7 @@ class Collection(CollectionBase):
         Определение класса элемента, которому нужно отнести загружаемый файл.
         """
         for item_type, field in self.item_types.items():
-            if isinstance(field.model, CollectionFileItemBase):
+            if issubclass(field.model, CollectionFileItemBase):
                 if field.model.file_supported(file):
                     return item_type
 
@@ -369,7 +369,8 @@ class FilePreviewMixin(models.Model):
         abstract = True
 
     def get_preview_url(self):
-        extension = FILE_ICON_OVERRIDES.get(self.extension, self.extension)  # noqa
+        extension = self.extension.lower()  # noqa
+        extension = FILE_ICON_OVERRIDES.get(extension, extension)
         icon_path_template = 'paper_uploads/dist/image/{}.svg'
         icon_path = icon_path_template.format(extension)
         if find(icon_path) is None:
@@ -536,6 +537,3 @@ class ImageCollection(Collection):
         return {
             'acceptFiles': ['image/*'],
         }
-
-    def detect_file_type(self, file: File) -> Optional[str]:
-        return 'image'

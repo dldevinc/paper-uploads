@@ -45,6 +45,7 @@ FILE_ICON_OVERRIDES = {
     'flac': 'audio',
     'flv': 'video',
     'gz': 'archive',
+    'jpeg': 'jpg',
     'm4a': 'audio',
     'm4v': 'video',
     'mkv': 'video',
