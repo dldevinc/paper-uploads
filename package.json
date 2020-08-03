@@ -13,7 +13,7 @@
     "@babel/plugin-syntax-dynamic-import": "^7.8.3",
     "@babel/preset-env": "^7.8.7",
     "autoprefixer": "^9.7.4",
-    "babel-loader": "^8.0.6",
+    "babel-loader": "^8.1.0",
     "deepmerge": "^4.2.2",
     "fast-async": "^6.3.8",
     "fast-css-loader": "^1.0.2",
@@ -28,6 +28,6 @@
     "sass-loader": "^7.3.1",
     "terser-webpack-plugin": "^2.3.5",
     "webpack": "^4.42.0",
-    "webpack-cli": "^3.3.11"
+    "webpack-cli": "^3.3.12"
   }
 }
