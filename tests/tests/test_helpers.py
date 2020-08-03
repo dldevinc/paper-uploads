@@ -10,6 +10,22 @@ from app.models import DummyResource
 from paper_uploads import helpers, validators
 
 
+class TestGetFilename:
+    def test_camelcase(self):
+        assert helpers.get_filename('/tmp/folder/File Name.JpEg') == 'File Name'
+
+    def test_no_extension(self):
+        assert helpers.get_filename('/tmp/file') == 'file'
+
+
+class TestGetExtensions:
+    def test_camelcase(self):
+        assert helpers.get_extension('/tmp/folder/File Name.JpEg') == 'JpEg'
+
+    def test_no_extension(self):
+        assert helpers.get_extension('/tmp/file') == ''
+
+
 class TestBuildVariations:
     variations = None
 

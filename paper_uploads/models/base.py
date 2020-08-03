@@ -16,7 +16,7 @@ from .. import helpers, signals
 from ..conf import settings
 from ..typing import FileLike
 from ..variations import PaperVariation
-from .mixins import BacklinkModelMixin, FileProxyMixin, FileFieldProxyMixin
+from .mixins import BacklinkModelMixin, FileFieldProxyMixin, FileProxyMixin
 
 __all__ = [
     'Resource',
@@ -178,24 +178,6 @@ class FileResource(FileProxyMixin, Resource):
         """
         raise NotImplementedError
 
-    def _update_name(self, filename: str):
-        """
-        Получение имени файла из начальных данных, переданных в метод загрузки или
-        переименования, т.к. после соответствующей операции к имени может добавиться
-        суффикс
-        """
-        basename = os.path.basename(filename)
-        self.name, _ = os.path.splitext(basename)
-
-    def _update_extension(self):
-        """
-        Получение расширения файла из уже обработанного файла (после загрузки или
-        переименования), т.к. соответствующие методы могут изменить его.
-        """
-        basename = os.path.basename(self.get_file_name())
-        _, extension = os.path.splitext(basename)
-        self.extension = extension.lower().lstrip('.')
-
     def attach_file(self, file: FileLike, name: str = None, **options):
         """
         Присоединение файла к экземпляру ресурса.
@@ -212,7 +194,7 @@ class FileResource(FileProxyMixin, Resource):
 
         # имя файла берем из исходного файла, а расширение - из результата
         # загрузки, т.к. они могут быть модифицированы методом `_attach_file`.
-        self._update_name(file.name)
+        self.name = helpers.get_filename(file.name)
 
         signals.pre_attach_file.send(
             sender=type(self), instance=self, file=file, options=options
@@ -220,8 +202,8 @@ class FileResource(FileProxyMixin, Resource):
 
         response = self._attach_file(file, **options)
 
-        self._update_extension()
         result_file = self.get_file()
+        self.extension = helpers.get_extension(self.get_file_name())
         self.size = result_file.size
         self.uploaded_at = now()
         self.modified_at = now()
@@ -249,9 +231,8 @@ class FileResource(FileProxyMixin, Resource):
 
         old_name = self.get_file_name()
 
-        basename = os.path.basename(new_name)
-        name, extension = os.path.splitext(basename)
-        extension = extension.lower().lstrip('.')
+        name = helpers.get_filename(new_name)
+        extension = helpers.get_extension(new_name)
 
         # если новое имя идентично прежнему - ничего не делаем
         if name == self.name and extension == self.extension:
@@ -269,8 +250,8 @@ class FileResource(FileProxyMixin, Resource):
 
         # имя файла берем из переданного значения, а расширение - из результата
         # переименования, т.к. они могут быть модифицированы методом `_rename_file`.
-        self._update_name(new_name)
-        self._update_extension()
+        self.name = helpers.get_filename(new_name)
+        self.extension = helpers.get_extension(self.get_file_name())
 
         signals.post_rename_file.send(
             sender=type(self),

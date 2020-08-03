@@ -21,7 +21,7 @@ class DummyResource(Resource):
 class DummyFileResource(FileResource):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__name = 'File_ABCD.jpg'
+        self.__filename = '{}.{}'.format(self.name, self.extension)
 
     def get_file(self) -> File:
         file = getattr(self, '_file', None)
@@ -33,7 +33,7 @@ class DummyFileResource(FileResource):
         return file
 
     def get_file_name(self) -> str:
-        return self.__name
+        return '{}'.format(self.__filename)
 
     def get_file_url(self):
         return 'http://example.com/{}'.format(quote(self.get_basename()))
@@ -42,12 +42,13 @@ class DummyFileResource(FileResource):
         return True
 
     def _attach_file(self, file: File, **options):
+        self.__filename = file.name
         return {
             'success': True,
         }
 
     def _rename_file(self, new_name: str, **options):
-        self.__name = new_name
+        self.__filename = new_name
         return {
             'success': True,
         }
@@ -74,14 +75,16 @@ class DummyImageFieldResource(ImageFileResourceMixin, FileFieldResource):
         return self.image
 
     def get_variations(self) -> Dict[str, PaperVariation]:
-        # just for the test VariationFile with non-versatile resource
-        return {
-            'desktop': PaperVariation(
-                name='desktop',
-                size=(800, 0),
-                clip=False
-            ),
-        }
+        variations = getattr(self, '_variations', None)
+        if variations is None:
+            variations = self._variations = {
+                'desktop': PaperVariation(
+                    name='desktop',
+                    size=(800, 0),
+                    clip=False
+                ),
+            }
+        return variations
 
 
 class DummyVersatileImageResource(VersatileImageResourceMixin, FileFieldResource):

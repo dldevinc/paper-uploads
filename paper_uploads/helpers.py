@@ -1,3 +1,4 @@
+import os
 import time
 from typing import Any, Dict, Iterable, Iterator, List, Set
 
@@ -19,6 +20,18 @@ ALLOWED_VERSIONS = {'webp', '2x', '3x', '4x'}
 # экземпляра модели.
 # TODO: уточнить необходимость такого подхода
 MAX_DB_READ_ATTEMPTS = 3
+
+
+def get_filename(filename: str) -> str:
+    basename = os.path.basename(filename)
+    name, _ = os.path.splitext(basename)
+    return name
+
+
+def get_extension(filename: str) -> str:
+    basename = os.path.basename(filename)
+    _, extension = os.path.splitext(basename)
+    return extension.lstrip('.')
 
 
 def generate_scaled_versions(
