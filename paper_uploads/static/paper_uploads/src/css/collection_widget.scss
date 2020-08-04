@@ -33,6 +33,14 @@
   border-radius: 0.25rem;
   background-color: darken(#f8f9fa, 2%);
 
+  &:focus {
+    outline: none;
+  }
+
+  &.sortable-ghost {
+    opacity: 0.5;
+  }
+
   .sortable-handler {
     position: relative;
     cursor: move;
