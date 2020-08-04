@@ -35,7 +35,7 @@ class CollectionField(FileResourceFieldBase):
             del kwargs['blank']
         return name, path, args, kwargs
 
-    def _check_relation_class(self):
+    def _check_relation_class(self, base, error_message):
         from ...models.collection import CollectionBase
 
         rel_is_string = isinstance(self.remote_field.model, str)

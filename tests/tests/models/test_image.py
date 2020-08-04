@@ -9,8 +9,13 @@ from .test_base import TestVersatileImageResource
 
 
 class TestUploadedImage(TestVersatileImageResource):
-    @staticmethod
-    def init(storage):
+    resource_name = 'Nature Tree'
+    resource_extension = 'Jpeg'
+    resource_size = 672759
+    resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+
+    @classmethod
+    def init(cls, storage):
         storage.resource = UploadedImage(
             title='Calliphora',
             description='Calliphora is a genus of blow flies, also known as bottle flies',
@@ -60,14 +65,14 @@ class TestUploadedImage(TestVersatileImageResource):
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             'id': 1,
-            'name': 'Nature Tree',
-            'extension': 'Jpeg',
-            'size': 672759,
+            'name': self.resource_name,
+            'extension': self.resource_extension,
+            'size': self.resource_size,
             'width': 1534,
             'height': 2301,
+            'cropregion': '',
             'title': 'Calliphora',
             'description': 'Calliphora is a genus of blow flies, also known as bottle flies',
-            'cropregion': '',
             'file_info': '(Jpeg, 1534x2301, 657.0\xa0KB)',
             'url': utils.get_target_filepath(
                 '/media/images/%Y-%m-%d/Nature_Tree{}.Jpeg',

@@ -1,4 +1,3 @@
-import os
 from typing import Any, Dict
 
 from django.core import checks
@@ -81,7 +80,8 @@ class ResourceFieldBase(models.OneToOneField):
 
 class FileResourceFieldBase(ResourceFieldBase):
     """
-    Базовый класс для полей, которые загружаемы файлы.
+    Базовый класс для полей, которые загружают файлы с помощью FineUploader.
+    См. https://fineuploader.com/
     """
 
     def formfield(self, **kwargs):
@@ -93,7 +93,7 @@ class FileResourceFieldBase(ResourceFieldBase):
     def get_validation(self) -> Dict[str, Any]:
         """
         Возвращает конфигурацию валидации загружаемых файлов FineUploader.
-        см. https://docs.fineuploader.com/branch/master/api/options.html#validation
+        См. https://docs.fineuploader.com/branch/master/api/options.html#validation
 
         image.minWidth и т.п. не используются из-за отсутствия возможности
         кастомизировать текст об ошибках.

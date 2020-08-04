@@ -22,13 +22,15 @@ from ..dummy import *
 
 
 class TestResource:
+    resource_name = 'Nature Tree'
+
     def _equal_dates(self, date1, date2):
         return abs((date2 - date1).seconds) < 5
 
-    @staticmethod
-    def init(storage):
+    @classmethod
+    def init(cls, storage):
         storage.resource = DummyResource.objects.create(
-            name='Nature Tree',
+            name=cls.resource_name,
             owner_app_label='app',
             owner_model_name='dummyfilefieldresource',
             owner_fieldname='file'
@@ -37,7 +39,7 @@ class TestResource:
         storage.resource.delete()
 
     def test_name(self, storage):
-        assert storage.resource.name == 'Nature Tree'
+        assert storage.resource.name == self.resource_name
 
     def test_dates(self, storage):
         assert self._equal_dates(storage.resource.created_at, now())
@@ -45,15 +47,15 @@ class TestResource:
         assert self._equal_dates(storage.resource.uploaded_at, now())
 
     def test_str(self, storage):
-        assert str(storage.resource) == 'Nature Tree'
+        assert str(storage.resource) == self.resource_name
 
     def test_repr(self, storage):
-        assert repr(storage.resource) == "DummyResource('Nature Tree')"
+        assert repr(storage.resource) == "DummyResource('{}')".format(self.resource_name)
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             'id': 1,
-            'name': 'Nature Tree'
+            'name': self.resource_name
         }
 
     def test_get_owner_model(self, storage):
@@ -83,12 +85,16 @@ class TestWrongResource:
 
 
 class TestFileResource(TestResource):
-    @staticmethod
-    def init(storage):
+    resource_name = 'Nature Tree'
+    resource_extension = 'Jpeg'
+    resource_size = 672759
+
+    @classmethod
+    def init(cls, storage):
         storage.resource = DummyFileResource.objects.create(
-            name='Nature Tree',
-            extension='Jpeg',
-            size=672759,
+            name=cls.resource_name,
+            extension=cls.resource_extension,
+            size=cls.resource_size,
             owner_app_label='app',
             owner_model_name='dummyfilefieldresource',
             owner_fieldname='file'
@@ -97,25 +103,38 @@ class TestFileResource(TestResource):
         storage.resource.delete()
 
     def test_extension(self, storage):
-        assert storage.resource.extension == 'Jpeg'
+        assert storage.resource.extension == self.resource_extension
 
     def test_size(self, storage):
-        assert storage.resource.size == 672759
+        assert storage.resource.size == self.resource_size
 
     def test_content_hash(self, storage):
         assert storage.resource.content_hash == ''
 
     def test_str(self, storage):
-        assert str(storage.resource) == 'Nature Tree.Jpeg'
+        assert str(storage.resource) == '{}.{}'.format(
+            self.resource_name,
+            self.resource_extension
+        )
 
     def test_repr(self, storage):
-        assert repr(storage.resource) == "{}('Nature Tree.Jpeg')".format(type(storage.resource).__name__)
+        assert repr(storage.resource) == "{}('{}.{}')".format(
+            type(storage.resource).__name__,
+            self.resource_name,
+            self.resource_extension
+        )
 
     def test_get_basename(self, storage):
-        assert storage.resource.get_basename() == 'Nature Tree.Jpeg'
+        assert storage.resource.get_basename() == '{}.{}'.format(
+            self.resource_name,
+            self.resource_extension
+        )
 
     def test_get_file_name(self, storage):
-        assert storage.resource.get_file_name() == 'Nature Tree.Jpeg'
+        assert storage.resource.get_file_name() == '{}.{}'.format(
+            self.resource_name,
+            self.resource_extension
+        )
 
     def test_get_file_url(self, storage):
         assert storage.resource.get_file_url() == 'http://example.com/Nature%20Tree.Jpeg'
@@ -123,9 +142,9 @@ class TestFileResource(TestResource):
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             'id': 1,
-            'name': 'Nature Tree',
-            'extension': 'Jpeg',
-            'size': 672759,
+            'name': self.resource_name,
+            'extension': self.resource_extension,
+            'size': self.resource_size,
             'url': 'http://example.com/Nature%20Tree.Jpeg'
         }
 
@@ -144,6 +163,7 @@ class TestFileResource(TestResource):
         assert content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
 
     def test_update_hash(self, storage):
+        actual_hash = storage.resource.content_hash
         storage.resource.content_hash = ''
 
         with open(NASA_FILEPATH, 'rb') as fp:
@@ -153,6 +173,8 @@ class TestFileResource(TestResource):
         with open(NASA_FILEPATH, 'rb') as fp:
             assert storage.resource.update_hash(fp) is False  # not updated
             assert storage.resource.content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
+
+        storage.resource.content_hash = actual_hash
 
     def test_attach_file(self):
         resource = DummyFileResource()
@@ -473,8 +495,13 @@ class TestFileResourceSignals:
 
 
 class TestFileFieldResource(TestFileResource):
-    @staticmethod
-    def init(storage):
+    resource_name = 'Nature Tree'
+    resource_extension = 'Jpeg'
+    resource_size = 672759
+    resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+
+    @classmethod
+    def init(cls, storage):
         storage.resource = DummyFileFieldResource(
             owner_app_label='app',
             owner_model_name='dummyfilefieldresource',
@@ -486,15 +513,6 @@ class TestFileFieldResource(TestFileResource):
         yield
         storage.resource.delete_file()
         storage.resource.delete()
-
-    def test_extension(self, storage):
-        assert storage.resource.extension == 'Jpeg'
-
-    def test_str(self, storage):
-        assert str(storage.resource) == "Nature Tree.Jpeg"
-
-    def test_get_basename(self, storage):
-        assert storage.resource.get_basename() == 'Nature Tree.Jpeg'
 
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
@@ -525,18 +543,17 @@ class TestFileFieldResource(TestFileResource):
 
     def test_proxied_attributes(self, storage):
         storage.resource.seek(0, os.SEEK_END)
-        assert storage.resource.tell() == 672759
+        assert storage.resource.tell() == self.resource_size
         storage.resource.seek(0)
         assert storage.resource.tell() == 0
-        assert storage.resource.read(4) == b'\xff\xd8\xff\xe0'
         storage.resource.seek(0)
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             'id': 1,
-            'name': 'Nature Tree',
-            'extension': 'Jpeg',
-            'size': 672759,
+            'name': self.resource_name,
+            'extension': self.resource_extension,
+            'size': self.resource_size,
             'url': utils.get_target_filepath(
                 '/media/file_field/Nature_Tree{}.Jpeg',
                 storage.resource.get_file_url()
@@ -544,7 +561,7 @@ class TestFileFieldResource(TestFileResource):
         }
 
     def test_content_hash(self, storage):
-        assert storage.resource.content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
+        assert storage.resource.content_hash == self.resource_hash
 
     def test_path(self, storage):
         assert storage.resource.path.endswith(utils.get_target_filepath(
@@ -619,8 +636,8 @@ class TestEmptyFileFieldResource:
 
 
 class TestImageFieldResource(TestFileFieldResource):
-    @staticmethod
-    def init(storage):
+    @classmethod
+    def init(cls, storage):
         storage.resource = DummyImageFieldResource(
             title='Calliphora',
             description='Calliphora is a genus of blow flies, also known as bottle flies',
@@ -684,14 +701,14 @@ class TestImageFieldResource(TestFileFieldResource):
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             'id': 1,
-            'name': 'Nature Tree',
-            'extension': 'Jpeg',
-            'size': 672759,
+            'name': self.resource_name,
+            'extension': self.resource_extension,
+            'size': self.resource_size,
             'width': 1534,
             'height': 2301,
+            'cropregion': '',
             'title': 'Calliphora',
             'description': 'Calliphora is a genus of blow flies, also known as bottle flies',
-            'cropregion': '',
             'url': utils.get_target_filepath(
                 '/media/image_field/Nature_Tree{}.Jpeg',
                 storage.resource.get_file_url()
@@ -805,8 +822,8 @@ class TestVariationFile:
 
 
 class TestVersatileImageResource(TestImageFieldResource):
-    @staticmethod
-    def init(storage):
+    @classmethod
+    def init(cls, storage):
         storage.resource = DummyVersatileImageResource(
             title='Calliphora',
             description='Calliphora is a genus of blow flies, also known as bottle flies',
@@ -851,14 +868,14 @@ class TestVersatileImageResource(TestImageFieldResource):
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             'id': 1,
-            'name': 'Nature Tree',
-            'extension': 'Jpeg',
-            'size': 672759,
+            'name': self.resource_name,
+            'extension': self.resource_extension,
+            'size': self.resource_size,
             'width': 1534,
             'height': 2301,
+            'cropregion': '',
             'title': 'Calliphora',
             'description': 'Calliphora is a genus of blow flies, also known as bottle flies',
-            'cropregion': '',
             'url': utils.get_target_filepath(
                 '/media/versatile_image/Nature_Tree{}.Jpeg',
                 storage.resource.get_file_url()

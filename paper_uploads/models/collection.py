@@ -324,7 +324,7 @@ class CollectionItemBase(PolymorphicModel):
                 self.item_type = name
                 break
         else:
-            raise ValueError('Unsupported collection item: %s' % type(self).__name__)
+            raise TypeError('Unsupported collection item: %s' % type(self).__name__)
 
     def get_caption(self):
         """ Заголовок для виджета в админке """

@@ -129,6 +129,10 @@ class FileCollection(Collection):
     file = CollectionItem(FileItem)
 
 
+class PhotoCollection(ImageCollection):
+    pass
+
+
 class IsolatedFileCollection(Collection):
     file = CollectionItem(FileItem)
 
@@ -143,8 +147,8 @@ class ChildFileCollection(IsolatedFileCollection):
 
 
 class CompleteCollection(Collection):
-    image = CollectionItem(ImageItem)
     svg = CollectionItem(SVGItem)
+    image = CollectionItem(ImageItem)
     file = CollectionItem(FileItem)
 
     VARIATIONS = dict(
