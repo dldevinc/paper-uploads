@@ -109,6 +109,3 @@ ENV/
 /node_modules
 /cache
 /package-lock.json
-
-# tests
-**/tests/db.sqlite3
