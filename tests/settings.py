@@ -1,5 +1,7 @@
 import os
 
+from django.utils.translation import ugettext_lazy as _
+
 from dotenv import load_dotenv
 
 
@@ -22,6 +24,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'paper_admin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -115,6 +118,31 @@ RQ_QUEUES = {
         'DEFAULT_TIMEOUT': '5m',
     },
 }
+
+# =============
+#  Paper Admin
+# =============
+PAPER_SUPPORT_PHONE = '+1 267 626 2554'
+PAPER_SUPPORT_EMAIL = 'office@directlinedev.com'
+PAPER_SUPPORT_COMPANY = 'Direct Line Development'
+PAPER_SUPPORT_WEBSITE = 'https://directlinedev.com/'
+
+PAPER_ENVIRONMENT_NAME = 'development'
+PAPER_ENVIRONMENT_COLOR = '#FFFF00'
+
+PAPER_MENU = [
+    dict(
+        label=_('Dashboard'),
+        url='admin:index',
+        icon='fa fa-fw fa-lg fa-area-chart',
+    ),
+    dict(
+        app='app',
+        icon='fa fa-fw fa-lg fa-home',
+    ),
+    '-',
+    'auth',
+]
 
 # ===============
 #  Paper Uploads

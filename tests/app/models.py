@@ -170,12 +170,93 @@ class FileFieldObject(models.Model):
     file = FileField(_('file'), blank=True)
     file_required = FileField(_('required file'))
 
-    file_extensions = FileField(_('Extension'), blank=True, validators=[
-        ExtensionValidator(['.pdf', '.txt', '.doc'])
-    ], help_text=_('Only `pdf`, `txt` and `doc` allowed'))
-    file_mimetypes = FileField(_('MimeType'), blank=True, validators=[
-        MimeTypeValidator(['image/svg', 'image/gif'])
-    ], help_text=_('Only `image/svg` and `image/gif` allowed'))
-    file_size = FileField(_('Size'), blank=True, validators=[
-        SizeValidator('16kb')
-    ], help_text=_('Maximum file size is 16Kb'))
+    file_extensions = FileField(
+        _('Extension'),
+        blank=True,
+        validators=[
+            ExtensionValidator(['.pdf', '.txt', '.doc'])
+        ],
+        help_text=_('Only `pdf`, `txt` and `doc` allowed')
+    )
+    file_mimetypes = FileField(
+        _('MimeType'),
+        blank=True,
+        validators=[
+            MimeTypeValidator(['image/svg', 'image/gif'])
+        ],
+        help_text=_('Only `image/svg` and `image/gif` allowed')
+    )
+    file_size = FileField(
+        _('Size'),
+        blank=True,
+        validators=[
+            SizeValidator('16kb')
+        ],
+        help_text=_('Maximum file size is 16Kb')
+    )
+
+    class Meta:
+        verbose_name = _('File')
+        verbose_name_plural = _('Files')
+
+    def __str__(self):
+        if self.file:
+            return self.file.name
+        else:
+            return 'FileObject'
+
+
+class ImageFieldObject(models.Model):
+    image = ImageField(_('image'), blank=True)
+    image_required = ImageField(_('required image'))
+
+    image_extensions = ImageField(
+        _('Extension'),
+        blank=True,
+        validators=[
+            ExtensionValidator(['.png', '.gif'])
+        ],
+        help_text=_('Only `png` and `gif` allowed')
+    )
+    image_mimetypes = ImageField(
+        _('MimeType'),
+        blank=True,
+        validators=[
+            MimeTypeValidator(['image/png', 'image/jpeg'])
+        ],
+        help_text=_('Only `image/png` and `image/jpeg` allowed')
+    )
+    image_size = ImageField(
+        _('Size'),
+        blank=True,
+        validators=[
+            SizeValidator('64kb')
+        ],
+        help_text=_('Maximum file size is 64Kb')
+    )
+    image_min_size = ImageField(
+        _('Min size'),
+        blank=True,
+        validators=[
+            ImageMinSizeValidator(640, 480)
+        ],
+        help_text=_('Image should be at least 640x480 pixels')
+    )
+    image_max_size = ImageField(
+        _('Max size'),
+        blank=True,
+        validators=[
+            ImageMaxSizeValidator(1024, 768)
+        ],
+        help_text=_('Image should be at most 1024x768 pixels')
+    )
+
+    class Meta:
+        verbose_name = _('Image')
+        verbose_name_plural = _('Images')
+
+    def __str__(self):
+        if self.image:
+            return self.image.name
+        else:
+            return 'ImageObject'

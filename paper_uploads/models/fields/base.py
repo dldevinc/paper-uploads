@@ -64,6 +64,13 @@ class ResourceFieldBase(models.OneToOneField):
             }
         )
 
+    def run_validators(self, value):
+        """
+        Валидаторы мы хотим запускать по отношению в экземпляру File,
+        а не к ID экземпляа модели.
+        """
+        pass
+
     def contribute_to_class(self, cls, *args, **kwargs):
         super().contribute_to_class(cls, *args, **kwargs)
         if not cls._meta.abstract:
