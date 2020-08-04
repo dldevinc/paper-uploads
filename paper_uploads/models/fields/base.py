@@ -24,10 +24,11 @@ class ResourceFieldBase(models.OneToOneField):
 
     def _check_relation(self):
         from ...models.base import Resource
+
         return self._check_relation_class(
             Resource,
             "Field defines a relation with model '%s', "
-            "which is not subclass of Resource model"
+            "which is not subclass of Resource model",
         )
 
     def _check_relation_class(self, base, error_message):
@@ -42,9 +43,7 @@ class ResourceFieldBase(models.OneToOneField):
         )
 
         if not issubclass(self.remote_field.model, base):
-            return [
-                checks.Error(error_message % model_name, obj=self)
-            ]
+            return [checks.Error(error_message % model_name, obj=self)]
         return []
 
     def deconstruct(self):
@@ -56,12 +55,14 @@ class ResourceFieldBase(models.OneToOneField):
         return name, path, args, kwargs
 
     def formfield(self, **kwargs):
-        return super().formfield(**{
-            'owner_app_label': self.opts.app_label.lower(),
-            'owner_model_name': self.opts.model_name.lower(),
-            'owner_fieldname': self.name,
-            **kwargs,
-        })
+        return super().formfield(
+            **{
+                'owner_app_label': self.opts.app_label.lower(),
+                'owner_model_name': self.opts.model_name.lower(),
+                'owner_fieldname': self.name,
+                **kwargs,
+            }
+        )
 
     def contribute_to_class(self, cls, *args, **kwargs):
         super().contribute_to_class(cls, *args, **kwargs)
@@ -85,10 +86,7 @@ class FileResourceFieldBase(ResourceFieldBase):
     """
 
     def formfield(self, **kwargs):
-        return super().formfield(**{
-            'validation': self.get_validation(),
-            **kwargs,
-        })
+        return super().formfield(**{'validation': self.get_validation(), **kwargs,})
 
     def get_validation(self) -> Dict[str, Any]:
         """

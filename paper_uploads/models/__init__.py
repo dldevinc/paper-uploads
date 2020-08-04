@@ -10,7 +10,6 @@ __all__ = [
     'ImageField',
     'CollectionField',
     'CollectionItem',
-
     'Collection',
     'ImageCollection',
     'FileItem',

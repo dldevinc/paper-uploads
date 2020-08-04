@@ -85,7 +85,7 @@ class CollectionMetaclass(ModelBase):
     """
 
     @classmethod
-    def __prepare__(self, name, bases):
+    def __prepare__(cls, name, bases):
         return OrderedDict()
 
     def __new__(mcs, name, bases, attrs, **kwargs):

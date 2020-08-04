@@ -11,9 +11,9 @@ from django.views.generic import FormView
 
 from .. import exceptions
 from ..forms.dialogs.file import UploadedFileDialog
+from ..helpers import run_validators
 from ..logging import logger
 from ..models.base import FileResource
-from ..helpers import run_validators
 from . import helpers
 
 

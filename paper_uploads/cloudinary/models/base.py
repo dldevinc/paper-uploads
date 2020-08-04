@@ -4,8 +4,9 @@ import string
 import tempfile
 from typing import IO
 
-import cloudinary.uploader
 import requests
+
+import cloudinary.uploader
 from cloudinary import CloudinaryResource
 from cloudinary.models import CloudinaryField
 from django.core.exceptions import ValidationError

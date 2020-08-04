@@ -101,9 +101,7 @@ class Command(BaseCommand):
 
                 if missed_variations:
                     invalid = True
-                    recreatable = (
-                        self.options['fix_missing'] and instance.file_exists()
-                    )
+                    recreatable = self.options['fix_missing'] and instance.file_exists()
                     for vname in missed_variations:
                         message += "\n  Not found variation '{}'".format(vname)
                         if recreatable:

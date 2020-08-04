@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from PIL import Image
 
 from .typing import FileLike
-from .utils import remove_dulpicates, parse_filesize
+from .utils import parse_filesize, remove_dulpicates
 
 __all__ = [
     "ExtensionValidator",

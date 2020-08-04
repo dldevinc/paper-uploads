@@ -14,8 +14,8 @@ from django.views.decorators.http import require_http_methods
 from django.views.generic import FormView
 
 from .. import exceptions, signals
-from ..logging import logger
 from ..helpers import run_validators
+from ..logging import logger
 from ..models.collection import CollectionBase, CollectionItemBase
 from . import helpers
 

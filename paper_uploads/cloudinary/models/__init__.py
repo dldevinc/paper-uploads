@@ -17,7 +17,6 @@ __all__ = [
     'CloudinaryFileField',
     'CloudinaryImageField',
     'CloudinaryMediaField',
-
     'CloudinaryCollection',
     'CloudinaryImageCollection',
     'CloudinaryFileItem',

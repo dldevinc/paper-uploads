@@ -33,7 +33,7 @@ class FileWidgetBase(widgets.Widget):
                 'owner_model_name': self.owner_model_name,
                 'owner_fieldname': self.owner_fieldname,
                 'validation': json.dumps(self.get_validation()),
-                'validation_lines': self.get_validation_lines(),
+                'validation_lines': self.get_validation_text(),
                 'instance': self.get_instance(value) if value else None,
             }
         )
@@ -54,9 +54,9 @@ class FileWidgetBase(widgets.Widget):
             **self.validation,
         }
 
-    def get_validation_lines(self) -> List[Tuple[str, str]]:
+    def get_validation_text(self) -> List[Tuple[str, str]]:
         """
-        Получение ограничений на загружаемые файлы в виде текста
+        Получение ограничений на загружаемые файлы в виде текстового описания
         """
         limits = []  # type: List[Tuple[str, str]]
         validation = self.get_validation()

@@ -1,8 +1,8 @@
 import os
 
-from django.db import models
 from django.core import checks
 from django.core.exceptions import SuspiciousFileOperation
+from django.db import models
 from django.utils.crypto import get_random_string
 
 from ... import forms

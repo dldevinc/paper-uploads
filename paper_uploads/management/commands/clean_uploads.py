@@ -115,7 +115,10 @@ class Command(BaseCommand):
                     for index, item in enumerate(qs, start=1):
                         self.stdout.write(
                             '  {}) {} #{} (File: {})'.format(
-                                index, type(item).__name__, item.pk, item.get_file_name()
+                                index,
+                                type(item).__name__,
+                                item.pk,
+                                item.get_file_name(),
                             )
                         )
                     self.stdout.write('\n')
@@ -165,7 +168,10 @@ class Command(BaseCommand):
                     for index, item in enumerate(qs, start=1):
                         self.stdout.write(
                             '  {}) {} #{} (File: {})'.format(
-                                index, type(item).__name__, item.pk, item.get_file_name()
+                                index,
+                                type(item).__name__,
+                                item.pk,
+                                item.get_file_name(),
                             )
                         )
                     self.stdout.write('\n')

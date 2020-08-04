@@ -20,10 +20,7 @@ class CloudinaryFileField(CloudinaryOptionsMixin, FileResourceFieldBase):
         super().__init__(*args, **kwargs)
 
     def formfield(self, **kwargs):
-        return super().formfield(**{
-            'form_class': forms.FileField,
-            **kwargs
-        })
+        return super().formfield(**{'form_class': forms.FileField, **kwargs})
 
 
 class CloudinaryImageField(CloudinaryOptionsMixin, FileResourceFieldBase):
@@ -32,10 +29,7 @@ class CloudinaryImageField(CloudinaryOptionsMixin, FileResourceFieldBase):
         super().__init__(*args, **kwargs)
 
     def formfield(self, **kwargs):
-        return super().formfield(**{
-            'form_class': forms.ImageField,
-            **kwargs
-        })
+        return super().formfield(**{'form_class': forms.ImageField, **kwargs})
 
 
 class CloudinaryMediaField(CloudinaryOptionsMixin, FileResourceFieldBase):
@@ -44,7 +38,4 @@ class CloudinaryMediaField(CloudinaryOptionsMixin, FileResourceFieldBase):
         super().__init__(*args, **kwargs)
 
     def formfield(self, **kwargs):
-        return super().formfield(**{
-            'form_class': forms.FileField,
-            **kwargs
-        })
+        return super().formfield(**{'form_class': forms.FileField, **kwargs})
