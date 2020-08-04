@@ -260,3 +260,15 @@ class ImageFieldObject(models.Model):
             return self.image.name
         else:
             return 'ImageObject'
+
+
+class CollectionFieldObject(models.Model):
+    file_collection = CollectionField(FileCollection)
+    image_collection = CollectionField(PhotoCollection)
+
+    class Meta:
+        verbose_name = _('Collection')
+        verbose_name_plural = _('Collections')
+
+    def __str__(self):
+        return 'CollectionObject'
