@@ -10,7 +10,7 @@ from .test_base import TestVersatileImageResource
 
 class TestUploadedImage(TestVersatileImageResource):
     resource_name = 'Nature Tree'
-    resource_extension = 'Jpeg'
+    resource_extension = 'jpg'
     resource_size = 672759
     resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
 
@@ -39,26 +39,26 @@ class TestUploadedImage(TestVersatileImageResource):
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
         assert file_name == utils.get_target_filepath(
-            'images/%Y-%m-%d/Nature_Tree.Jpeg',
+            'images/%Y-%m-%d/Nature_Tree.jpg',
             file_name
         )
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
         assert file_url == utils.get_target_filepath(
-            '/media/images/%Y-%m-%d/Nature_Tree.Jpeg',
+            '/media/images/%Y-%m-%d/Nature_Tree.jpg',
             file_url
         )
 
     def test_path(self, storage):
         assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/images/%Y-%m-%d/Nature_Tree.Jpeg',
+            '/media/images/%Y-%m-%d/Nature_Tree.jpg',
             storage.resource.get_file_url()
         ))
 
     def test_url(self, storage):
         assert storage.resource.url == utils.get_target_filepath(
-            '/media/images/%Y-%m-%d/Nature_Tree.Jpeg',
+            '/media/images/%Y-%m-%d/Nature_Tree.jpg',
             storage.resource.get_file_url()
         )
 
@@ -73,9 +73,9 @@ class TestUploadedImage(TestVersatileImageResource):
             'cropregion': '',
             'title': 'Calliphora',
             'description': 'Calliphora is a genus of blow flies, also known as bottle flies',
-            'file_info': '(Jpeg, 1534x2301, 657.0\xa0KB)',
+            'file_info': '(jpg, 1534x2301, 657.0\xa0KB)',
             'url': utils.get_target_filepath(
-                '/media/images/%Y-%m-%d/Nature_Tree{}.Jpeg',
+                '/media/images/%Y-%m-%d/Nature_Tree{}.jpg',
                 storage.resource.get_file_url()
             ),
         }

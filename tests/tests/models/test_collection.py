@@ -514,7 +514,7 @@ class TestSVGItemFilesExists:
 
 class TestImageItem(TestCollectionItem):
     resource_name = 'Nature Tree'
-    resource_extension = 'Jpeg'
+    resource_extension = 'jpg'
     resource_size = 672759
     resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
     collection_class = CompleteCollection
@@ -538,26 +538,26 @@ class TestImageItem(TestCollectionItem):
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
         assert file_name == utils.get_target_filepath(
-            'collections/images/%Y-%m-%d/Nature_Tree{}.Jpeg',
+            'collections/images/%Y-%m-%d/Nature_Tree{}.jpg',
             file_name
         )
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
         assert file_url == utils.get_target_filepath(
-            '/media/collections/images/%Y-%m-%d/Nature_Tree{}.Jpeg',
+            '/media/collections/images/%Y-%m-%d/Nature_Tree{}.jpg',
             file_url
         )
 
     def test_path(self, storage):
         assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/collections/images/%Y-%m-%d/Nature_Tree{}.Jpeg',
+            '/media/collections/images/%Y-%m-%d/Nature_Tree{}.jpg',
             storage.resource.get_file_url()
         ))
 
     def test_url(self, storage):
         assert storage.resource.url == utils.get_target_filepath(
-            '/media/collections/images/%Y-%m-%d/Nature_Tree{}.Jpeg',
+            '/media/collections/images/%Y-%m-%d/Nature_Tree{}.jpg',
             storage.resource.get_file_url()
         )
 
@@ -579,7 +579,7 @@ class TestImageItem(TestCollectionItem):
             'description': '',
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
             'url': utils.get_target_filepath(
-                '/media/collections/images/%Y-%m-%d/Nature_Tree{}.Jpeg',
+                '/media/collections/images/%Y-%m-%d/Nature_Tree{}.jpg',
                 storage.resource.get_file_url()
             ),
             'preview': render_to_string(

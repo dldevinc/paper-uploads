@@ -10,7 +10,7 @@ from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from PIL import Image
 from variations.typing import Size
-from variations.utils import prepare_image
+from variations.utils import prepare_image, replace_extension
 
 from .. import helpers, signals
 from ..conf import settings
@@ -362,17 +362,23 @@ class ImageFileResourceMixin(models.Model):
             'description': self.description,
         }
 
-    def attach_file(self, file: FileLike, name: str = None, **options):
-        super().attach_file(file, name=name, **options)  # noqa
-        with self.get_file().open() as fp:  # noqa
-            try:
-                image = Image.open(fp)
-            except OSError:
-                raise ValidationError(
-                    'File `%s` is not an image' % self.get_basename()  # noqa
-                )
-            else:
-                self.width, self.height = image.size
+    def _prepare_file(self, file: File, **options) -> File:
+        try:
+            image = Image.open(file)
+        except OSError:
+            raise ValidationError(
+                'File `%s` is not an image' % self.get_basename()  # noqa
+            )
+        else:
+            self.width, self.height = image.size
+
+            # format extension
+            file.name = replace_extension(file.name, format=image.format)
+            root, ext = os.path.splitext(file.name)
+            ext = ext.lstrip('.').lower()
+            file.name = '.'.join([root, ext])
+
+        return super()._prepare_file(file, **options)
 
 
 class VariationFile(File):

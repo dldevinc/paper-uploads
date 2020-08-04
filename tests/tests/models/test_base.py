@@ -648,6 +648,11 @@ class TestEmptyFileFieldResource:
 
 
 class TestImageFieldResource(TestFileFieldResource):
+    resource_name = 'Nature Tree'
+    resource_extension = 'jpg'
+    resource_size = 672759
+    resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+
     @classmethod
     def init(cls, storage):
         storage.resource = DummyImageFieldResource(
@@ -668,26 +673,26 @@ class TestImageFieldResource(TestFileFieldResource):
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
         assert file_name == utils.get_target_filepath(
-            'image_field/Nature_Tree{}.Jpeg',
+            'image_field/Nature_Tree{}.jpg',
             file_name
         )
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
         assert file_url == utils.get_target_filepath(
-            '/media/image_field/Nature_Tree{}.Jpeg',
+            '/media/image_field/Nature_Tree{}.jpg',
             file_url
         )
 
     def test_path(self, storage):
         assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/image_field/Nature_Tree{}.Jpeg',
+            '/media/image_field/Nature_Tree{}.jpg',
             storage.resource.get_file_url()
         ))
 
     def test_url(self, storage):
         assert storage.resource.url == utils.get_target_filepath(
-            '/media/image_field/Nature_Tree{}.Jpeg',
+            '/media/image_field/Nature_Tree{}.jpg',
             storage.resource.get_file_url()
         )
 
@@ -722,7 +727,7 @@ class TestImageFieldResource(TestFileFieldResource):
             'title': 'Calliphora',
             'description': 'Calliphora is a genus of blow flies, also known as bottle flies',
             'url': utils.get_target_filepath(
-                '/media/image_field/Nature_Tree{}.Jpeg',
+                '/media/image_field/Nature_Tree{}.jpg',
                 storage.resource.get_file_url()
             ),
         }
@@ -836,6 +841,11 @@ class TestVariationFile:
 
 
 class TestVersatileImageResource(TestImageFieldResource):
+    resource_name = 'Nature Tree'
+    resource_extension = 'jpg'
+    resource_size = 672759
+    resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+
     @classmethod
     def init(cls, storage):
         storage.resource = DummyVersatileImageResource(
@@ -856,26 +866,26 @@ class TestVersatileImageResource(TestImageFieldResource):
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
         assert file_name == utils.get_target_filepath(
-            'versatile_image/Nature_Tree{}.Jpeg',
+            'versatile_image/Nature_Tree{}.jpg',
             file_name
         )
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
         assert file_url == utils.get_target_filepath(
-            '/media/versatile_image/Nature_Tree{}.Jpeg',
+            '/media/versatile_image/Nature_Tree{}.jpg',
             file_url
         )
 
     def test_path(self, storage):
         assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/versatile_image/Nature_Tree{}.Jpeg',
+            '/media/versatile_image/Nature_Tree{}.jpg',
             storage.resource.get_file_url()
         ))
 
     def test_url(self, storage):
         assert storage.resource.url == utils.get_target_filepath(
-            '/media/versatile_image/Nature_Tree{}.Jpeg',
+            '/media/versatile_image/Nature_Tree{}.jpg',
             storage.resource.get_file_url()
         )
 
@@ -891,7 +901,7 @@ class TestVersatileImageResource(TestImageFieldResource):
             'title': 'Calliphora',
             'description': 'Calliphora is a genus of blow flies, also known as bottle flies',
             'url': utils.get_target_filepath(
-                '/media/versatile_image/Nature_Tree{}.Jpeg',
+                '/media/versatile_image/Nature_Tree{}.jpg',
                 storage.resource.get_file_url()
             ),
         }
