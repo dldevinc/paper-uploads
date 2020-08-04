@@ -192,18 +192,17 @@ class FileResource(FileProxyMixin, Resource):
         elif name:
             file.name = name
 
-        # имя файла берем из исходного файла, а расширение - из результата
-        # загрузки, т.к. они могут быть модифицированы методом `_attach_file`.
-        self.name = helpers.get_filename(file.name)
+        prepared_file = self._prepare_file(file, **options)
+        self.name = helpers.get_filename(prepared_file.name)
+        self.extension = helpers.get_extension(prepared_file.name)
 
         signals.pre_attach_file.send(
-            sender=type(self), instance=self, file=file, options=options
+            sender=type(self), instance=self, file=prepared_file, options=options
         )
 
-        response = self._attach_file(file, **options)
+        response = self._attach_file(prepared_file, **options)
 
         result_file = self.get_file()
-        self.extension = helpers.get_extension(self.get_file_name())
         self.size = result_file.size
         self.uploaded_at = now()
         self.modified_at = now()
@@ -216,6 +215,12 @@ class FileResource(FileProxyMixin, Resource):
             options=options,
             response=response,
         )
+
+    def _prepare_file(self, file: File, **options) -> File:
+        """
+        Подготовка файла к присоединению к модели.
+        """
+        return file
 
     def _attach_file(self, file: File, **options):
         raise NotImplementedError

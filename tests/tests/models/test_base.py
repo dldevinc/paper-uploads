@@ -291,6 +291,8 @@ class TestFileResourceSignals:
             assert resource.update_hash(fp) is True
             assert signal_fired is True
 
+        signals.content_hash_update.disconnect(signal_handler)
+
     def test_pre_attach_file_signal(self):
         resource = DummyFileResource()
         signal_fired = False
@@ -303,7 +305,7 @@ class TestFileResourceSignals:
 
             # ensure instance not filled yet
             assert instance.size == 0
-            assert instance.extension == ''
+            assert instance.extension == 'jpg'
             assert instance.content_hash == ''
 
             # ensure file type
@@ -326,6 +328,7 @@ class TestFileResourceSignals:
             assert signal_fired is True
 
         resource.delete_file()
+        signals.pre_attach_file.disconnect(signal_handler)
 
     def test_post_signal_fired_signal(self):
         resource = DummyFileResource()
@@ -367,6 +370,7 @@ class TestFileResourceSignals:
             assert signal_fired is True
 
         resource.delete_file()
+        signals.post_attach_file.disconnect(signal_handler)
 
     def test_rename_to_same_name(self):
         resource = DummyFileResource()
@@ -387,6 +391,8 @@ class TestFileResourceSignals:
         assert signal_fired is False
 
         resource.delete_file()
+        signals.pre_rename_file.disconnect(signal_handler)
+        signals.post_rename_file.disconnect(signal_handler)
 
     def test_pre_rename_file_signal(self):
         resource = DummyFileResource()
@@ -418,6 +424,7 @@ class TestFileResourceSignals:
         assert signal_fired is True
 
         resource.delete_file()
+        signals.pre_rename_file.disconnect(signal_handler)
 
     def test_post_rename_file_signal(self):
         resource = DummyFileResource()
@@ -454,6 +461,7 @@ class TestFileResourceSignals:
         assert signal_fired is True
 
         resource.delete_file()
+        signals.post_rename_file.disconnect(signal_handler)
 
     def test_pre_delete_file_signal(self):
         resource = DummyFileResource()
@@ -474,6 +482,8 @@ class TestFileResourceSignals:
         resource.delete_file()
         assert signal_fired is True
 
+        signals.pre_delete_file.disconnect(signal_handler)
+
     def test_post_delete_file_signal(self):
         resource = DummyFileResource()
         signal_fired = False
@@ -492,6 +502,8 @@ class TestFileResourceSignals:
         assert signal_fired is False
         resource.delete_file()
         assert signal_fired is True
+
+        signals.post_delete_file.disconnect(signal_handler)
 
 
 class TestFileFieldResource(TestFileResource):
@@ -1095,6 +1107,7 @@ class TestImageResourceVariations:
 
         resource.delete_file()
         resource.delete()
+        signals.variation_created.disconnect(signal_handler)
 
 
 @pytest.mark.django_db
