@@ -364,8 +364,8 @@ class ImageFileResourceMixin(models.Model):
                 image = Image.open(fp)
             except OSError:
                 raise ValidationError(
-                    '`%s` is not an image' % self.get_basename()  # noqa
-                )  # noqa
+                    'File `%s` is not an image' % self.get_basename()  # noqa
+                )
             else:
                 self.width, self.height = image.size
 

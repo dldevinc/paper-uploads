@@ -28,7 +28,7 @@ class TestExtensionValidator:
                 validator(fp)
 
             assert (
-                exc.value.messages[0] == "`something.avi` has an invalid extension. "
+                exc.value.messages[0] == "File `something.avi` has an invalid extension. "
                 "Valid extension(s): pdf"
             )
 
@@ -75,7 +75,7 @@ class TestMimetypeValidator:
 
             assert (
                 exc.value.messages[0]
-                == "`something.txt` has an invalid mimetype 'text/plain'"
+                == "File `something.txt` has an invalid mimetype 'text/plain'"
             )
 
     def test_custom_message(self):
@@ -107,7 +107,7 @@ class TestSizeValidator:
 
         assert (
             exc.value.messages[0]
-            == "`something.txt` is too large. Maximum file size is 8\xa0bytes."
+            == "File `something.txt` is too large. Maximum file size is 8\xa0bytes."
         )
 
     def test_custom_message(self):
@@ -139,7 +139,7 @@ class TestImageMinSizeValidator:
         with pytest.raises(ValidationError) as exc:
             with make_dummy_file(content=b'Hello') as fp:
                 validator(fp)
-        assert exc.value.messages[0] == "`something.txt` is not an image"
+        assert exc.value.messages[0] == "File `something.txt` is not an image"
 
     def test_closed_image(self):
         tfile = tempfile.NamedTemporaryFile(delete=False)
@@ -161,7 +161,7 @@ class TestImageMinSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "`something.jpg` is not wide enough. Minimum width is 40 pixels."
+            == "File `something.jpg` is not wide enough. Minimum width is 40 pixels."
         )
 
         with pytest.raises(ValidationError) as exc:
@@ -169,7 +169,7 @@ class TestImageMinSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "`something.jpg` is not tall enough. Minimum height is 60 pixels."
+            == "File `something.jpg` is not tall enough. Minimum height is 60 pixels."
         )
 
         with pytest.raises(ValidationError) as exc:
@@ -177,7 +177,7 @@ class TestImageMinSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "`something.jpg` is too small. Image should be at least 40x60 pixels."
+            == "File `something.jpg` is too small. Image should be at least 40x60 pixels."
         )
 
     def test_help_text(self):
@@ -206,7 +206,7 @@ class TestImageMaxSizeValidator:
         with pytest.raises(ValidationError) as exc:
             with make_dummy_file(content=b'Hello') as fp:
                 validator(fp)
-        assert exc.value.messages[0] == "`something.txt` is not an image"
+        assert exc.value.messages[0] == "File `something.txt` is not an image"
 
     def test_closed_image(self):
         tfile = tempfile.NamedTemporaryFile(delete=False)
@@ -228,7 +228,7 @@ class TestImageMaxSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "`something.jpg` is too tall. Maximum height is 60 pixels."
+            == "File `something.jpg` is too tall. Maximum height is 60 pixels."
         )
 
         with pytest.raises(ValidationError) as exc:
@@ -236,7 +236,7 @@ class TestImageMaxSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "`something.jpg` is too wide. Maximum width is 40 pixels."
+            == "File `something.jpg` is too wide. Maximum width is 40 pixels."
         )
 
         with pytest.raises(ValidationError) as exc:
@@ -244,7 +244,7 @@ class TestImageMaxSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "`something.jpg` is too big. Image should be at most 40x60 pixels."
+            == "File `something.jpg` is too big. Image should be at most 40x60 pixels."
         )
 
     def test_help_text(self):
