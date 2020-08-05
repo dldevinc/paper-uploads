@@ -56,6 +56,7 @@ class MimeTypeValidator:
             self.message = message
 
     def __call__(self, file: FileLike):
+        file.seek(0)  # ensure read from the start
         mimetype = magic.from_buffer(file.read(1024), mime=True)
         file.seek(0)  # correct file position after mimetype detection
         basetype, subtype = mimetype.split('/', 1)
