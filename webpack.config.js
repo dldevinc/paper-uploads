@@ -68,9 +68,11 @@ module.exports = {
                 {
                     loader: 'sass-loader',
                     options: {
-                        includePaths: [
-                            path.resolve(`${SOURCE_DIR}/css/`)
-                        ]
+                        sassOptions: {
+                            includePaths: [
+                                path.resolve(`${SOURCE_DIR}/css/`)
+                            ]
+                        }
                     }
                 }]
             },
