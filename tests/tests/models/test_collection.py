@@ -588,6 +588,11 @@ class TestImageItem(TestCollectionItem):
             )
         }
 
+    def test_get_variations(self, storage):
+        variations = storage.resource.get_variations()
+        for name in storage.resource.PREVIEW_VARIATIONS:
+            assert name in variations
+
     def test_width(self, storage):
         assert storage.resource.width == 1534
 

@@ -367,7 +367,7 @@ class ImageFileResourceMixin(models.Model):
             image = Image.open(file)
         except OSError:
             raise ValidationError(
-                'File `%s` is not an image' % self.get_basename()  # noqa
+                'File `%s` is not an image' % file.name
             )
         else:
             self.width, self.height = image.size
@@ -517,6 +517,10 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         # нельзя использовать `_reset_variation_files`, т.к. он обращается
         # к `get_variations`, что может быть неопределено для элементов коллекций.
         self._variation_files_cache = {}
+
+        # инициализация аттрибутов вариаций для уже загруженных файлов
+        if self.pk:
+            self._setup_variation_files()
 
     def __getattr__(self, item):
         # реализация-заглушка, чтобы PyCharm не ругался на атрибуты-вариации
