@@ -13,6 +13,11 @@
     transition: background-color 0.2s 0s;
   }
 
+  .file-info {
+    font-size: .875em;
+    font-weight: 300;
+  }
+
   .progress {
     position: absolute;
     display: flex;

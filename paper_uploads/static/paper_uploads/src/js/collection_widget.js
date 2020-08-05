@@ -201,7 +201,7 @@ Collection.prototype.initUploader = function() {
 
         _this.itemContainer.append(clone);
 
-        emitters.dom.trigger('mutate', [clone]);
+        emitters.dom.trigger('mutate', [preloader]);
 
         _this.trigger('collection:submit_item', [preloader, id]);
     }).on('upload', function(id) {
