@@ -1,9 +1,11 @@
 import os
+import tempfile
 
 from django.core import checks
 from django.core.exceptions import SuspiciousFileOperation
 from django.db import models
 from django.utils.crypto import get_random_string
+from filelock import FileLock, Timeout
 
 from ... import forms
 from ...helpers import build_variations
@@ -20,7 +22,7 @@ class VariationalFileField(models.FileField):
     не допустить перезапись.
     """
 
-    def variations_collapsed(self, instance, name):
+    def _variations_collapsed(self, instance, name):
         if self.storage.exists(name):
             return True
 
@@ -30,13 +32,11 @@ class VariationalFileField(models.FileField):
                 return True
         return False
 
-    def generate_filename(self, instance, filename):
-        name = super().generate_filename(instance, filename)
-
+    def _find_available_name(self, instance, name):
         max_length = self.max_length
         dir_name, file_name = os.path.split(name)
         file_root, file_ext = os.path.splitext(file_name)
-        while self.variations_collapsed(instance, name) or (
+        while self._variations_collapsed(instance, name) or (
             max_length and len(name) > max_length
         ):
             name = os.path.join(
@@ -58,6 +58,31 @@ class VariationalFileField(models.FileField):
                     dir_name, "%s_%s%s" % (file_root, get_random_string(7), file_ext)
                 )
         return name
+
+    def _create_placeholder_files(self, instance, name):
+        """
+        Создаем файлы-заглушки, которые "забронируют" имена
+        итоговых файлов вариаций.
+
+        Разрешает ситуацию, когда два или более файлов с одинаковым
+        именем, но разными расширением загружаются одновременно
+        в разных процессах / потоках.
+        """
+        for variation in instance.get_variations().values():
+            variation_filename = variation.get_output_filename(name)
+            with self.storage.open(variation_filename, 'wb') as fp:
+                fp.write(b'dummy')
+
+    def generate_filename(self, instance, filename):
+        name = super().generate_filename(instance, filename)
+        lock = FileLock(os.path.join(tempfile.gettempdir(), 'paper_uploads.lock'))
+        try:
+            with lock.acquire(timeout=5):
+                available_name = self._find_available_name(instance, name)
+                self._create_placeholder_files(instance, available_name)
+        except Timeout:
+            available_name = self._find_available_name(instance, name)
+        return available_name
 
 
 class ImageField(FileResourceFieldBase):

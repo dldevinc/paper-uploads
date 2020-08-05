@@ -296,8 +296,6 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
         raise NotImplementedError
 
     def get_file_name(self) -> str:
-        if not self.file_exists():
-            raise FileNotFoundError
         return self.get_file().name
 
     def get_file_url(self) -> str:

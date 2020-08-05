@@ -623,11 +623,6 @@ class TestDeleteFile:
 
 
 class TestEmptyFileFieldResource:
-    def test_name(self):
-        resource = DummyFileFieldResource()
-        with pytest.raises(FileNotFoundError):
-            resource.get_file_name()
-
     def test_url(self):
         resource = DummyFileFieldResource()
         with pytest.raises(FileNotFoundError):
@@ -1122,11 +1117,6 @@ class TestImageResourceVariations:
 
 @pytest.mark.django_db
 class TestEmptyVersatileImageResource:
-    def test_name(self):
-        resource = DummyVersatileImageResource()
-        with pytest.raises(FileNotFoundError):
-            resource.get_file_name()
-
     def test_url(self):
         resource = DummyVersatileImageResource()
         with pytest.raises(FileNotFoundError):
