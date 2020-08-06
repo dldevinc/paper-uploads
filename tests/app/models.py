@@ -265,6 +265,7 @@ class ImageFieldObject(models.Model):
 class CollectionFieldObject(models.Model):
     file_collection = CollectionField(FileCollection)
     image_collection = CollectionField(PhotoCollection)
+    full_collection = CollectionField(CompleteCollection)
 
     class Meta:
         verbose_name = _('Collection')

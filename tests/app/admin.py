@@ -42,7 +42,7 @@ class CollectionFieldObjectAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             'fields': (
-                'file_collection', 'image_collection'
+                'file_collection', 'image_collection', 'full_collection'
             ),
         }),
     )
