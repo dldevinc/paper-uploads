@@ -1,8 +1,10 @@
+import io
 import os
 import tempfile
 
 from django.core import checks
 from django.core.exceptions import SuspiciousFileOperation
+from django.core.files import File
 from django.db import models
 from django.utils.crypto import get_random_string
 from filelock import FileLock, Timeout
@@ -68,10 +70,10 @@ class VariationalFileField(models.FileField):
         именем, но разными расширением загружаются одновременно
         в разных процессах / потоках.
         """
+        buffer = File(io.BytesIO(b'dummy'))
         for variation in instance.get_variations().values():
             variation_filename = variation.get_output_filename(name)
-            with self.storage.open(variation_filename, 'wb') as fp:
-                fp.write(b'dummy')
+            self.storage.save(variation_filename, buffer)
 
     def generate_filename(self, instance, filename):
         name = super().generate_filename(instance, filename)
