@@ -34,27 +34,38 @@ function Collection(element, options) {
      * @type Object
      */
     this._opts = deepmerge({
-        input: '.collection__input',
-        itemContainer: '.collection__items',
-        item: '.collection__item',
-        createButton: '.collection__create-button',
-        uploadButton: '.collection__upload-button',
-        deleteButton: '.collection__delete-button',
-        preloaderItem: '.collection__item--preloader',
-        preloaderTemplate: '.collection__item-preloader',
+        preloaderItem: '.collection-item--preloader',
 
-        itemPreview: '.collection__item-preview',
-        itemLink: '.collection__item-link',
-        itemCheckbox: '.collection__item-checkbox',
-        itemName: '.collection__item-name',
-        changeItemButton: '.collection__item-change-button',
-        cancelItemButton: '.collection__item-cancel-button',
-        deleteItemButton: '.collection__item-delete-button',
-        itemSelectorTemplate: '.collection__{}-item-template',
+        templates: '.collection__{}-item-template',
 
-        collectionEmptyState: 'collection--empty',
-        itemCheckedState: 'collection__item--checked',
-        itemRemovingState: 'collection__item--removing',
+        collection: {
+            input: '.collection__input',
+            itemList: '.collection__items',
+            item: '.collection__item',
+            dropzone: '.dropzone-overlay',
+            createButton: '.collection__create-button',
+            uploadButton: '.collection__upload-button',
+            deleteButton: '.collection__delete-button',
+
+            states: {
+                empty: 'collection--empty',
+            },
+        },
+
+        item: {
+            caption: '.collection-item__name',
+            preview: '.collection-item__preview',
+            checkbox: '.collection-item__checkbox',
+            view_button: '.collection-item__view-button',
+            edit_button: '.collection-item__edit-button',
+            cancel_button: '.collection-item__cancel-button',
+            delete_button: '.collection-item__delete-button',
+
+            states: {
+                checked: 'collection-item--checked',
+                removing: 'collection-item--removing',
+            },
+        },
 
         urls: {
             createCollection: '',
@@ -68,29 +79,29 @@ function Collection(element, options) {
 
     this.element = element;
 
-    this.input = this.element.querySelector(this._opts.input);
+    this.input = this.element.querySelector(this._opts.collection.input);
     if (!this.input) {
-        throw new Error(`Not found element "${this._opts.input}"`);
+        throw new Error(`Not found element "${this._opts.collection.input}"`);
     }
 
-    this.itemContainer = this.element.querySelector(this._opts.itemContainer);
-    if (!this.itemContainer) {
-        throw new Error(`Not found element "${this._opts.itemContainer}"`);
+    this.itemList = this.element.querySelector(this._opts.collection.itemList);
+    if (!this.itemList) {
+        throw new Error(`Not found element "${this._opts.collection.itemList}"`);
     }
 
-    this.createButton = this.element.querySelector(this._opts.createButton);
+    this.createButton = this.element.querySelector(this._opts.collection.createButton);
     if (!this.createButton) {
-        throw new Error(`Not found element "${this._opts.createButton}"`);
+        throw new Error(`Not found element "${this._opts.collection.createButton}"`);
     }
 
-    this.uploadButton = this.element.querySelector(this._opts.uploadButton);
+    this.uploadButton = this.element.querySelector(this._opts.collection.uploadButton);
     if (!this.uploadButton) {
-        throw new Error(`Not found element "${this._opts.uploadButton}"`);
+        throw new Error(`Not found element "${this._opts.collection.uploadButton}"`);
     }
 
-    this.deleteButton = this.element.querySelector(this._opts.deleteButton);
+    this.deleteButton = this.element.querySelector(this._opts.collection.deleteButton);
     if (!this.deleteButton) {
-        throw new Error(`Not found element "${this._opts.deleteButton}"`);
+        throw new Error(`Not found element "${this._opts.collection.deleteButton}"`);
     }
 
     this.init();
@@ -110,17 +121,17 @@ Object.defineProperty(Collection.prototype, 'collectionId', {
             this.createButton.disabled = false;
             this.uploadButton.disabled = true;
             this.deleteButton.disabled = true;
-            this.element.classList.add(this._opts.collectionEmptyState);
+            this.element.classList.add(this._opts.collection.states.empty);
 
             const uploadInput = this.uploadButton.querySelector('input[type="file"]');
             uploadInput && (uploadInput.disabled = true);
         } else {
-            // создание коллекции
+            // коллекция инициализирована
             this.input.value = newValue;
             this.createButton.disabled = true;
             this.uploadButton.disabled = false;
             this.deleteButton.disabled = false;
-            this.element.classList.remove(this._opts.collectionEmptyState);
+            this.element.classList.remove(this._opts.collection.states.empty);
 
             const uploadInput = this.uploadButton.querySelector('input[type="file"]');
             uploadInput && (uploadInput.disabled = false);
@@ -148,6 +159,7 @@ Object.defineProperty(Collection.prototype, 'loading', {
     }
 });
 
+
 /**
  * Инициализация галереи
  */
@@ -160,6 +172,18 @@ Collection.prototype.init = function() {
 };
 
 /**
+ * Возвращает фрагмент элемента галереи из шаблона.
+ * @param type
+ * @returns {DocumentFragment}
+ * @private
+ */
+Collection.prototype._createItem = function(type) {
+    const selector = this._opts.templates.replace('{}', type);
+    const template = this.element.querySelector(selector);
+    return document.importNode(template.content, true);
+};
+
+/**
  * Инициализация загрузчика картинок.
  */
 Collection.prototype.initUploader = function() {
@@ -169,15 +193,15 @@ Collection.prototype.initUploader = function() {
         multiple: true,
         maxConnections: 4,
         button: this.uploadButton,
-        dropzones: this.element.querySelectorAll('.dropzone-overlay'),
+        dropzones: this.element.querySelectorAll(this._opts.collection.dropzone),
         validation: JSON.parse(this.element.dataset.validation),
         params: {
             collectionId: function() {
                 return _this.collectionId;
             },
             order: function(id) {
-                const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
-                return Array.from(_this.itemContainer.children).indexOf(preloader);
+                const preloader = _this.itemList.querySelector(`.item-preloader-${id}`);
+                return Array.from(_this.itemList.children).indexOf(preloader);
             }
         },
     }).on('submit', function() {
@@ -185,21 +209,19 @@ Collection.prototype.initUploader = function() {
             throw new ValidationError();
         }
     }).on('submitted', function(id) {
-        const template = _this.element.querySelector(_this._opts.preloaderTemplate);
-        const clone = document.importNode(template.content, true);
+        const clone = _this._createItem('preloader');
+        const preloader = clone.querySelector(_this._opts.collection.item);
+        _this.itemList.append(clone);
 
-        const preloader = clone.querySelector(_this._opts.item);
         preloader.dataset.queueId = id;
         preloader.classList.add(`item-preloader-${id}`);
 
         const file = this.uploader.getFile(id);
-        const fileName = preloader.querySelector(_this._opts.itemName);
-        if (fileName) {
-            fileName.title = file.name;
-            fileName.textContent = file.name;
+        const caption = preloader.querySelector(_this._opts.item.caption);
+        if (caption) {
+            caption.title = file.name;
+            caption.textContent = file.name;
         }
-
-        _this.itemContainer.append(clone);
 
         emitters.dom.trigger('mutate', [preloader]);
 
@@ -207,10 +229,10 @@ Collection.prototype.initUploader = function() {
     }).on('upload', function(id) {
         _this.loading = true;
 
-        const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
+        const preloader = _this.itemList.querySelector(`.item-preloader-${id}`);
         _this.trigger('collection:upload_item', [preloader, id]);
     }).on('progress', function(id, percentage) {
-        const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
+        const preloader = _this.itemList.querySelector(`.item-preloader-${id}`);
         const progressBar = preloader.querySelector('.progress-bar');
         progressBar && (progressBar.style.height = percentage + '%');
 
@@ -223,56 +245,49 @@ Collection.prototype.initUploader = function() {
             _this.trigger('collection:created');
         }
 
-        const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
+        const preloader = _this.itemList.querySelector(`.item-preloader-${id}`);
         _this.trigger('collection:complete_item', [preloader, id]);
 
         const itemType = response.item_type;
-        const templateSelector = _this._opts.itemSelectorTemplate.replace('{}', itemType);
-        const template = _this.element.querySelector(templateSelector);
-        if (!template) {
-            _this.trigger('error', [id, `Invalid item_type: ${itemType}`]);
-            return
-        } else {
-            const clone = document.importNode(template.content, true);
-            const item = clone.querySelector(_this._opts.item);
-            item.setAttribute('data-pk', response.id);
-            item.setAttribute('data-item-type', itemType);
+        const clone = _this._createItem(itemType);
 
-            const preview = clone.querySelector(_this._opts.itemPreview);
-            preview && (preview.innerHTML = response.preview);
+        const item = clone.querySelector(_this._opts.collection.item);
+        item.setAttribute('data-pk', response.id);
+        item.setAttribute('data-item-type', itemType);
 
-            const previewLink = clone.querySelector(_this._opts.itemLink);
-            previewLink && (previewLink.href = response.url);
+        const preview = clone.querySelector(_this._opts.item.preview);
+        preview && (preview.innerHTML = response.preview);
 
-            const fileName = clone.querySelector(_this._opts.itemName);
-            if (fileName) {
-                fileName.title = response.caption;
-                fileName.textContent = response.caption;
-            }
+        const previewLink = clone.querySelector(_this._opts.item.view_button);
+        previewLink && (previewLink.href = response.url);
 
-            preloader.before(clone);
+        const caption = clone.querySelector(_this._opts.item.caption);
+        if (caption) {
+            caption.title = response.caption;
+            caption.textContent = response.caption;
         }
 
+        preloader.before(clone);
         preloader.remove();
     }).on('cancel', function(id) {
-        const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
+        const preloader = _this.itemList.querySelector(`.item-preloader-${id}`);
         _this.trigger('collection:cancel_item', [preloader, id]);
         if (preloader) {
             // анимация удаления
             preloader.addEventListener('animationend', function() {
                 preloader.remove();
             });
-            preloader.classList.add(_this._opts.itemRemovingState);
+            preloader.classList.add(_this._opts.item.states.removing);
         }
     }).on('error', function(id, messages) {
         collectError(messages);
-        const preloader = _this.itemContainer.querySelector(`.item-preloader-${id}`);
+        const preloader = _this.itemList.querySelector(`.item-preloader-${id}`);
         if (preloader) {
             // анимация удаления
             preloader.addEventListener('animationend', function() {
                 preloader.remove();
             });
-            preloader.classList.add(_this._opts.itemRemovingState);
+            preloader.classList.add(_this._opts.item.states.removing);
         }
     }).on('all_complete', function() {
         _this.loading = false;
@@ -282,14 +297,14 @@ Collection.prototype.initUploader = function() {
 
 Collection.prototype.initSortable = function() {
     const _this = this;
-    return Sortable.create(this.itemContainer, {
+    return Sortable.create(this.itemList, {
         animation: 0,
-        draggable: this._opts.item,
+        draggable: this._opts.collection.item,
         filter: this._opts.preloaderItem,
         handle: '.sortable-handler',
         ghostClass: 'sortable-ghost',
         onEnd: function() {
-            const items = Array.from(_this.itemContainer.querySelectorAll(_this._opts.item));
+            const items = Array.from(_this.itemList.querySelectorAll(_this._opts.collection.item));
             const order = items.map(function(item) {
                 if (!item.matches(_this._opts.preloaderItem)) {
                     return item.dataset.pk;
@@ -338,8 +353,8 @@ Collection.prototype.initSortable = function() {
  * Удаление всех элементов галереи из контейнера.
  */
 Collection.prototype.cleanItems = function() {
-    while (this.itemContainer.firstChild) {
-        this.itemContainer.removeChild(this.itemContainer.firstChild);
+    while (this.itemList.firstChild) {
+        this.itemList.removeChild(this.itemList.firstChild);
     }
 };
 
@@ -431,7 +446,7 @@ Collection.prototype._deleteItem = function(item) {
         item.addEventListener('animationend', function() {
             item.remove();
         });
-        item.classList.add(_this._opts.itemRemovingState);
+        item.classList.add(_this._opts.item.states.removing);
     });
 };
 
@@ -478,16 +493,16 @@ Collection.prototype._changeItem = function(item, $dialog) {
         } else {
             $dialog.modal('hide');
 
-            const preview = item.querySelector(_this._opts.itemPreview);
+            const preview = item.querySelector(_this._opts.item.preview);
             preview && (preview.innerHTML = response.preview);
 
-            const previewLink = item.querySelector(_this._opts.itemLink);
+            const previewLink = item.querySelector(_this._opts.item.view_button);
             previewLink && (previewLink.href = response.url);
 
-            const fileName = item.querySelector(_this._opts.itemName);
-            if (fileName) {
-                fileName.title = response.caption;
-                fileName.textContent = response.caption;
+            const caption = item.querySelector(_this._opts.item.caption);
+            if (caption) {
+                caption.title = response.caption;
+                caption.textContent = response.caption;
             }
         }
     });
@@ -534,8 +549,8 @@ Collection.prototype._deleteCollection = function() {
         }
 
         let lastItem = null;
-        Array.from(_this.itemContainer.children).forEach(function(item) {
-            item.classList.add(_this._opts.itemRemovingState);
+        Array.from(_this.itemList.children).forEach(function(item) {
+            item.classList.add(_this._opts.item.states.removing);
             lastItem = item;
         });
 
@@ -560,8 +575,8 @@ Collection.prototype._deleteCollection = function() {
  * @private
  */
 Collection.prototype._checkItem = function(item, state=true) {
-    item.classList.toggle(this._opts.itemCheckedState, state);
-    const checkbox = item.querySelector(this._opts.itemCheckbox);
+    item.classList.toggle(this._opts.item.states.checked, state);
+    const checkbox = item.querySelector(this._opts.item.checkbox);
     checkbox.checked = state;
 };
 
@@ -570,7 +585,7 @@ Collection.prototype.addListeners = function() {
 
     // создание галереи
     this.element.addEventListener('click', function(event) {
-        if (!event.target.closest(_this._opts.createButton)) {
+        if (!event.target.closest(_this._opts.collection.createButton)) {
             return
         }
 
@@ -595,7 +610,7 @@ Collection.prototype.addListeners = function() {
 
     // удаление галереи
     this.element.addEventListener('click', function(event) {
-        if (!event.target.closest(_this._opts.deleteButton)) {
+        if (!event.target.closest(_this._opts.collection.deleteButton)) {
             return
         }
 
@@ -638,13 +653,13 @@ Collection.prototype.addListeners = function() {
 
     // редактирование элемента
     this.element.addEventListener('click', function(event) {
-        if (!event.target.closest(_this._opts.changeItemButton)) {
+        if (!event.target.closest(_this._opts.item.edit_button)) {
             return
         }
 
         event.preventDefault();
 
-        const item = event.target.closest(_this._opts.item);
+        const item = event.target.closest(_this._opts.collection.item);
         const instance_id = parseInt(item && item.dataset.pk);
         if (isNaN(instance_id)) {
             return
@@ -749,56 +764,38 @@ Collection.prototype.addListeners = function() {
 
     // отмена загрузки
     this.element.addEventListener('click', function(event) {
-        if (!event.target.closest(_this._opts.cancelItemButton)) {
+        if (!event.target.closest(_this._opts.item.cancel_button)) {
             return
         }
 
         event.preventDefault();
-        const item = event.target.closest(_this._opts.item);
+        const item = event.target.closest(_this._opts.collection.item);
         const queueId = parseInt(item.dataset.queueId);
         _this.uploader.uploader.cancel(queueId);
     });
 
     // удаление элемента
     this.element.addEventListener('click', function(event) {
-        if (!event.target.closest(_this._opts.deleteItemButton)) {
+        if (!event.target.closest(_this._opts.item.delete_button)) {
             return
         }
 
         event.preventDefault();
 
-        bootbox.dialog({
-            size: 'small',
-            title: gettext('Confirmation'),
-            message: gettext('Are you sure you want to <b>DELETE</b> this file?'),
-            onEscape: true,
-            buttons: {
-                cancel: {
-                    label: gettext('Cancel'),
-                    className: 'btn-outline-info'
-                },
-                confirm: {
-                    label: gettext('Delete'),
-                    className: 'btn-danger',
-                    callback: function() {
-                        const item = event.target.closest(_this._opts.item);
-                        Promise.all([
-                            preloader.show(),
-                            _this._deleteItem(item)
-                        ]).then(function() {
-                            preloader.hide();
-                        }).catch(function(error) {
-                            preloader.hide();
-                            if ((typeof error === 'object') && error.response && error.response.errors) {
-                                showError(error.response.errors);
-                            } else if (error instanceof Error) {
-                                showError(error.message);
-                            } else {
-                                showError(error);
-                            }
-                        });
-                    }
-                }
+        const item = event.target.closest(_this._opts.collection.item);
+        Promise.all([
+            preloader.show(),
+            _this._deleteItem(item)
+        ]).then(function() {
+            preloader.hide();
+        }).catch(function(error) {
+            preloader.hide();
+            if ((typeof error === 'object') && error.response && error.response.errors) {
+                showError(error.response.errors);
+            } else if (error instanceof Error) {
+                showError(error.message);
+            } else {
+                showError(error);
             }
         });
     });
@@ -806,13 +803,13 @@ Collection.prototype.addListeners = function() {
     // выделение элемента галереи
     let lastChecked = null;
     this.element.addEventListener('click', function(event) {
-        const item = event.target.closest(_this._opts.item);
+        const item = event.target.closest(_this._opts.collection.item);
         if (!item) {
             return
         }
 
         let target_state;
-        let checkbox = event.target.closest(_this._opts.itemCheckbox);
+        let checkbox = event.target.closest(_this._opts.item.checkbox);
         if (!checkbox) {
             // если клик на сам элемент, то выделение работает только в случае,
             // когда была зажата клавиша Ctrl (или Shift для массового выделения)
@@ -820,7 +817,7 @@ Collection.prototype.addListeners = function() {
                 return
             }
 
-            checkbox = item.querySelector(_this._opts.itemCheckbox);
+            checkbox = item.querySelector(_this._opts.item.checkbox);
             if (!checkbox) {
                 return
             }
@@ -831,7 +828,7 @@ Collection.prototype.addListeners = function() {
         }
 
         if (lastChecked && event.shiftKey && (lastChecked !== item)) {
-            const items = Array.from(_this.itemContainer.querySelectorAll(_this._opts.item));
+            const items = Array.from(_this.itemList.querySelectorAll(_this._opts.collection.item));
             const lastIndex = items.indexOf(lastChecked);
             const targetIndex = items.indexOf(item);
             const startIndex = Math.min(lastIndex, targetIndex);
@@ -850,9 +847,9 @@ Collection.prototype.addListeners = function() {
     // удаление выделенных элементов при нажатии Delete
     this.element.addEventListener('keyup', function(event) {
         if (event.code === 'Delete') {
-            const items = Array.from(_this.itemContainer.querySelectorAll(_this._opts.item));
+            const items = Array.from(_this.itemList.querySelectorAll(_this._opts.collection.item));
             const checkedItems = items.filter(function(item) {
-                const checkbox = item.querySelector(_this._opts.itemCheckbox);
+                const checkbox = item.querySelector(_this._opts.item.checkbox);
                 return checkbox.checked;
             });
 
@@ -904,14 +901,14 @@ Collection.prototype.addListeners = function() {
 
     // просмотр при двойном клике
     this.element.addEventListener('dblclick', function(event) {
-        const item = event.target.closest(_this._opts.item);
+        const item = event.target.closest(_this._opts.collection.item);
         if (!item) {
             return
         }
 
-        const itemLink = item.querySelector(_this._opts.itemLink);
-        if (itemLink) {
-            itemLink.dispatchEvent(new MouseEvent('click', {
+        const viewButton = item.querySelector(_this._opts.item.view_button);
+        if (viewButton) {
+            viewButton.dispatchEvent(new MouseEvent('click', {
                 bubbles: true,
                 cancelable: true
             }));
