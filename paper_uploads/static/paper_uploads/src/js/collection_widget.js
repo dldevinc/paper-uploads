@@ -64,6 +64,7 @@ function Collection(element, options) {
             states: {
                 checked: 'collection-item--checked',
                 removing: 'collection-item--removing',
+                processing: 'collection-item--processing',
             },
         },
 
@@ -161,18 +162,7 @@ Object.defineProperty(Collection.prototype, 'loading', {
 
 
 /**
- * Инициализация галереи
- */
-Collection.prototype.init = function() {
-    this.uploader = this.initUploader();
-    this.sortable = this.initSortable();
-    this.collectionId = this.input.value;
-    this.loading = false;
-    this.addListeners();
-};
-
-/**
- * Возвращает фрагмент элемента галереи из шаблона.
+ * Возвращает созданный DOM-элемент элемента коллекции из HTML-шаблона.
  * @param type
  * @returns {DocumentFragment}
  * @private
@@ -181,6 +171,82 @@ Collection.prototype._createItem = function(type) {
     const selector = this._opts.templates.replace('{}', type);
     const template = this.element.querySelector(selector);
     return document.importNode(template.content, true);
+};
+
+/**
+ * Добавление прелоадера нового элемента.
+ * @param id
+ * @returns {HTMLElement}
+ * @private
+ */
+Collection.prototype._createPreloader = function(id) {
+    const clone = this._createItem('preloader');
+    const preloader = clone.querySelector(this._opts.collection.item);
+    this.itemList.append(clone);
+
+    preloader.dataset.queueId = id;
+    preloader.classList.add(`preloader-${id}`);
+
+    const file = this.uploader.uploader.getFile(id);
+    const caption = preloader.querySelector(this._opts.item.caption);
+    if (caption) {
+        caption.title = file.name;
+        caption.textContent = file.name;
+    }
+
+    return preloader;
+};
+
+/**
+ * Поиск DOM-элемента, представляющего прелоадер для указанного элемента коллекции.
+ * @param id
+ * @returns {HTMLElement}
+ * @private
+ */
+Collection.prototype._findPreloader = function(id) {
+    return this.itemList.querySelector(`.preloader-${id}`);
+}
+
+
+/**
+ * Возвращает созданный DOM-элемент элемента коллекции из HTML-шаблона.
+ * @param response
+ * @returns {DocumentFragment}
+ * @private
+ */
+Collection.prototype._createUploadedItem = function(response) {
+    const itemType = response.item_type;
+    const clone = this._createItem(itemType);
+
+    const item = clone.querySelector(this._opts.collection.item);
+    item.setAttribute('data-pk', response.id);
+    item.setAttribute('data-item-type', itemType);
+
+    const preview = clone.querySelector(this._opts.item.preview);
+    preview && (preview.innerHTML = response.preview);
+
+    const viewButton = clone.querySelector(this._opts.item.view_button);
+    viewButton && (viewButton.href = response.url);
+
+    const caption = clone.querySelector(this._opts.item.caption);
+    if (caption) {
+        caption.title = response.caption;
+        caption.textContent = response.caption;
+    }
+
+    return clone;
+};
+
+
+/**
+ * Инициализация коллекции
+ */
+Collection.prototype.init = function() {
+    this.uploader = this.initUploader();
+    this.sortable = this.initSortable();
+    this.collectionId = this.input.value;
+    this.loading = false;
+    this.addListeners();
 };
 
 /**
@@ -200,7 +266,7 @@ Collection.prototype.initUploader = function() {
                 return _this.collectionId;
             },
             order: function(id) {
-                const preloader = _this.itemList.querySelector(`.item-preloader-${id}`);
+                const preloader = _this._findPreloader(id);
                 return Array.from(_this.itemList.children).indexOf(preloader);
             }
         },
@@ -209,92 +275,61 @@ Collection.prototype.initUploader = function() {
             throw new ValidationError();
         }
     }).on('submitted', function(id) {
-        const clone = _this._createItem('preloader');
-        const preloader = clone.querySelector(_this._opts.collection.item);
-        _this.itemList.append(clone);
-
-        preloader.dataset.queueId = id;
-        preloader.classList.add(`item-preloader-${id}`);
-
-        const file = this.uploader.getFile(id);
-        const caption = preloader.querySelector(_this._opts.item.caption);
-        if (caption) {
-            caption.title = file.name;
-            caption.textContent = file.name;
-        }
-
+        const preloader = _this._createPreloader(id);
         emitters.dom.trigger('mutate', [preloader]);
-
         _this.trigger('collection:submit_item', [preloader, id]);
     }).on('upload', function(id) {
         _this.loading = true;
 
-        const preloader = _this.itemList.querySelector(`.item-preloader-${id}`);
+        const preloader = _this._findPreloader(id);
         _this.trigger('collection:upload_item', [preloader, id]);
     }).on('progress', function(id, percentage) {
-        const preloader = _this.itemList.querySelector(`.item-preloader-${id}`);
+        const preloader = _this._findPreloader(id);
         const progressBar = preloader.querySelector('.progress-bar');
         progressBar && (progressBar.style.height = percentage + '%');
 
         if (percentage >= 100) {
-            preloader.classList.add('processing');
+            preloader.classList.add(_this._opts.item.states.processing);
         }
     }).on('complete', function(id, response) {
         if (isNaN(_this.collectionId)) {
             _this.collectionId = response.collectionId;
-            _this.trigger('collection:created');
+            _this.trigger('collection:created');  // TODO: ?
         }
 
-        const preloader = _this.itemList.querySelector(`.item-preloader-${id}`);
+        const preloader = _this._findPreloader(id);
         _this.trigger('collection:complete_item', [preloader, id]);
 
-        const itemType = response.item_type;
-        const clone = _this._createItem(itemType);
-
-        const item = clone.querySelector(_this._opts.collection.item);
-        item.setAttribute('data-pk', response.id);
-        item.setAttribute('data-item-type', itemType);
-
-        const preview = clone.querySelector(_this._opts.item.preview);
-        preview && (preview.innerHTML = response.preview);
-
-        const previewLink = clone.querySelector(_this._opts.item.view_button);
-        previewLink && (previewLink.href = response.url);
-
-        const caption = clone.querySelector(_this._opts.item.caption);
-        if (caption) {
-            caption.title = response.caption;
-            caption.textContent = response.caption;
-        }
-
+        const clone = _this._createUploadedItem(response);
         preloader.before(clone);
         preloader.remove();
     }).on('cancel', function(id) {
-        const preloader = _this.itemList.querySelector(`.item-preloader-${id}`);
+        const preloader = _this._findPreloader(id);
         _this.trigger('collection:cancel_item', [preloader, id]);
-        if (preloader) {
-            // анимация удаления
-            preloader.addEventListener('animationend', function() {
-                preloader.remove();
-            });
-            preloader.classList.add(_this._opts.item.states.removing);
-        }
+
+        // анимация удаления
+        preloader.addEventListener('animationend', function() {
+            preloader.remove();
+        });
+        preloader.classList.add(_this._opts.item.states.removing);
     }).on('error', function(id, messages) {
         collectError(messages);
-        const preloader = _this.itemList.querySelector(`.item-preloader-${id}`);
-        if (preloader) {
-            // анимация удаления
-            preloader.addEventListener('animationend', function() {
-                preloader.remove();
-            });
-            preloader.classList.add(_this._opts.item.states.removing);
-        }
+        const preloader = _this._findPreloader(id);
+
+        // анимация удаления
+        preloader.addEventListener('animationend', function() {
+            preloader.remove();
+        });
+        preloader.classList.add(_this._opts.item.states.removing);
     }).on('all_complete', function() {
         _this.loading = false;
         showCollectedErrors();
     });
 };
 
+/**
+ * Инициализация плагина Drag-n-Drop сортировки.
+ */
 Collection.prototype.initSortable = function() {
     const _this = this;
     return Sortable.create(this.itemList, {
@@ -347,15 +382,6 @@ Collection.prototype.initSortable = function() {
             })
         },
     });
-};
-
-/**
- * Удаление всех элементов галереи из контейнера.
- */
-Collection.prototype.cleanItems = function() {
-    while (this.itemList.firstChild) {
-        this.itemList.removeChild(this.itemList.firstChild);
-    }
 };
 
 /**
@@ -496,8 +522,8 @@ Collection.prototype._changeItem = function(item, $dialog) {
             const preview = item.querySelector(_this._opts.item.preview);
             preview && (preview.innerHTML = response.preview);
 
-            const previewLink = item.querySelector(_this._opts.item.view_button);
-            previewLink && (previewLink.href = response.url);
+            const viewButton = item.querySelector(_this._opts.item.view_button);
+            viewButton && (viewButton.href = response.url);
 
             const caption = item.querySelector(_this._opts.item.caption);
             if (caption) {
@@ -506,6 +532,15 @@ Collection.prototype._changeItem = function(item, $dialog) {
             }
         }
     });
+};
+
+/**
+ * Удаление DOM-содержимого коллекции.
+ */
+Collection.prototype.cleanItems = function() {
+    while (this.itemList.firstChild) {
+        this.itemList.removeChild(this.itemList.firstChild);
+    }
 };
 
 /**
