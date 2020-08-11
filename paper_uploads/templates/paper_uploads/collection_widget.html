@@ -24,21 +24,21 @@
     {% endif %}
   </div>
 
-  <button type="button" class="collection__create-button btn btn-success" {% if widget.value %}disabled{% endif %}
+  <button type="button" class="collection__create-button btn btn-success" {% if widget.value %}hidden{% endif %}
           data-toggle="tooltip" data-placement="top" data-trigger="hover"
           data-html="true" title="{{ _('Create collection') }}">
     <i class="fa fa-fw fa-plus"></i>
     {{ _('Create collection') }}
   </button>
 
-  <button type="button" class="collection__upload-button btn btn-success" {% if not widget.value %}disabled{% endif %}
+  <button type="button" class="collection__upload-button btn btn-success" {% if not widget.value %}hidden{% endif %}
           data-toggle="tooltip" data-placement="top" data-trigger="hover"
           data-html="true" title="{{ _('Select files') }}">
     <i class="fa fa-fw fa-folder-open"></i>
     {{ _('Select files') }}
   </button>
 
-  <button type="button" class="collection__delete-button btn btn-danger" {% if not widget.value %}disabled{% endif %}
+  <button type="button" class="collection__delete-button btn btn-danger" {% if not widget.value %}hidden{% endif %}
           data-toggle="tooltip" data-placement="top" data-trigger="hover"
           data-html="true" title="{{ _('Delete collection') }}">
     <i class="fa fa-fw fa-trash"></i>

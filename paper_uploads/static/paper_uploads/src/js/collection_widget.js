@@ -119,9 +119,9 @@ Object.defineProperty(Collection.prototype, 'collectionId', {
         if (isNaN(newValue)) {
             // удаление коллекции
             this.input.value = '';
-            this.createButton.disabled = false;
-            this.uploadButton.disabled = true;
-            this.deleteButton.disabled = true;
+            this.createButton.hidden = false;
+            this.uploadButton.hidden = true;
+            this.deleteButton.hidden = true;
             this.element.classList.add(this._opts.collection.states.empty);
 
             const uploadInput = this.uploadButton.querySelector('input[type="file"]');
@@ -129,9 +129,9 @@ Object.defineProperty(Collection.prototype, 'collectionId', {
         } else {
             // коллекция инициализирована
             this.input.value = newValue;
-            this.createButton.disabled = true;
-            this.uploadButton.disabled = false;
-            this.deleteButton.disabled = false;
+            this.createButton.hidden = true;
+            this.uploadButton.hidden = false;
+            this.deleteButton.hidden = false;
             this.element.classList.remove(this._opts.collection.states.empty);
 
             const uploadInput = this.uploadButton.querySelector('input[type="file"]');
