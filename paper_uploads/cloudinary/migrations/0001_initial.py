@@ -5,7 +5,7 @@ from django.db import migrations, models
 import django.db.models.deletion
 import django.db.models.manager
 import django.utils.timezone
-import paper_uploads.cloudinary.models.base
+import paper_uploads.cloudinary.models.mixins
 import paper_uploads.models.mixins
 
 
@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                 'abstract': False,
                 'default_permissions': (),
             },
-            bases=(paper_uploads.cloudinary.models.base.ReadonlyCloudinaryFileProxyMixin, paper_uploads.models.mixins.FileProxyMixin, models.Model),
+            bases=(paper_uploads.cloudinary.models.mixins.ReadonlyCloudinaryFileProxyMixin, paper_uploads.models.mixins.FileProxyMixin, models.Model),
         ),
         migrations.CreateModel(
             name='CloudinaryFileItem',
@@ -66,7 +66,7 @@ class Migration(migrations.Migration):
                 'abstract': False,
                 'base_manager_name': 'objects',
             },
-            bases=(paper_uploads.cloudinary.models.base.ReadonlyCloudinaryFileProxyMixin, 'paper_uploads.collectionitembase', paper_uploads.models.mixins.FileProxyMixin, models.Model),
+            bases=(paper_uploads.cloudinary.models.mixins.ReadonlyCloudinaryFileProxyMixin, 'paper_uploads.collectionitembase', paper_uploads.models.mixins.FileProxyMixin, models.Model),
         ),
         migrations.CreateModel(
             name='CloudinaryImage',
@@ -95,7 +95,7 @@ class Migration(migrations.Migration):
                 'abstract': False,
                 'default_permissions': (),
             },
-            bases=(paper_uploads.cloudinary.models.base.ReadonlyCloudinaryFileProxyMixin, paper_uploads.models.mixins.FileProxyMixin, models.Model),
+            bases=(paper_uploads.cloudinary.models.mixins.ReadonlyCloudinaryFileProxyMixin, paper_uploads.models.mixins.FileProxyMixin, models.Model),
         ),
         migrations.CreateModel(
             name='CloudinaryImageItem',
@@ -124,7 +124,7 @@ class Migration(migrations.Migration):
                 'abstract': False,
                 'base_manager_name': 'objects',
             },
-            bases=(paper_uploads.cloudinary.models.base.ReadonlyCloudinaryFileProxyMixin, 'paper_uploads.collectionitembase', paper_uploads.models.mixins.FileProxyMixin, models.Model),
+            bases=(paper_uploads.cloudinary.models.mixins.ReadonlyCloudinaryFileProxyMixin, 'paper_uploads.collectionitembase', paper_uploads.models.mixins.FileProxyMixin, models.Model),
         ),
         migrations.CreateModel(
             name='CloudinaryMedia',
@@ -149,7 +149,7 @@ class Migration(migrations.Migration):
                 'abstract': False,
                 'default_permissions': (),
             },
-            bases=(paper_uploads.cloudinary.models.base.ReadonlyCloudinaryFileProxyMixin, paper_uploads.models.mixins.FileProxyMixin, models.Model),
+            bases=(paper_uploads.cloudinary.models.mixins.ReadonlyCloudinaryFileProxyMixin, paper_uploads.models.mixins.FileProxyMixin, models.Model),
         ),
         migrations.CreateModel(
             name='CloudinaryMediaItem',
@@ -174,7 +174,7 @@ class Migration(migrations.Migration):
                 'abstract': False,
                 'base_manager_name': 'objects',
             },
-            bases=(paper_uploads.cloudinary.models.base.ReadonlyCloudinaryFileProxyMixin, 'paper_uploads.collectionitembase', paper_uploads.models.mixins.FileProxyMixin, models.Model),
+            bases=(paper_uploads.cloudinary.models.mixins.ReadonlyCloudinaryFileProxyMixin, 'paper_uploads.collectionitembase', paper_uploads.models.mixins.FileProxyMixin, models.Model),
         ),
         migrations.CreateModel(
             name='CloudinaryCollection',

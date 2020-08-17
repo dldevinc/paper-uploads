@@ -11,7 +11,8 @@ from ...models.base import ImageFileResourceMixin
 from ...models.collection import Collection, CollectionItemBase, FilePreviewMixin
 from ...models.fields import CollectionItem
 from ...typing import FileLike
-from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
+from .base import CloudinaryFileResource
+from .mixins import ReadonlyCloudinaryFileProxyMixin
 
 __all__ = [
     'CloudinaryFileItem',

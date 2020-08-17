@@ -6,7 +6,8 @@ from django.utils.translation import gettext_lazy as _
 
 from ...conf import settings
 from ...typing import FileLike
-from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
+from .base import CloudinaryFileResource
+from .mixins import ReadonlyCloudinaryFileProxyMixin
 
 
 class CloudinaryMedia(ReadonlyCloudinaryFileProxyMixin, CloudinaryFileResource):
