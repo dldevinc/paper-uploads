@@ -35,6 +35,9 @@ class DummyFileResource(FileResource):
     def get_file_name(self) -> str:
         return '{}'.format(self.__filename)
 
+    def get_file_size(self) -> int:
+        return 28
+
     def get_file_url(self):
         return 'http://example.com/{}'.format(quote(self.get_basename()))
 

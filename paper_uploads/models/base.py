@@ -166,6 +166,12 @@ class FileResource(FileProxyMixin, Resource):
         """
         raise NotImplementedError
 
+    def get_file_size(self) -> int:
+        """
+        Получение размера загруженного файла.
+        """
+        raise NotImplementedError
+
     def get_file_url(self) -> str:
         """
         Получение ссылки на загруженный файл.
@@ -203,7 +209,7 @@ class FileResource(FileProxyMixin, Resource):
         response = self._attach_file(prepared_file, **options)
 
         result_file = self.get_file()
-        self.size = result_file.size
+        self.size = self.get_file_size()
         self.uploaded_at = now()
         self.modified_at = now()
         self.update_hash(result_file)
@@ -297,6 +303,9 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
 
     def get_file_name(self) -> str:
         return self.get_file().name
+
+    def get_file_size(self) -> int:
+        return self.get_file().size
 
     def get_file_url(self) -> str:
         if not self.file_exists():

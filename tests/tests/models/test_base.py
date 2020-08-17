@@ -87,7 +87,7 @@ class TestWrongResource:
 class TestFileResource(TestResource):
     resource_name = 'Nature Tree'
     resource_extension = 'Jpeg'
-    resource_size = 672759
+    resource_size = 28
 
     @classmethod
     def init(cls, storage):
@@ -135,6 +135,9 @@ class TestFileResource(TestResource):
             self.resource_name,
             self.resource_extension
         )
+
+    def test_get_file_size(self, storage):
+        assert storage.resource.get_file_size() == self.resource_size
 
     def test_get_file_url(self, storage):
         assert storage.resource.get_file_url() == 'http://example.com/Nature%20Tree.Jpeg'
