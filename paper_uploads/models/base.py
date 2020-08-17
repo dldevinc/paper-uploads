@@ -130,7 +130,11 @@ class FileResource(FileProxyMixin, Resource):
         https://www.dropbox.com/developers/reference/content-hash
         """
         blocks = []
+
+        if file.closed:
+            file.open('rb')
         file.seek(0)
+
         while True:
             data = file.read(self.BLOCK_SIZE)
             if not data:
@@ -138,9 +142,9 @@ class FileResource(FileProxyMixin, Resource):
             blocks.append(hashlib.sha256(data).digest())
         return hashlib.sha256(b''.join(blocks)).hexdigest()
 
-    def update_hash(self, file: FileLike) -> bool:
+    def update_hash(self) -> bool:
         old_hash = self.content_hash
-        new_hash = self.get_hash(file)
+        new_hash = self.get_hash(self.get_file())
         if new_hash and new_hash != old_hash:
             signals.content_hash_update.send(
                 sender=type(self), instance=self, content_hash=new_hash
@@ -212,7 +216,7 @@ class FileResource(FileProxyMixin, Resource):
         self.size = self.get_file_size()
         self.uploaded_at = now()
         self.modified_at = now()
-        self.update_hash(result_file)
+        self.update_hash()
 
         signals.post_attach_file.send(
             sender=type(self),

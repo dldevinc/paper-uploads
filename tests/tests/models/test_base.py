@@ -88,6 +88,7 @@ class TestFileResource(TestResource):
     resource_name = 'Nature Tree'
     resource_extension = 'Jpeg'
     resource_size = 28
+    resource_hash = '5d8ec227d0d8794d4d99dfbbdb9ad3b479c16952ad4ef69252644d9c404543a5'
 
     @classmethod
     def init(cls, storage):
@@ -169,13 +170,11 @@ class TestFileResource(TestResource):
         actual_hash = storage.resource.content_hash
         storage.resource.content_hash = ''
 
-        with open(NASA_FILEPATH, 'rb') as fp:
-            assert storage.resource.update_hash(fp) is True
-            assert storage.resource.content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
+        assert storage.resource.update_hash() is True
+        assert storage.resource.content_hash == self.resource_hash
 
-        with open(NASA_FILEPATH, 'rb') as fp:
-            assert storage.resource.update_hash(fp) is False  # not updated
-            assert storage.resource.content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
+        assert storage.resource.update_hash() is False  # not updated
+        assert storage.resource.content_hash == self.resource_hash
 
         storage.resource.content_hash = actual_hash
 
@@ -285,14 +284,13 @@ class TestFileResourceSignals:
             signal_fired = True
             assert sender is DummyFileResource
             assert instance is resource
-            assert content_hash == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
+            assert content_hash == '5d8ec227d0d8794d4d99dfbbdb9ad3b479c16952ad4ef69252644d9c404543a5'
 
         signals.content_hash_update.connect(signal_handler)
 
-        with open(NASA_FILEPATH, 'rb') as fp:
-            assert signal_fired is False
-            assert resource.update_hash(fp) is True
-            assert signal_fired is True
+        assert signal_fired is False
+        assert resource.update_hash() is True
+        assert signal_fired is True
 
         signals.content_hash_update.disconnect(signal_handler)
 
