@@ -22,7 +22,7 @@ class BacklinkModelMixin(models.Model):
 
     def get_owner_model(self) -> Optional[Type[models.Model]]:
         if not self.owner_app_label or not self.owner_model_name:
-            return
+            return None
 
         try:
             return apps.get_model(self.owner_app_label, self.owner_model_name)
@@ -34,7 +34,7 @@ class BacklinkModelMixin(models.Model):
     def get_owner_field(self) -> Optional[models.Field]:
         owner_model = self.get_owner_model()
         if owner_model is None:
-            return
+            return None
 
         try:
             return owner_model._meta.get_field(self.owner_fieldname)
@@ -66,7 +66,7 @@ class FileProxyMixin:
             raise FileNotFoundError
         return self.get_file().open(mode)  # noqa
 
-    open.alters_data = True
+    open.alters_data = True  # noqa
 
     def close(self):
         if not self.file_exists():  # noqa

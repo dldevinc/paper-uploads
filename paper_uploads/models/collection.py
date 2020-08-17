@@ -188,6 +188,7 @@ class Collection(CollectionBase):
             if issubclass(field.model, CollectionFileItemBase):
                 if field.model.file_supported(file):
                     return item_type
+        return None
 
 
 # ======================================================================================
@@ -310,6 +311,7 @@ class CollectionItemBase(PolymorphicModel):
         for name, field in collection_cls.item_types.items():
             if field.model is type(self):
                 return field
+        return None
 
     def attach_to(self, collection: CollectionBase):
         """

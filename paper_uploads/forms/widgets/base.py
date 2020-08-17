@@ -12,7 +12,7 @@ class FileWidgetBase(widgets.Widget):
     owner_app_label = None
     owner_model_name = None
     owner_fieldname = None
-    validation = None
+    validation = None  # type: dict
 
     def __init__(self, *args, **kwargs):
         self.validation = self.validation or {}

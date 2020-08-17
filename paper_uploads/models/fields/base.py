@@ -93,7 +93,7 @@ class FileResourceFieldBase(ResourceFieldBase):
     """
 
     def formfield(self, **kwargs):
-        return super().formfield(**{'validation': self.get_validation(), **kwargs,})
+        return super().formfield(**{'validation': self.get_validation(), **kwargs})
 
     def get_validation(self) -> Dict[str, Any]:
         """

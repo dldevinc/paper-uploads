@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.core.files.uploadedfile import UploadedFile
+from django.db import models
 from django.http import JsonResponse
 
 from .. import exceptions
@@ -129,7 +130,7 @@ def get_model_class(content_type_id: int, base_class: Type[T]) -> Type[T]:
     raise exceptions.InvalidContentType(content_type_id)
 
 
-def get_instance(model_class: Type[T], instance_id: int) -> T:
+def get_instance(model_class: Type[models.Model], instance_id: int) -> models.Model:
     """
     Получение экземпляра модели загружаемого файла.
     """

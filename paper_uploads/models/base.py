@@ -453,7 +453,7 @@ class VariationFile(File):
         return self
 
     # open() doesn't alter the file's contents, but it does reset the pointer
-    open.alters_data = True
+    open.alters_data = True  # noqa
 
     def delete(self):
         if not self:
@@ -592,6 +592,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
             max_height = max(max_height, size[1])
         if max_width and max_height:
             return max_width, max_height
+        return None
 
     def _save_variation(self, name: str, variation: PaperVariation, image: Image):
         """

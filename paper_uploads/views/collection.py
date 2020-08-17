@@ -1,4 +1,5 @@
 import posixpath
+from typing import Type
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import (
@@ -266,7 +267,7 @@ def sort_items(request):
 class ChangeView(PermissionRequiredMixin, FormView):
     template_name = 'paper_uploads/dialogs/collection.html'
     permission_required = 'paper_uploads.change'
-    instance = None
+    instance = None  # type: CollectionItemBase
 
     def get_form_class(self):
         return import_string(self.instance.change_form_class)
