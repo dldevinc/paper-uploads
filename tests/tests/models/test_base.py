@@ -248,7 +248,7 @@ class TestFileResource(TestResource):
         resource.delete_file()
 
     def test_open(self, storage):
-        with storage.resource as fp:
+        with storage.resource.open() as fp:
             assert fp.read(4) == b'This'
 
         # recreate "file" - can't be reopened
@@ -542,7 +542,7 @@ class TestFileFieldResource(TestFileResource):
         )
 
     def test_open(self, storage):
-        with storage.resource as fp:
+        with storage.resource.open() as fp:
             assert fp.read(4) == b'\xff\xd8\xff\xe0'
 
         storage.resource.open()  # reopen

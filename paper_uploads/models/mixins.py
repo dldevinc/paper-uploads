@@ -56,7 +56,7 @@ class FileProxyMixin:
     tell = property(lambda self: self.get_file().tell)
 
     def __enter__(self):
-        return self.open()  # noqa
+        return self
 
     def __exit__(self, exc_type, exc_value, tb):
         self.close()

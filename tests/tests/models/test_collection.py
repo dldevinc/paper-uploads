@@ -472,7 +472,7 @@ class TestSVGItem(TestCollectionItem):
         }
 
     def test_open(self, storage):
-        with storage.resource as fp:
+        with storage.resource.open() as fp:
             assert fp.read(5) == b'<?xml'
 
         storage.resource.open()  # reopen
