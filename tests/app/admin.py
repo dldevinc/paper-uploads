@@ -1,7 +1,14 @@
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 
-from .models import FileFieldObject, ImageFieldObject, CollectionFieldObject
+from .models import (
+    CloudinaryFileExample,
+    CloudinaryImageExample,
+    CloudinaryMediaExample,
+    CollectionFieldObject,
+    FileFieldObject,
+    ImageFieldObject,
+)
 
 
 @admin.register(FileFieldObject)
@@ -43,6 +50,39 @@ class CollectionFieldObjectAdmin(admin.ModelAdmin):
         (None, {
             'fields': (
                 'file_collection', 'image_collection', 'full_collection'
+            ),
+        }),
+    )
+
+
+@admin.register(CloudinaryFileExample)
+class CloudinaryFileExampleAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {
+            'fields': (
+                'file',
+            ),
+        }),
+    )
+
+
+@admin.register(CloudinaryImageExample)
+class CloudinaryImageExampleAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {
+            'fields': (
+                'image',
+            ),
+        }),
+    )
+
+
+@admin.register(CloudinaryMediaExample)
+class CloudinaryMediaExampleAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {
+            'fields': (
+                'media',
             ),
         }),
     )

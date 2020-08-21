@@ -7,6 +7,7 @@ from django.db import models
 from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
 
+from paper_uploads.cloudinary.models import *
 from paper_uploads.models import *
 from paper_uploads.models.base import *
 from paper_uploads.typing import *
@@ -276,3 +277,48 @@ class CollectionFieldObject(models.Model):
 
     def __str__(self):
         return 'CollectionObject'
+
+
+# ======================================================================================
+
+
+class CloudinaryFileExample(models.Model):
+    file = CloudinaryFileField(_('file'))
+
+    class Meta:
+        verbose_name = _('Cloudinary File')
+        verbose_name_plural = _('Cloudinary Files')
+
+    def __str__(self):
+        if self.file:
+            return self.file.name
+        else:
+            return 'FileObject'
+
+
+class CloudinaryImageExample(models.Model):
+    image = CloudinaryImageField(_('image'))
+
+    class Meta:
+        verbose_name = _('Cloudinary Image')
+        verbose_name_plural = _('Cloudinary Images')
+
+    def __str__(self):
+        if self.image:
+            return self.image.name
+        else:
+            return 'ImageObject'
+
+
+class CloudinaryMediaExample(models.Model):
+    media = CloudinaryMediaField(_('media'))
+
+    class Meta:
+        verbose_name = _('Cloudinary Media')
+        verbose_name_plural = _('Cloudinary Media')
+
+    def __str__(self):
+        if self.media:
+            return self.media.name
+        else:
+            return 'MediaObject'
