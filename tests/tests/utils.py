@@ -2,7 +2,7 @@ import datetime
 import os
 import re
 
-re_suffix = re.compile(r'_({\w}{7})$')
+re_suffix = re.compile(r'(_[\w]{6,7})$')
 
 
 def get_file_suffix(filepath: str) -> str:
@@ -21,5 +21,7 @@ def get_target_filepath(pattern: str, filepath: str) -> str:
     """
     value = datetime.datetime.now().strftime(pattern)
     suffix = get_file_suffix(filepath)
-    value = value.format(suffix or '')
+    value = value.format(
+        suffix=suffix or ''
+    )
     return value

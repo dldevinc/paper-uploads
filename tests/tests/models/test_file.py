@@ -40,26 +40,26 @@ class TestUploadedFile(TestFileFieldResource):
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
         assert file_name == utils.get_target_filepath(
-            'files/%Y-%m-%d/Nature_Tree.Jpeg',
+            'files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
             file_name
         )
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
         assert file_url == utils.get_target_filepath(
-            '/media/files/%Y-%m-%d/Nature_Tree.Jpeg',
+            '/media/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
             file_url
         )
 
     def test_path(self, storage):
         assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/files/%Y-%m-%d/Nature_Tree.Jpeg',
+            '/media/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
             storage.resource.get_file_url()
         ))
 
     def test_url(self, storage):
         assert storage.resource.url == utils.get_target_filepath(
-            '/media/files/%Y-%m-%d/Nature_Tree.Jpeg',
+            '/media/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
             storage.resource.get_file_url()
         )
 
@@ -71,7 +71,7 @@ class TestUploadedFile(TestFileFieldResource):
             'size': self.resource_size,
             'file_info': '(Jpeg, 657.0\xa0KB)',
             'url': utils.get_target_filepath(
-                '/media/files/%Y-%m-%d/Nature_Tree{}.Jpeg',
+                '/media/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
                 storage.resource.get_file_url()
             ),
         }

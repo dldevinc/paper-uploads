@@ -530,14 +530,14 @@ class TestFileFieldResource(TestFileResource):
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
         assert file_name == utils.get_target_filepath(
-            'file_field/Nature_Tree{}.Jpeg',
+            'file_field/Nature_Tree{suffix}.Jpeg',
             file_name
         )
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
         assert file_url == utils.get_target_filepath(
-            '/media/file_field/Nature_Tree{}.Jpeg',
+            '/media/file_field/Nature_Tree{suffix}.Jpeg',
             file_url
         )
 
@@ -568,7 +568,7 @@ class TestFileFieldResource(TestFileResource):
             'extension': self.resource_extension,
             'size': self.resource_size,
             'url': utils.get_target_filepath(
-                '/media/file_field/Nature_Tree{}.Jpeg',
+                '/media/file_field/Nature_Tree{suffix}.Jpeg',
                 storage.resource.get_file_url()
             )
         }
@@ -578,13 +578,13 @@ class TestFileFieldResource(TestFileResource):
 
     def test_path(self, storage):
         assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/file_field/Nature_Tree{}.Jpeg',
+            '/media/file_field/Nature_Tree{suffix}.Jpeg',
             storage.resource.get_file_url()
         ))
 
     def test_url(self, storage):
         assert storage.resource.url == utils.get_target_filepath(
-            '/media/file_field/Nature_Tree{}.Jpeg',
+            '/media/file_field/Nature_Tree{suffix}.Jpeg',
             storage.resource.get_file_url()
         )
 
@@ -669,26 +669,26 @@ class TestImageFieldResource(TestFileFieldResource):
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
         assert file_name == utils.get_target_filepath(
-            'image_field/Nature_Tree{}.jpg',
+            'image_field/Nature_Tree{suffix}.jpg',
             file_name
         )
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
         assert file_url == utils.get_target_filepath(
-            '/media/image_field/Nature_Tree{}.jpg',
+            '/media/image_field/Nature_Tree{suffix}.jpg',
             file_url
         )
 
     def test_path(self, storage):
         assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/image_field/Nature_Tree{}.jpg',
+            '/media/image_field/Nature_Tree{suffix}.jpg',
             storage.resource.get_file_url()
         ))
 
     def test_url(self, storage):
         assert storage.resource.url == utils.get_target_filepath(
-            '/media/image_field/Nature_Tree{}.jpg',
+            '/media/image_field/Nature_Tree{suffix}.jpg',
             storage.resource.get_file_url()
         )
 
@@ -723,7 +723,7 @@ class TestImageFieldResource(TestFileFieldResource):
             'title': 'Calliphora',
             'description': 'Calliphora is a genus of blow flies, also known as bottle flies',
             'url': utils.get_target_filepath(
-                '/media/image_field/Nature_Tree{}.jpg',
+                '/media/image_field/Nature_Tree{suffix}.jpg',
                 storage.resource.get_file_url()
             ),
         }
@@ -749,7 +749,7 @@ class TestVariationFile:
 
     def test_name(self, storage):
         assert storage.file.name == utils.get_target_filepath(
-            'versatile_image/milky-way-nasa{}.desktop.jpg',
+            'versatile_image/milky-way-nasa{suffix}.desktop.jpg',
             storage.resource.get_file_name()
         )
 
@@ -769,13 +769,13 @@ class TestVariationFile:
 
     def test_path(self, storage):
         assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/versatile_image/milky-way-nasa{}.jpg',
+            '/media/versatile_image/milky-way-nasa{suffix}.jpg',
             storage.resource.get_file_url()
         ))
 
     def test_url(self, storage):
         assert storage.resource.url == utils.get_target_filepath(
-            '/media/versatile_image/milky-way-nasa{}.jpg',
+            '/media/versatile_image/milky-way-nasa{suffix}.jpg',
             storage.resource.get_file_url()
         )
 
@@ -862,26 +862,26 @@ class TestVersatileImageResource(TestImageFieldResource):
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
         assert file_name == utils.get_target_filepath(
-            'versatile_image/Nature_Tree{}.jpg',
+            'versatile_image/Nature_Tree{suffix}.jpg',
             file_name
         )
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
         assert file_url == utils.get_target_filepath(
-            '/media/versatile_image/Nature_Tree{}.jpg',
+            '/media/versatile_image/Nature_Tree{suffix}.jpg',
             file_url
         )
 
     def test_path(self, storage):
         assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/versatile_image/Nature_Tree{}.jpg',
+            '/media/versatile_image/Nature_Tree{suffix}.jpg',
             storage.resource.get_file_url()
         ))
 
     def test_url(self, storage):
         assert storage.resource.url == utils.get_target_filepath(
-            '/media/versatile_image/Nature_Tree{}.jpg',
+            '/media/versatile_image/Nature_Tree{suffix}.jpg',
             storage.resource.get_file_url()
         )
 
@@ -897,7 +897,7 @@ class TestVersatileImageResource(TestImageFieldResource):
             'title': 'Calliphora',
             'description': 'Calliphora is a genus of blow flies, also known as bottle flies',
             'url': utils.get_target_filepath(
-                '/media/versatile_image/Nature_Tree{}.jpg',
+                '/media/versatile_image/Nature_Tree{suffix}.jpg',
                 storage.resource.get_file_url()
             ),
         }
@@ -914,7 +914,7 @@ class TestVersatileImageResource(TestImageFieldResource):
         assert vfile.exists() is True
         assert vfile.path.endswith(
             utils.get_target_filepath(
-                'Nature_Tree{}.desktop.jpg',
+                'Nature_Tree{suffix}.desktop.jpg',
                 storage.resource.get_file_url()
             ),
         )

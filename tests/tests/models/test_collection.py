@@ -261,26 +261,26 @@ class TestCollectionItem(TestFileFieldResource):
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
         assert file_name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/Nature_Tree{}.Jpeg',
+            'collections/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
             file_name
         )
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
         assert file_url == utils.get_target_filepath(
-            '/media/collections/files/%Y-%m-%d/Nature_Tree{}.Jpeg',
+            '/media/collections/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
             file_url
         )
 
     def test_path(self, storage):
         assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/collections/files/%Y-%m-%d/Nature_Tree{}.Jpeg',
+            '/media/collections/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
             storage.resource.get_file_url()
         ))
 
     def test_url(self, storage):
         assert storage.resource.url == utils.get_target_filepath(
-            '/media/collections/files/%Y-%m-%d/Nature_Tree{}.Jpeg',
+            '/media/collections/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
             storage.resource.get_file_url()
         )
 
@@ -302,7 +302,7 @@ class TestCollectionItem(TestFileFieldResource):
             'size': self.resource_size,
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
             'url': utils.get_target_filepath(
-                '/media/collections/files/%Y-%m-%d/Nature_Tree{}.Jpeg',
+                '/media/collections/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
                 storage.resource.get_file_url()
             ),
             'preview': render_to_string(
@@ -426,26 +426,26 @@ class TestSVGItem(TestCollectionItem):
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
         assert file_name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/Meditation{}.svg',
+            'collections/files/%Y-%m-%d/Meditation{suffix}.svg',
             file_name
         )
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
         assert file_url == utils.get_target_filepath(
-            '/media/collections/files/%Y-%m-%d/Meditation{}.svg',
+            '/media/collections/files/%Y-%m-%d/Meditation{suffix}.svg',
             file_url
         )
 
     def test_path(self, storage):
         assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/collections/files/%Y-%m-%d/Meditation{}.svg',
+            '/media/collections/files/%Y-%m-%d/Meditation{suffix}.svg',
             storage.resource.get_file_url()
         ))
 
     def test_url(self, storage):
         assert storage.resource.url == utils.get_target_filepath(
-            '/media/collections/files/%Y-%m-%d/Meditation{}.svg',
+            '/media/collections/files/%Y-%m-%d/Meditation{suffix}.svg',
             storage.resource.get_file_url()
         )
 
@@ -462,7 +462,7 @@ class TestSVGItem(TestCollectionItem):
             'size': self.resource_size,
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
             'url': utils.get_target_filepath(
-                '/media/collections/files/%Y-%m-%d/Meditation{}.svg',
+                '/media/collections/files/%Y-%m-%d/Meditation{suffix}.svg',
                 storage.resource.get_file_url()
             ),
             'preview': render_to_string(
@@ -538,26 +538,26 @@ class TestImageItem(TestCollectionItem):
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
         assert file_name == utils.get_target_filepath(
-            'collections/images/%Y-%m-%d/Nature_Tree{}.jpg',
+            'collections/images/%Y-%m-%d/Nature_Tree{suffix}.jpg',
             file_name
         )
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
         assert file_url == utils.get_target_filepath(
-            '/media/collections/images/%Y-%m-%d/Nature_Tree{}.jpg',
+            '/media/collections/images/%Y-%m-%d/Nature_Tree{suffix}.jpg',
             file_url
         )
 
     def test_path(self, storage):
         assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/collections/images/%Y-%m-%d/Nature_Tree{}.jpg',
+            '/media/collections/images/%Y-%m-%d/Nature_Tree{suffix}.jpg',
             storage.resource.get_file_url()
         ))
 
     def test_url(self, storage):
         assert storage.resource.url == utils.get_target_filepath(
-            '/media/collections/images/%Y-%m-%d/Nature_Tree{}.jpg',
+            '/media/collections/images/%Y-%m-%d/Nature_Tree{suffix}.jpg',
             storage.resource.get_file_url()
         )
 
@@ -579,7 +579,7 @@ class TestImageItem(TestCollectionItem):
             'description': '',
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
             'url': utils.get_target_filepath(
-                '/media/collections/images/%Y-%m-%d/Nature_Tree{}.jpg',
+                '/media/collections/images/%Y-%m-%d/Nature_Tree{suffix}.jpg',
                 storage.resource.get_file_url()
             ),
             'preview': render_to_string(
