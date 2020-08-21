@@ -10,6 +10,7 @@ CALLIPHORA_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/calliphora.
 NATURE_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/Nature Tree.Jpeg')
 DOCUMENT_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/document.pdf')
 MEDITATION_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/Meditation.svg')
+AUDIO_FILEPATH = os.path.join(settings.BASE_DIR, 'tests/samples/audio.mp3')
 
 __all__ = [
     'NASA_FILEPATH',
@@ -17,6 +18,7 @@ __all__ = [
     'NATURE_FILEPATH',
     'DOCUMENT_FILEPATH',
     'MEDITATION_FILEPATH',
+    'AUDIO_FILEPATH',
     'make_dummy_file',
     'make_dummy_image',
 ]
