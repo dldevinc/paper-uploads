@@ -512,6 +512,7 @@ class TestFileFieldResource(TestFileResource):
     resource_extension = 'Jpeg'
     resource_size = 672759
     resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+    file_field_name = 'file'
 
     @classmethod
     def init(cls, storage):
@@ -526,6 +527,12 @@ class TestFileFieldResource(TestFileResource):
         yield
         storage.resource.delete_file()
         storage.resource.delete()
+
+    def test_get_file_field(self, storage):
+        assert (
+            storage.resource.get_file_field()
+            == storage.resource._meta.get_field(self.file_field_name)
+        )
 
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
@@ -624,23 +631,55 @@ class TestDeleteFile:
 
 
 class TestEmptyFileFieldResource:
-    def test_url(self):
-        resource = DummyFileFieldResource()
-        with pytest.raises(FileNotFoundError):
-            resource.get_file_url()
+    @classmethod
+    def init(cls, storage):
+        storage.resource = DummyFileFieldResource()
+        yield
 
-    def test_file_exists(self):
-        resource = DummyFileFieldResource()
-        assert resource.file_exists() is False
+    def test_open(self, storage):
+        with pytest.raises(ValueError):
+            storage.resource.open()  # noqa
 
-    def test_rename_file(self):
-        resource = DummyFileFieldResource()
-        with pytest.raises(FileNotFoundError):
-            resource.rename_file('bla-bla.jpg')
+    def test_closed(self, storage):
+        assert storage.resource.closed is True
 
-    def test_delete_file(self):
-        resource = DummyFileFieldResource()
-        resource.delete_file()
+    def test_read(self, storage):
+        with pytest.raises(ValueError):
+            storage.resource.read()  # noqa
+
+    def test_url(self, storage):
+        with pytest.raises(ValueError):
+            storage.resource.url  # noqa
+
+    def test_path(self, storage):
+        with pytest.raises(ValueError):
+            storage.resource.path  # noqa
+
+    def test_get_file(self, storage):
+        assert bool(storage.resource.get_file()) is False
+
+    def test_get_file_name(self, storage):
+        with pytest.raises(ValueError):
+            storage.resource.get_file_name()
+
+    def test_get_file_size(self, storage):
+        with pytest.raises(ValueError):
+            storage.resource.get_file_size()
+
+    def test_get_file_url(self, storage):
+        with pytest.raises(ValueError):
+            storage.resource.get_file_url()
+
+    def test_file_exists(self, storage):
+        assert storage.resource.file_exists() is False
+
+    def test_rename_file(self, storage):
+        with pytest.raises(ValueError):
+            storage.resource.rename_file('bla-bla.jpg')
+
+    def test_delete_file(self, storage):
+        with pytest.raises(ValueError):
+            storage.resource.delete_file()
 
 
 class TestImageFieldResource(TestFileFieldResource):
@@ -648,6 +687,7 @@ class TestImageFieldResource(TestFileFieldResource):
     resource_extension = 'jpg'
     resource_size = 672759
     resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+    file_field_name = 'image'
 
     @classmethod
     def init(cls, storage):
@@ -841,6 +881,7 @@ class TestVersatileImageResource(TestImageFieldResource):
     resource_extension = 'jpg'
     resource_size = 672759
     resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+    file_field_name = 'file'
 
     @classmethod
     def init(cls, storage):
@@ -1116,31 +1157,15 @@ class TestImageResourceVariations:
         signals.variation_created.disconnect(signal_handler)
 
 
-@pytest.mark.django_db
-class TestEmptyVersatileImageResource:
-    def test_url(self):
-        resource = DummyVersatileImageResource()
-        with pytest.raises(FileNotFoundError):
-            resource.get_file_url()
+class TestEmptyVersatileImageResource(TestEmptyFileFieldResource):
+    @classmethod
+    def init(cls, storage):
+        storage.resource = DummyVersatileImageResource()
+        yield
 
-    def test_file_exists(self):
-        resource = DummyVersatileImageResource()
-        assert resource.file_exists() is False
+    def test_variation_files(self, storage):
+        assert list(storage.resource.variation_files()) == []
 
-    def test_rename_file(self):
-        resource = DummyVersatileImageResource()
-        with pytest.raises(FileNotFoundError):
-            resource.rename_file('bla-bla.jpg')
-
-    def test_delete_file(self):
-        resource = DummyVersatileImageResource()
-        resource.delete_file()
-
-    def test_variation_files(self):
-        resource = DummyVersatileImageResource()
-        assert list(resource.variation_files()) == []
-
-    def test_variation_attribute(self):
-        resource = DummyVersatileImageResource()
+    def test_variation_attribute(self, storage):
         with pytest.raises(AttributeError):
-            resource.desktop  # noqa
+            storage.resource.desktop  # noqa

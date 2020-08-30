@@ -5,7 +5,7 @@ from paper_uploads.models import UploadedFile
 
 from .. import utils
 from ..dummy import *
-from .test_base import TestFileFieldResource
+from .test_base import TestEmptyFileFieldResource, TestFileFieldResource
 
 
 class TestUploadedFile(TestFileFieldResource):
@@ -13,6 +13,7 @@ class TestUploadedFile(TestFileFieldResource):
     resource_extension = 'Jpeg'
     resource_size = 672759
     resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+    file_field_name = 'file'
 
     @classmethod
     def init(cls, storage):
@@ -24,7 +25,9 @@ class TestUploadedFile(TestFileFieldResource):
         with open(NATURE_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp)
         storage.resource.save()
+
         yield
+
         storage.resource.delete_file()
         storage.resource.delete()
 
@@ -88,8 +91,14 @@ class TestUploadedFileExists:
         with open(NATURE_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp)
         storage.resource.save()
+
         yield
-        storage.resource.delete_file()
+
+        try:
+            storage.resource.delete_file()
+        except ValueError:
+            pass
+
         storage.resource.delete()
 
     def test_files(self, storage):
@@ -97,3 +106,10 @@ class TestUploadedFileExists:
         assert os.path.exists(source_path) is True
         storage.resource.delete_file()
         assert os.path.exists(source_path) is False
+
+
+class TestEmptyUploadedFileExists(TestEmptyFileFieldResource):
+    @classmethod
+    def init(cls, storage):
+        storage.resource = UploadedFile()
+        yield

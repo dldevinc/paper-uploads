@@ -26,6 +26,12 @@ class UploadedImage(VersatileImageResourceMixin, FileFieldResource):
     def get_file(self) -> FieldFile:
         return self.file
 
+    def set_file(self, value):
+        self.file = value
+
+    def get_file_field(self) -> VariationalFileField:
+        return self._meta.get_field('file')
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),

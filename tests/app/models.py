@@ -33,6 +33,9 @@ class DummyFileResource(FileResource):
             file = self._file = File(buffer, name=self.name)
         return file
 
+    def get_file_field(self) -> models.FileField:
+        return models.Field(name='file')
+
     def get_file_name(self) -> str:
         return '{}'.format(self.__filename)
 
@@ -71,12 +74,18 @@ class DummyFileFieldResource(FileFieldResource):
     def get_file(self) -> FieldFile:
         return self.file
 
+    def get_file_field(self) -> models.FileField:
+        return self._meta.get_field('file')
+
 
 class DummyImageFieldResource(ImageFileResourceMixin, FileFieldResource):
     image = models.FileField(_('file'), upload_to='image_field')
 
     def get_file(self) -> FieldFile:
         return self.image
+
+    def get_file_field(self) -> models.FileField:
+        return self._meta.get_field('image')
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         variations = getattr(self, '_variations', None)
@@ -96,6 +105,9 @@ class DummyVersatileImageResource(VersatileImageResourceMixin, FileFieldResource
 
     def get_file(self) -> FieldFile:
         return self.file
+
+    def get_file_field(self) -> models.FileField:
+        return self._meta.get_field('file')
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         return {

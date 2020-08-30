@@ -50,8 +50,6 @@ class FileProxyMixin:
     Проксирование некоторых свойств файла на уровень модели
     """
 
-    closed = property(lambda self: self.get_file().closed)
-    read = property(lambda self: self.get_file().read)
     seek = property(lambda self: self.get_file().seek)
     tell = property(lambda self: self.get_file().tell)
 
@@ -61,16 +59,21 @@ class FileProxyMixin:
     def __exit__(self, exc_type, exc_value, tb):
         self.close()
 
-    def open(self, mode='rb'):
-        if not self.file_exists():  # noqa
-            raise FileNotFoundError
-        return self.get_file().open(mode)  # noqa
+    @property
+    def closed(self):
+        file = self.get_file()  # noqa
+        return not file or file.closed
 
+    def open(self, mode='rb'):
+        self._require_file()  # noqa
+        return self.get_file().open(mode)  # noqa
     open.alters_data = True  # noqa
 
+    def read(self, size=None):
+        self._require_file()  # noqa
+        return self.get_file().read(size)  # noqa
+
     def close(self):
-        if not self.file_exists():  # noqa
-            raise FileNotFoundError
         self.get_file().close()  # noqa
 
 
@@ -79,5 +82,12 @@ class FileFieldProxyMixin:
     Проксирование некоторых свойств файла (только для чтения) на уровень модели
     """
 
-    path = property(lambda self: self.get_file().path)
-    url = property(lambda self: self.get_file().url)
+    @property
+    def path(self):
+        self._require_file()  # noqa
+        return self.get_file().path
+
+    @property
+    def url(self):
+        self._require_file()  # noqa
+        return self.get_file().url

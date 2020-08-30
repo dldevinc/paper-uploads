@@ -116,6 +116,17 @@ class FileResource(FileProxyMixin, Resource):
     def __repr__(self):
         return "{}('{}')".format(type(self).__name__, self.get_basename())
 
+    def _require_file(self):
+        """
+        Требование наличия непустой ссылки на файл.
+        Физическое существование файла не гарантируется и должно проверяться
+        методом `file_exists`.
+        """
+        file = self.get_file()
+        if not file:
+            file_field = self.get_file_field()
+            raise ValueError("The '%s' attribute has no file associated with it." % file_field.name)
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
@@ -160,6 +171,20 @@ class FileResource(FileProxyMixin, Resource):
         return '{}.{}'.format(self.name, self.extension)
 
     def get_file(self) -> File:
+        raise NotImplementedError
+
+    def set_file(self, value):
+        """
+        Обновление файла в текущей модели при переименовании / удалении.
+        Применяется в Cloudinary, т.к. файловые storage устанавливают
+        значения поля самостоятельно.
+        """
+        raise NotImplementedError
+
+    def get_file_field(self):
+        """
+        Получение файлового поля модели.
+        """
         raise NotImplementedError
 
     def get_file_name(self) -> str:
@@ -241,6 +266,8 @@ class FileResource(FileProxyMixin, Resource):
         В действительности, переименование файла происходит в методе `_rename_file`.
         Не переопределяйте этот метод, если не уверены в том, что вы делаете.
         """
+        self._require_file()
+
         if not self.file_exists():
             raise FileNotFoundError
 
@@ -286,6 +313,8 @@ class FileResource(FileProxyMixin, Resource):
         В действительности, удаление файла происходит в методе `_delete_file`.
         Не переопределяйте этот метод, если не уверены в том, что вы делаете.
         """
+        self._require_file()
+
         signals.pre_delete_file.send(sender=type(self), instance=self)
         self._delete_file()
         signals.post_delete_file.send(sender=type(self), instance=self)
@@ -306,14 +335,15 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
         raise NotImplementedError
 
     def get_file_name(self) -> str:
+        self._require_file()
         return self.get_file().name
 
     def get_file_size(self) -> int:
+        self._require_file()
         return self.get_file().size
 
     def get_file_url(self) -> str:
-        if not self.file_exists():
-            raise FileNotFoundError
+        self._require_file()
         return self.get_file().url
 
     def file_exists(self) -> bool:

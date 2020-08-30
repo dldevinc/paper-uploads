@@ -5,7 +5,7 @@ from paper_uploads.models import UploadedImage
 
 from .. import utils
 from ..dummy import *
-from .test_base import TestVersatileImageResource
+from .test_base import TestEmptyVersatileImageResource, TestVersatileImageResource
 
 
 class TestUploadedImage(TestVersatileImageResource):
@@ -13,6 +13,7 @@ class TestUploadedImage(TestVersatileImageResource):
     resource_extension = 'jpg'
     resource_size = 672759
     resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+    file_field_name = 'file'
 
     @classmethod
     def init(cls, storage):
@@ -26,7 +27,9 @@ class TestUploadedImage(TestVersatileImageResource):
         with open(NATURE_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp)
         storage.resource.save()
+
         yield
+
         storage.resource.delete_file()
         storage.resource.delete()
 
@@ -92,8 +95,14 @@ class TestUploadedImageExists:
         with open(NATURE_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp)
         storage.resource.save()
+
         yield
-        storage.resource.delete_file()
+
+        try:
+            storage.resource.delete_file()
+        except ValueError:
+            pass
+
         storage.resource.delete()
 
     def test_files(self, storage):
@@ -110,3 +119,10 @@ class TestUploadedImageExists:
         assert os.path.exists(source_path) is False
         assert os.path.exists(desktop_path) is False
         assert os.path.exists(mobile_path) is False
+
+
+class TestEmptyUploadedFileExists(TestEmptyVersatileImageResource):
+    @classmethod
+    def init(cls, storage):
+        storage.resource = UploadedImage()
+        yield

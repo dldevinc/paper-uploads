@@ -17,7 +17,11 @@ from paper_uploads.models import Collection, FileItem, ImageCollection, ImageIte
 
 from .. import utils
 from ..dummy import *
-from .test_base import TestFileFieldResource
+from .test_base import (
+    TestEmptyFileFieldResource,
+    TestEmptyVersatileImageResource,
+    TestFileFieldResource,
+)
 
 
 class TestCollectionMetaclass:
@@ -351,6 +355,7 @@ class TestFileItem(TestCollectionItem):
     resource_extension = 'Jpeg'
     resource_size = 672759
     resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+    file_field_name = 'file'
     collection_class = FileCollection
 
     @classmethod
@@ -389,7 +394,11 @@ class TestFileItemFilesExists:
 
         yield
 
-        storage.resource.delete_file()
+        try:
+            storage.resource.delete_file()
+        except ValueError:
+            pass
+
         storage.resource.delete()
         storage.collection.delete()
 
@@ -400,11 +409,19 @@ class TestFileItemFilesExists:
         assert os.path.exists(source_path) is False
 
 
+class TestEmptyFileItem(TestEmptyFileFieldResource):
+    @classmethod
+    def init(cls, storage):
+        storage.resource = FileItem()
+        yield
+
+
 class TestSVGItem(TestCollectionItem):
     resource_name = 'Meditation'
     resource_extension = 'svg'
     resource_size = 47193
     resource_hash = '7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d'
+    file_field_name = 'file'
     collection_class = CompleteCollection
 
     @classmethod
@@ -501,7 +518,11 @@ class TestSVGItemFilesExists:
 
         yield
 
-        storage.resource.delete_file()
+        try:
+            storage.resource.delete_file()
+        except ValueError:
+            pass
+
         storage.resource.delete()
         storage.collection.delete()
 
@@ -512,11 +533,19 @@ class TestSVGItemFilesExists:
         assert os.path.exists(source_path) is False
 
 
+class TestEmptySVGItem(TestEmptyFileFieldResource):
+    @classmethod
+    def init(cls, storage):
+        storage.resource = SVGItem()
+        yield
+
+
 class TestImageItem(TestCollectionItem):
     resource_name = 'Nature Tree'
     resource_extension = 'jpg'
     resource_size = 672759
     resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+    file_field_name = 'file'
     collection_class = CompleteCollection
 
     @classmethod
@@ -624,7 +653,11 @@ class TestImageItemFilesExists:
 
         yield
 
-        storage.resource.delete_file()
+        try:
+            storage.resource.delete_file()
+        except ValueError:
+            pass
+
         storage.resource.delete()
         storage.collection.delete()
 
@@ -642,6 +675,13 @@ class TestImageItemFilesExists:
         assert os.path.exists(source_path) is False
         assert os.path.exists(desktop_path) is False
         assert os.path.exists(mobile_path) is False
+
+
+class TestEmptyImageItem(TestEmptyVersatileImageResource):
+    @classmethod
+    def init(cls, storage):
+        storage.resource = ImageItem()
+        yield
 
 
 @pytest.mark.django_db
