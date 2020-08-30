@@ -144,7 +144,9 @@ class FileResource(FileProxyMixin, Resource):
 
         if file.closed:
             file.open('rb')
-        file.seek(0)
+
+        if file.seekable():
+            file.seek(0)
 
         while True:
             data = file.read(self.BLOCK_SIZE)
@@ -237,7 +239,6 @@ class FileResource(FileProxyMixin, Resource):
 
         response = self._attach_file(prepared_file, **options)
 
-        result_file = self.get_file()
         self.size = self.get_file_size()
         self.uploaded_at = now()
         self.modified_at = now()
@@ -246,7 +247,7 @@ class FileResource(FileProxyMixin, Resource):
         signals.post_attach_file.send(
             sender=type(self),
             instance=self,
-            file=result_file,
+            file=self.get_file(),
             options=options,
             response=response,
         )
@@ -356,8 +357,9 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
         self.get_file().save(file.name, file, save=False)
 
     def _rename_file(self, new_name: str, **options):
-        with self.get_file().open() as fp:
-            self.get_file().save(new_name, fp, save=False)
+        file = self.get_file()
+        with file.open() as fp:
+            file.save(new_name, fp, save=False)
 
     def _delete_file(self):
         self.get_file().delete(save=False)
@@ -654,9 +656,6 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
             raise FileNotFoundError
 
         file = self.get_file()
-        if not file:
-            return
-
         with file.open() as source:
             img = Image.open(source)
             draft_size = self.calculate_max_size(img.size)

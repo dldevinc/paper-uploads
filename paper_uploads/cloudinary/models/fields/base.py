@@ -1,7 +1,7 @@
 class CloudinaryOptionsMixin:
     def __init__(self, *args, cloudinary=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.cloudinary_options = cloudinary
+        self.cloudinary = cloudinary
 
     def deconstruct(self):
         name, path, args, kwargs = super().deconstruct()
