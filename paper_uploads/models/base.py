@@ -51,7 +51,6 @@ class ResourceBase(models.Model):
         help_text=_('human readable resource name'),
     )
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
-    uploaded_at = models.DateTimeField(_('uploaded at'), default=now, editable=False)
     modified_at = models.DateTimeField(_('changed at'), auto_now=True, editable=False)
 
     class Meta:
@@ -106,6 +105,7 @@ class FileResource(FileProxyMixin, Resource):
         editable=False,
         help_text=_('Hash of the contents of a file'),
     )
+    uploaded_at = models.DateTimeField(_('uploaded at'), default=now, editable=False)
 
     class Meta(Resource.Meta):
         abstract = True

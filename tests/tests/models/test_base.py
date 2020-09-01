@@ -24,8 +24,8 @@ from ..dummy import *
 class TestResource:
     resource_name = 'Nature Tree'
 
-    def _equal_dates(self, date1, date2):
-        return abs((date2 - date1).seconds) < 5
+    def _equal_dates(self, date1, date2, delta=5):
+        return abs((date2 - date1).seconds) < delta
 
     @classmethod
     def init(cls, storage):
@@ -42,7 +42,7 @@ class TestResource:
         assert storage.resource.name == self.resource_name
 
     def test_dates(self, storage):
-        assert self._equal_dates(storage.resource.created_at, now())
+        assert self._equal_dates(storage.resource.created_at, now(), delta=60)
         assert self._equal_dates(storage.resource.modified_at, now())
         assert self._equal_dates(storage.resource.uploaded_at, now())
 
