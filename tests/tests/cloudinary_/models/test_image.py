@@ -1,29 +1,31 @@
 from cloudinary import uploader
 
-from app.models import CloudinaryMediaExample
-from paper_uploads.cloudinary.models import CloudinaryMedia
+from app.models import CloudinaryImageExample
+from paper_uploads.cloudinary.models import CloudinaryImage
 from paper_uploads.conf import settings
 
 from ... import utils
 from ...dummy import *
-from ...models.test_base import TestFileFieldResource, TestEmptyFileFieldResource
+from ...models.test_base import TestImageFieldResource, TestEmptyFileFieldResource
 
 
-class TestCloudinaryMedia(TestFileFieldResource):
-    resource_name = 'audio'
-    resource_extension = 'mp3'
-    resource_size = 2113939
-    resource_hash = '4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d'
+class TestCloudinaryImage(TestImageFieldResource):
+    resource_name = 'Nature Tree'
+    resource_extension = 'jpg'  # Cloudinary extension format
+    resource_size = 672759
+    resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
     file_field_name = 'file'
 
     @classmethod
     def init(cls, storage):
-        storage.resource = CloudinaryMedia(
+        storage.resource = CloudinaryImage(
+            title='Calliphora',
+            description='Calliphora is a genus of blow flies, also known as bottle flies',
             owner_app_label='app',
-            owner_model_name='cloudinarymediaexample',
-            owner_fieldname='media'
+            owner_model_name='cloudinaryimageexample',
+            owner_fieldname='image'
         )
-        with open(AUDIO_FILEPATH, 'rb') as fp:
+        with open(NATURE_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp)
         storage.resource.save()
         yield
@@ -33,21 +35,18 @@ class TestCloudinaryMedia(TestFileFieldResource):
     def test_type(self, storage):
         file_field = storage.resource.get_file_field()
         assert file_field.type == 'private'
-        assert file_field.resource_type == 'video'
-
-    def test_display_name(self, storage):
-        assert storage.resource.display_name == self.resource_name
+        assert file_field.resource_type == 'image'
 
     def test_get_owner_model(self, storage):
-        assert storage.resource.get_owner_model() is CloudinaryMediaExample
+        assert storage.resource.get_owner_model() is CloudinaryImageExample
 
     def test_get_owner_field(self, storage):
-        assert storage.resource.get_owner_field() is CloudinaryMediaExample._meta.get_field('media')
+        assert storage.resource.get_owner_field() is CloudinaryImageExample._meta.get_field('image')
 
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
         assert file_name == utils.get_target_filepath(
-            'files/%Y-%m-%d/audio{suffix}',
+            'images/%Y-%m-%d/Nature_Tree{suffix}',
             file_name
         )
 
@@ -68,19 +67,18 @@ class TestCloudinaryMedia(TestFileFieldResource):
             'name': self.resource_name,
             'extension': self.resource_extension,
             'size': self.resource_size,
-            'file_info': '(mp3, 2.0\xa0MB)',
+            'width': 1534,
+            'height': 2301,
+            'cropregion': '',
+            'title': 'Calliphora',
+            'description': 'Calliphora is a genus of blow flies, also known as bottle flies',
+            'file_info': '(jpg, 1534x2301, 657.0\xa0KB)',
             'url': storage.resource.get_file_url(),
         }
 
-    def test_open(self, storage):
-        with storage.resource.open() as fp:
-            assert fp.read(4) == b'ID3\x03'
-
-        storage.resource.open()  # reopen
-
     def test_get_cloudinary_options(self, storage):
         options = storage.resource.get_cloudinary_options()
-        folder = utils.get_target_filepath(settings.FILES_UPLOAD_TO, '')
+        folder = utils.get_target_filepath(settings.IMAGES_UPLOAD_TO, '')
         assert options == {
             'use_filename': True,
             'unique_filename': True,
@@ -91,12 +89,12 @@ class TestCloudinaryMedia(TestFileFieldResource):
 
 class TestRenameFile:
     def test_rename_file(self):
-        resource = CloudinaryMedia(
+        resource = CloudinaryImage(
             owner_app_label='app',
             owner_model_name='fileexample',
             owner_fieldname='file'
         )
-        with open(AUDIO_FILEPATH, 'rb') as fp:
+        with open(NATURE_FILEPATH, 'rb') as fp:
             resource.attach_file(fp)
 
         assert resource.file_exists() is True
@@ -119,7 +117,7 @@ class TestRenameFile:
 class TestEmptyCloudinaryFile(TestEmptyFileFieldResource):
     @classmethod
     def init(cls, storage):
-        storage.resource = CloudinaryMedia()
+        storage.resource = CloudinaryImage()
         yield
 
     def test_path(self, storage):

@@ -1,6 +1,6 @@
 from cloudinary import uploader
 
-from app.models import FileExample
+from app.models import CloudinaryFileExample
 from paper_uploads.cloudinary.models import CloudinaryFile
 from paper_uploads.conf import settings
 
@@ -20,7 +20,7 @@ class TestCloudinaryFile(TestFileFieldResource):
     def init(cls, storage):
         storage.resource = CloudinaryFile(
             owner_app_label='app',
-            owner_model_name='fileexample',
+            owner_model_name='cloudinaryfileexample',
             owner_fieldname='file'
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
@@ -39,10 +39,10 @@ class TestCloudinaryFile(TestFileFieldResource):
         assert storage.resource.display_name == self.resource_name
 
     def test_get_owner_model(self, storage):
-        assert storage.resource.get_owner_model() is FileExample
+        assert storage.resource.get_owner_model() is CloudinaryFileExample
 
     def test_get_owner_field(self, storage):
-        assert storage.resource.get_owner_field() is FileExample._meta.get_field('file')
+        assert storage.resource.get_owner_field() is CloudinaryFileExample._meta.get_field('file')
 
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()

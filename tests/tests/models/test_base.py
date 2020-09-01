@@ -40,10 +40,11 @@ class TestResource:
     def test_name(self, storage):
         assert storage.resource.name == self.resource_name
 
-    def test_dates(self, storage):
-        assert self._equal_dates(storage.resource.created_at, storage.now)
+    def test_created_at(self, storage):
+        assert self._equal_dates(storage.resource.created_at, storage.now, delta=30)
+
+    def test_modified_at(self, storage):
         assert self._equal_dates(storage.resource.modified_at, storage.now)
-        assert self._equal_dates(storage.resource.uploaded_at, storage.now)
 
     def test_str(self, storage):
         assert str(storage.resource) == self.resource_name
@@ -101,6 +102,9 @@ class TestFileResource(TestResource):
         )
         yield
         storage.resource.delete()
+
+    def test_uploaded_at(self, storage):
+        assert self._equal_dates(storage.resource.uploaded_at, storage.now)
 
     def test_extension(self, storage):
         assert storage.resource.extension == self.resource_extension

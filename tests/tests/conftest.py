@@ -52,7 +52,9 @@ def storage(request, class_scoped_db):
 
     next(gen)
 
+    # Time right after `init()` call. For date / time tests.
     storage.now = now()
+
     yield storage
 
     try:
