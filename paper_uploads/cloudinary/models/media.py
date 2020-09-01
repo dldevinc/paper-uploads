@@ -7,10 +7,9 @@ from django.utils.translation import gettext_lazy as _
 
 from ...conf import settings
 from .base import CloudinaryFieldFile, CloudinaryFileResource
-from .mixins import ReadonlyCloudinaryFileProxyMixin
 
 
-class CloudinaryMedia(ReadonlyCloudinaryFileProxyMixin, CloudinaryFileResource):
+class CloudinaryMedia(CloudinaryFileResource):
     file = CloudinaryField(
         _('file'),
         type=settings.CLOUDINARY.get('type', 'private'),

@@ -13,6 +13,7 @@ from django.utils.functional import cached_property
 from ...conf import settings
 from ...logging import logger
 from ...models.base import FileResource
+from .mixins import ReadonlyCloudinaryFileProxyMixin
 
 
 class CloudinaryFieldFile:
@@ -132,7 +133,7 @@ class CloudinaryFieldFile:
         return data
 
 
-class CloudinaryFileResource(FileResource):
+class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
     class Meta(FileResource.Meta):
         abstract = True
 

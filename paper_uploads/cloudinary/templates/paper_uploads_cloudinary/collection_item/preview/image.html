@@ -1,7 +1,7 @@
 {% load cloudinary %}
 
-<img src="{% cloudinary_url item.file width=preview_width height=preview_height crop="fill" %}"
+<img src="{% cloudinary_url item.file width=width height=height crop="fill" %}"
      class="collection-item__image"
-     width="{{ preview_width }}"
-     height="{{ preview_height }}"
+     width="{{ width }}"
+     height="{{ height }}"
      alt="{% if item %}{{ item.alt }}{% endif %}">
