@@ -1,39 +1,43 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
+from cloudinary.models import CloudinaryField
 from django.db import models
 from django.template.defaultfilters import filesizeformat
 from django.utils.translation import gettext_lazy as _
 
 from ...conf import settings
-from ...typing import FileLike
-from .base import CloudinaryFileResource
+from .base import CloudinaryFieldFile, CloudinaryFileResource
 from .mixins import ReadonlyCloudinaryFileProxyMixin
 
 
 class CloudinaryMedia(ReadonlyCloudinaryFileProxyMixin, CloudinaryFileResource):
-    cloudinary_resource_type = 'video'
-
+    file = CloudinaryField(
+        _('file'),
+        type=settings.CLOUDINARY.get('type', 'private'),
+        resource_type='video',
+        folder=settings.FILES_UPLOAD_TO
+    )
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
     class Meta(CloudinaryFileResource.Meta):
         verbose_name = _('media')
         verbose_name_plural = _('media')
 
+    def get_file(self) -> Optional[CloudinaryFieldFile]:
+        if not self.file:
+            return None
+        return CloudinaryFieldFile(self.file)
+
+    def set_file(self, value):
+        self.file = value
+
+    def get_file_field(self) -> CloudinaryField:
+        return self._meta.get_field('file')
+
     def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:
             self.display_name = self.name
         super().save(*args, **kwargs)
-
-    def attach_file(self, file: FileLike, name: str = None, **options):
-        """
-        Установка опций загрузки файла из параметров поля
-        """
-        cloudinary_options = settings.CLOUDINARY.copy()
-        owner_field = self.get_owner_field()
-        if owner_field is not None and hasattr(owner_field, 'cloudinary_options'):
-            cloudinary_options.update(owner_field.cloudinary_options or {})
-        options.setdefault('cloudinary', cloudinary_options)
-        return super().attach_file(file, name, **options)
 
     def as_dict(self) -> Dict[str, Any]:
         return {

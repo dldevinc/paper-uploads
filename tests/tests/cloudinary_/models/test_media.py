@@ -1,7 +1,8 @@
 from cloudinary import uploader
+from django.utils.timezone import now
 
 from app.models import FileExample
-from paper_uploads.cloudinary.models import CloudinaryFile
+from paper_uploads.cloudinary.models import CloudinaryMedia
 from paper_uploads.conf import settings
 
 from ... import utils
@@ -9,21 +10,21 @@ from ...dummy import *
 from ...models.test_base import TestFileFieldResource, TestEmptyFileFieldResource
 
 
-class TestCloudinaryFile(TestFileFieldResource):
-    resource_name = 'Nature Tree'
-    resource_extension = 'Jpeg'
-    resource_size = 672759
-    resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+class TestCloudinaryMedia(TestFileFieldResource):
+    resource_name = 'audio'
+    resource_extension = 'mp3'
+    resource_size = 2113939
+    resource_hash = '4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d'
     file_field_name = 'file'
 
     @classmethod
     def init(cls, storage):
-        storage.resource = CloudinaryFile(
+        storage.resource = CloudinaryMedia(
             owner_app_label='app',
             owner_model_name='fileexample',
             owner_fieldname='file'
         )
-        with open(NATURE_FILEPATH, 'rb') as fp:
+        with open(AUDIO_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp)
         storage.resource.save()
         yield
@@ -33,7 +34,7 @@ class TestCloudinaryFile(TestFileFieldResource):
     def test_type(self, storage):
         file_field = storage.resource.get_file_field()
         assert file_field.type == 'private'
-        assert file_field.resource_type == 'raw'
+        assert file_field.resource_type == 'video'
 
     def test_display_name(self, storage):
         assert storage.resource.display_name == self.resource_name
@@ -47,7 +48,7 @@ class TestCloudinaryFile(TestFileFieldResource):
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
         assert file_name == utils.get_target_filepath(
-            'files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
+            'files/%Y-%m-%d/audio{suffix}',
             file_name
         )
 
@@ -68,9 +69,15 @@ class TestCloudinaryFile(TestFileFieldResource):
             'name': self.resource_name,
             'extension': self.resource_extension,
             'size': self.resource_size,
-            'file_info': '(Jpeg, 657.0\xa0KB)',
+            'file_info': '(mp3, 2.0\xa0MB)',
             'url': storage.resource.get_file_url(),
         }
+
+    def test_open(self, storage):
+        with storage.resource.open() as fp:
+            assert fp.read(4) == b'ID3\x03'
+
+        storage.resource.open()  # reopen
 
     def test_get_cloudinary_options(self, storage):
         options = storage.resource.get_cloudinary_options()
@@ -85,12 +92,12 @@ class TestCloudinaryFile(TestFileFieldResource):
 
 class TestRenameFile:
     def test_rename_file(self):
-        resource = CloudinaryFile(
+        resource = CloudinaryMedia(
             owner_app_label='app',
             owner_model_name='fileexample',
             owner_fieldname='file'
         )
-        with open(NATURE_FILEPATH, 'rb') as fp:
+        with open(AUDIO_FILEPATH, 'rb') as fp:
             resource.attach_file(fp)
 
         assert resource.file_exists() is True
@@ -113,7 +120,7 @@ class TestRenameFile:
 class TestEmptyCloudinaryFile(TestEmptyFileFieldResource):
     @classmethod
     def init(cls, storage):
-        storage.resource = CloudinaryFile()
+        storage.resource = CloudinaryMedia()
         yield
 
     def test_path(self, storage):
