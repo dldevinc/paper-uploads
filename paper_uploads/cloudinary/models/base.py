@@ -1,4 +1,5 @@
 import datetime
+import posixpath
 from typing import Optional
 
 import cloudinary.exceptions
@@ -228,9 +229,17 @@ class CloudinaryFileResource(FileResource):
         # TODO: Cloudinary can't copy files. We dont't want to do it manually
         file = self.get_file()
 
+        old_name = self.get_file_name()
+        folder, basename = posixpath.split(old_name)
+        if file.resource_type != 'raw':
+            # video and image have no extension
+            base, ext = posixpath.splitext(new_name)
+            new_name = base
+        new_name = posixpath.join(folder, new_name)
+
         try:
             result = uploader.rename(
-                self.get_file_name(),
+                old_name,
                 new_name,
                 type=file.type,
                 resource_type=file.resource_type,

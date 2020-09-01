@@ -5,7 +5,12 @@ from paper_uploads.models import UploadedFile
 
 from .. import utils
 from ..dummy import *
-from .test_base import TestEmptyFileFieldResource, TestFileFieldResource
+from .test_base import (
+    TestEmptyFileFieldResource,
+    TestFileDelete,
+    TestFileFieldResource,
+    TestFileRename,
+)
 
 
 class TestUploadedFile(TestFileFieldResource):
@@ -80,6 +85,72 @@ class TestUploadedFile(TestFileFieldResource):
         }
 
 
+class TestUploadedFileRename(TestFileRename):
+    @classmethod
+    def init(cls, storage):
+        storage.resource = UploadedFile(
+            owner_app_label='app',
+            owner_model_name='fileexample',
+            owner_fieldname='file'
+        )
+        with open(NATURE_FILEPATH, 'rb') as fp:
+            storage.resource.attach_file(fp, name='old_name.jpg')
+        storage.resource.save()
+
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
+        storage.old_source_path = file.path
+
+        storage.resource.rename_file('new_name.png')
+
+        yield
+
+        os.remove(storage.old_source_path)
+        storage.resource.delete_file()
+        storage.resource.delete()
+
+    def test_old_file_name(self, storage):
+        assert storage.old_source_name == utils.get_target_filepath(
+            'files/%Y-%m-%d/old_name{suffix}.jpg',
+            storage.old_source_name
+        )
+
+    def test_new_file_name(self, storage):
+        file = storage.resource.get_file()
+        assert file.name == utils.get_target_filepath(
+            'files/%Y-%m-%d/new_name{suffix}.png',
+            file.name
+        )
+
+
+class TestUploadedFileDelete(TestFileDelete):
+    @classmethod
+    def init(cls, storage):
+        storage.resource = UploadedFile(
+            owner_app_label='app',
+            owner_model_name='fileexample',
+            owner_fieldname='file'
+        )
+        with open(NATURE_FILEPATH, 'rb') as fp:
+            storage.resource.attach_file(fp, name='old_name.jpg')
+        storage.resource.save()
+
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
+        storage.old_source_path = file.path
+        storage.resource.delete_file()
+
+        yield
+
+        storage.resource.delete()
+
+    def test_file_name(self, storage):
+        assert storage.old_source_name == utils.get_target_filepath(
+            'files/%Y-%m-%d/old_name{suffix}.jpg',
+            storage.old_source_name
+        )
+
+
 class TestUploadedFileExists:
     @staticmethod
     def init(storage):
@@ -108,7 +179,7 @@ class TestUploadedFileExists:
         assert os.path.exists(source_path) is False
 
 
-class TestEmptyUploadedFileExists(TestEmptyFileFieldResource):
+class TestEmptyUploadedFile(TestEmptyFileFieldResource):
     @classmethod
     def init(cls, storage):
         storage.resource = UploadedFile()

@@ -599,38 +599,62 @@ class TestFileFieldResource(TestFileResource):
         )
 
 
-class TestRenameFile:
-    def test_rename_file(self):
-        resource = DummyFileFieldResource()
-        with open(NASA_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp, name='old_name.jpg')
+class TestFileRename:
+    @classmethod
+    def init(cls, storage):
+        storage.resource = DummyFileFieldResource()
+        with open(NATURE_FILEPATH, 'rb') as fp:
+            storage.resource.attach_file(fp, name='old_name.jpg')
+        storage.resource.save()
 
-        old_source_path = resource.file.path
-        assert os.path.exists(old_source_path) is True
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
+        storage.old_source_path = file.path
+        storage.resource.rename_file('new_name.png')
 
-        resource.rename_file('new_name.png')
+        yield
 
-        # ensure old file still exists
-        assert os.path.exists(old_source_path) is True
-        assert os.path.exists(resource.file.path) is True
+        os.remove(storage.old_source_path)
+        storage.resource.delete_file()
+        storage.resource.delete()
 
-        assert resource.get_file_name() == 'file_field/new_name.png'
+    def test_old_file_exists(self, storage):
+        assert os.path.exists(storage.old_source_path) is True
 
-        os.remove(old_source_path)
-        resource.delete_file()
+    def test_new_file_exists(self, storage):
+        file = storage.resource.get_file()
+        assert os.path.exists(file.path) is True
+
+    def test_old_file_name(self, storage):
+        assert storage.old_source_name == 'file_field/old_name.jpg'
+
+    def test_new_file_name(self, storage):
+        file = storage.resource.get_file()
+        assert file.name == 'file_field/new_name.png'
 
 
-class TestDeleteFile:
-    def test_delete_file(self):
-        resource = DummyFileFieldResource()
-        with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
+class TestFileDelete:
+    @classmethod
+    def init(cls, storage):
+        storage.resource = DummyFileFieldResource()
+        with open(NATURE_FILEPATH, 'rb') as fp:
+            storage.resource.attach_file(fp, name='old_name.jpg')
+        storage.resource.save()
 
-        source_path = resource.file.path
-        assert os.path.exists(source_path) is True
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
+        storage.old_source_path = file.path
+        storage.resource.delete_file()
 
-        resource.delete_file()
-        assert os.path.exists(source_path) is False
+        yield
+
+        storage.resource.delete()
+
+    def test_file_name(self, storage):
+        assert storage.old_source_name == 'file_field/old_name.jpg'
+
+    def test_file_not_exists(self, storage):
+        assert os.path.exists(storage.old_source_path) is False
 
 
 class TestEmptyFileFieldResource:
@@ -990,6 +1014,88 @@ class TestVersatileImageResource(TestImageFieldResource):
         assert storage.resource.calculate_max_size((2000, 3000)) == (800, 1200)
 
 
+class TestImageRename(TestFileRename):
+    @classmethod
+    def init(cls, storage):
+        storage.resource = DummyVersatileImageResource()
+        with open(NATURE_FILEPATH, 'rb') as fp:
+            storage.resource.attach_file(fp, name='old_name.jpg')
+        storage.resource.save()
+
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
+        storage.old_desktop_name = storage.resource.desktop.name
+        storage.old_mobile_name = storage.resource.mobile.name
+
+        storage.old_source_path = file.path
+        storage.old_desktop_path = storage.resource.desktop.path
+        storage.old_mobile_path = storage.resource.mobile.path
+
+        storage.resource.rename_file('new_name.png')
+
+        yield
+
+        os.remove(storage.old_source_path)
+        os.remove(storage.old_desktop_path)
+        os.remove(storage.old_mobile_path)
+        storage.resource.delete_file()
+        storage.resource.delete()
+
+    def test_old_file_name(self, storage):
+        assert storage.old_source_name == 'versatile_image/old_name.jpg'
+        assert storage.old_desktop_name == 'versatile_image/old_name.desktop.jpg'
+        assert storage.old_mobile_name == 'versatile_image/old_name.mobile.jpg'
+
+    def test_new_file_name(self, storage):
+        assert storage.resource.file.name == 'versatile_image/new_name.png'
+        assert storage.resource.desktop.name == 'versatile_image/new_name.desktop.png'
+        assert storage.resource.mobile.name == 'versatile_image/new_name.mobile.png'
+
+    def test_old_file_exists(self, storage):
+        super().test_old_file_exists(storage)
+        assert os.path.exists(storage.old_desktop_path) is True
+        assert os.path.exists(storage.old_mobile_path) is True
+
+    def test_new_file_exists(self, storage):
+        super().test_new_file_exists(storage)
+        assert os.path.exists(storage.resource.desktop.path) is True
+        assert os.path.exists(storage.resource.mobile.path) is True
+
+
+class TestImageDelete(TestFileDelete):
+    @classmethod
+    def init(cls, storage):
+        storage.resource = DummyVersatileImageResource()
+        with open(NATURE_FILEPATH, 'rb') as fp:
+            storage.resource.attach_file(fp, name='old_name.jpg')
+        storage.resource.save()
+
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
+        storage.old_desktop_name = storage.resource.desktop.name
+        storage.old_mobile_name = storage.resource.mobile.name
+
+        storage.old_source_path = file.path
+        storage.old_desktop_path = storage.resource.desktop.path
+        storage.old_mobile_path = storage.resource.mobile.path
+
+        storage.resource.delete_file()
+
+        yield
+
+        storage.resource.delete()
+
+    def test_file_name(self, storage):
+        assert storage.old_source_name == 'versatile_image/old_name.jpg'
+        assert storage.old_desktop_name == 'versatile_image/old_name.desktop.jpg'
+        assert storage.old_mobile_name == 'versatile_image/old_name.mobile.jpg'
+
+    def test_file_not_exists(self, storage):
+        assert os.path.exists(storage.old_source_path) is False
+        assert os.path.exists(storage.old_desktop_path) is False
+        assert os.path.exists(storage.old_mobile_path) is False
+
+
 @pytest.mark.django_db
 class TestImageResourceVariations:
     def test_variation_attributes_after_delete(self):
@@ -1052,39 +1158,6 @@ class TestImageResourceVariations:
         assert os.path.exists(source_path) is False
         assert os.path.exists(desktop_path) is False
         assert os.path.exists(mobile_path) is False
-
-        resource.delete()
-
-    def test_rename_file(self):
-        resource = DummyVersatileImageResource()
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
-        resource.save()
-
-        old_source_path = resource.file.path
-        old_desktop_path = resource.desktop.path
-        old_mobile_path = resource.mobile.path
-
-        assert os.path.exists(old_source_path) is True
-        assert os.path.exists(old_desktop_path) is True
-        assert os.path.exists(old_mobile_path) is True
-
-        resource.rename_file('renamed.jpg')
-
-        # ensure previous files still exists
-        assert os.path.exists(old_source_path) is True
-        assert os.path.exists(old_desktop_path) is True
-        assert os.path.exists(old_mobile_path) is True
-
-        assert os.path.exists(resource.file.path) is True
-        assert os.path.exists(resource.desktop.path) is True
-        assert os.path.exists(resource.mobile.path) is True
-
-        resource.delete_file()
-
-        os.remove(old_source_path)
-        os.remove(old_desktop_path)
-        os.remove(old_mobile_path)
 
         resource.delete()
 

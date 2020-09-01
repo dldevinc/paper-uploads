@@ -1,3 +1,5 @@
+import cloudinary
+import pytest
 from cloudinary import uploader
 
 from app.models import CloudinaryMediaExample
@@ -6,7 +8,12 @@ from paper_uploads.conf import settings
 
 from ... import utils
 from ...dummy import *
-from ...models.test_base import TestFileFieldResource, TestEmptyFileFieldResource
+from ...models.test_base import (
+    TestEmptyFileFieldResource,
+    TestFileDelete,
+    TestFileFieldResource,
+    TestFileRename,
+)
 
 
 class TestCloudinaryMedia(TestFileFieldResource):
@@ -89,31 +96,92 @@ class TestCloudinaryMedia(TestFileFieldResource):
         }
 
 
-class TestRenameFile:
-    def test_rename_file(self):
-        resource = CloudinaryMedia(
+class TestCloudinaryMediaRename(TestFileRename):
+    @classmethod
+    def init(cls, storage):
+        storage.resource = CloudinaryMedia(
             owner_app_label='app',
             owner_model_name='fileexample',
             owner_fieldname='file'
         )
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
+            storage.resource.attach_file(fp, name='old_name.mp3')
+        storage.resource.save()
 
-        assert resource.file_exists() is True
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
 
-        resource.rename_file('files/new_name.PNG')
+        storage.resource.rename_file('new_name.ogg')
 
+        yield
+
+        storage.resource.delete_file()
+        storage.resource.delete()
+
+    def test_old_file_exists(self, storage):
+        file = storage.resource.get_file()
         uploader.explicit(
-            resource.get_file_name(),
-            type=resource.get_file().type,
-            resource_type=resource.get_file().resource_type,
+            file.name,
+            type=file.type,
+            resource_type=file.resource_type
         )
-        assert resource.file_exists() is True
 
-        file_name = resource.get_file_name()
-        assert file_name == 'files/new_name.PNG'
+    def test_new_file_exists(self, storage):
+        file = storage.resource.get_file()
+        uploader.explicit(
+            file.name,
+            type=file.type,
+            resource_type=file.resource_type
+        )
 
-        resource.delete_file()
+    def test_old_file_name(self, storage):
+        assert storage.old_source_name == utils.get_target_filepath(
+            'files/%Y-%m-%d/old_name{suffix}',
+            storage.old_source_name
+        )
+
+    def test_new_file_name(self, storage):
+        file = storage.resource.get_file()
+        assert file.name == utils.get_target_filepath(
+            'files/%Y-%m-%d/new_name{suffix}',
+            file.name
+        )
+
+
+class TestCloudinaryMediaDelete(TestFileDelete):
+    @classmethod
+    def init(cls, storage):
+        storage.resource = CloudinaryMedia(
+            owner_app_label='app',
+            owner_model_name='fileexample',
+            owner_fieldname='file'
+        )
+        with open(AUDIO_FILEPATH, 'rb') as fp:
+            storage.resource.attach_file(fp, name='old_name.jpg')
+        storage.resource.save()
+
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
+        storage.resource.delete_file()
+
+        yield
+
+        storage.resource.delete()
+
+    def test_file_name(self, storage):
+        assert storage.old_source_name == utils.get_target_filepath(
+            'files/%Y-%m-%d/old_name{suffix}',
+            storage.old_source_name
+        )
+
+    def test_file_not_exists(self, storage):
+        file_field = storage.resource.get_file_field()
+        with pytest.raises(cloudinary.exceptions.Error):
+            uploader.explicit(
+                storage.old_source_name,
+                type=file_field.type,
+                resource_type=file_field.resource_type
+            )
 
 
 class TestEmptyCloudinaryFile(TestEmptyFileFieldResource):

@@ -5,7 +5,12 @@ from paper_uploads.models import UploadedImage
 
 from .. import utils
 from ..dummy import *
-from .test_base import TestEmptyVersatileImageResource, TestVersatileImageResource
+from .test_base import (
+    TestEmptyVersatileImageResource,
+    TestImageDelete,
+    TestImageRename,
+    TestVersatileImageResource,
+)
 
 
 class TestUploadedImage(TestVersatileImageResource):
@@ -119,6 +124,109 @@ class TestUploadedImageExists:
         assert os.path.exists(source_path) is False
         assert os.path.exists(desktop_path) is False
         assert os.path.exists(mobile_path) is False
+
+
+class TestUploadedImageRename(TestImageRename):
+    @classmethod
+    def init(cls, storage):
+        storage.resource = UploadedImage(
+            owner_app_label='app',
+            owner_model_name='imageexample',
+            owner_fieldname='image'
+        )
+        with open(NATURE_FILEPATH, 'rb') as fp:
+            storage.resource.attach_file(fp, name='old_name.jpg')
+        storage.resource.save()
+
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
+        storage.old_desktop_name = storage.resource.desktop.name
+        storage.old_mobile_name = storage.resource.mobile.name
+
+        storage.old_source_path = file.path
+        storage.old_desktop_path = storage.resource.desktop.path
+        storage.old_mobile_path = storage.resource.mobile.path
+
+        storage.resource.rename_file('new_name.png')
+
+        yield
+
+        os.remove(storage.old_source_path)
+        os.remove(storage.old_desktop_path)
+        os.remove(storage.old_mobile_path)
+        storage.resource.delete_file()
+        storage.resource.delete()
+
+    def test_old_file_name(self, storage):
+        assert storage.old_source_name == utils.get_target_filepath(
+            'images/%Y-%m-%d/old_name{suffix}.jpg',
+            storage.old_source_name
+        )
+        assert storage.old_desktop_name == utils.get_target_filepath(
+            'images/%Y-%m-%d/old_name{suffix}.desktop.jpg',
+            storage.old_source_name
+        )
+        assert storage.old_mobile_name == utils.get_target_filepath(
+            'images/%Y-%m-%d/old_name{suffix}.mobile.jpg',
+            storage.old_source_name
+        )
+
+    def test_new_file_name(self, storage):
+        file = storage.resource.get_file()
+        assert file.name == utils.get_target_filepath(
+            'images/%Y-%m-%d/new_name{suffix}.png',
+            file.name
+        )
+        assert storage.resource.desktop.name == utils.get_target_filepath(
+            'images/%Y-%m-%d/new_name{suffix}.desktop.png',
+            file.name
+        )
+        assert storage.resource.mobile.name == utils.get_target_filepath(
+            'images/%Y-%m-%d/new_name{suffix}.mobile.png',
+            file.name
+        )
+
+
+class TestUploadedFileDelete(TestImageDelete):
+    @classmethod
+    def init(cls, storage):
+        storage.resource = UploadedImage(
+            owner_app_label='app',
+            owner_model_name='imageexample',
+            owner_fieldname='image'
+        )
+        with open(NATURE_FILEPATH, 'rb') as fp:
+            storage.resource.attach_file(fp, name='old_name.jpg')
+        storage.resource.save()
+
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
+        storage.old_desktop_name = storage.resource.desktop.name
+        storage.old_mobile_name = storage.resource.mobile.name
+
+        storage.old_source_path = file.path
+        storage.old_desktop_path = storage.resource.desktop.path
+        storage.old_mobile_path = storage.resource.mobile.path
+
+        storage.resource.delete_file()
+
+        yield
+
+        storage.resource.delete()
+
+    def test_file_name(self, storage):
+        assert storage.old_source_name == utils.get_target_filepath(
+            'images/%Y-%m-%d/old_name{suffix}.jpg',
+            storage.old_source_name
+        )
+        assert storage.old_desktop_name == utils.get_target_filepath(
+            'images/%Y-%m-%d/old_name{suffix}.desktop.jpg',
+            storage.old_source_name
+        )
+        assert storage.old_mobile_name == utils.get_target_filepath(
+            'images/%Y-%m-%d/old_name{suffix}.mobile.jpg',
+            storage.old_source_name
+        )
 
 
 class TestEmptyUploadedFileExists(TestEmptyVersatileImageResource):
