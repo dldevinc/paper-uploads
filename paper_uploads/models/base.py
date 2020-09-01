@@ -237,6 +237,10 @@ class FileResource(FileProxyMixin, Resource):
             sender=type(self), instance=self, file=prepared_file, options=options
         )
 
+        # reset file position before upload
+        if prepared_file.seekable():
+            prepared_file.seek(0)
+
         response = self._attach_file(prepared_file, **options)
 
         self.size = self.get_file_size()
