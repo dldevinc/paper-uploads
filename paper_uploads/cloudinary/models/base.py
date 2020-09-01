@@ -166,7 +166,8 @@ class CloudinaryFileResource(FileResource):
         return True
 
     def get_cloudinary_options(self):
-        options = settings.CLOUDINARY.copy()
+        global_options = settings.CLOUDINARY or {}
+        options = global_options.get('uploader', {}).copy()
 
         file_field = self.get_file_field()
         options.update(file_field.options)

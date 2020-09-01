@@ -13,7 +13,7 @@ from .mixins import ReadonlyCloudinaryFileProxyMixin
 class CloudinaryFile(ReadonlyCloudinaryFileProxyMixin, CloudinaryFileResource):
     file = CloudinaryField(
         _('file'),
-        type='upload',
+        type=settings.CLOUDINARY.get('type', 'private'),
         resource_type='raw',
         folder=settings.FILES_UPLOAD_TO
     )

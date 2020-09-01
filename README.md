@@ -703,9 +703,12 @@ PAPER_UPLOADS = {
 Значение по умолчанию:
 ```python
 {
-    'use_filename': True,
-    'unique_filename': True,
-    'overwrite': True,
+    'type': 'private',
+    'uploader': {
+        'use_filename': True,
+        'unique_filename': True,
+        'overwrite': True,
+    }
 }
 ```
 
