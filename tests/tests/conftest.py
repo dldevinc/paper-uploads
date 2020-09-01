@@ -2,6 +2,7 @@ from threading import local
 
 import pytest
 import pytest_django.fixtures
+from django.utils.timezone import now
 
 
 @pytest.fixture(scope="class")
@@ -50,6 +51,8 @@ def storage(request, class_scoped_db):
     gen = request.cls.init(storage)
 
     next(gen)
+
+    storage.now = now()
     yield storage
 
     try:

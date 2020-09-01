@@ -4,7 +4,6 @@ import shutil
 import pytest
 from django.conf import settings
 from django.core.files import File
-from django.utils.timezone import now
 
 from app.models import (
     DummyFileFieldResource,
@@ -42,9 +41,9 @@ class TestResource:
         assert storage.resource.name == self.resource_name
 
     def test_dates(self, storage):
-        assert self._equal_dates(storage.resource.created_at, now(), delta=60)
-        assert self._equal_dates(storage.resource.modified_at, now())
-        assert self._equal_dates(storage.resource.uploaded_at, now())
+        assert self._equal_dates(storage.resource.created_at, storage.now)
+        assert self._equal_dates(storage.resource.modified_at, storage.now)
+        assert self._equal_dates(storage.resource.uploaded_at, storage.now)
 
     def test_str(self, storage):
         assert str(storage.resource) == self.resource_name
