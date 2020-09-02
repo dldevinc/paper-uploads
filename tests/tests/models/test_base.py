@@ -267,13 +267,14 @@ class TestFileResource(TestResource):
         delattr(storage.resource, '_file')
         storage.resource.get_file()
 
-    def test_proxied_attributes(self, storage):
-        storage.resource.seek(0, os.SEEK_END)
-        assert storage.resource.tell() == 28
-        storage.resource.seek(0)
-        assert storage.resource.tell() == 0
-        assert storage.resource.read(4) == b'This'
-        storage.resource.seek(0)
+    def test_seek(self, storage):
+        if storage.resource.seekable():
+            storage.resource.seek(0, os.SEEK_END)
+            assert storage.resource.tell() == 28
+            storage.resource.seek(0)
+            assert storage.resource.tell() == 0
+            assert storage.resource.read(4) == b'This'
+            storage.resource.seek(0)
 
 
 class TestFileResourceSignals:
@@ -564,12 +565,25 @@ class TestFileFieldResource(TestFileResource):
 
         storage.resource.open()  # reopen
 
-    def test_proxied_attributes(self, storage):
-        storage.resource.seek(0, os.SEEK_END)
-        assert storage.resource.tell() == self.resource_size
-        storage.resource.seek(0)
-        assert storage.resource.tell() == 0
-        storage.resource.seek(0)
+    def test_seekable(self, storage):
+        with storage.resource.open() as fp:
+            assert fp.seekable() is True
+
+    def test_readable(self, storage):
+        with storage.resource.open() as fp:
+            assert fp.readable() is True
+
+    def test_writable(self, storage):
+        with storage.resource.open() as fp:
+            assert fp.writable() is False
+
+    def test_seek(self, storage):
+        if storage.resource.seekable():
+            storage.resource.seek(0, os.SEEK_END)
+            assert storage.resource.tell() == self.resource_size
+            storage.resource.seek(0)
+            assert storage.resource.tell() == 0
+            storage.resource.seek(0)
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {

@@ -334,3 +334,33 @@ class CloudinaryMediaExample(models.Model):
             return self.media.name
         else:
             return 'MediaObject'
+
+
+class CloudinaryFileCollection(Collection):
+    file = CollectionItem(CloudinaryFileItem)
+
+
+class CloudinaryPhotoCollection(CloudinaryImageCollection):
+    pass
+
+
+class CloudinaryMediaCollection(Collection):
+    media = CollectionItem(CloudinaryMediaItem)
+
+
+class CloudinaryCompleteCollection(CloudinaryCollection):
+    pass
+
+
+class CloudinaryCollectionFieldObject(models.Model):
+    file_collection = CollectionField(CloudinaryFileCollection)
+    image_collection = CollectionField(CloudinaryPhotoCollection)
+    media_collection = CollectionField(CloudinaryMediaCollection)
+    full_collection = CollectionField(CloudinaryCompleteCollection)
+
+    class Meta:
+        verbose_name = _('Collection')
+        verbose_name_plural = _('Collections')
+
+    def __str__(self):
+        return 'CloudinaryCollectionObject'

@@ -76,6 +76,30 @@ class FileProxyMixin:
     def close(self):
         self.get_file().close()  # noqa
 
+    def readable(self):
+        if self.closed:
+            return False
+        file = self.get_file()
+        if hasattr(file, 'readable'):
+            return file.readable()
+        return True
+
+    def writable(self):
+        if self.closed:
+            return False
+        file = self.get_file()
+        if hasattr(file, 'writable'):
+            return file.writable()
+        return 'w' in getattr(file, 'mode', '')
+
+    def seekable(self):
+        if self.closed:
+            return False
+        file = self.get_file()
+        if hasattr(file, 'seekable'):
+            return file.seekable()
+        return True
+
 
 class FileFieldProxyMixin:
     """

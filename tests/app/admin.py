@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 
 from .models import (
+    CloudinaryCollectionFieldObject,
     CloudinaryFileExample,
     CloudinaryImageExample,
     CloudinaryMediaExample,
@@ -83,6 +84,17 @@ class CloudinaryMediaExampleAdmin(admin.ModelAdmin):
         (None, {
             'fields': (
                 'media',
+            ),
+        }),
+    )
+
+
+@admin.register(CloudinaryCollectionFieldObject)
+class CloudinaryCollectionFieldObjectAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {
+            'fields': (
+                'file_collection', 'image_collection', 'full_collection'
             ),
         }),
     )

@@ -41,12 +41,36 @@ class ReadonlyCloudinaryFileProxyMixin:
             self._wrapped_file.close()
             self._wrapped_file = None
 
+    def readable(self):
+        if self.closed:
+            return False
+        if hasattr(self._wrapped_file, 'readable'):
+            return self._wrapped_file.readable()
+        return True
+
+    def writable(self):
+        if self.closed:
+            return False
+        if hasattr(self._wrapped_file, 'writable'):
+            return self._wrapped_file.writable()
+        return 'w' in getattr(self._wrapped_file, 'mode', '')
+
+    def seekable(self):
+        if self.closed:
+            return False
+        if hasattr(self._wrapped_file, 'seekable'):
+            return self._wrapped_file.seekable()
+        return True
+
     @property
     def url(self):
         self._require_file()  # noqa
         return self.get_file().url  # noqa
 
     def download_file(self, mode='rb'):
+        # TODO: хранить скачанный файл, проверять checksum вместо повторного скачивания
+        # TODO: lock
+        # TODO: swap mode to non-writable after download
         if self._wrapped_file is None:
             self._wrapped_file = self._download_file(mode)
         self._wrapped_file.seek(0)
