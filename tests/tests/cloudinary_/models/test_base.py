@@ -1,10 +1,13 @@
+import os
+
 import pytest
 from cloudinary import CloudinaryResource, uploader
 
 from paper_uploads.cloudinary.models.base import CloudinaryFieldFile
 
-from .. import utils
-from ..dummy import *
+from ... import utils
+from ...dummy import *
+from ...models.test_base import TestFileResource
 
 
 class TestCloudinaryFieldFile:
@@ -166,3 +169,71 @@ class TestCloudinaryMedia(TestCloudinaryFieldFile):
     def test_open_text(self, storage):
         with storage.file.open('r') as fp:
             assert fp.read(3) == 'ID3'
+
+
+class CloudinaryFileResource(TestFileResource):
+    def test_type(self, storage):
+        raise NotImplementedError
+
+    def test_get_file_field(self, storage):
+        assert (
+            storage.resource.get_file_field()
+            == storage.resource._meta.get_field(self.file_field_name)  # noqa: F821
+        )
+
+    def test_get_file_name(self, storage):
+        raise NotImplementedError
+
+    def test_get_file_url(self, storage):
+        file_url = storage.resource.get_file_url()
+        assert file_url.startswith('https://res.cloudinary.com/')
+
+    def test_url(self, storage):
+        assert storage.resource.url.startswith('https://res.cloudinary.com/')
+
+    def test_closed(self, storage):
+        with storage.resource.open():
+            assert storage.resource.closed is False
+        assert storage.resource.closed is True
+
+    def test_seekable(self, storage):
+        with storage.resource.open() as fp:
+            assert fp.seekable() is True
+
+    def test_readable(self, storage):
+        with storage.resource.open() as fp:
+            assert fp.readable() is True
+
+    def test_writable(self, storage):
+        with storage.resource.open() as fp:
+            assert fp.writable() is False
+
+    def test_open(self, storage):
+        with storage.resource.open() as fp:
+            assert fp.read(4) == b'\xff\xd8\xff\xe0'
+
+    def test_close(self, storage):
+        fp = storage.resource.open()
+        assert storage.resource.closed is False
+        fp.close()
+        assert storage.resource.closed is True
+
+    def test_seek(self, storage):
+        with storage.resource.open() as fp:
+            if fp.seekable():
+                fp.seek(0, os.SEEK_END)
+                assert fp.tell() == self.resource_size
+
+    def test_tell(self, storage):
+        with storage.resource.open() as fp:
+            assert fp.tell() == 0
+
+    def test_get_cloudinary_options(self, storage):
+        options = storage.resource.get_cloudinary_options()
+        folder = utils.get_target_filepath(self.resource_location, '')  # noqa: F821
+        assert options == {
+            'use_filename': True,
+            'unique_filename': True,
+            'overwrite': True,
+            'folder': folder
+        }

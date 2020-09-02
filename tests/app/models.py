@@ -359,8 +359,8 @@ class CloudinaryCollectionFieldObject(models.Model):
     full_collection = CollectionField(CloudinaryCompleteCollection)
 
     class Meta:
-        verbose_name = _('Collection')
-        verbose_name_plural = _('Collections')
+        verbose_name = _('Cloudinary Collection')
+        verbose_name_plural = _('Cloudinary Collections')
 
     def __str__(self):
         return 'CloudinaryCollectionObject'

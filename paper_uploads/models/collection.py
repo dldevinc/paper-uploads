@@ -330,7 +330,7 @@ class CollectionItemBase(PolymorphicModel):
 
     def get_caption(self):
         """ Заголовок для виджета в админке """
-        raise NotImplementedError
+        return self.get_basename()
 
     def render_preview(self):
         """ Отображение элемента коллекции в админке """
@@ -419,9 +419,6 @@ class FileItem(FilePreviewMixin, CollectionFileItemBase):
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field('file')
 
-    def get_caption(self):
-        return self.get_basename()
-
     @classmethod
     def file_supported(cls, file: File) -> bool:
         return True
@@ -457,9 +454,6 @@ class SVGItem(CollectionFileItemBase):
 
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field('file')
-
-    def get_caption(self):
-        return self.get_basename()
 
     @classmethod
     def file_supported(cls, file: File) -> bool:
@@ -517,9 +511,6 @@ class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
             variation_config = self.get_variation_config(itemtype_field, collection_cls)
             self._variations_cache = build_variations(variation_config)
         return self._variations_cache
-
-    def get_caption(self):
-        return self.get_basename()
 
     @classmethod
     def file_supported(cls, file: File) -> bool:

@@ -1,8 +1,30 @@
+import hashlib
 import re
 from typing import Any, Dict, Iterable, Set, Tuple
 
+from .typing import FileLike
+
 filesize_regex = re.compile(r'^([.\d]+)\s*([KMGT])?B?$')
 filesize_units = {"K": 2 ** 10, "M": 2 ** 20, "G": 2 ** 30, "T": 2 ** 40}
+
+
+def checksum(file: FileLike) -> str:
+    """
+    DropBox checksum realization.
+    https://www.dropbox.com/developers/reference/content-hash
+    """
+    if file.closed:
+        file.open('rb')
+    elif file.seekable():
+        file.seek(0)
+
+    blocks = []
+    while True:
+        data = file.read(4 * 1024 * 1024)
+        if not data:
+            break
+        blocks.append(hashlib.sha256(data).digest())
+    return hashlib.sha256(b''.join(blocks)).hexdigest()
 
 
 def remove_dulpicates(seq: Iterable) -> Tuple:

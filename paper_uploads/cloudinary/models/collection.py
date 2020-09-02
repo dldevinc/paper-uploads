@@ -45,7 +45,7 @@ class CloudinaryFileItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
 
     file = CloudinaryField(
         _('file'),
-        type=settings.CLOUDINARY.get('type', 'private'),
+        type=settings.CLOUDINARY_TYPE,
         resource_type='raw',
         folder=settings.COLLECTION_FILES_UPLOAD_TO
     )
@@ -71,9 +71,6 @@ class CloudinaryFileItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
     def get_file_field(self) -> CloudinaryField:
         return self._meta.get_field('file')
 
-    def get_caption(self):
-        return self.get_basename()
-
     @classmethod
     def file_supported(cls, file: File) -> bool:
         return True
@@ -86,7 +83,7 @@ class CloudinaryMediaItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
 
     file = CloudinaryField(
         _('file'),
-        type=settings.CLOUDINARY.get('type', 'private'),
+        type=settings.CLOUDINARY_TYPE,
         resource_type='video',
         folder=settings.COLLECTION_FILES_UPLOAD_TO
     )
@@ -112,9 +109,6 @@ class CloudinaryMediaItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
     def get_file_field(self) -> CloudinaryField:
         return self._meta.get_field('file')
 
-    def get_caption(self):
-        return self.get_basename()
-
     @classmethod
     def file_supported(cls, file: File) -> bool:
         mimetype = magic.from_buffer(file.read(1024), mime=True)
@@ -131,7 +125,7 @@ class CloudinaryImageItem(ImageFileResourceMixin, CollectionCloudinaryFileItemBa
 
     file = CloudinaryField(
         _('file'),
-        type=settings.CLOUDINARY.get('type', 'private'),
+        type=settings.CLOUDINARY_TYPE,
         resource_type='image',
         folder=settings.COLLECTION_IMAGES_UPLOAD_TO
     )

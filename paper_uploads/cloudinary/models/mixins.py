@@ -1,7 +1,12 @@
+import os
 import tempfile
-from typing import IO
 
 import requests
+from django.core.files import File
+from filelock import FileLock
+
+from ... import utils
+from ...conf import settings
 
 
 class ReadonlyCloudinaryFileProxyMixin:
@@ -10,7 +15,6 @@ class ReadonlyCloudinaryFileProxyMixin:
     """
 
     _wrapped_file = None
-    SPOOL_SIZE = 10 * 1024 * 1024
 
     seek = property(lambda self: self._wrapped_file.seek)
     tell = property(lambda self: self._wrapped_file.tell)
@@ -68,24 +72,31 @@ class ReadonlyCloudinaryFileProxyMixin:
         return self.get_file().url  # noqa
 
     def download_file(self, mode='rb'):
-        # TODO: хранить скачанный файл, проверять checksum вместо повторного скачивания
-        # TODO: lock
-        # TODO: swap mode to non-writable after download
         if self._wrapped_file is None:
             self._wrapped_file = self._download_file(mode)
         self._wrapped_file.seek(0)
 
-    def _download_file(self, mode='rb') -> IO:
-        response = requests.get(self.get_file_url(), stream=True)  # noqa
-        response.raise_for_status()
+    def _download_file(self, mode='rb') -> File:
+        temp_filepath = os.path.join(
+            tempfile.gettempdir(),
+            settings.CLOUDINARY_TEMP_DIR,
+            self.get_file().name  # noqa
+        )
+        root, basename = os.path.split(temp_filepath)
+        os.makedirs(root, mode=0o755, exist_ok=True)
 
-        bytes_mode = 'b' in mode
-        filemode = 'wb+' if bytes_mode else 'w+'
-        tfile = tempfile.SpooledTemporaryFile(max_size=self.SPOOL_SIZE, mode=filemode)
-        for chunk in response.iter_content():
-            if bytes_mode:
-                tfile.write(chunk)
-            else:
-                tfile.write(chunk.decode(response.encoding or 'utf-8'))
-        tfile.seek(0)
-        return tfile
+        if os.path.exists(temp_filepath):
+            with open(temp_filepath, 'rb') as fp:
+                file_checksum = utils.checksum(fp)
+            if file_checksum == self.content_hash:  # noqa
+                return File(open(temp_filepath, mode))
+
+        lock = FileLock(temp_filepath + '.lock')
+        with lock.acquire(timeout=3600):
+            response = requests.get(self.get_file_url(), stream=True)  # noqa
+            response.raise_for_status()
+
+            with open(temp_filepath, 'wb+') as fp:
+                for chunk in response.iter_content():
+                    fp.write(chunk)
+            return File(open(temp_filepath, mode))

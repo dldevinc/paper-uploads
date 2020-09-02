@@ -168,8 +168,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         return True
 
     def get_cloudinary_options(self):
-        global_options = settings.CLOUDINARY or {}
-        options = global_options.get('uploader', {}).copy()
+        options = (settings.CLOUDINARY_UPLOADER_OPTIONS or {}).copy()
 
         file_field = self.get_file_field()
         options.update(file_field.options)

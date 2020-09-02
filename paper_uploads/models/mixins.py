@@ -36,6 +36,9 @@ class BacklinkModelMixin(models.Model):
         if owner_model is None:
             return None
 
+        if not self.owner_fieldname:
+            return None
+
         try:
             return owner_model._meta.get_field(self.owner_fieldname)
         except FieldDoesNotExist:

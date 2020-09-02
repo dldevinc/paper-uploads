@@ -12,7 +12,7 @@ from .base import CloudinaryFieldFile, CloudinaryFileResource
 class CloudinaryMedia(CloudinaryFileResource):
     file = CloudinaryField(
         _('file'),
-        type=settings.CLOUDINARY.get('type', 'private'),
+        type=settings.CLOUDINARY_TYPE,
         resource_type='video',
         folder=settings.FILES_UPLOAD_TO
     )

@@ -12,7 +12,7 @@ from .base import CloudinaryFieldFile, CloudinaryFileResource
 class CloudinaryImage(ImageFileResourceMixin, CloudinaryFileResource):
     file = CloudinaryField(
         _('file'),
-        type=settings.CLOUDINARY.get('type', 'private'),
+        type=settings.CLOUDINARY_TYPE,
         resource_type='image',
         folder=settings.IMAGES_UPLOAD_TO
     )

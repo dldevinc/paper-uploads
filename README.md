@@ -696,19 +696,24 @@ PAPER_UPLOADS = {
 
 Значение по умолчанию: `None`
 
-### `CLOUDINARY`
+### `CLOUDINARY_TYPE`
+Тип загрузки файлов. Возможные значения: `private`, `upload`.
+Значение по умолчанию: `private`
+
+### `CLOUDINARY_TEMP_DIR`
+Папка в разделе `/tmp/`, в которую скачиваются файлы из Cloudinary
+для из открытия для чтения.
+
+### `CLOUDINARY_UPLOADER_OPTIONS`
 Словарь, задающий глобальные [параметры загрузки](https://cloudinary.com/documentation/image_upload_api_reference#required_parameters)
 для Cloudinary.
 
 Значение по умолчанию:
 ```python
 {
-    'type': 'private',
-    'uploader': {
-        'use_filename': True,
-        'unique_filename': True,
-        'overwrite': True,
-    }
+    'use_filename': True,
+    'unique_filename': True,
+    'overwrite': True,
 }
 ```
 

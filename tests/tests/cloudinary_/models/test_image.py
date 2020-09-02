@@ -1,26 +1,33 @@
-import cloudinary
+import posixpath
+
+import cloudinary.exceptions
 import pytest
 from cloudinary import uploader
 
 from app.models import CloudinaryImageExample
 from paper_uploads.cloudinary.models import CloudinaryImage
-from paper_uploads.conf import settings
 
 from ... import utils
 from ...dummy import *
 from ...models.test_base import (
     TestEmptyFileFieldResource,
     TestImageDelete,
-    TestImageFieldResource,
     TestImageRename,
 )
+from .test_base import CloudinaryFileResource
 
 
-class TestCloudinaryImage(TestImageFieldResource):
+class TestCloudinaryImage(CloudinaryFileResource):
+    resource_url = '/media/images/%Y-%m-%d'
+    resource_location = 'images/%Y-%m-%d'
     resource_name = 'Nature Tree'
-    resource_extension = 'jpg'  # Cloudinary extension format
+    resource_extension = 'jpg'
     resource_size = 672759
-    resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+    resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+    owner_app_label = 'app'
+    owner_model_name = 'cloudinaryimageexample'
+    owner_fieldname = 'image'
+    owner_class = CloudinaryImageExample
     file_field_name = 'file'
 
     @classmethod
@@ -28,9 +35,9 @@ class TestCloudinaryImage(TestImageFieldResource):
         storage.resource = CloudinaryImage(
             title='Calliphora',
             description='Calliphora is a genus of blow flies, also known as bottle flies',
-            owner_app_label='app',
-            owner_model_name='cloudinaryimageexample',
-            owner_fieldname='image'
+            owner_app_label=cls.owner_app_label,
+            owner_model_name=cls.owner_model_name,
+            owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp)
@@ -44,29 +51,10 @@ class TestCloudinaryImage(TestImageFieldResource):
         assert file_field.type == 'private'
         assert file_field.resource_type == 'image'
 
-    def test_get_owner_model(self, storage):
-        assert storage.resource.get_owner_model() is CloudinaryImageExample
-
-    def test_get_owner_field(self, storage):
-        assert storage.resource.get_owner_field() is CloudinaryImageExample._meta.get_field('image')
-
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
-        assert file_name == utils.get_target_filepath(
-            'images/%Y-%m-%d/Nature_Tree{suffix}',
-            file_name
-        )
-
-    def test_get_file_url(self, storage):
-        file_url = storage.resource.get_file_url()
-        assert file_url.startswith('https://res.cloudinary.com/')
-
-    def test_path(self, storage):
-        # Cloudinary has no path
-        pass
-
-    def test_url(self, storage):
-        assert storage.resource.url.startswith('https://res.cloudinary.com/')
+        pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}')
+        assert file_name == utils.get_target_filepath(pattern, file_name)
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
@@ -81,16 +69,9 @@ class TestCloudinaryImage(TestImageFieldResource):
             'description': 'Calliphora is a genus of blow flies, also known as bottle flies',
             'file_info': '(jpg, 1534x2301, 657.0\xa0KB)',
             'url': storage.resource.get_file_url(),
-        }
-
-    def test_get_cloudinary_options(self, storage):
-        options = storage.resource.get_cloudinary_options()
-        folder = utils.get_target_filepath(settings.IMAGES_UPLOAD_TO, '')
-        assert options == {
-            'use_filename': True,
-            'unique_filename': True,
-            'overwrite': True,
-            'folder': folder
+            'created': storage.resource.created_at.isoformat(),
+            'modified': storage.resource.modified_at.isoformat(),
+            'uploaded': storage.resource.uploaded_at.isoformat(),
         }
 
 
@@ -103,13 +84,13 @@ class TestCloudinaryImageRename(TestImageRename):
             owner_fieldname='file'
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach_file(fp, name='old_image_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
 
-        storage.resource.rename_file('new_name.png')
+        storage.resource.rename_file('new_image_name.png')
 
         yield
 
@@ -118,11 +99,12 @@ class TestCloudinaryImageRename(TestImageRename):
 
     def test_old_file_exists(self, storage):
         file = storage.resource.get_file()
-        uploader.explicit(
-            file.name,
-            type=file.type,
-            resource_type=file.resource_type
-        )
+        with pytest.raises(cloudinary.exceptions.Error):
+            uploader.explicit(
+                storage.old_source_name,
+                type=file.type,
+                resource_type=file.resource_type
+            )
 
     def test_new_file_exists(self, storage):
         file = storage.resource.get_file()
@@ -134,14 +116,14 @@ class TestCloudinaryImageRename(TestImageRename):
 
     def test_old_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            'images/%Y-%m-%d/old_name{suffix}',
+            'images/%Y-%m-%d/old_image_name{suffix}',
             storage.old_source_name
         )
 
     def test_new_file_name(self, storage):
         file = storage.resource.get_file()
         assert file.name == utils.get_target_filepath(
-            'images/%Y-%m-%d/new_name{suffix}',
+            'images/%Y-%m-%d/new_image_name{suffix}',
             file.name
         )
 

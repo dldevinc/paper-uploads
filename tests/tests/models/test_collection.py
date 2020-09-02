@@ -1,4 +1,5 @@
 import os
+import posixpath
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
@@ -243,54 +244,15 @@ class TestCollection:
             assert storage.image_collection.detect_file_type(file) == 'image'
 
 
-class TestCollectionItem(TestFileFieldResource):
-    resource_name = 'Nature Tree'
-    resource_extension = 'Jpeg'
-    resource_size = 672759
-    resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
-    collection_class = CompleteCollection
+class CollectionItemMixin:
+    owner_app_label = ''
+    owner_model_name = ''
+    owner_fieldname = ''
+    owner_class = None
+    collection_class = None
 
-    @classmethod
-    def init(cls, storage):
-        storage.collection = cls.collection_class.objects.create()
-
-        storage.resource = FileItem()
-        storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
-        storage.resource.save()
-
-        yield
-
-        storage.resource.delete_file()
-        storage.resource.delete()
-        storage.collection.delete()
-
-    def test_get_file_name(self, storage):
-        file_name = storage.resource.get_file_name()
-        assert file_name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
-            file_name
-        )
-
-    def test_get_file_url(self, storage):
-        file_url = storage.resource.get_file_url()
-        assert file_url == utils.get_target_filepath(
-            '/media/collections/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
-            file_url
-        )
-
-    def test_path(self, storage):
-        assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/collections/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
-            storage.resource.get_file_url()
-        ))
-
-    def test_url(self, storage):
-        assert storage.resource.url == utils.get_target_filepath(
-            '/media/collections/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
-            storage.resource.get_file_url()
-        )
+    def test_item_type(self, storage):
+        raise NotImplementedError
 
     def test_get_owner_model(self, storage):
         # Collection items does not have owner
@@ -299,28 +261,6 @@ class TestCollectionItem(TestFileFieldResource):
     def test_get_owner_field(self, storage):
         # Collection items does not have owner
         assert storage.resource.get_owner_field() is None
-
-    def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            'id': 1,
-            'collectionId': 1,
-            'item_type': 'file',
-            'name': self.resource_name,
-            'extension': self.resource_extension,
-            'size': self.resource_size,
-            'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
-            'url': utils.get_target_filepath(
-                '/media/collections/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg',
-                storage.resource.get_file_url()
-            ),
-            'preview': render_to_string(
-                'paper_uploads/collection_item/preview/file.html',
-                storage.resource.get_preview_context()
-            )
-        }
-
-    def test_item_type(self, storage):
-        assert storage.resource.item_type == 'file'
 
     def test_collection_content_type(self, storage):
         assert storage.resource.collection_content_type == ContentType.objects.get_for_model(
@@ -339,19 +279,12 @@ class TestCollectionItem(TestFileFieldResource):
 
     def test_get_caption(self, storage):
         assert storage.resource.get_caption() == '{}.{}'.format(
-            self.resource_name,
-            self.resource_extension
+            self.resource_name,  # noqa: F821
+            self.resource_extension  # noqa: F821
         )
 
     def test_file_supported(self, storage):
-        with open(DOCUMENT_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
-
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
-
-        with open(MEDITATION_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
+        raise NotImplementedError
 
 
 @pytest.mark.django_db
@@ -366,11 +299,13 @@ class TestAttachWrongItemClassToCollection:
         collection.delete()
 
 
-class TestFileItem(TestCollectionItem):
+class TestFileItem(CollectionItemMixin, TestFileFieldResource):
+    resource_url = '/media/collections/files/%Y-%m-%d'
+    resource_location = 'collections/files/%Y-%m-%d'
     resource_name = 'Nature Tree'
     resource_extension = 'Jpeg'
     resource_size = 672759
-    resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+    resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
     file_field_name = 'file'
     collection_class = FileCollection
 
@@ -393,8 +328,43 @@ class TestFileItem(TestCollectionItem):
     def test_display_name(self, storage):
         assert storage.resource.display_name == self.resource_name
 
+    def test_item_type(self, storage):
+        assert storage.resource.item_type == 'file'
+
     def test_get_preview_url(self, storage):
         assert storage.resource.get_preview_url() == '/static/paper_uploads/dist/image/jpg.svg'
+
+    def test_as_dict(self, storage):
+        assert storage.resource.as_dict() == {
+            'id': 1,
+            'collectionId': 1,
+            'item_type': 'file',
+            'name': self.resource_name,
+            'extension': self.resource_extension,
+            'size': self.resource_size,
+            'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
+            'preview': render_to_string(
+                'paper_uploads/collection_item/preview/file.html',
+                storage.resource.get_preview_context()
+            ),
+            'url': storage.resource.get_file_url(),
+            'created': storage.resource.created_at.isoformat(),
+            'modified': storage.resource.modified_at.isoformat(),
+            'uploaded': storage.resource.uploaded_at.isoformat(),
+        }
+
+    def test_file_supported(self, storage):
+        with open(DOCUMENT_FILEPATH, 'rb') as fp:
+            assert storage.resource.file_supported(File(fp)) is True
+
+        with open(NATURE_FILEPATH, 'rb') as fp:
+            assert storage.resource.file_supported(File(fp)) is True
+
+        with open(MEDITATION_FILEPATH, 'rb') as fp:
+            assert storage.resource.file_supported(File(fp)) is True
+
+        with open(AUDIO_FILEPATH, 'rb') as fp:
+            assert storage.resource.file_supported(File(fp)) is True
 
 
 class TestFileItemFilesExists:
@@ -495,11 +465,17 @@ class TestEmptyFileItem(TestEmptyFileFieldResource):
         yield
 
 
-class TestSVGItem(TestCollectionItem):
+class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
+    resource_url = '/media/collections/files/%Y-%m-%d'
+    resource_location = 'collections/files/%Y-%m-%d'
     resource_name = 'Meditation'
     resource_extension = 'svg'
     resource_size = 47193
-    resource_hash = '7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d'
+    resource_checksum = '7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d'
+    owner_app_label = ''
+    owner_model_name = ''
+    owner_fieldname = ''
+    owner_class = None
     file_field_name = 'file'
     collection_class = CompleteCollection
 
@@ -519,34 +495,28 @@ class TestSVGItem(TestCollectionItem):
         storage.resource.delete()
         storage.collection.delete()
 
+    def test_item_type(self, storage):
+        assert storage.resource.item_type == 'svg'
+
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
-        assert file_name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/Meditation{suffix}.svg',
-            file_name
-        )
+        pattern = posixpath.join(self.resource_location, 'Meditation{suffix}.svg')
+        assert file_name == utils.get_target_filepath(pattern, file_name)
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
-        assert file_url == utils.get_target_filepath(
-            '/media/collections/files/%Y-%m-%d/Meditation{suffix}.svg',
-            file_url
-        )
+        pattern = posixpath.join(self.resource_url, 'Meditation{suffix}.svg')
+        assert file_url == utils.get_target_filepath(pattern, file_url)
 
     def test_path(self, storage):
-        assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/collections/files/%Y-%m-%d/Meditation{suffix}.svg',
-            storage.resource.get_file_url()
-        ))
+        path = storage.resource.path
+        pattern = posixpath.join('media', self.resource_location, 'Meditation{suffix}.svg')
+        assert path.endswith(utils.get_target_filepath(pattern, path))
 
     def test_url(self, storage):
-        assert storage.resource.url == utils.get_target_filepath(
-            '/media/collections/files/%Y-%m-%d/Meditation{suffix}.svg',
-            storage.resource.get_file_url()
-        )
-
-    def test_item_type(self, storage):
-        assert storage.resource.item_type == 'svg'
+        url = storage.resource.url
+        pattern = posixpath.join(self.resource_url, 'Meditation{suffix}.svg')
+        assert url == utils.get_target_filepath(pattern, url)
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
@@ -557,21 +527,19 @@ class TestSVGItem(TestCollectionItem):
             'extension': self.resource_extension,
             'size': self.resource_size,
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
-            'url': utils.get_target_filepath(
-                '/media/collections/files/%Y-%m-%d/Meditation{suffix}.svg',
-                storage.resource.get_file_url()
-            ),
             'preview': render_to_string(
                 'paper_uploads/collection_item/preview/svg.html',
                 storage.resource.get_preview_context()
-            )
+            ),
+            'url': storage.resource.get_file_url(),
+            'created': storage.resource.created_at.isoformat(),
+            'modified': storage.resource.modified_at.isoformat(),
+            'uploaded': storage.resource.uploaded_at.isoformat(),
         }
 
     def test_open(self, storage):
         with storage.resource.open() as fp:
             assert fp.read(5) == b'<?xml'
-
-        storage.resource.open()  # reopen
 
     def test_file_supported(self, storage):
         with open(DOCUMENT_FILEPATH, 'rb') as fp:
@@ -582,6 +550,9 @@ class TestSVGItem(TestCollectionItem):
 
         with open(MEDITATION_FILEPATH, 'rb') as fp:
             assert storage.resource.file_supported(File(fp)) is True
+
+        with open(AUDIO_FILEPATH, 'rb') as fp:
+            assert storage.resource.file_supported(File(fp)) is False
 
 
 class TestSVGItemFilesExists:
@@ -682,11 +653,17 @@ class TestEmptySVGItem(TestEmptyFileFieldResource):
         yield
 
 
-class TestImageItem(TestCollectionItem):
+class TestImageItem(CollectionItemMixin, TestFileFieldResource):
+    resource_url = '/media/collections/images/%Y-%m-%d'
+    resource_location = 'collections/images/%Y-%m-%d'
     resource_name = 'Nature Tree'
     resource_extension = 'jpg'
     resource_size = 672759
-    resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+    resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+    owner_app_label = ''
+    owner_model_name = ''
+    owner_fieldname = ''
+    owner_class = None
     file_field_name = 'file'
     collection_class = CompleteCollection
 
@@ -706,34 +683,28 @@ class TestImageItem(TestCollectionItem):
         storage.resource.delete()
         storage.collection.delete()
 
+    def test_item_type(self, storage):
+        assert storage.resource.item_type == 'image'
+
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
-        assert file_name == utils.get_target_filepath(
-            'collections/images/%Y-%m-%d/Nature_Tree{suffix}.jpg',
-            file_name
-        )
+        pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}.jpg')
+        assert file_name == utils.get_target_filepath(pattern, file_name)
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
-        assert file_url == utils.get_target_filepath(
-            '/media/collections/images/%Y-%m-%d/Nature_Tree{suffix}.jpg',
-            file_url
-        )
+        pattern = posixpath.join(self.resource_url, 'Nature_Tree{suffix}.jpg')
+        assert file_url == utils.get_target_filepath(pattern, file_url)
 
     def test_path(self, storage):
-        assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/collections/images/%Y-%m-%d/Nature_Tree{suffix}.jpg',
-            storage.resource.get_file_url()
-        ))
+        path = storage.resource.path
+        pattern = posixpath.join('media', self.resource_location, 'Nature_Tree{suffix}.jpg')
+        assert path.endswith(utils.get_target_filepath(pattern, path))
 
     def test_url(self, storage):
-        assert storage.resource.url == utils.get_target_filepath(
-            '/media/collections/images/%Y-%m-%d/Nature_Tree{suffix}.jpg',
-            storage.resource.get_file_url()
-        )
-
-    def test_item_type(self, storage):
-        assert storage.resource.item_type == 'image'
+        url = storage.resource.url
+        pattern = posixpath.join(self.resource_url, 'Nature_Tree{suffix}.jpg')
+        assert url == utils.get_target_filepath(pattern, url)
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
@@ -749,14 +720,14 @@ class TestImageItem(TestCollectionItem):
             'title': '',
             'description': '',
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
-            'url': utils.get_target_filepath(
-                '/media/collections/images/%Y-%m-%d/Nature_Tree{suffix}.jpg',
-                storage.resource.get_file_url()
-            ),
             'preview': render_to_string(
                 'paper_uploads/collection_item/preview/image.html',
                 storage.resource.get_preview_context()
-            )
+            ),
+            'url': storage.resource.get_file_url(),
+            'created': storage.resource.created_at.isoformat(),
+            'modified': storage.resource.modified_at.isoformat(),
+            'uploaded': storage.resource.uploaded_at.isoformat(),
         }
 
     def test_get_variations(self, storage):
@@ -780,6 +751,9 @@ class TestImageItem(TestCollectionItem):
         # SVG passes image test
         with open(MEDITATION_FILEPATH, 'rb') as fp:
             assert storage.resource.file_supported(File(fp)) is True
+
+        with open(AUDIO_FILEPATH, 'rb') as fp:
+            assert storage.resource.file_supported(File(fp)) is False
 
 
 class TestImageItemFilesExists:

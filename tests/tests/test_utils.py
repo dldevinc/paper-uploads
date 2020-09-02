@@ -1,4 +1,19 @@
+from django.core.files import File
+
 from paper_uploads import utils
+
+from .dummy import *
+
+
+def test_checksum():
+    with open(NATURE_FILEPATH, 'rb') as fp:
+        assert utils.checksum(fp) == 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+
+
+def test_checksum_on_closed_file():
+    fp = File(None, CALLIPHORA_FILEPATH)
+    assert utils.checksum(fp) == 'd4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386'
+    fp.close()
 
 
 def test_remove_dulpicates():

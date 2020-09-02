@@ -1,4 +1,3 @@
-import hashlib
 import os
 from typing import Any, Dict, Iterable, Optional, Tuple
 
@@ -12,7 +11,7 @@ from PIL import Image
 from variations.typing import Size
 from variations.utils import prepare_image, replace_extension
 
-from .. import helpers, signals
+from .. import helpers, signals, utils
 from ..conf import settings
 from ..typing import FileLike
 from ..variations import PaperVariation
@@ -71,6 +70,8 @@ class ResourceBase(models.Model):
         return {
             'id': self.pk,
             'name': self.name,
+            'created': self.created_at.isoformat(),
+            'modified': self.modified_at.isoformat(),
         }
 
 
@@ -90,8 +91,6 @@ class FileResource(FileProxyMixin, Resource):
     Подкласс ресурса, представляющего файл.
     """
 
-    BLOCK_SIZE = 4 * 1024 * 1024
-
     extension = models.CharField(
         _('extension'),
         max_length=32,
@@ -99,7 +98,7 @@ class FileResource(FileProxyMixin, Resource):
         help_text=_('Lowercase, without leading dot'),
     )
     size = models.PositiveIntegerField(_('Size'), default=0, editable=False)
-    content_hash = models.CharField(
+    content_hash = models.CharField(  # TODO: rename to checksum
         _('content hash'),
         max_length=64,
         editable=False,
@@ -133,31 +132,12 @@ class FileResource(FileProxyMixin, Resource):
             'extension': self.extension,
             'size': self.size,
             'url': self.get_file_url(),
+            'uploaded': self.uploaded_at.isoformat()
         }
-
-    def get_hash(self, file: FileLike) -> str:
-        """
-        DropBox checksum realization.
-        https://www.dropbox.com/developers/reference/content-hash
-        """
-        blocks = []
-
-        if file.closed:
-            file.open('rb')
-
-        if file.seekable():
-            file.seek(0)
-
-        while True:
-            data = file.read(self.BLOCK_SIZE)
-            if not data:
-                break
-            blocks.append(hashlib.sha256(data).digest())
-        return hashlib.sha256(b''.join(blocks)).hexdigest()
 
     def update_hash(self) -> bool:
         old_hash = self.content_hash
-        new_hash = self.get_hash(self.get_file())
+        new_hash = utils.checksum(self.get_file())
         if new_hash and new_hash != old_hash:
             signals.content_hash_update.send(
                 sender=type(self), instance=self, content_hash=new_hash

@@ -14,10 +14,16 @@ from .test_base import (
 
 
 class TestUploadedImage(TestVersatileImageResource):
+    resource_url = '/media/images/%Y-%m-%d'
+    resource_location = 'images/%Y-%m-%d'
     resource_name = 'Nature Tree'
     resource_extension = 'jpg'
     resource_size = 672759
-    resource_hash = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+    resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
+    owner_app_label = 'app'
+    owner_model_name = 'imageexample'
+    owner_fieldname = 'image'
+    owner_class = ImageExample
     file_field_name = 'file'
 
     @classmethod
@@ -25,9 +31,9 @@ class TestUploadedImage(TestVersatileImageResource):
         storage.resource = UploadedImage(
             title='Calliphora',
             description='Calliphora is a genus of blow flies, also known as bottle flies',
-            owner_app_label='app',
-            owner_model_name='imageexample',
-            owner_fieldname='image'
+            owner_app_label=cls.owner_app_label,
+            owner_model_name=cls.owner_model_name,
+            owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp)
@@ -37,38 +43,6 @@ class TestUploadedImage(TestVersatileImageResource):
 
         storage.resource.delete_file()
         storage.resource.delete()
-
-    def test_get_owner_model(self, storage):
-        assert storage.resource.get_owner_model() is ImageExample
-
-    def test_get_owner_field(self, storage):
-        assert storage.resource.get_owner_field() is ImageExample._meta.get_field('image')
-
-    def test_get_file_name(self, storage):
-        file_name = storage.resource.get_file_name()
-        assert file_name == utils.get_target_filepath(
-            'images/%Y-%m-%d/Nature_Tree{suffix}.jpg',
-            file_name
-        )
-
-    def test_get_file_url(self, storage):
-        file_url = storage.resource.get_file_url()
-        assert file_url == utils.get_target_filepath(
-            '/media/images/%Y-%m-%d/Nature_Tree{suffix}.jpg',
-            file_url
-        )
-
-    def test_path(self, storage):
-        assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/images/%Y-%m-%d/Nature_Tree{suffix}.jpg',
-            storage.resource.get_file_url()
-        ))
-
-    def test_url(self, storage):
-        assert storage.resource.url == utils.get_target_filepath(
-            '/media/images/%Y-%m-%d/Nature_Tree{suffix}.jpg',
-            storage.resource.get_file_url()
-        )
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
@@ -82,10 +56,10 @@ class TestUploadedImage(TestVersatileImageResource):
             'title': 'Calliphora',
             'description': 'Calliphora is a genus of blow flies, also known as bottle flies',
             'file_info': '(jpg, 1534x2301, 657.0\xa0KB)',
-            'url': utils.get_target_filepath(
-                '/media/images/%Y-%m-%d/Nature_Tree{suffix}.jpg',
-                storage.resource.get_file_url()
-            ),
+            'url': storage.resource.get_file_url(),
+            'created': storage.resource.created_at.isoformat(),
+            'modified': storage.resource.modified_at.isoformat(),
+            'uploaded': storage.resource.uploaded_at.isoformat(),
         }
 
 
