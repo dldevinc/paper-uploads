@@ -88,7 +88,7 @@ class ReadonlyCloudinaryFileProxyMixin:
         if os.path.exists(temp_filepath):
             with open(temp_filepath, 'rb') as fp:
                 file_checksum = utils.checksum(fp)
-            if file_checksum == self.content_hash:  # noqa: F821
+            if file_checksum == self.checksum:  # noqa: F821
                 return File(open(temp_filepath, mode))
 
         lock = FileLock(temp_filepath + '.lock')

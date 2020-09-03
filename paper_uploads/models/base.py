@@ -98,11 +98,10 @@ class FileResource(FileProxyMixin, Resource):
         help_text=_('Lowercase, without leading dot'),
     )
     size = models.PositiveIntegerField(_('Size'), default=0, editable=False)
-    content_hash = models.CharField(  # TODO: rename to checksum
-        _('content hash'),
+    checksum = models.CharField(
+        _('checksum'),
         max_length=64,
         editable=False,
-        help_text=_('Hash of the contents of a file'),
     )
     uploaded_at = models.DateTimeField(_('uploaded at'), default=now, editable=False)
 
@@ -135,15 +134,18 @@ class FileResource(FileProxyMixin, Resource):
             'uploaded': self.uploaded_at.isoformat()
         }
 
-    def update_hash(self) -> bool:
-        old_hash = self.content_hash
-        new_hash = utils.checksum(self.get_file())
-        if new_hash and new_hash != old_hash:
-            signals.content_hash_update.send(
-                sender=type(self), instance=self, content_hash=new_hash
+    def update_checksum(self, file: FileLike = None) -> bool:
+        file = file or self.get_file()
+        old_checksum = self.checksum
+        new_checksum = utils.checksum(file)
+        if new_checksum and new_checksum != old_checksum:
+            signals.checksum_update.send(
+                sender=type(self),
+                instance=self,
+                checksum=new_checksum
             )
-            self.content_hash = new_hash
-        return old_hash != new_hash
+            self.checksum = new_checksum
+        return old_checksum != new_checksum
 
     def get_basename(self) -> str:
         """
@@ -226,7 +228,15 @@ class FileResource(FileProxyMixin, Resource):
         self.size = self.get_file_size()
         self.uploaded_at = now()
         self.modified_at = now()
-        self.update_hash()
+
+        # Рассчет хэша от входного файла, а не от загруженного,
+        # т.к. в случае Cloudinary, это приведет к избыточному
+        # скачиванию файла из облачного хранилища.
+        if prepared_file.seekable():
+            prepared_file.seek(0)
+            self.update_checksum(prepared_file)
+        else:
+            self.update_checksum()
 
         signals.post_attach_file.send(
             sender=type(self),

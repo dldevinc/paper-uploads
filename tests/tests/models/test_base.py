@@ -164,7 +164,7 @@ class TestFileResource(TestResource):
             owner_model_name=cls.owner_model_name,
             owner_fieldname=cls.owner_fieldname
         )
-        storage.resource.update_hash()
+        storage.resource.update_checksum()
         yield
         storage.resource.delete()
 
@@ -174,8 +174,8 @@ class TestFileResource(TestResource):
     def test_size(self, storage):
         assert storage.resource.size == self.resource_size
 
-    def test_content_hash(self, storage):
-        assert storage.resource.content_hash == self.resource_checksum
+    def test_checksum(self, storage):
+        assert storage.resource.checksum == self.resource_checksum
 
     def test_uploaded_at(self, storage):
         assert self._equal_dates(storage.resource.uploaded_at, storage.now)
@@ -202,14 +202,14 @@ class TestFileResource(TestResource):
             'uploaded': storage.resource.uploaded_at.isoformat(),
         }
 
-    def test_update_hash(self, storage):
-        storage.resource.content_hash = ''
+    def test_update_checksum(self, storage):
+        storage.resource.checksum = ''
 
-        assert storage.resource.update_hash() is True
-        assert storage.resource.content_hash == self.resource_checksum
+        assert storage.resource.update_checksum() is True
+        assert storage.resource.checksum == self.resource_checksum
 
-        assert storage.resource.update_hash() is False  # not updated
-        assert storage.resource.content_hash == self.resource_checksum
+        assert storage.resource.update_checksum() is False  # not updated
+        assert storage.resource.checksum == self.resource_checksum
 
     def test_get_basename(self, storage):
         assert storage.resource.get_basename() == '{}.{}'.format(
@@ -276,25 +276,25 @@ class TestFileResource(TestResource):
 
 
 class TestFileResourceSignals:
-    def test_update_hash_signal(self):
+    def test_update_checksum_signal(self):
         resource = DummyFileResource()
         signal_fired = False
-        resource.content_hash = ''
+        resource.checksum = ''
 
-        def signal_handler(sender, instance, content_hash, **kwargs):
+        def signal_handler(sender, instance, checksum, **kwargs):
             nonlocal signal_fired
             signal_fired = True
             assert sender is DummyFileResource
             assert instance is resource
-            assert content_hash == '5d8ec227d0d8794d4d99dfbbdb9ad3b479c16952ad4ef69252644d9c404543a5'
+            assert checksum == '5d8ec227d0d8794d4d99dfbbdb9ad3b479c16952ad4ef69252644d9c404543a5'
 
-        signals.content_hash_update.connect(signal_handler)
+        signals.checksum_update.connect(signal_handler)
 
         assert signal_fired is False
-        assert resource.update_hash() is True
+        assert resource.update_checksum() is True
         assert signal_fired is True
 
-        signals.content_hash_update.disconnect(signal_handler)
+        signals.checksum_update.disconnect(signal_handler)
 
     def test_pre_attach_file_signal(self):
         resource = DummyFileResource()
@@ -309,7 +309,7 @@ class TestFileResourceSignals:
             # ensure instance not filled yet
             assert instance.size == 0
             assert instance.extension == 'jpg'
-            assert instance.content_hash == ''
+            assert instance.checksum == ''
 
             # ensure file type
             assert isinstance(file, File)
@@ -333,7 +333,7 @@ class TestFileResourceSignals:
         resource.delete_file()
         signals.pre_attach_file.disconnect(signal_handler)
 
-    def test_post_signal_fired_signal(self):
+    def test_post_attach_file_signal(self):
         resource = DummyFileResource()
         signal_fired = False
 
@@ -346,7 +346,7 @@ class TestFileResourceSignals:
             # ensure instance filled
             assert instance.size == 28
             assert instance.extension == 'jpg'
-            assert instance.content_hash == '5d8ec227d0d8794d4d99dfbbdb9ad3b479c16952ad4ef69252644d9c404543a5'
+            assert instance.checksum == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
 
             # ensure file type
             assert isinstance(file, File)
@@ -624,7 +624,7 @@ class TestFileAttach:
         assert resource.name == 'milky-way-nasa'
         assert resource.extension == 'jpg'
         assert resource.size == self.resource_size
-        assert resource.content_hash == self.resource_checksum
+        assert resource.checksum == self.resource_checksum
 
         resource.delete_file()
 
@@ -637,7 +637,7 @@ class TestFileAttach:
         assert resource.name == 'milky-way-nasa'
         assert resource.extension == 'jpg'
         assert resource.size == self.resource_size
-        assert resource.content_hash == self.resource_checksum
+        assert resource.checksum == self.resource_checksum
 
         resource.delete_file()
 
@@ -649,7 +649,7 @@ class TestFileAttach:
         assert resource.name == 'overwritten'
         assert resource.extension == 'png'
         assert resource.size == self.resource_size
-        assert resource.content_hash == self.resource_checksum
+        assert resource.checksum == self.resource_checksum
 
         resource.delete_file()
 
@@ -662,7 +662,7 @@ class TestFileAttach:
         assert resource.name == 'override'
         assert resource.extension == 'gif'
         assert resource.size == self.resource_size
-        assert resource.content_hash == self.resource_checksum
+        assert resource.checksum == self.resource_checksum
 
         resource.delete_file()
 

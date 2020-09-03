@@ -1,8 +1,7 @@
 from django.db.models.signals import Signal
 
-# Хэш файла изменился. Это происходит либо в случае создания нового файла,
-# либо при изменении контента уже существующего файла.
-content_hash_update = Signal(providing_args=["instance", "content_hash"])
+# изменение контрольной суммы файла
+checksum_update = Signal(providing_args=["instance", "checksum"])
 
 # создание / перезапись (recut) файла вариации изображения
 variation_created = Signal(providing_args=["instance", "file"])
