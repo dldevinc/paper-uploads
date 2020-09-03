@@ -150,6 +150,19 @@ def upload_item(request):
 
         try:
             instance.attach_file(file)
+        except ValidationError as e:
+            messages = helpers.get_exception_messages(e)
+            logger.debug(messages)
+            return helpers.error_response(messages)
+        except Exception as e:
+            logger.exception('Error')
+            if hasattr(e, 'args'):
+                message = '{}: {}'.format(type(e).__name__, e.args[0])
+            else:
+                message = type(e).__name__
+            return helpers.error_response(message)
+
+        try:
             instance.full_clean()
             run_validators(file, item_type_field.validators)
             instance.save()

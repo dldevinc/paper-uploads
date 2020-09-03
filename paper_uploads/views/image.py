@@ -56,6 +56,12 @@ def upload(request):
 
         try:
             instance.attach_file(file)
+        except ValidationError as e:
+            messages = helpers.get_exception_messages(e)
+            logger.debug(messages)
+            return helpers.error_response(messages)
+
+        try:
             instance.full_clean()
             if owner_field is not None:
                 run_validators(file, owner_field.validators)
