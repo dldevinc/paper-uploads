@@ -48,6 +48,11 @@ class TestCloudinaryMedia(CloudinaryFileResource):
         assert file_field.type == 'private'
         assert file_field.resource_type == 'video'
 
+    def test_public_id(self, storage):
+        public_id = storage.resource.get_file().public_id
+        pattern = posixpath.join(self.resource_location, 'audio{suffix}')
+        assert public_id == utils.get_target_filepath(pattern, public_id)
+
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
         pattern = posixpath.join(self.resource_location, 'audio{suffix}')

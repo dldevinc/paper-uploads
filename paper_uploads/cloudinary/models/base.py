@@ -1,5 +1,6 @@
 import datetime
 import posixpath
+import re
 from typing import Optional
 
 import cloudinary.exceptions
@@ -14,6 +15,8 @@ from ...conf import settings
 from ...logging import logger
 from ...models.base import FileResource
 from .mixins import ReadonlyCloudinaryFileProxyMixin
+
+re_public_id = re.compile(r'^(?P<public_id>.*?)(?:\.(?P<format>[^.]+))?$')
 
 
 class CloudinaryFieldFile:
@@ -35,11 +38,11 @@ class CloudinaryFieldFile:
 
     def __init__(self, resource: CloudinaryResource, name=None, type=None, resource_type=None):
         self.resource = resource
-        if name is None:
-            name = resource.public_id
-        self.name = name
         self.type = type or resource.type
         self.resource_type = resource_type or resource.resource_type
+        if name is None:
+            name = self.public_id
+        self.name = name
         self.mode = None
         self._response = None
 
@@ -59,11 +62,18 @@ class CloudinaryFieldFile:
         return self.url == other.url
 
     @cached_property
+    def public_id(self):
+        public_id = self.resource.public_id
+        if (self.resource_type == 'raw') and self.resource.format:
+            public_id += '.' + self.resource.format
+        return public_id
+
+    @cached_property
     def metadata(self):
         if self.resource.metadata is not None:
             return self.resource.metadata
         data = uploader.explicit(
-            self.resource.public_id,
+            self.public_id,
             type=self.type,
             resource_type=self.resource_type
         )
@@ -213,10 +223,18 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         except cloudinary.exceptions.Error as e:
             raise ValidationError(*e.args)
 
+        # fix difference between `public_id` in response
+        # and `public_id` in CloudinaryField
+        match = re_public_id.match(result["public_id"])
+        if match:
+            public_id, file_format = match.groups()
+        else:
+            public_id, file_format = result["public_id"], result.get("format")
+
         resource = CloudinaryResource(
-            result["public_id"],
+            public_id,
             version=str(result["version"]),
-            format=result.get("format"),
+            format=file_format,
             type=result["type"],
             resource_type=result["resource_type"],
             metadata=result,
@@ -250,10 +268,18 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
             )
             return
 
+        # fix difference between `public_id` in response
+        # and `public_id` in CloudinaryField
+        match = re_public_id.match(result["public_id"])
+        if match:
+            public_id, file_format = match.groups()
+        else:
+            public_id, file_format = result["public_id"], result.get("format")
+
         resource = CloudinaryResource(
-            result["public_id"],
+            public_id,
             version=str(result["version"]),
-            format=result.get("format"),
+            format=file_format,
             type=result["type"],
             resource_type=result["resource_type"],
             metadata=result,

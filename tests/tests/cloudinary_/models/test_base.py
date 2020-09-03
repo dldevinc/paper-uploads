@@ -175,6 +175,9 @@ class CloudinaryFileResource(TestFileResource):
     def test_type(self, storage):
         raise NotImplementedError
 
+    def test_public_id(self, storage):
+        raise NotImplementedError
+
     def test_get_file_field(self, storage):
         assert (
             storage.resource.get_file_field()

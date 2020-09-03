@@ -64,11 +64,13 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
         assert file_field.type == 'private'
         assert file_field.resource_type == 'raw'
 
+    def test_public_id(self, storage):
+        public_id = storage.resource.get_file().public_id
+        pattern = posixpath.join(self.resource_location, 'document{suffix}.pdf')
+        assert public_id == utils.get_target_filepath(pattern, public_id)
+
     def test_display_name(self, storage):
         assert storage.resource.display_name == self.resource_name
-
-    def test_path(self, storage):
-        pass
 
     def test_open(self, storage):
         with storage.resource.open() as fp:
@@ -248,11 +250,13 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
         assert file_field.type == 'private'
         assert file_field.resource_type == 'video'
 
+    def test_public_id(self, storage):
+        public_id = storage.resource.get_file().public_id
+        pattern = posixpath.join(self.resource_location, 'audio{suffix}')
+        assert public_id == utils.get_target_filepath(pattern, public_id)
+
     def test_display_name(self, storage):
         assert storage.resource.display_name == self.resource_name
-
-    def test_path(self, storage):
-        pass
 
     def test_open(self, storage):
         with storage.resource.open() as fp:
@@ -432,8 +436,10 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
         assert file_field.type == 'private'
         assert file_field.resource_type == 'image'
 
-    def test_path(self, storage):
-        pass
+    def test_public_id(self, storage):
+        public_id = storage.resource.get_file().public_id
+        pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}')
+        assert public_id == utils.get_target_filepath(pattern, public_id)
 
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()
