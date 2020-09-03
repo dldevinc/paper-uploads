@@ -702,7 +702,9 @@ PAPER_UPLOADS = {
 
 ### `CLOUDINARY_TEMP_DIR`
 Папка в разделе `/tmp/`, в которую скачиваются файлы из Cloudinary
-для из открытия для чтения.
+при чтении их содержимого. Доступ к содержимому большого количества 
+файлов из Cloudinary может привести к скачиванию больших объемов данных 
+и захламлению временной папки.
 
 ### `CLOUDINARY_UPLOADER_OPTIONS`
 Словарь, задающий глобальные [параметры загрузки](https://cloudinary.com/documentation/image_upload_api_reference#required_parameters)
