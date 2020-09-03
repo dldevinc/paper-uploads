@@ -19,5 +19,7 @@ class UploadedFileBaseForm(forms.ModelForm):
         old_name = self.instance.name
         new_name = self.cleaned_data['new_name']
         if old_name != new_name:
+            if self.instance.extension:
+                new_name += '.' + self.instance.extension
             self.instance.rename_file(new_name)
         return super().save(commit)
