@@ -1,4 +1,4 @@
-<img src="{% if item %}{{ item.file.url }}{% endif %}"
+<img src="{% if item %}{{ item.get_file_url }}{% endif %}"
      class="collection-item__image"
      width="{{ width }}"
      height="{{ height }}"

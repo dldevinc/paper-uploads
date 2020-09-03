@@ -28,7 +28,7 @@
         <input type="checkbox" name="{{ widget.name }}-check" class="collection-item__checkbox">
       </label>
 
-      <a href="{% if item %}{{ item.file.url }}{% endif %}" class="collection-item__view-button tool-item text-info"
+      <a href="{% if item %}{{ item.get_file_url }}{% endif %}" class="collection-item__view-button tool-item text-info"
          target="_blank"
          data-toggle="tooltip" data-placement="top" data-trigger="hover"
          data-html="true" title="{{ _('View file') }}">
