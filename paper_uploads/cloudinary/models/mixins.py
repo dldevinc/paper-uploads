@@ -31,14 +31,14 @@ class ReadonlyCloudinaryFileProxyMixin:
         return not file or file.closed
 
     def open(self, mode='rb'):
-        self._require_file()  # noqa
+        self._require_file()  # noqa: F821
         self.download_file(mode)
         return self
     open.alters_data = True
 
     def read(self, size=None):
-        self._require_file()  # noqa
-        return self._wrapped_file.read(size)  # noqa
+        self._require_file()  # noqa: F821
+        return self._wrapped_file.read(size)
 
     def close(self):
         if self._wrapped_file is not None:
@@ -68,8 +68,8 @@ class ReadonlyCloudinaryFileProxyMixin:
 
     @property
     def url(self):
-        self._require_file()  # noqa
-        return self.get_file().url  # noqa
+        self._require_file()  # noqa: F821
+        return self.get_file().url  # noqa: F821
 
     def download_file(self, mode='rb'):
         if self._wrapped_file is None:
@@ -80,7 +80,7 @@ class ReadonlyCloudinaryFileProxyMixin:
         temp_filepath = os.path.join(
             tempfile.gettempdir(),
             settings.CLOUDINARY_TEMP_DIR,
-            self.get_file().name  # noqa
+            self.get_file().name  # noqa: F821
         )
         root, basename = os.path.split(temp_filepath)
         os.makedirs(root, mode=0o755, exist_ok=True)
@@ -88,12 +88,12 @@ class ReadonlyCloudinaryFileProxyMixin:
         if os.path.exists(temp_filepath):
             with open(temp_filepath, 'rb') as fp:
                 file_checksum = utils.checksum(fp)
-            if file_checksum == self.content_hash:  # noqa
+            if file_checksum == self.content_hash:  # noqa: F821
                 return File(open(temp_filepath, mode))
 
         lock = FileLock(temp_filepath + '.lock')
         with lock.acquire(timeout=3600):
-            response = requests.get(self.get_file_url(), stream=True)  # noqa
+            response = requests.get(self.get_file_url(), stream=True)  # noqa: F821
             response.raise_for_status()
 
             with open(temp_filepath, 'wb+') as fp:

@@ -110,7 +110,7 @@ def get_instance(
     attempts = 1
     while True:
         try:
-            return model_class._base_manager.using(using).get(pk=object_id)  # noqa
+            return model_class._base_manager.using(using).get(pk=object_id)
         except ObjectDoesNotExist:
             # delay recheck if transaction not committed yet
             attempts += 1
