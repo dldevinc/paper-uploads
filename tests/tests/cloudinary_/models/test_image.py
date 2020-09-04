@@ -10,7 +10,7 @@ from paper_uploads.cloudinary.models import CloudinaryImage
 from ... import utils
 from ...dummy import *
 from ...models.test_base import (
-    TestEmptyFileFieldResource,
+    TestFileFieldResourceEmpty,
     TestImageDelete,
     TestImageRename,
 )
@@ -170,7 +170,7 @@ class TestCloudinaryImageDelete(TestImageDelete):
             )
 
 
-class TestEmptyCloudinaryFile(TestEmptyFileFieldResource):
+class TestEmptyCloudinaryFile(TestFileFieldResourceEmpty):
     @classmethod
     def init(cls, storage):
         storage.resource = CloudinaryImage()

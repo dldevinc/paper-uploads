@@ -612,7 +612,7 @@ class TestFileFieldResource(TestFileResource):
         assert url == utils.get_target_filepath(pattern, url)
 
 
-class TestFileAttach:
+class TestFileFieldResourceAttach:
     resource_size = 9711423
     resource_checksum = '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
 
@@ -675,7 +675,7 @@ class TestFileAttach:
         resource.delete_file()
 
 
-class TestFileRename:
+class TestFileFieldResourceRename:
     @classmethod
     def init(cls, storage):
         storage.resource = DummyFileFieldResource()
@@ -709,7 +709,7 @@ class TestFileRename:
         assert file.name == 'file_field/new_name.png'
 
 
-class TestFileDelete:
+class TestFileFieldResourceDelete:
     @classmethod
     def init(cls, storage):
         storage.resource = DummyFileFieldResource()
@@ -733,7 +733,7 @@ class TestFileDelete:
         assert os.path.exists(storage.old_source_path) is False
 
 
-class TestEmptyFileFieldResource:
+class TestFileFieldResourceEmpty:
     @classmethod
     def init(cls, storage):
         storage.resource = DummyFileFieldResource()
@@ -1071,7 +1071,7 @@ class TestVersatileImageResource(TestImageFieldResource):
         assert storage.resource.calculate_max_size((2000, 3000)) == (800, 1200)
 
 
-class TestImageRename(TestFileRename):
+class TestImageRename(TestFileFieldResourceRename):
     @classmethod
     def init(cls, storage):
         storage.resource = DummyVersatileImageResource()
@@ -1119,7 +1119,7 @@ class TestImageRename(TestFileRename):
         assert os.path.exists(storage.resource.mobile.path) is True
 
 
-class TestImageDelete(TestFileDelete):
+class TestImageDelete(TestFileFieldResourceDelete):
     @classmethod
     def init(cls, storage):
         storage.resource = DummyVersatileImageResource()
@@ -1240,20 +1240,20 @@ class TestImageResourceVariations:
         resource.delete_file()
         resource.delete()
 
-    def test_recut_missing_source(self):
-        resource = DummyVersatileImageResource()
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
-        resource.save()
-
-        os.remove(resource.file.path)
-        os.remove(resource.desktop.path)
-
-        with pytest.raises(FileNotFoundError):
-            resource.recut('desktop')
-
-        resource.delete_file()
-        resource.delete()
+    # def test_recut_missing_source(self):
+    #     resource = DummyVersatileImageResource()
+    #     with open(NATURE_FILEPATH, 'rb') as fp:
+    #         resource.attach_file(fp)
+    #     resource.save()
+    #
+    #     os.remove(resource.file.path)
+    #     os.remove(resource.desktop.path)
+    #
+    #     with pytest.raises(FileNotFoundError):
+    #         resource.recut('desktop')
+    #
+    #     resource.delete_file()
+    #     resource.delete()
 
     def test_variation_created_signal(self):
         resource = DummyVersatileImageResource()
@@ -1290,7 +1290,7 @@ class TestImageResourceVariations:
         signals.variation_created.disconnect(signal_handler)
 
 
-class TestEmptyVersatileImageResource(TestEmptyFileFieldResource):
+class TestEmptyVersatileImageResource(TestFileFieldResourceEmpty):
     @classmethod
     def init(cls, storage):
         storage.resource = DummyVersatileImageResource()

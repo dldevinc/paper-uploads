@@ -9,7 +9,11 @@ from paper_uploads.cloudinary.models import CloudinaryFile
 
 from ... import utils
 from ...dummy import *
-from ...models.test_base import TestEmptyFileFieldResource, TestFileDelete, TestFileRename
+from ...models.test_base import (
+    TestFileFieldResourceDelete,
+    TestFileFieldResourceEmpty,
+    TestFileFieldResourceRename,
+)
 from .test_base import CloudinaryFileResource
 
 
@@ -72,7 +76,7 @@ class TestCloudinaryFile(CloudinaryFileResource):
         }
 
 
-class TestCloudinaryFileRename(TestFileRename):
+class TestCloudinaryFileRename(TestFileFieldResourceRename):
     @classmethod
     def init(cls, storage):
         storage.resource = CloudinaryFile(
@@ -125,7 +129,7 @@ class TestCloudinaryFileRename(TestFileRename):
         )
 
 
-class TestCloudinaryFileDelete(TestFileDelete):
+class TestCloudinaryFileDelete(TestFileFieldResourceDelete):
     @classmethod
     def init(cls, storage):
         storage.resource = CloudinaryFile(
@@ -161,7 +165,7 @@ class TestCloudinaryFileDelete(TestFileDelete):
             )
 
 
-class TestEmptyCloudinaryFile(TestEmptyFileFieldResource):
+class TestEmptyCloudinaryFile(TestFileFieldResourceEmpty):
     @classmethod
     def init(cls, storage):
         storage.resource = CloudinaryFile()

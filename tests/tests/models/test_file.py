@@ -6,10 +6,10 @@ from paper_uploads.models import UploadedFile
 from .. import utils
 from ..dummy import *
 from .test_base import (
-    TestEmptyFileFieldResource,
-    TestFileDelete,
     TestFileFieldResource,
-    TestFileRename,
+    TestFileFieldResourceDelete,
+    TestFileFieldResourceEmpty,
+    TestFileFieldResourceRename,
 )
 
 
@@ -59,7 +59,7 @@ class TestUploadedFile(TestFileFieldResource):
         }
 
 
-class TestUploadedFileRename(TestFileRename):
+class TestUploadedFileRename(TestFileFieldResourceRename):
     @classmethod
     def init(cls, storage):
         storage.resource = UploadedFile(
@@ -97,7 +97,7 @@ class TestUploadedFileRename(TestFileRename):
         )
 
 
-class TestUploadedFileDelete(TestFileDelete):
+class TestUploadedFileDelete(TestFileFieldResourceDelete):
     @classmethod
     def init(cls, storage):
         storage.resource = UploadedFile(
@@ -153,7 +153,7 @@ class TestUploadedFileExists:
         assert os.path.exists(source_path) is False
 
 
-class TestEmptyUploadedFile(TestEmptyFileFieldResource):
+class TestEmptyUploadedFile(TestFileFieldResourceEmpty):
     @classmethod
     def init(cls, storage):
         storage.resource = UploadedFile()

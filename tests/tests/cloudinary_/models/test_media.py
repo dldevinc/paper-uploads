@@ -9,7 +9,11 @@ from paper_uploads.cloudinary.models import CloudinaryMedia
 
 from ... import utils
 from ...dummy import *
-from ...models.test_base import TestEmptyFileFieldResource, TestFileDelete, TestFileRename
+from ...models.test_base import (
+    TestFileFieldResourceDelete,
+    TestFileFieldResourceEmpty,
+    TestFileFieldResourceRename,
+)
 from .test_base import CloudinaryFileResource
 
 
@@ -76,7 +80,7 @@ class TestCloudinaryMedia(CloudinaryFileResource):
             assert fp.read(4) == b'ID3\x03'
 
 
-class TestCloudinaryMediaRename(TestFileRename):
+class TestCloudinaryMediaRename(TestFileFieldResourceRename):
     @classmethod
     def init(cls, storage):
         storage.resource = CloudinaryMedia(
@@ -129,7 +133,7 @@ class TestCloudinaryMediaRename(TestFileRename):
         )
 
 
-class TestCloudinaryMediaDelete(TestFileDelete):
+class TestCloudinaryMediaDelete(TestFileFieldResourceDelete):
     @classmethod
     def init(cls, storage):
         storage.resource = CloudinaryMedia(
@@ -165,7 +169,7 @@ class TestCloudinaryMediaDelete(TestFileDelete):
             )
 
 
-class TestEmptyCloudinaryFile(TestEmptyFileFieldResource):
+class TestEmptyCloudinaryFile(TestFileFieldResourceEmpty):
     @classmethod
     def init(cls, storage):
         storage.resource = CloudinaryMedia()

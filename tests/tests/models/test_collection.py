@@ -19,11 +19,11 @@ from paper_uploads.models import Collection, FileItem, ImageCollection, ImageIte
 from .. import utils
 from ..dummy import *
 from .test_base import (
-    TestEmptyFileFieldResource,
     TestEmptyVersatileImageResource,
-    TestFileDelete,
     TestFileFieldResource,
-    TestFileRename,
+    TestFileFieldResourceDelete,
+    TestFileFieldResourceEmpty,
+    TestFileFieldResourceRename,
     TestImageDelete,
     TestImageRename,
 )
@@ -395,7 +395,7 @@ class TestFileItemFilesExists:
         assert os.path.exists(source_path) is False
 
 
-class TestFileItemRename(TestFileRename):
+class TestFileItemRename(TestFileFieldResourceRename):
     @classmethod
     def init(cls, storage):
         storage.collection = FileCollection.objects.create()
@@ -431,7 +431,7 @@ class TestFileItemRename(TestFileRename):
         )
 
 
-class TestFileItemDelete(TestFileDelete):
+class TestFileItemDelete(TestFileFieldResourceDelete):
     @classmethod
     def init(cls, storage):
         storage.collection = FileCollection.objects.create()
@@ -458,7 +458,7 @@ class TestFileItemDelete(TestFileDelete):
         )
 
 
-class TestEmptyFileItem(TestEmptyFileFieldResource):
+class TestEmptyFileItem(TestFileFieldResourceEmpty):
     @classmethod
     def init(cls, storage):
         storage.resource = FileItem()
@@ -583,7 +583,7 @@ class TestSVGItemFilesExists:
         assert os.path.exists(source_path) is False
 
 
-class TestSVGItemRename(TestFileRename):
+class TestSVGItemRename(TestFileFieldResourceRename):
     @classmethod
     def init(cls, storage):
         storage.collection = CompleteCollection.objects.create()
@@ -619,7 +619,7 @@ class TestSVGItemRename(TestFileRename):
         )
 
 
-class TestSVGItemDelete(TestFileDelete):
+class TestSVGItemDelete(TestFileFieldResourceDelete):
     @classmethod
     def init(cls, storage):
         storage.collection = CompleteCollection.objects.create()
@@ -646,7 +646,7 @@ class TestSVGItemDelete(TestFileDelete):
         )
 
 
-class TestEmptySVGItem(TestEmptyFileFieldResource):
+class TestEmptySVGItem(TestFileFieldResourceEmpty):
     @classmethod
     def init(cls, storage):
         storage.resource = SVGItem()

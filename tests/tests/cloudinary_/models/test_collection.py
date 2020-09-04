@@ -20,9 +20,9 @@ from paper_uploads.cloudinary.models import (
 from ... import utils
 from ...dummy import *
 from ...models.test_base import (
-    TestEmptyFileFieldResource,
-    TestFileDelete,
-    TestFileRename,
+    TestFileFieldResourceDelete,
+    TestFileFieldResourceEmpty,
+    TestFileFieldResourceRename,
     TestImageDelete,
     TestImageRename,
 )
@@ -114,7 +114,7 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
             assert storage.resource.file_supported(File(fp)) is True
 
 
-class TestFileItemRename(TestFileRename):
+class TestFileItemRename(TestFileFieldResourceRename):
     @classmethod
     def init(cls, storage):
         storage.collection = CloudinaryFileCollection.objects.create()
@@ -165,7 +165,7 @@ class TestFileItemRename(TestFileRename):
         )
 
 
-class TestFileItemDelete(TestFileDelete):
+class TestFileItemDelete(TestFileFieldResourceDelete):
     @classmethod
     def init(cls, storage):
         storage.collection = CloudinaryFileCollection.objects.create()
@@ -200,7 +200,7 @@ class TestFileItemDelete(TestFileDelete):
             )
 
 
-class TestEmptyFileItem(TestEmptyFileFieldResource):
+class TestEmptyFileItem(TestFileFieldResourceEmpty):
     @classmethod
     def init(cls, storage):
         storage.collection = CloudinaryFileCollection.objects.create()
@@ -300,7 +300,7 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
             assert storage.resource.file_supported(File(fp)) is True
 
 
-class TestMediaItemRename(TestFileRename):
+class TestMediaItemRename(TestFileFieldResourceRename):
     @classmethod
     def init(cls, storage):
         storage.collection = CloudinaryMediaCollection.objects.create()
@@ -351,7 +351,7 @@ class TestMediaItemRename(TestFileRename):
         )
 
 
-class TestMediaItemDelete(TestFileDelete):
+class TestMediaItemDelete(TestFileFieldResourceDelete):
     @classmethod
     def init(cls, storage):
         storage.collection = CloudinaryMediaCollection.objects.create()
@@ -386,7 +386,7 @@ class TestMediaItemDelete(TestFileDelete):
             )
 
 
-class TestEmptyMediaItem(TestEmptyFileFieldResource):
+class TestEmptyMediaItem(TestFileFieldResourceEmpty):
     @classmethod
     def init(cls, storage):
         storage.collection = CloudinaryMediaCollection.objects.create()
@@ -578,7 +578,7 @@ class TestImageItemDelete(TestImageDelete):
             )
 
 
-class TestEmptyImageItem(TestEmptyFileFieldResource):
+class TestEmptyImageItem(TestFileFieldResourceEmpty):
     @classmethod
     def init(cls, storage):
         storage.collection = CloudinaryCompleteCollection.objects.create()
