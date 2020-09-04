@@ -5,6 +5,7 @@ from django.core.exceptions import (
     ValidationError,
 )
 from django.template import loader
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.generic import FormView
@@ -136,8 +137,18 @@ class ChangeView(PermissionRequiredMixin, FormView):
             raise exceptions.AjaxFormError('Multiple objects returned')
 
     def form_valid(self, form):
-        form.save()
-        return helpers.success_response(self.instance.as_dict())
+        try:
+            form.save()
+        except exceptions.FileNotFoundError as e:
+            error = _('File not found: %s') % e.name
+            logger.debug(error)
+            return helpers.error_response(error)
+        except ValidationError as e:
+            messages = helpers.get_exception_messages(e)
+            logger.debug(messages)
+            return helpers.error_response(messages)
+
+        return helpers.success_response(self.instance.as_dict())  # noqa: F821
 
     def form_invalid(self, form):
         return helpers.success_response({

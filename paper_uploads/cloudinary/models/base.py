@@ -72,12 +72,12 @@ class CloudinaryFieldFile:
     def metadata(self):
         if self.resource.metadata is not None:
             return self.resource.metadata
-        data = uploader.explicit(
+
+        return uploader.explicit(
             self.public_id,
             type=self.type,
             resource_type=self.resource_type
         )
-        return data
 
     @property
     def size(self) -> int:
@@ -262,11 +262,8 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
                 type=file.type,
                 resource_type=file.resource_type,
             )
-        except cloudinary.exceptions.Error:
-            logger.exception(
-                "Couldn't rename Cloudinary file: {}".format(self.get_file_name())
-            )
-            return
+        except cloudinary.exceptions.Error as e:
+            raise ValidationError(*e.args)
 
         # fix difference between `public_id` in response
         # and `public_id` in CloudinaryField

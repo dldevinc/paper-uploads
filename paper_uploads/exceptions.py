@@ -34,3 +34,10 @@ class AjaxFormError(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(message)
+
+
+class FileNotFoundError(Exception):
+    def __init__(self, file):
+        self.file = file
+        self.name = file.get_file_name()
+        super().__init__()

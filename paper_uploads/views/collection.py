@@ -1,5 +1,4 @@
 import posixpath
-from typing import Type
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import (
@@ -10,6 +9,7 @@ from django.core.exceptions import (
 from django.db import transaction
 from django.template import loader
 from django.utils.module_loading import import_string
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.generic import FormView
@@ -314,7 +314,17 @@ class ChangeView(PermissionRequiredMixin, FormView):
             raise exceptions.AjaxFormError('Multiple objects returned')
 
     def form_valid(self, form):
-        form.save()
+        try:
+            form.save()
+        except exceptions.FileNotFoundError as e:
+            error = _('File not found: %s') % e.name
+            logger.debug(error)
+            return helpers.error_response(error)
+        except ValidationError as e:
+            messages = helpers.get_exception_messages(e)
+            logger.debug(messages)
+            return helpers.error_response(messages)
+
         return helpers.success_response(self.instance.as_dict())
 
     def form_invalid(self, form):

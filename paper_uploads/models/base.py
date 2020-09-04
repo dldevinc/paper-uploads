@@ -11,7 +11,7 @@ from PIL import Image
 from variations.typing import Size
 from variations.utils import prepare_image, replace_extension
 
-from .. import helpers, signals, utils
+from .. import exceptions, helpers, signals, utils
 from ..conf import settings
 from ..typing import FileLike
 from ..variations import PaperVariation
@@ -264,10 +264,9 @@ class FileResource(FileProxyMixin, Resource):
         self._require_file()
 
         if not self.file_exists():
-            raise FileNotFoundError
+            raise exceptions.FileNotFoundError(self)
 
         old_name = self.get_file_name()
-
         name = helpers.get_filename(new_name)
         extension = helpers.get_extension(new_name)
 
@@ -647,7 +646,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         Можно указать имена конкретных вариаций в параметре `names`.
         """
         if not self.file_exists():
-            raise FileNotFoundError
+            raise exceptions.FileNotFoundError(self)
 
         file = self.get_file()
         with file.open() as source:
