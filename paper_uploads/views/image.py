@@ -168,11 +168,7 @@ class ChangeView(PermissionRequiredMixin, FormView):
         return kwargs
 
     def get_form(self, form_class=None):
-        try:
-            self.instance = self.get_instance()
-        except exceptions.AjaxFormError as exc:
-            logger.exception('Error')
-            return helpers.error_response(exc.message)
+        self.instance = self.get_instance()
         return super().get_form(form_class)
 
     def get(self, request, *args, **kwargs):
@@ -184,3 +180,10 @@ class ChangeView(PermissionRequiredMixin, FormView):
                 )
             }
         )
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return super().post(request, *args, **kwargs)
+        except exceptions.AjaxFormError as exc:
+            logger.exception('Error')
+            return helpers.error_response(exc.message)

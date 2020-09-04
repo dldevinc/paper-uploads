@@ -280,10 +280,10 @@ def sort_items(request):
 class ChangeView(PermissionRequiredMixin, FormView):
     template_name = 'paper_uploads/dialogs/collection.html'
     permission_required = 'paper_uploads.change'
-    instance = None  # type: CollectionItemBase
+    instance = None
 
     def get_form_class(self):
-        return import_string(self.instance.change_form_class)
+        return import_string(self.instance.change_form_class)  # noqa: F821
 
     def get_instance(self):
         content_type_id = self.request.GET.get('paperCollectionContentType')
@@ -325,7 +325,7 @@ class ChangeView(PermissionRequiredMixin, FormView):
             logger.debug(messages)
             return helpers.error_response(messages)
 
-        return helpers.success_response(self.instance.as_dict())
+        return helpers.success_response(self.instance.as_dict())  # noqa: F821
 
     def form_invalid(self, form):
         return helpers.success_response({
@@ -346,11 +346,7 @@ class ChangeView(PermissionRequiredMixin, FormView):
         return kwargs
 
     def get_form(self, form_class=None):
-        try:
-            self.instance = self.get_instance()
-        except exceptions.AjaxFormError as exc:
-            logger.exception('Error')
-            return helpers.error_response(exc.message)
+        self.instance = self.get_instance()
         return super().get_form(form_class)
 
     def get(self, request, *args, **kwargs):
@@ -362,3 +358,10 @@ class ChangeView(PermissionRequiredMixin, FormView):
                 )
             }
         )
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return super().post(request, *args, **kwargs)
+        except exceptions.AjaxFormError as exc:
+            logger.exception('Error')
+            return helpers.error_response(exc.message)

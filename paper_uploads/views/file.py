@@ -184,7 +184,7 @@ class ChangeView(PermissionRequiredMixin, FormView):
 
     def post(self, request, *args, **kwargs):
         try:
-            super().post(request, *args, **kwargs)
+            return super().post(request, *args, **kwargs)
         except exceptions.AjaxFormError as exc:
             logger.exception('Error')
             return helpers.error_response(exc.message)
