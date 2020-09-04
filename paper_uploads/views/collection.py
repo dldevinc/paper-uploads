@@ -25,7 +25,7 @@ from . import helpers
 @require_http_methods(["POST"])
 def delete_collection(request):
     if not request.user.has_perm('paper_uploads.delete'):
-        return helpers.error_response('Access denied')
+        return helpers.error_response(_('Access denied'))
 
     content_type_id = request.POST.get('paperCollectionContentType')
     try:
@@ -34,20 +34,20 @@ def delete_collection(request):
         )
     except exceptions.InvalidContentType:
         logger.exception('Error')
-        return helpers.error_response('Invalid content type')
+        return helpers.error_response(_('Invalid content type'))
 
     collection_id = request.POST.get('collectionId')
     try:
         instance = helpers.get_instance(collection_cls, collection_id)
     except exceptions.InvalidObjectId:
         logger.exception('Error')
-        return helpers.error_response('Invalid ID')
+        return helpers.error_response(_('Invalid ID'))
     except ObjectDoesNotExist:
         logger.exception('Error')
-        return helpers.error_response('Object not found')
+        return helpers.error_response(_('Object not found'))
     except MultipleObjectsReturned:
         logger.exception('Error')
-        return helpers.error_response('Multiple objects returned')
+        return helpers.error_response(_('Multiple objects returned'))
 
     instance.delete()
     return helpers.success_response()
@@ -57,7 +57,7 @@ def delete_collection(request):
 @require_http_methods(["POST"])
 def create_collection(request):
     if not request.user.has_perm('paper_uploads.upload'):
-        return helpers.error_response('Access denied')
+        return helpers.error_response(_('Access denied'))
 
     # Определение модели галереи
     content_type_id = request.POST.get('paperCollectionContentType')
@@ -67,7 +67,7 @@ def create_collection(request):
         )
     except exceptions.InvalidContentType:
         logger.exception('Error')
-        return helpers.error_response('Invalid content type')
+        return helpers.error_response(_('Invalid content type'))
 
     collection = collection_cls.objects.create(
         owner_app_label=request.POST.get('paperOwnerAppLabel'),
@@ -83,7 +83,7 @@ def create_collection(request):
 @require_http_methods(["POST"])
 def upload_item(request):
     if not request.user.has_perm('paper_uploads.upload'):
-        return helpers.error_response('Access denied')
+        return helpers.error_response(_('Access denied'))
 
     qqfilename = request.POST.get('qqfilename')
     basename = posixpath.basename(qqfilename)
@@ -97,10 +97,10 @@ def upload_item(request):
         return helpers.error_response()
     except exceptions.InvalidUUID:
         logger.exception('Error')
-        return helpers.error_response('Invalid UUID')
+        return helpers.error_response(_('Invalid UUID'))
     except exceptions.InvalidChunking:
         logger.exception('Error')
-        return helpers.error_response('Invalid chunking', prevent_retry=False)
+        return helpers.error_response(_('Invalid chunking'), prevent_retry=False)
 
     try:
         # Определение модели галереи
@@ -111,7 +111,7 @@ def upload_item(request):
             )
         except exceptions.InvalidContentType:
             logger.exception('Error')
-            return helpers.error_response('Invalid content type')
+            return helpers.error_response(_('Invalid content type'))
 
         # Получение объекта галереи
         collection_id = request.POST.get('collectionId')
@@ -119,18 +119,18 @@ def upload_item(request):
             collection = helpers.get_instance(collection_cls, collection_id)
         except exceptions.InvalidObjectId:
             logger.exception('Error')
-            return helpers.error_response('Invalid collection ID')
+            return helpers.error_response(_('Invalid collection ID'))
         except ObjectDoesNotExist:
             logger.exception('Error')
-            return helpers.error_response('Collection not found')
+            return helpers.error_response(_('Collection not found'))
         except MultipleObjectsReturned:
             logger.exception('Error')
-            return helpers.error_response('Multiple objects returned')
+            return helpers.error_response(_('Multiple objects returned'))
 
         # Определение типа элемента галереи
-        item_type = collection.detect_file_type(file)
+        item_type = collection.detect_file_type(file)  # noqa: F821
         if item_type is None:
-            return helpers.error_response('Unsupported file')
+            return helpers.error_response(_('Unsupported file'))
 
         item_type_field = collection_cls.item_types[item_type]
         instance = item_type_field.model(
@@ -190,7 +190,7 @@ def upload_item(request):
 @require_http_methods(["POST"])
 def delete_item(request):
     if not request.user.has_perm('paper_uploads.delete'):
-        return helpers.error_response('Access denied')
+        return helpers.error_response(_('Access denied'))
 
     content_type_id = request.POST.get('paperCollectionContentType')
     try:
@@ -199,7 +199,7 @@ def delete_item(request):
         )
     except exceptions.InvalidContentType:
         logger.exception('Error')
-        return helpers.error_response('Invalid content type')
+        return helpers.error_response(_('Invalid content type'))
 
     item_type = request.POST.get('item_type')
     for name, field in collection_cls.item_types.items():
@@ -207,20 +207,20 @@ def delete_item(request):
             model_class = field.model
             break
     else:
-        return helpers.error_response('Invalid item type')
+        return helpers.error_response(_('Invalid item type'))
 
     instance_id = request.POST.get('instance_id')
     try:
         instance = helpers.get_instance(model_class, instance_id)
     except exceptions.InvalidObjectId:
         logger.exception('Error')
-        return helpers.error_response('Invalid ID')
+        return helpers.error_response(_('Invalid ID'))
     except ObjectDoesNotExist:
         # silently skip
         return helpers.success_response()
     except MultipleObjectsReturned:
         logger.exception('Error')
-        return helpers.error_response('Multiple objects returned')
+        return helpers.error_response(_('Multiple objects returned'))
     else:
         instance.delete()
         return helpers.success_response()
@@ -230,7 +230,7 @@ def delete_item(request):
 @require_http_methods(["POST"])
 def sort_items(request):
     if not request.user.has_perm('paper_uploads.change'):
-        return helpers.error_response('Access denied')
+        return helpers.error_response(_('Access denied'))
 
     content_type_id = request.POST.get('paperCollectionContentType')
     try:
@@ -239,31 +239,31 @@ def sort_items(request):
         )
     except exceptions.InvalidContentType:
         logger.exception('Error')
-        return helpers.error_response('Invalid content type')
+        return helpers.error_response(_('Invalid content type'))
 
     collection_id = request.POST.get('collectionId')
     try:
         instance = helpers.get_instance(collection_cls, collection_id)
     except exceptions.InvalidObjectId:
         logger.exception('Error')
-        return helpers.error_response('Invalid ID')
+        return helpers.error_response(_('Invalid ID'))
     except ObjectDoesNotExist:
         logger.exception('Error')
-        return helpers.error_response('Object not found')
+        return helpers.error_response(_('Object not found'))
     except MultipleObjectsReturned:
         logger.exception('Error')
-        return helpers.error_response('Multiple objects returned')
+        return helpers.error_response(_('Multiple objects returned'))
 
     order_string = request.POST.get('order', '')
     try:
         item_ids = (int(pk) for pk in order_string.split(','))
     except ValueError:
         logger.exception('Error')
-        return helpers.error_response('Invalid order')
+        return helpers.error_response(_('Invalid order'))
 
     with transaction.atomic():
         for index, item_id in enumerate(item_ids):
-            if item_id in set(instance.items.values_list('pk', flat=True)):
+            if item_id in set(instance.items.values_list('pk', flat=True)):  # noqa: F821
                 CollectionItemBase.objects.filter(pk=item_id).update(order=index)
             else:
                 CollectionItemBase.objects.filter(pk=item_id).update(
@@ -293,7 +293,7 @@ class ChangeView(PermissionRequiredMixin, FormView):
             )
         except exceptions.InvalidContentType:
             logger.exception('Error')
-            return helpers.error_response('Invalid content type')
+            raise exceptions.AjaxFormError(_('Invalid content type'))
 
         item_type = self.request.GET.get('item_type')
         for name, field in collection_cls.item_types.items():
@@ -301,17 +301,17 @@ class ChangeView(PermissionRequiredMixin, FormView):
                 model_class = field.model
                 break
         else:
-            raise exceptions.AjaxFormError('Invalid item type')
+            raise exceptions.AjaxFormError(_('Invalid item type'))
 
         instance_id = self.request.GET.get('instance_id')
         try:
             return helpers.get_instance(model_class, instance_id)
         except exceptions.InvalidObjectId:
-            raise exceptions.AjaxFormError('Invalid ID')
+            raise exceptions.AjaxFormError(_('Invalid ID'))
         except ObjectDoesNotExist:
-            raise exceptions.AjaxFormError('Object not found')
+            raise exceptions.AjaxFormError(_('Object not found'))
         except MultipleObjectsReturned:
-            raise exceptions.AjaxFormError('Multiple objects returned')
+            raise exceptions.AjaxFormError(_('Multiple objects returned'))
 
     def form_valid(self, form):
         try:

@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.forms import widgets
 from django.template.defaultfilters import filesizeformat
 from django.utils.functional import cached_property
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 
 class FileWidgetBase(widgets.Widget):

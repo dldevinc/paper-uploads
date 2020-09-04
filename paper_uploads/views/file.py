@@ -22,7 +22,7 @@ from . import helpers
 @require_http_methods(["POST"])
 def upload(request):
     if not request.user.has_perm('paper_uploads.upload'):
-        return helpers.error_response('Access denied')
+        return helpers.error_response(_('Access denied'))
 
     try:
         file = helpers.read_file(request)
@@ -32,10 +32,10 @@ def upload(request):
         return helpers.error_response()
     except exceptions.InvalidUUID:
         logger.exception('Error')
-        return helpers.error_response('Invalid UUID')
+        return helpers.error_response(_('Invalid UUID'))
     except exceptions.InvalidChunking:
         logger.exception('Error')
-        return helpers.error_response('Invalid chunking', prevent_retry=False)
+        return helpers.error_response(_('Invalid chunking'), prevent_retry=False)
 
     try:
         # Определение модели файла
@@ -46,7 +46,7 @@ def upload(request):
             )
         except exceptions.InvalidContentType:
             logger.exception('Error')
-            return helpers.error_response('Invalid content type')
+            return helpers.error_response(_('Invalid content type'))
 
         instance = model_class(
             owner_app_label=request.POST.get('paperOwnerAppLabel'),
@@ -83,7 +83,7 @@ def upload(request):
 @require_http_methods(["POST"])
 def delete(request):
     if not request.user.has_perm('paper_uploads.delete'):
-        return helpers.error_response('Access denied')
+        return helpers.error_response(_('Access denied'))
 
     content_type_id = request.POST.get('paperContentType')
     instance_id = request.POST.get('instance_id')
@@ -92,19 +92,19 @@ def delete(request):
         model_class = helpers.get_model_class(content_type_id, base_class=FileResource)
     except exceptions.InvalidContentType:
         logger.exception('Error')
-        return helpers.error_response('Invalid content type')
+        return helpers.error_response(_('Invalid content type'))
 
     try:
         instance = helpers.get_instance(model_class, instance_id)
     except exceptions.InvalidObjectId:
         logger.exception('Error')
-        return helpers.error_response('Invalid ID')
+        return helpers.error_response(_('Invalid ID'))
     except ObjectDoesNotExist:
         logger.exception('Error')
-        return helpers.error_response('Object not found')
+        return helpers.error_response(_('Object not found'))
     except MultipleObjectsReturned:
         logger.exception('Error')
-        return helpers.error_response('Multiple objects returned')
+        return helpers.error_response(_('Multiple objects returned'))
 
     instance.delete()
     return helpers.success_response()
@@ -125,16 +125,16 @@ class ChangeView(PermissionRequiredMixin, FormView):
                 content_type_id, base_class=FileResource
             )
         except exceptions.InvalidContentType:
-            raise exceptions.AjaxFormError('Invalid content type')
+            raise exceptions.AjaxFormError(_('Invalid content type'))
 
         try:
             return helpers.get_instance(model_class, instance_id)
         except exceptions.InvalidObjectId:
-            raise exceptions.AjaxFormError('Invalid ID')
+            raise exceptions.AjaxFormError(_('Invalid ID'))
         except ObjectDoesNotExist:
-            raise exceptions.AjaxFormError('Object not found')
+            raise exceptions.AjaxFormError(_('Object not found'))
         except MultipleObjectsReturned:
-            raise exceptions.AjaxFormError('Multiple objects returned')
+            raise exceptions.AjaxFormError(_('Multiple objects returned'))
 
     def form_valid(self, form):
         try:
@@ -169,11 +169,7 @@ class ChangeView(PermissionRequiredMixin, FormView):
         return kwargs
 
     def get_form(self, form_class=None):
-        try:
-            self.instance = self.get_instance()
-        except exceptions.AjaxFormError as exc:
-            logger.exception('Error')
-            return helpers.error_response(exc.message)
+        self.instance = self.get_instance()
         return super().get_form(form_class)
 
     def get(self, request, *args, **kwargs):
@@ -185,3 +181,10 @@ class ChangeView(PermissionRequiredMixin, FormView):
                 )
             }
         )
+
+    def post(self, request, *args, **kwargs):
+        try:
+            super().post(request, *args, **kwargs)
+        except exceptions.AjaxFormError as exc:
+            logger.exception('Error')
+            return helpers.error_response(exc.message)
