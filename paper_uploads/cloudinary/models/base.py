@@ -80,12 +80,12 @@ class CloudinaryFieldFile:
         )
 
     @property
-    def size(self) -> int:
-        return self.metadata['bytes']
+    def url(self) -> str:
+        return self.resource.url
 
     @property
-    def url(self) -> str:
-        return self.metadata['secure_url']
+    def size(self) -> int:
+        return self.metadata['bytes']
 
     @property
     def format(self) -> Optional[str]:
