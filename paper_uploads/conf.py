@@ -32,7 +32,8 @@ DEFAULTS = {
     'CLOUDINARY_UPLOADER_OPTIONS': {
         'use_filename': True,
         'unique_filename': True,
-        'overwrite': True
+        'overwrite': True,
+        'invalidate': True
     },
 }
 

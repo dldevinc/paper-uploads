@@ -1,8 +1,10 @@
 import posixpath
+from contextlib import contextmanager
 
 import cloudinary.exceptions
 import pytest
 from cloudinary import uploader
+from django.core.exceptions import ValidationError
 
 from app.models import CloudinaryImageExample
 from paper_uploads.cloudinary.models import CloudinaryImage
@@ -10,9 +12,10 @@ from paper_uploads.cloudinary.models import CloudinaryImage
 from ... import utils
 from ...dummy import *
 from ...models.test_base import (
-    TestFileFieldResourceEmpty,
-    TestImageDelete,
-    TestImageRename,
+    TestImageFieldResourceAttach,
+    TestImageFieldResourceDelete,
+    TestImageFieldResourceEmpty,
+    TestImageFieldResourceRename,
 )
 from .test_base import CloudinaryFileResource
 
@@ -31,7 +34,7 @@ class TestCloudinaryImage(CloudinaryFileResource):
     file_field_name = 'file'
 
     @classmethod
-    def init(cls, storage):
+    def init_class(cls, storage):
         storage.resource = CloudinaryImage(
             title='Calliphora',
             description='Calliphora is a genus of blow flies, also known as bottle flies',
@@ -80,21 +83,53 @@ class TestCloudinaryImage(CloudinaryFileResource):
         }
 
 
-class TestCloudinaryImageRename(TestImageRename):
-    @classmethod
-    def init(cls, storage):
-        storage.resource = CloudinaryImage(
-            owner_app_label='app',
-            owner_model_name='fileexample',
-            owner_fieldname='file'
+class TestCloudinaryImageAttach(TestImageFieldResourceAttach):
+    resource_class = CloudinaryImage
+    resource_size = 9711423
+    resource_checksum = '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
+    owner_app_label = 'app'
+    owner_model_name = 'cloudinaryimageexample'
+    owner_fieldname = 'image'
+
+    @contextmanager
+    def get_resource(self):
+        resource = self.resource_class(
+            owner_app_label=self.owner_app_label,
+            owner_model_name=self.owner_model_name,
+            owner_fieldname=self.owner_fieldname
         )
-        with open(NATURE_FILEPATH, 'rb') as fp:
+        try:
+            yield resource
+        finally:
+            resource.delete_file()
+
+    def test_unsupported_file(self):
+        with self.get_resource() as resource:
+            with open(DOCUMENT_FILEPATH, 'rb') as fp:
+                with pytest.raises(ValidationError):
+                    resource.attach_file(fp)
+
+
+class TestCloudinaryImageRename(TestImageFieldResourceRename):
+    resource_class = CloudinaryImage
+    resource_location = 'images/%Y-%m-%d'
+    owner_app_label = 'app'
+    owner_model_name = 'cloudinaryimageexample'
+    owner_fieldname = 'image'
+
+    @classmethod
+    def init_class(cls, storage):
+        storage.resource = cls.resource_class(
+            owner_app_label=cls.owner_app_label,
+            owner_model_name=cls.owner_model_name,
+            owner_fieldname=cls.owner_fieldname
+        )
+        with open(CALLIPHORA_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp, name='old_image_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
-
         storage.resource.rename_file('new_image_name.png')
 
         yield
@@ -121,27 +156,33 @@ class TestCloudinaryImageRename(TestImageRename):
 
     def test_old_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            'images/%Y-%m-%d/old_image_name{suffix}',
+            posixpath.join(self.resource_location, 'old_image_name{suffix}'),
             storage.old_source_name
         )
 
     def test_new_file_name(self, storage):
         file = storage.resource.get_file()
         assert file.name == utils.get_target_filepath(
-            'images/%Y-%m-%d/new_image_name{suffix}',
+            posixpath.join(self.resource_location, 'new_image_name{suffix}'),
             file.name
         )
 
 
-class TestCloudinaryImageDelete(TestImageDelete):
+class TestCloudinaryImageDelete(TestImageFieldResourceDelete):
+    resource_class = CloudinaryImage
+    resource_location = 'images/%Y-%m-%d'
+    owner_app_label = 'app'
+    owner_model_name = 'cloudinaryimageexample'
+    owner_fieldname = 'image'
+
     @classmethod
-    def init(cls, storage):
-        storage.resource = CloudinaryImage(
-            owner_app_label='app',
-            owner_model_name='fileexample',
-            owner_fieldname='file'
+    def init_class(cls, storage):
+        storage.resource = cls.resource_class(
+            owner_app_label=cls.owner_app_label,
+            owner_model_name=cls.owner_model_name,
+            owner_fieldname=cls.owner_fieldname
         )
-        with open(NATURE_FILEPATH, 'rb') as fp:
+        with open(CALLIPHORA_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp, name='old_name.jpg')
         storage.resource.save()
 
@@ -156,7 +197,7 @@ class TestCloudinaryImageDelete(TestImageDelete):
 
     def test_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            'images/%Y-%m-%d/old_name{suffix}',
+            posixpath.join(self.resource_location, 'old_name{suffix}'),
             storage.old_source_name
         )
 
@@ -170,11 +211,8 @@ class TestCloudinaryImageDelete(TestImageDelete):
             )
 
 
-class TestEmptyCloudinaryFile(TestFileFieldResourceEmpty):
-    @classmethod
-    def init(cls, storage):
-        storage.resource = CloudinaryImage()
-        yield
+class TestCloudinaryFileEmpty(TestImageFieldResourceEmpty):
+    recource_class = CloudinaryImage
 
     def test_path(self, storage):
         pass

@@ -301,19 +301,17 @@ class FileResource(FileProxyMixin, Resource):
     def _rename_file(self, new_name: str, **options):
         raise NotImplementedError
 
-    def delete_file(self):
+    def delete_file(self, **options):
         """
         Удаление файла.
         В действительности, удаление файла происходит в методе `_delete_file`.
         Не переопределяйте этот метод, если не уверены в том, что вы делаете.
         """
-        self._require_file()
+        signals.pre_delete_file.send(sender=type(self), instance=self, options=options)
+        self._delete_file(**options)
+        signals.post_delete_file.send(sender=type(self), instance=self, options=options)
 
-        signals.pre_delete_file.send(sender=type(self), instance=self)
-        self._delete_file()
-        signals.post_delete_file.send(sender=type(self), instance=self)
-
-    def _delete_file(self):
+    def _delete_file(self, **options):
         raise NotImplementedError
 
 
@@ -354,7 +352,7 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
         with file.open() as fp:
             file.save(new_name, fp, save=False)
 
-    def _delete_file(self):
+    def _delete_file(self, **options):
         self.get_file().delete(save=False)
 
 

@@ -31,8 +31,8 @@ def storage(request, class_scoped_db):
     объект.
 
         class TestShape:
-            @staticmethod
-            def init(storage):
+            @classmethod
+            def init_class(cls, storage):
                 storage.object = Shape(...)
                 yield
                 storage.object.delete()
@@ -41,23 +41,18 @@ def storage(request, class_scoped_db):
                 assert storage.object.pk == 1
 
         class TestSquare(TestShape):
-            @staticmethod
-            def init(storage):
+            @classmethod
+            def init_class(cls, storage):
                 storage.object = Square(...)
                 yield
                 storage.object.delete()
     """
     storage = local()
-    gen = request.cls.init(storage)
-
-    next(gen)
+    if hasattr(request.cls, 'init_class'):
+        gen = request.cls.init_class(storage)
+        next(gen)
 
     # Time right after `init()` call. For date / time tests.
     storage.now = now()
 
     yield storage
-
-    try:
-        next(gen)
-    except StopIteration:
-        pass

@@ -20,7 +20,7 @@ class TestCloudinaryFieldFile:
     resource_size = 3028
 
     @classmethod
-    def init(cls, storage):
+    def init_class(cls, storage):
         with open(cls.upload_file, 'rb') as fp:
             storage.resource = uploader.upload_resource(
                 fp,
@@ -238,5 +238,6 @@ class CloudinaryFileResource(TestFileResource):
             'use_filename': True,
             'unique_filename': True,
             'overwrite': True,
+            'invalidate': True,
             'folder': folder
         }

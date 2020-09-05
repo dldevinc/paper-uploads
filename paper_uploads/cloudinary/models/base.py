@@ -245,8 +245,10 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
 
     def _rename_file(self, new_name: str, **options):
         # TODO: Cloudinary can't copy files. We dont't want to do it manually
-        file = self.get_file()
+        cloudinary_options = self.get_cloudinary_options()
+        cloudinary_options.update(options.get('cloudinary', {}))
 
+        file = self.get_file()
         old_name = self.get_file_name()
         folder, basename = posixpath.split(old_name)
         if file.resource_type != 'raw':
@@ -261,6 +263,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
                 new_name,
                 type=file.type,
                 resource_type=file.resource_type,
+                **cloudinary_options
             )
         except cloudinary.exceptions.Error as e:
             raise ValidationError(*e.args)
@@ -283,14 +286,20 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         )
         self.set_file(resource)
 
-    def _delete_file(self):
+    def _delete_file(self, **options):
+        cloudinary_options = self.get_cloudinary_options()
+        cloudinary_options.update(options.get('cloudinary', {}))
+
         file = self.get_file()
+        if not file:
+            return
 
         try:
             result = uploader.destroy(
                 self.get_file_name(),
                 type=file.type,
                 resource_type=file.resource_type,
+                **cloudinary_options
             )
         except cloudinary.exceptions.Error:
             logger.exception(

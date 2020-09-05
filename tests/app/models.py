@@ -60,7 +60,7 @@ class DummyFileResource(FileResource):
             'success': True,
         }
 
-    def _delete_file(self):
+    def _delete_file(self, **options):
         pass
 
 

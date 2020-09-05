@@ -542,7 +542,9 @@ class Page(models.Model):
     CLOUDINARY = {
        'cloud_name': 'mycloud',
        'api_key': '012345678901234',
-       'api_secret': 'g1rtyOCvm4tDIfCPFFuh4u1W0PC'
+       'api_secret': 'g1rtyOCvm4tDIfCPFFuh4u1W0PC',
+       'sign_url': True,
+       'secure': True
     }
     ```
 
@@ -716,6 +718,7 @@ PAPER_UPLOADS = {
     'use_filename': True,
     'unique_filename': True,
     'overwrite': True,
+    'invalidate': True
 }
 ```
 

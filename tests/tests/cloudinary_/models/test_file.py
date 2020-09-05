@@ -1,4 +1,5 @@
 import posixpath
+from contextlib import contextmanager
 
 import cloudinary.exceptions
 import pytest
@@ -10,6 +11,7 @@ from paper_uploads.cloudinary.models import CloudinaryFile
 from ... import utils
 from ...dummy import *
 from ...models.test_base import (
+    TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
     TestFileFieldResourceEmpty,
     TestFileFieldResourceRename,
@@ -31,7 +33,7 @@ class TestCloudinaryFile(CloudinaryFileResource):
     file_field_name = 'file'
 
     @classmethod
-    def init(cls, storage):
+    def init_class(cls, storage):
         storage.resource = CloudinaryFile(
             owner_app_label=cls.owner_app_label,
             owner_model_name=cls.owner_model_name,
@@ -76,13 +78,38 @@ class TestCloudinaryFile(CloudinaryFileResource):
         }
 
 
+class TestCloudinaryFileAttach(TestFileFieldResourceAttach):
+    resource_class = CloudinaryFile
+    owner_app_label = 'app'
+    owner_model_name = 'cloudinaryfileexample'
+    owner_fieldname = 'file'
+
+    @contextmanager
+    def get_resource(self):
+        resource = self.resource_class(
+            owner_app_label=self.owner_app_label,
+            owner_model_name=self.owner_model_name,
+            owner_fieldname=self.owner_fieldname
+        )
+        try:
+            yield resource
+        finally:
+            resource.delete_file()
+
+
 class TestCloudinaryFileRename(TestFileFieldResourceRename):
+    resource_class = CloudinaryFile
+    resource_location = 'files/%Y-%m-%d'
+    owner_app_label = 'app'
+    owner_model_name = 'fileexample'
+    owner_fieldname = 'file'
+
     @classmethod
-    def init(cls, storage):
-        storage.resource = CloudinaryFile(
-            owner_app_label='app',
-            owner_model_name='fileexample',
-            owner_fieldname='file'
+    def init_class(cls, storage):
+        storage.resource = cls.resource_class(
+            owner_app_label=cls.owner_app_label,
+            owner_model_name=cls.owner_model_name,
+            owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp, name='old_file_name.jpg')
@@ -117,25 +144,31 @@ class TestCloudinaryFileRename(TestFileFieldResourceRename):
 
     def test_old_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            'files/%Y-%m-%d/old_file_name{suffix}.jpg',
+            posixpath.join(self.resource_location, 'old_file_name{suffix}.jpg'),
             storage.old_source_name
         )
 
     def test_new_file_name(self, storage):
         file = storage.resource.get_file()
         assert file.name == utils.get_target_filepath(
-            'files/%Y-%m-%d/new_file_name{suffix}.png',
+            posixpath.join(self.resource_location, 'new_file_name{suffix}.png'),
             file.name
         )
 
 
 class TestCloudinaryFileDelete(TestFileFieldResourceDelete):
+    resource_class = CloudinaryFile
+    resource_location = 'files/%Y-%m-%d'
+    owner_app_label = 'app'
+    owner_model_name = 'fileexample'
+    owner_fieldname = 'file'
+
     @classmethod
-    def init(cls, storage):
-        storage.resource = CloudinaryFile(
-            owner_app_label='app',
-            owner_model_name='fileexample',
-            owner_fieldname='file'
+    def init_class(cls, storage):
+        storage.resource = cls.resource_class(
+            owner_app_label=cls.owner_app_label,
+            owner_model_name=cls.owner_model_name,
+            owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp, name='old_name.jpg')
@@ -149,12 +182,6 @@ class TestCloudinaryFileDelete(TestFileFieldResourceDelete):
 
         storage.resource.delete()
 
-    def test_file_name(self, storage):
-        assert storage.old_source_name == utils.get_target_filepath(
-            'files/%Y-%m-%d/old_name{suffix}.jpg',
-            storage.old_source_name
-        )
-
     def test_file_not_exists(self, storage):
         file_field = storage.resource.get_file_field()
         with pytest.raises(cloudinary.exceptions.Error):
@@ -165,11 +192,8 @@ class TestCloudinaryFileDelete(TestFileFieldResourceDelete):
             )
 
 
-class TestEmptyCloudinaryFile(TestFileFieldResourceEmpty):
-    @classmethod
-    def init(cls, storage):
-        storage.resource = CloudinaryFile()
-        yield
+class TestCloudinaryFileEmpty(TestFileFieldResourceEmpty):
+    recource_class = CloudinaryFile
 
     def test_path(self, storage):
         pass

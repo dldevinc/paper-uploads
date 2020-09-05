@@ -1,5 +1,6 @@
 import os
 import posixpath
+from contextlib import contextmanager
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
@@ -19,12 +20,14 @@ from paper_uploads.models import Collection, FileItem, ImageCollection, ImageIte
 from .. import utils
 from ..dummy import *
 from .test_base import (
-    TestEmptyVersatileImageResource,
     TestFileFieldResource,
+    TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
     TestFileFieldResourceEmpty,
     TestFileFieldResourceRename,
+    TestImageAttach,
     TestImageDelete,
+    TestImageEmpty,
     TestImageRename,
 )
 
@@ -79,7 +82,7 @@ class TestCollectionMetaclass:
 
 class TestCollection:
     @staticmethod
-    def init(storage):
+    def init_class(storage):
         # collection #1 (files only)
         storage.file_collection = FileCollection.objects.create()
 
@@ -310,7 +313,7 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
     collection_class = FileCollection
 
     @classmethod
-    def init(cls, storage):
+    def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
 
         storage.resource = FileItem()
@@ -367,9 +370,89 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
             assert storage.resource.file_supported(File(fp)) is True
 
 
-class TestFileItemFilesExists:
+@pytest.mark.django_db
+class TestFileItemAttach(TestFileFieldResourceAttach):
+    resource_class = FileItem
+    collection_class = CompleteCollection
+
+    @contextmanager
+    def get_resource(self):
+        collection = self.collection_class.objects.create()
+        resource = self.resource_class()
+        resource.attach_to(collection)
+        try:
+            yield resource
+        finally:
+            resource.delete_file()
+            collection.delete()
+
+
+class TestFileItemRename(TestFileFieldResourceRename):
+    resource_class = FileItem
+    resource_location = 'collections/files/%Y-%m-%d'
+    collection_class = FileCollection
+
+    @classmethod
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+        storage.resource = cls.resource_class()
+        storage.resource.attach_to(storage.collection)
+        with open(NATURE_FILEPATH, 'rb') as fp:
+            storage.resource.attach_file(fp, name='old_name.jpg')
+        storage.resource.save()
+
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
+        storage.old_source_path = file.path
+        storage.resource.rename_file('new_name.png')
+
+        yield
+
+        os.remove(storage.old_source_path)
+        storage.resource.delete_file()
+        storage.resource.delete()
+
+
+class TestFileItemDelete(TestFileFieldResourceDelete):
+    resource_class = FileItem
+    resource_location = 'collections/files/%Y-%m-%d'
+    collection_class = FileCollection
+
+    @classmethod
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+        storage.resource = cls.resource_class()
+        storage.resource.attach_to(storage.collection)
+        with open(NATURE_FILEPATH, 'rb') as fp:
+            storage.resource.attach_file(fp, name='old_name.jpg')
+        storage.resource.save()
+
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
+        storage.old_source_path = file.path
+        storage.resource.delete_file()
+
+        yield
+
+        storage.resource.delete()
+
+
+class TestFileItemEmpty(TestFileFieldResourceEmpty):
+    recource_class = FileItem
+    collection_class = FileCollection
+
+    @classmethod
+    def init_class(cls, storage):
+        collection = cls.collection_class.objects.create()
+        storage.resource = cls.recource_class()
+        storage.resource.attach_to(collection)
+        yield
+        collection.delete()
+
+
+class TestFileItemExists:
     @staticmethod
-    def init(storage):
+    def init_class(storage):
         storage.collection = FileCollection.objects.create()
 
         storage.resource = FileItem()
@@ -395,76 +478,6 @@ class TestFileItemFilesExists:
         assert os.path.exists(source_path) is False
 
 
-class TestFileItemRename(TestFileFieldResourceRename):
-    @classmethod
-    def init(cls, storage):
-        storage.collection = FileCollection.objects.create()
-
-        storage.resource = FileItem()
-        storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
-        storage.resource.save()
-
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
-        storage.old_source_path = file.path
-        storage.resource.rename_file('new_name.png')
-
-        yield
-
-        os.remove(storage.old_source_path)
-        storage.resource.delete_file()
-        storage.resource.delete()
-
-    def test_old_file_name(self, storage):
-        assert storage.old_source_name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/old_name{suffix}.jpg',
-            storage.old_source_name
-        )
-
-    def test_new_file_name(self, storage):
-        file = storage.resource.get_file()
-        assert file.name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/new_name{suffix}.png',
-            file.name
-        )
-
-
-class TestFileItemDelete(TestFileFieldResourceDelete):
-    @classmethod
-    def init(cls, storage):
-        storage.collection = FileCollection.objects.create()
-
-        storage.resource = FileItem()
-        storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
-        storage.resource.save()
-
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
-        storage.old_source_path = file.path
-        storage.resource.delete_file()
-
-        yield
-
-        storage.resource.delete()
-
-    def test_file_name(self, storage):
-        assert storage.old_source_name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/old_name{suffix}.jpg',
-            storage.old_source_name
-        )
-
-
-class TestEmptyFileItem(TestFileFieldResourceEmpty):
-    @classmethod
-    def init(cls, storage):
-        storage.resource = FileItem()
-        yield
-
-
 class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
     resource_url = '/media/collections/files/%Y-%m-%d'
     resource_location = 'collections/files/%Y-%m-%d'
@@ -480,7 +493,7 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
     collection_class = CompleteCollection
 
     @classmethod
-    def init(cls, storage):
+    def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
 
         storage.resource = SVGItem()
@@ -555,9 +568,89 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
             assert storage.resource.file_supported(File(fp)) is False
 
 
-class TestSVGItemFilesExists:
+@pytest.mark.django_db
+class TestSVGItemAttach(TestFileFieldResourceAttach):
+    resource_class = SVGItem
+    collection_class = CompleteCollection
+
+    @contextmanager
+    def get_resource(self):
+        collection = self.collection_class.objects.create()
+        resource = self.resource_class()
+        resource.attach_to(collection)
+        try:
+            yield resource
+        finally:
+            resource.delete_file()
+            collection.delete()
+
+
+class TestSVGItemRename(TestFileFieldResourceRename):
+    resource_class = SVGItem
+    resource_location = 'collections/files/%Y-%m-%d'
+    collection_class = CompleteCollection
+
     @classmethod
-    def init(cls, storage):
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+        storage.resource = cls.resource_class()
+        storage.resource.attach_to(storage.collection)
+        with open(MEDITATION_FILEPATH, 'rb') as fp:
+            storage.resource.attach_file(fp, name='old_name.jpg')
+        storage.resource.save()
+
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
+        storage.old_source_path = file.path
+        storage.resource.rename_file('new_name.png')
+
+        yield
+
+        os.remove(storage.old_source_path)
+        storage.resource.delete_file()
+        storage.resource.delete()
+
+
+class TestSVGItemDelete(TestFileFieldResourceDelete):
+    resource_class = SVGItem
+    resource_location = 'collections/files/%Y-%m-%d'
+    collection_class = CompleteCollection
+
+    @classmethod
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+        storage.resource = cls.resource_class()
+        storage.resource.attach_to(storage.collection)
+        with open(MEDITATION_FILEPATH, 'rb') as fp:
+            storage.resource.attach_file(fp, name='old_name.jpg')
+        storage.resource.save()
+
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
+        storage.old_source_path = file.path
+        storage.resource.delete_file()
+
+        yield
+
+        storage.resource.delete()
+
+
+class TestSVGItemEmpty(TestFileFieldResourceEmpty):
+    recource_class = SVGItem
+    collection_class = CompleteCollection
+
+    @classmethod
+    def init_class(cls, storage):
+        collection = cls.collection_class.objects.create()
+        storage.resource = cls.recource_class()
+        storage.resource.attach_to(collection)
+        yield
+        collection.delete()
+
+
+class TestSVGItemExists:
+    @classmethod
+    def init_class(cls, storage):
         storage.collection = CompleteCollection.objects.create()
 
         storage.resource = SVGItem()
@@ -583,76 +676,6 @@ class TestSVGItemFilesExists:
         assert os.path.exists(source_path) is False
 
 
-class TestSVGItemRename(TestFileFieldResourceRename):
-    @classmethod
-    def init(cls, storage):
-        storage.collection = CompleteCollection.objects.create()
-
-        storage.resource = SVGItem()
-        storage.resource.attach_to(storage.collection)
-        with open(MEDITATION_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
-        storage.resource.save()
-
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
-        storage.old_source_path = file.path
-        storage.resource.rename_file('new_name.png')
-
-        yield
-
-        os.remove(storage.old_source_path)
-        storage.resource.delete_file()
-        storage.resource.delete()
-
-    def test_old_file_name(self, storage):
-        assert storage.old_source_name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/old_name{suffix}.jpg',
-            storage.old_source_name
-        )
-
-    def test_new_file_name(self, storage):
-        file = storage.resource.get_file()
-        assert file.name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/new_name{suffix}.png',
-            file.name
-        )
-
-
-class TestSVGItemDelete(TestFileFieldResourceDelete):
-    @classmethod
-    def init(cls, storage):
-        storage.collection = CompleteCollection.objects.create()
-
-        storage.resource = SVGItem()
-        storage.resource.attach_to(storage.collection)
-        with open(MEDITATION_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
-        storage.resource.save()
-
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
-        storage.old_source_path = file.path
-        storage.resource.delete_file()
-
-        yield
-
-        storage.resource.delete()
-
-    def test_file_name(self, storage):
-        assert storage.old_source_name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/old_name{suffix}.jpg',
-            storage.old_source_name
-        )
-
-
-class TestEmptySVGItem(TestFileFieldResourceEmpty):
-    @classmethod
-    def init(cls, storage):
-        storage.resource = SVGItem()
-        yield
-
-
 class TestImageItem(CollectionItemMixin, TestFileFieldResource):
     resource_url = '/media/collections/images/%Y-%m-%d'
     resource_location = 'collections/images/%Y-%m-%d'
@@ -668,7 +691,7 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
     collection_class = CompleteCollection
 
     @classmethod
-    def init(cls, storage):
+    def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
 
         storage.resource = ImageItem()
@@ -756,9 +779,103 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
             assert storage.resource.file_supported(File(fp)) is False
 
 
-class TestImageItemFilesExists:
+@pytest.mark.django_db
+class TestImageItemAttach(TestImageAttach):
+    resource_class = ImageItem
+    collection_class = CompleteCollection
+
+    @contextmanager
+    def get_resource(self):
+        collection = self.collection_class.objects.create()
+        resource = self.resource_class()
+        resource.attach_to(collection)
+        try:
+            yield resource
+        finally:
+            resource.delete_file()
+            collection.delete()
+
+
+class TestImageItemRename(TestImageRename):
+    resource_class = ImageItem
+    resource_location = 'collections/images/%Y-%m-%d'
+    collection_class = CompleteCollection
+
     @classmethod
-    def init(cls, storage):
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+        storage.resource = cls.resource_class()
+        storage.resource.attach_to(storage.collection)
+        with open(NATURE_FILEPATH, 'rb') as fp:
+            storage.resource.attach_file(fp, name='old_name.jpg')
+        storage.resource.save()
+
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
+        storage.old_desktop_name = storage.resource.desktop.name
+        storage.old_mobile_name = storage.resource.mobile.name
+
+        storage.old_source_path = file.path
+        storage.old_desktop_path = storage.resource.desktop.path
+        storage.old_mobile_path = storage.resource.mobile.path
+
+        storage.resource.rename_file('new_name.png')
+
+        yield
+
+        os.remove(storage.old_source_path)
+        os.remove(storage.old_desktop_path)
+        os.remove(storage.old_mobile_path)
+        storage.resource.delete_file()
+        storage.resource.delete()
+
+
+class TestImageItemDelete(TestImageDelete):
+    resource_class = ImageItem
+    resource_location = 'collections/images/%Y-%m-%d'
+    collection_class = CompleteCollection
+
+    @classmethod
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+        storage.resource = cls.resource_class()
+        storage.resource.attach_to(storage.collection)
+        with open(NATURE_FILEPATH, 'rb') as fp:
+            storage.resource.attach_file(fp, name='old_name.jpg')
+        storage.resource.save()
+
+        file = storage.resource.get_file()
+        storage.old_source_name = file.name
+        storage.old_desktop_name = storage.resource.desktop.name
+        storage.old_mobile_name = storage.resource.mobile.name
+
+        storage.old_source_path = file.path
+        storage.old_desktop_path = storage.resource.desktop.path
+        storage.old_mobile_path = storage.resource.mobile.path
+
+        storage.resource.delete_file()
+
+        yield
+
+        storage.resource.delete()
+
+
+class TestImageItemEmpty(TestImageEmpty):
+    recource_class = ImageItem
+    collection_class = CompleteCollection
+
+    @classmethod
+    def init_class(cls, storage):
+        collection = cls.collection_class.objects.create()
+        storage.resource = cls.recource_class()
+        storage.resource.attach_to(collection)
+        yield
+        collection.delete()
+
+
+class TestImageItemExists:
+    @classmethod
+    def init_class(cls, storage):
         storage.collection = CompleteCollection.objects.create()
 
         storage.resource = ImageItem()
@@ -791,111 +908,3 @@ class TestImageItemFilesExists:
         assert os.path.exists(source_path) is False
         assert os.path.exists(desktop_path) is False
         assert os.path.exists(mobile_path) is False
-
-
-class TestImageItemRename(TestImageRename):
-    @classmethod
-    def init(cls, storage):
-        storage.collection = CompleteCollection.objects.create()
-
-        storage.resource = ImageItem()
-        storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
-        storage.resource.save()
-
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
-        storage.old_desktop_name = storage.resource.desktop.name
-        storage.old_mobile_name = storage.resource.mobile.name
-
-        storage.old_source_path = file.path
-        storage.old_desktop_path = storage.resource.desktop.path
-        storage.old_mobile_path = storage.resource.mobile.path
-
-        storage.resource.rename_file('new_name.png')
-
-        yield
-
-        os.remove(storage.old_source_path)
-        os.remove(storage.old_desktop_path)
-        os.remove(storage.old_mobile_path)
-        storage.resource.delete_file()
-        storage.resource.delete()
-
-    def test_old_file_name(self, storage):
-        assert storage.old_source_name == utils.get_target_filepath(
-            'collections/images/%Y-%m-%d/old_name{suffix}.jpg',
-            storage.old_source_name
-        )
-        assert storage.old_desktop_name == utils.get_target_filepath(
-            'collections/images/%Y-%m-%d/old_name{suffix}.desktop.jpg',
-            storage.old_source_name
-        )
-        assert storage.old_mobile_name == utils.get_target_filepath(
-            'collections/images/%Y-%m-%d/old_name{suffix}.mobile.jpg',
-            storage.old_source_name
-        )
-
-    def test_new_file_name(self, storage):
-        file = storage.resource.get_file()
-        assert file.name == utils.get_target_filepath(
-            'collections/images/%Y-%m-%d/new_name{suffix}.png',
-            file.name
-        )
-        assert storage.resource.desktop.name == utils.get_target_filepath(
-            'collections/images/%Y-%m-%d/new_name{suffix}.desktop.png',
-            file.name
-        )
-        assert storage.resource.mobile.name == utils.get_target_filepath(
-            'collections/images/%Y-%m-%d/new_name{suffix}.mobile.png',
-            file.name
-        )
-
-
-class TestImageItemDelete(TestImageDelete):
-    @classmethod
-    def init(cls, storage):
-        storage.collection = CompleteCollection.objects.create()
-
-        storage.resource = ImageItem()
-        storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
-        storage.resource.save()
-
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
-        storage.old_desktop_name = storage.resource.desktop.name
-        storage.old_mobile_name = storage.resource.mobile.name
-
-        storage.old_source_path = file.path
-        storage.old_desktop_path = storage.resource.desktop.path
-        storage.old_mobile_path = storage.resource.mobile.path
-
-        storage.resource.delete_file()
-
-        yield
-
-        storage.resource.delete()
-
-    def test_file_name(self, storage):
-        assert storage.old_source_name == utils.get_target_filepath(
-            'collections/images/%Y-%m-%d/old_name{suffix}.jpg',
-            storage.old_source_name
-        )
-        assert storage.old_desktop_name == utils.get_target_filepath(
-            'collections/images/%Y-%m-%d/old_name{suffix}.desktop.jpg',
-            storage.old_source_name
-        )
-        assert storage.old_mobile_name == utils.get_target_filepath(
-            'collections/images/%Y-%m-%d/old_name{suffix}.mobile.jpg',
-            storage.old_source_name
-        )
-
-
-class TestEmptyImageItem(TestEmptyVersatileImageResource):
-    @classmethod
-    def init(cls, storage):
-        storage.resource = ImageItem()
-        yield

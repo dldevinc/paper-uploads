@@ -1,8 +1,10 @@
 import posixpath
+from contextlib import contextmanager
 
 import cloudinary.exceptions
 import pytest
 from cloudinary import uploader
+from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.template.loader import render_to_string
 
@@ -20,11 +22,14 @@ from paper_uploads.cloudinary.models import (
 from ... import utils
 from ...dummy import *
 from ...models.test_base import (
+    TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
     TestFileFieldResourceEmpty,
     TestFileFieldResourceRename,
-    TestImageDelete,
-    TestImageRename,
+    TestImageFieldResourceAttach,
+    TestImageFieldResourceDelete,
+    TestImageFieldResourceEmpty,
+    TestImageFieldResourceRename,
 )
 from ...models.test_collection import CollectionItemMixin
 from .test_base import CloudinaryFileResource
@@ -41,7 +46,7 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
     collection_class = CloudinaryCompleteCollection
 
     @classmethod
-    def init(cls, storage):
+    def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
 
         storage.resource = CloudinaryFileItem()
@@ -114,12 +119,32 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
             assert storage.resource.file_supported(File(fp)) is True
 
 
-class TestFileItemRename(TestFileFieldResourceRename):
-    @classmethod
-    def init(cls, storage):
-        storage.collection = CloudinaryFileCollection.objects.create()
+@pytest.mark.django_db
+class TestFileItemAttach(TestFileFieldResourceAttach):
+    resource_class = CloudinaryFileItem
+    collection_class = CloudinaryFileCollection
 
-        storage.resource = CloudinaryFileItem()
+    @contextmanager
+    def get_resource(self):
+        collection = self.collection_class.objects.create()
+        resource = self.resource_class()
+        resource.attach_to(collection)
+        try:
+            yield resource
+        finally:
+            resource.delete_file()
+            collection.delete()
+
+
+class TestFileItemRename(TestFileFieldResourceRename):
+    resource_class = CloudinaryFileItem
+    resource_location = 'collections/files/%Y-%m-%d'
+    collection_class = CloudinaryFileCollection
+
+    @classmethod
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+        storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp, name='old_cfile_name.jpg')
@@ -153,24 +178,27 @@ class TestFileItemRename(TestFileFieldResourceRename):
 
     def test_old_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/old_cfile_name{suffix}.jpg',
+            posixpath.join(self.resource_location, 'old_cfile_name{suffix}.jpg'),
             storage.old_source_name
         )
 
     def test_new_file_name(self, storage):
         file = storage.resource.get_file()
         assert file.name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/new_cfile_name{suffix}.png',
+            posixpath.join(self.resource_location, 'new_cfile_name{suffix}.png'),
             file.name
         )
 
 
 class TestFileItemDelete(TestFileFieldResourceDelete):
-    @classmethod
-    def init(cls, storage):
-        storage.collection = CloudinaryFileCollection.objects.create()
+    resource_class = CloudinaryFileItem
+    resource_location = 'collections/files/%Y-%m-%d'
+    collection_class = CloudinaryFileCollection
 
-        storage.resource = CloudinaryFileItem()
+    @classmethod
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+        storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp, name='old_name.jpg')
@@ -184,12 +212,6 @@ class TestFileItemDelete(TestFileFieldResourceDelete):
 
         storage.resource.delete()
 
-    def test_file_name(self, storage):
-        assert storage.old_source_name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/old_name{suffix}.jpg',
-            storage.old_source_name
-        )
-
     def test_file_not_exists(self, storage):
         file_field = storage.resource.get_file_field()
         with pytest.raises(cloudinary.exceptions.Error):
@@ -200,13 +222,17 @@ class TestFileItemDelete(TestFileFieldResourceDelete):
             )
 
 
-class TestEmptyFileItem(TestFileFieldResourceEmpty):
+class TestFileItemEmpty(TestFileFieldResourceEmpty):
+    recource_class = CloudinaryFileItem
+    collection_class = CloudinaryFileCollection
+
     @classmethod
-    def init(cls, storage):
-        storage.collection = CloudinaryFileCollection.objects.create()
-        storage.resource = CloudinaryFileItem()
-        storage.resource.attach_to(storage.collection)
+    def init_class(cls, storage):
+        collection = cls.collection_class.objects.create()
+        storage.resource = cls.recource_class()
+        storage.resource.attach_to(collection)
         yield
+        collection.delete()
 
     def test_path(self, storage):
         pass
@@ -227,7 +253,7 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
     collection_class = CloudinaryCompleteCollection
 
     @classmethod
-    def init(cls, storage):
+    def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
 
         storage.resource = CloudinaryMediaItem()
@@ -300,12 +326,92 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
             assert storage.resource.file_supported(File(fp)) is True
 
 
-class TestMediaItemRename(TestFileFieldResourceRename):
-    @classmethod
-    def init(cls, storage):
-        storage.collection = CloudinaryMediaCollection.objects.create()
+@pytest.mark.django_db
+class TestMediaItemAttach(TestFileFieldResourceAttach):
+    resource_class = CloudinaryMediaItem
+    resource_size = 2113939
+    resource_checksum = '4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d'
+    collection_class = CloudinaryMediaCollection
 
-        storage.resource = CloudinaryMediaItem()
+    @contextmanager
+    def get_resource(self):
+        collection = self.collection_class.objects.create()
+        resource = self.resource_class()
+        resource.attach_to(collection)
+        try:
+            yield resource
+        finally:
+            resource.delete_file()
+            collection.delete()
+
+    def test_file(self):
+        with self.get_resource() as resource:
+            with open(AUDIO_FILEPATH, 'rb') as fp:
+                resource.attach_file(fp)
+
+            assert resource.name == 'audio'
+            assert resource.extension == 'mp3'
+            assert resource.size == self.resource_size
+            assert resource.checksum == self.resource_checksum
+
+    def test_django_file(self):
+        with self.get_resource() as resource:
+            with open(AUDIO_FILEPATH, 'rb') as fp:
+                file = File(fp, name='milky-way-nasa.jpg')
+                resource.attach_file(file)
+
+            assert resource.name == 'milky-way-nasa'
+            assert resource.extension == 'jpg'
+            assert resource.size == self.resource_size
+            assert resource.checksum == self.resource_checksum
+
+    def test_override_name(self):
+        with self.get_resource() as resource:
+            with open(AUDIO_FILEPATH, 'rb') as fp:
+                resource.attach_file(fp, name='overwritten.jpg')
+
+            assert resource.name == 'overwritten'
+            assert resource.extension == 'jpg'
+
+    def test_override_django_name(self):
+        with self.get_resource() as resource:
+            with open(AUDIO_FILEPATH, 'rb') as fp:
+                file = File(fp, name='not_used.png')
+                resource.attach_file(file, name='overwritten.jpg')
+
+            assert resource.name == 'overwritten'
+            assert resource.extension == 'jpg'
+
+    def test_wrong_extension(self):
+        with self.get_resource() as resource:
+            with open(AUDIO_FILEPATH, 'rb') as fp:
+                resource.attach_file(fp, name='overwritten.gif')
+
+            assert resource.name == 'overwritten'
+            assert resource.extension == 'gif'
+
+    def test_file_position_at_end(self):
+        with self.get_resource() as resource:
+            with open(AUDIO_FILEPATH, 'rb') as fp:
+                resource.attach_file(fp)
+                assert fp.tell() == self.resource_size
+
+    def test_unsupported_file(self):
+        with self.get_resource() as resource:
+            with open(NASA_FILEPATH, 'rb') as fp:
+                with pytest.raises(ValidationError):
+                    resource.attach_file(fp)
+
+
+class TestMediaItemRename(TestFileFieldResourceRename):
+    resource_class = CloudinaryMediaItem
+    resource_location = 'collections/files/%Y-%m-%d'
+    collection_class = CloudinaryMediaCollection
+
+    @classmethod
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+        storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(AUDIO_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp, name='old_cmedia_name.mp3')
@@ -339,27 +445,30 @@ class TestMediaItemRename(TestFileFieldResourceRename):
 
     def test_old_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/old_cmedia_name{suffix}',
+            posixpath.join(self.resource_location, 'old_cmedia_name{suffix}'),
             storage.old_source_name
         )
 
     def test_new_file_name(self, storage):
         file = storage.resource.get_file()
         assert file.name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/new_cmedia_name{suffix}',
+            posixpath.join(self.resource_location, 'new_cmedia_name{suffix}'),
             file.name
         )
 
 
 class TestMediaItemDelete(TestFileFieldResourceDelete):
-    @classmethod
-    def init(cls, storage):
-        storage.collection = CloudinaryMediaCollection.objects.create()
+    resource_class = CloudinaryMediaItem
+    resource_location = 'collections/files/%Y-%m-%d'
+    collection_class = CloudinaryMediaCollection
 
-        storage.resource = CloudinaryMediaItem()
+    @classmethod
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+        storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.mp3')
+            storage.resource.attach_file(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -372,7 +481,7 @@ class TestMediaItemDelete(TestFileFieldResourceDelete):
 
     def test_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            'collections/files/%Y-%m-%d/old_name{suffix}',
+            posixpath.join(self.resource_location, 'old_name{suffix}'),
             storage.old_source_name
         )
 
@@ -386,13 +495,17 @@ class TestMediaItemDelete(TestFileFieldResourceDelete):
             )
 
 
-class TestEmptyMediaItem(TestFileFieldResourceEmpty):
+class TestMediaItemEmpty(TestFileFieldResourceEmpty):
+    recource_class = CloudinaryMediaItem
+    collection_class = CloudinaryMediaCollection
+
     @classmethod
-    def init(cls, storage):
-        storage.collection = CloudinaryMediaCollection.objects.create()
-        storage.resource = CloudinaryMediaItem()
-        storage.resource.attach_to(storage.collection)
+    def init_class(cls, storage):
+        collection = cls.collection_class.objects.create()
+        storage.resource = cls.recource_class()
+        storage.resource.attach_to(collection)
         yield
+        collection.delete()
 
     def test_path(self, storage):
         pass
@@ -413,7 +526,7 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
     collection_class = CloudinaryCompleteCollection
 
     @classmethod
-    def init(cls, storage):
+    def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
 
         storage.resource = CloudinaryImageItem()
@@ -490,20 +603,45 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
             assert storage.resource.file_supported(File(fp)) is False
 
 
-class TestImageItemRename(TestImageRename):
-    @classmethod
-    def init(cls, storage):
-        storage.collection = CloudinaryCompleteCollection.objects.create()
+@pytest.mark.django_db
+class TestImageItemAttach(TestImageFieldResourceAttach):
+    resource_class = CloudinaryImageItem
+    collection_class = CloudinaryCompleteCollection
 
-        storage.resource = CloudinaryImageItem()
+    @contextmanager
+    def get_resource(self):
+        collection = self.collection_class.objects.create()
+        resource = self.resource_class()
+        resource.attach_to(collection)
+        try:
+            yield resource
+        finally:
+            resource.delete_file()
+            collection.delete()
+
+    def test_unsupported_file(self):
+        with self.get_resource() as resource:
+            with open(DOCUMENT_FILEPATH, 'rb') as fp:
+                with pytest.raises(ValidationError):
+                    resource.attach_file(fp)
+
+
+class TestImageItemRename(TestImageFieldResourceRename):
+    resource_class = CloudinaryImageItem
+    resource_location = 'collections/images/%Y-%m-%d'
+    collection_class = CloudinaryCompleteCollection
+
+    @classmethod
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+        storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, 'rb') as fp:
+        with open(CALLIPHORA_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp, name='old_cimage_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
-
         storage.resource.rename_file('new_cimage_name.png')
 
         yield
@@ -530,32 +668,34 @@ class TestImageItemRename(TestImageRename):
 
     def test_old_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            'collections/images/%Y-%m-%d/old_cimage_name{suffix}',
+            posixpath.join(self.resource_location, 'old_cimage_name{suffix}'),
             storage.old_source_name
         )
 
     def test_new_file_name(self, storage):
         file = storage.resource.get_file()
         assert file.name == utils.get_target_filepath(
-            'collections/images/%Y-%m-%d/new_cimage_name{suffix}',
+            posixpath.join(self.resource_location, 'new_cimage_name{suffix}'),
             file.name
         )
 
 
-class TestImageItemDelete(TestImageDelete):
-    @classmethod
-    def init(cls, storage):
-        storage.collection = CloudinaryCompleteCollection.objects.create()
+class TestImageItemDelete(TestImageFieldResourceDelete):
+    resource_class = CloudinaryImageItem
+    resource_location = 'collections/images/%Y-%m-%d'
+    collection_class = CloudinaryCompleteCollection
 
-        storage.resource = CloudinaryImageItem()
+    @classmethod
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+        storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, 'rb') as fp:
+        with open(CALLIPHORA_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
-
         storage.resource.delete_file()
 
         yield
@@ -564,7 +704,7 @@ class TestImageItemDelete(TestImageDelete):
 
     def test_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            'collections/images/%Y-%m-%d/old_name{suffix}',
+            posixpath.join(self.resource_location, 'old_name{suffix}'),
             storage.old_source_name
         )
 
@@ -578,13 +718,17 @@ class TestImageItemDelete(TestImageDelete):
             )
 
 
-class TestEmptyImageItem(TestFileFieldResourceEmpty):
+class TestImageItemEmpty(TestImageFieldResourceEmpty):
+    recource_class = CloudinaryImageItem
+    collection_class = CloudinaryCompleteCollection
+
     @classmethod
-    def init(cls, storage):
-        storage.collection = CloudinaryCompleteCollection.objects.create()
-        storage.resource = CloudinaryImageItem()
-        storage.resource.attach_to(storage.collection)
+    def init_class(cls, storage):
+        collection = cls.collection_class.objects.create()
+        storage.resource = cls.recource_class()
+        storage.resource.attach_to(collection)
         yield
+        collection.delete()
 
     def test_path(self, storage):
         pass
