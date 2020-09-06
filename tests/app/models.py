@@ -25,12 +25,12 @@ class DummyFileResource(FileResource):
         self.__filename = '{}.{}'.format(self.name, self.extension)
 
     def get_file(self) -> File:
-        file = getattr(self, '_file', None)
+        file = getattr(self, '_file_cache', None)
         if file is None:
             buffer = io.BytesIO()
             buffer.write(b'This is example file content')
             buffer.seek(0)
-            file = self._file = File(buffer, name=self.name)
+            file = self._file_cache = File(buffer, name=self.name)
         return file
 
     def get_file_field(self) -> models.FileField:
