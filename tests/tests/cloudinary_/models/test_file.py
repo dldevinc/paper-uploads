@@ -155,6 +155,12 @@ class TestCloudinaryFileRename(TestFileFieldResourceRename):
             file.name
         )
 
+    def test_name(self, storage):
+        assert storage.resource.name == utils.get_target_filepath(
+            'new_file_name{suffix}',
+            storage.resource.name
+        )
+
 
 class TestCloudinaryFileDelete(TestFileFieldResourceDelete):
     resource_class = CloudinaryFile

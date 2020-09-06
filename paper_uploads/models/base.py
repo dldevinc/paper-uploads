@@ -152,7 +152,9 @@ class FileResource(FileProxyMixin, Resource):
         Человекопонятное имя файла.
         Не содержит суффикса, которое может быть добавлено файловым хранилищем.
         """
-        return '{}.{}'.format(self.name, self.extension)
+        if self.extension:
+            return '{}.{}'.format(self.name, self.extension)
+        return self.name
 
     def get_file(self) -> File:
         raise NotImplementedError
@@ -212,8 +214,6 @@ class FileResource(FileProxyMixin, Resource):
             file.name = name
 
         prepared_file = self._prepare_file(file, **options)
-        self.name = helpers.get_filename(prepared_file.name)
-        self.extension = helpers.get_extension(prepared_file.name)
 
         signals.pre_attach_file.send(
             sender=type(self), instance=self, file=prepared_file, options=options
@@ -284,10 +284,7 @@ class FileResource(FileProxyMixin, Resource):
 
         response = self._rename_file(new_name, **options)
 
-        # имя файла берем из переданного значения, а расширение - из результата
-        # переименования, т.к. они могут быть модифицированы методом `_rename_file`.
-        self.name = helpers.get_filename(new_name)
-        self.extension = helpers.get_extension(self.get_file_name())
+        self.modified_at = now()
 
         signals.post_rename_file.send(
             sender=type(self),
@@ -308,8 +305,8 @@ class FileResource(FileProxyMixin, Resource):
         Не переопределяйте этот метод, если не уверены в том, что вы делаете.
         """
         signals.pre_delete_file.send(sender=type(self), instance=self, options=options)
-        self._delete_file(**options)
-        signals.post_delete_file.send(sender=type(self), instance=self, options=options)
+        response = self._delete_file(**options)
+        signals.post_delete_file.send(sender=type(self), instance=self, options=options, response=response)
 
     def _delete_file(self, **options):
         raise NotImplementedError
@@ -347,10 +344,16 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
     def _attach_file(self, file: File, **options):
         self.get_file().save(file.name, file, save=False)
 
+        self.name = helpers.get_filename(file.name)
+        self.extension = helpers.get_extension(self.get_file_name())
+
     def _rename_file(self, new_name: str, **options):
         file = self.get_file()
         with file.open() as fp:
             file.save(new_name, fp, save=False)
+
+        self.name = helpers.get_filename(new_name)
+        self.extension = helpers.get_extension(self.get_file_name())
 
     def _delete_file(self, **options):
         self.get_file().delete(save=False)

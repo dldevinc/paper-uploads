@@ -16,7 +16,7 @@ post_rename_file = Signal(providing_args=["instance", "old_name", "new_name", "o
 
 # удаление файла
 pre_delete_file = Signal(providing_args=["instance", "options"])
-post_delete_file = Signal(providing_args=["instance", "options"])
+post_delete_file = Signal(providing_args=["instance", "options", "response"])
 
 # изменен порядок элементов коллекции
 collection_reordered = Signal(providing_args=["instance"])

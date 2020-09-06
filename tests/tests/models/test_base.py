@@ -329,8 +329,9 @@ class TestFileResourceSignals:
             assert instance is resource
 
             # ensure instance not filled yet
+            assert instance.name == ''
             assert instance.size == 0
-            assert instance.extension == 'jpg'
+            assert instance.extension == ''
             assert instance.checksum == ''
 
             # ensure file type
@@ -366,6 +367,7 @@ class TestFileResourceSignals:
             assert instance is resource
 
             # ensure instance filled
+            assert instance.name == 'milky-way-nasa'
             assert instance.size == 28
             assert instance.extension == 'jpg'
             assert instance.checksum == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
@@ -513,7 +515,7 @@ class TestFileResourceSignals:
         resource = DummyFileResource()
         signal_fired = False
 
-        def signal_handler(sender, instance, options, **kwargs):
+        def signal_handler(sender, instance, options, response, **kwargs):
             nonlocal signal_fired
             signal_fired = True
             assert sender is DummyFileResource
@@ -523,6 +525,11 @@ class TestFileResourceSignals:
             assert options == {
                 'key1': 'value1',
                 'key2': 'value2'
+            }
+
+            # result of `_delete_file` method
+            assert response == {
+                'success': True,
             }
 
         signals.post_delete_file.connect(signal_handler)
@@ -778,6 +785,15 @@ class TestFileFieldResourceRename:
             posixpath.join(self.resource_location, 'new_name{suffix}.png'),
             file.name
         )
+
+    def test_name(self, storage):
+        assert storage.resource.name == utils.get_target_filepath(
+            'new_name{suffix}',
+            storage.resource.name
+        )
+
+    def test_extension(self, storage):
+        assert storage.resource.extension == 'png'
 
 
 class TestFileFieldResourceDelete:

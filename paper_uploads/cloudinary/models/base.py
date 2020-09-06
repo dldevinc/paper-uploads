@@ -1,7 +1,6 @@
 import datetime
 import os
 import posixpath
-import re
 import tempfile
 from io import UnsupportedOperation
 from typing import Optional
@@ -16,13 +15,11 @@ from django.core.files.utils import FileProxyMixin
 from django.utils.functional import cached_property
 from filelock import FileLock
 
-from ... import utils
+from ... import helpers, utils
 from ...conf import settings
 from ...logging import logger
 from ...models.base import FileResource
 from .mixins import ReadonlyCloudinaryFileProxyMixin
-
-re_public_id = re.compile(r'^(?P<public_id>.*?)(?:\.(?P<format>[^.]+))?$')
 
 
 class CloudinaryFieldFile(FileProxyMixin):
@@ -244,11 +241,12 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
 
         # fix difference between `public_id` in response
         # and `public_id` in CloudinaryField
-        match = re_public_id.match(result["public_id"])
-        if match:
-            public_id, file_format = match.groups()
+        file_format = result.get("format")
+        if file_format:
+            public_id = result["public_id"]
         else:
-            public_id, file_format = result["public_id"], result.get("format")
+            public_id, file_format = posixpath.splitext(result["public_id"])
+            file_format = file_format.lstrip('.')
 
         resource = CloudinaryResource(
             public_id,
@@ -260,6 +258,9 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         )
 
         self.set_file(resource)
+
+        self.name = helpers.get_filename(file.name)
+        self.extension = file_format or ''
         return result
 
     def _rename_file(self, new_name: str, **options):
@@ -289,11 +290,12 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
 
         # fix difference between `public_id` in response
         # and `public_id` in CloudinaryField
-        match = re_public_id.match(result["public_id"])
-        if match:
-            public_id, file_format = match.groups()
+        file_format = result.get("format")
+        if file_format:
+            public_id = result["public_id"]
         else:
-            public_id, file_format = result["public_id"], result.get("format")
+            public_id, file_format = posixpath.splitext(result["public_id"])
+            file_format = file_format.lstrip('.')
 
         resource = CloudinaryResource(
             public_id,
@@ -304,6 +306,10 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
             metadata=result,
         )
         self.set_file(resource)
+
+        self.name = helpers.get_filename(new_name)
+        self.extension = file_format or ''
+        return result
 
     def _delete_file(self, **options):
         cloudinary_options = self.get_cloudinary_options()
@@ -337,3 +343,4 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
                     self.get_file_name(), status
                 )
             )
+        return result

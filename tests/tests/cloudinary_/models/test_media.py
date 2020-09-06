@@ -117,7 +117,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
     def test_django_file(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                file = File(fp, name='audio.mp3')
+                file = File(fp, name='audio.ogg')
                 resource.attach_file(file)
 
             assert resource.name == 'audio'
@@ -131,7 +131,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
                 resource.attach_file(fp, name='overwritten.ogg')
 
             assert resource.name == 'overwritten'
-            assert resource.extension == 'ogg'
+            assert resource.extension == 'mp3'
 
     def test_override_django_name(self):
         with self.get_resource() as resource:
@@ -148,7 +148,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
                 resource.attach_file(fp, name='overwritten.gif')
 
             assert resource.name == 'overwritten'
-            assert resource.extension == 'gif'
+            assert resource.extension == 'mp3'
 
     def test_file_position_at_end(self):
         with self.get_resource() as resource:
@@ -220,6 +220,15 @@ class TestCloudinaryMediaRename(TestFileFieldResourceRename):
             posixpath.join(self.resource_location, 'new_media_name{suffix}'),
             file.name
         )
+
+    def test_name(self, storage):
+        assert storage.resource.name == utils.get_target_filepath(
+            'new_media_name{suffix}',
+            storage.resource.name
+        )
+
+    def test_extension(self, storage):
+        assert storage.resource.extension == 'mp3'
 
 
 class TestCloudinaryMediaDelete(TestFileFieldResourceDelete):

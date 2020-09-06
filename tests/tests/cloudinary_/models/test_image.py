@@ -167,6 +167,15 @@ class TestCloudinaryImageRename(TestImageFieldResourceRename):
             file.name
         )
 
+    def test_name(self, storage):
+        assert storage.resource.name == utils.get_target_filepath(
+            'new_image_name{suffix}',
+            storage.resource.name
+        )
+
+    def test_extension(self, storage):
+        assert storage.resource.extension == 'jpg'
+
 
 class TestCloudinaryImageDelete(TestImageFieldResourceDelete):
     resource_class = CloudinaryImage

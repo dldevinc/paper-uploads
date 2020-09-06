@@ -7,6 +7,7 @@ from django.db import models
 from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
 
+from paper_uploads import helpers
 from paper_uploads.cloudinary.models import *
 from paper_uploads.models import *
 from paper_uploads.models.base import *
@@ -50,18 +51,24 @@ class DummyFileResource(FileResource):
 
     def _attach_file(self, file: File, **options):
         self.__filename = file.name
+        self.name = helpers.get_filename(file.name)
+        self.extension = helpers.get_extension(file.name)
         return {
             'success': True,
         }
 
     def _rename_file(self, new_name: str, **options):
         self.__filename = new_name
+        self.name = helpers.get_filename(new_name)
+        self.extension = helpers.get_extension(new_name)
         return {
             'success': True,
         }
 
     def _delete_file(self, **options):
-        pass
+        return {
+            'success': True,
+        }
 
 
 class DummyFileFieldResource(FileFieldResource):
