@@ -130,16 +130,16 @@ class TestCloudinaryFileRename(TestFileFieldResourceRename):
         with pytest.raises(cloudinary.exceptions.Error):
             uploader.explicit(
                 storage.old_source_name,
-                type=file.type,
-                resource_type=file.resource_type
+                type=file.resource.type,
+                resource_type=file.resource.resource_type
             )
 
     def test_new_file_exists(self, storage):
         file = storage.resource.get_file()
         uploader.explicit(
             file.name,
-            type=file.type,
-            resource_type=file.resource_type
+            type=file.resource.type,
+            resource_type=file.resource.resource_type
         )
 
     def test_old_file_name(self, storage):

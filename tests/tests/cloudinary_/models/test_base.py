@@ -18,6 +18,7 @@ class TestCloudinaryFieldFile:
     resource_name = 'document'
     resource_ext = '.pdf'
     resource_size = 3028
+    resource_checksum = '93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e'
 
     @classmethod
     def init_class(cls, storage):
@@ -67,8 +68,12 @@ class TestCloudinaryFieldFile:
         assert 'secure_url' in meta
 
     def test_uploaded_metadata(self, storage):
-        resource = CloudinaryResource(storage.resource.public_id)
-        file = CloudinaryFieldFile(resource, type=self.type, resource_type=self.resource_type)
+        resource = CloudinaryResource(
+            storage.resource.public_id,
+            type=self.type,
+            resource_type=self.resource_type
+        )
+        file = CloudinaryFieldFile(resource, checksum=self.resource_checksum)
 
         meta = file.metadata
         assert 'asset_id' in meta
@@ -103,8 +108,12 @@ class TestCloudinaryFieldFile:
         assert storage.file.format is None
 
     def test_uploaded_format(self, storage):
-        resource = CloudinaryResource(storage.resource.public_id)
-        file = CloudinaryFieldFile(resource, type=self.type, resource_type=self.resource_type)
+        resource = CloudinaryResource(
+            storage.resource.public_id,
+            type=self.type,
+            resource_type=self.resource_type
+        )
+        file = CloudinaryFieldFile(resource, checksum=self.resource_checksum)
         assert file.format is None
 
     def test_read(self, storage):
@@ -128,13 +137,18 @@ class TestCloudinaryImage(TestCloudinaryFieldFile):
     resource_name = 'Nature_Tree'
     resource_ext = ''  # no extension for image
     resource_size = 672759
+    resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
 
     def test_format(self, storage):
         assert storage.file.format == 'jpg'
 
     def test_uploaded_format(self, storage):
-        resource = CloudinaryResource(storage.resource.public_id)
-        file = CloudinaryFieldFile(resource, type=self.type, resource_type=self.resource_type)
+        resource = CloudinaryResource(
+            storage.resource.public_id,
+            type=self.type,
+            resource_type=self.resource_type
+        )
+        file = CloudinaryFieldFile(resource, checksum=self.resource_checksum)
         assert file.format == 'jpg'
 
     def test_read(self, storage):
@@ -153,13 +167,18 @@ class TestCloudinaryMedia(TestCloudinaryFieldFile):
     resource_name = 'audio'
     resource_ext = ''  # no extension for media
     resource_size = 2113939
+    resource_checksum = '4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d'
 
     def test_format(self, storage):
         assert storage.file.format == 'mp3'
 
     def test_uploaded_format(self, storage):
-        resource = CloudinaryResource(storage.resource.public_id)
-        file = CloudinaryFieldFile(resource, type=self.type, resource_type=self.resource_type)
+        resource = CloudinaryResource(
+            storage.resource.public_id,
+            type=self.type,
+            resource_type=self.resource_type
+        )
+        file = CloudinaryFieldFile(resource, checksum=self.resource_checksum)
         assert file.format == 'mp3'
 
     def test_read(self, storage):

@@ -36,13 +36,9 @@ class CloudinaryFieldFile:
     truncate = property(lambda self: self._response.raw.truncate)
     writelines = property(lambda self: self._response.raw.writelines)
 
-    def __init__(self, resource: CloudinaryResource, name=None, type=None, resource_type=None, checksum=None):
+    def __init__(self, resource: CloudinaryResource, checksum=None):
         self.resource = resource
-        self.type = type or resource.type
-        self.resource_type = resource_type or resource.resource_type
-        if name is None:
-            name = self.public_id
-        self.name = name
+        self.name = self.public_id
         self.checksum = checksum
         self.mode = None
         self._response = None
@@ -65,7 +61,7 @@ class CloudinaryFieldFile:
     @cached_property
     def public_id(self):
         public_id = self.resource.public_id
-        if (self.resource_type == 'raw') and self.resource.format:
+        if (self.resource.resource_type == 'raw') and self.resource.format:
             public_id += '.' + self.resource.format
         return public_id
 
@@ -76,8 +72,8 @@ class CloudinaryFieldFile:
 
         return uploader.explicit(
             self.public_id,
-            type=self.type,
-            resource_type=self.resource_type
+            type=self.resource.type,
+            resource_type=self.resource.resource_type
         )
 
     @property
@@ -168,11 +164,13 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         if not file:
             return False
 
+        file_field = self.get_file_field()
+
         try:
             uploader.explicit(
                 self.get_file_name(),
-                type=file.type,
-                resource_type=file.resource_type,
+                type=file_field.type,
+                resource_type=file_field.resource_type,
             )
         except cloudinary.exceptions.Error:
             return False
@@ -249,10 +247,10 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         cloudinary_options = self.get_cloudinary_options()
         cloudinary_options.update(options.get('cloudinary', {}))
 
-        file = self.get_file()
+        file_field = self.get_file_field()
         old_name = self.get_file_name()
         folder, basename = posixpath.split(old_name)
-        if file.resource_type != 'raw':
+        if file_field.resource_type != 'raw':
             # video and image have no extension
             base, ext = posixpath.splitext(new_name)
             new_name = base
@@ -262,8 +260,8 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
             result = uploader.rename(
                 old_name,
                 new_name,
-                type=file.type,
-                resource_type=file.resource_type,
+                type=file_field.type,
+                resource_type=file_field.resource_type,
                 **cloudinary_options
             )
         except cloudinary.exceptions.Error as e:
@@ -295,11 +293,13 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         if not file:
             return
 
+        file_field = self.get_file_field()
+
         try:
             result = uploader.destroy(
                 self.get_file_name(),
-                type=file.type,
-                resource_type=file.resource_type,
+                type=file_field.type,
+                resource_type=file_field.resource_type,
                 **cloudinary_options
             )
         except cloudinary.exceptions.Error:
