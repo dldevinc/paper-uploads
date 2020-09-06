@@ -185,7 +185,7 @@ class Collection(CollectionBase):
         Определение класса элемента, которому нужно отнести загружаемый файл.
         """
         for item_type, field in self.item_types.items():
-            if issubclass(field.model, CollectionFileItemBase):
+            if hasattr(field.model, 'file_supported'):
                 if field.model.file_supported(file):
                     return item_type
         return None
