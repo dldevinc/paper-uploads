@@ -63,7 +63,7 @@ class CloudinaryFileItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:
             return None
-        return CloudinaryFieldFile(self.file)
+        return CloudinaryFieldFile(self.file, checksum=self.checksum)
 
     def set_file(self, value):
         self.file = value
@@ -101,7 +101,7 @@ class CloudinaryMediaItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:
             return None
-        return CloudinaryFieldFile(self.file)
+        return CloudinaryFieldFile(self.file, checksum=self.checksum)
 
     def set_file(self, value):
         self.file = value
@@ -137,7 +137,7 @@ class CloudinaryImageItem(ImageFileResourceMixin, CollectionCloudinaryFileItemBa
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:
             return None
-        return CloudinaryFieldFile(self.file)
+        return CloudinaryFieldFile(self.file, checksum=self.checksum)
 
     def set_file(self, value):
         self.file = value

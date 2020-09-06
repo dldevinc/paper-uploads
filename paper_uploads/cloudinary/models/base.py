@@ -36,13 +36,14 @@ class CloudinaryFieldFile:
     truncate = property(lambda self: self._response.raw.truncate)
     writelines = property(lambda self: self._response.raw.writelines)
 
-    def __init__(self, resource: CloudinaryResource, name=None, type=None, resource_type=None):
+    def __init__(self, resource: CloudinaryResource, name=None, type=None, resource_type=None, checksum=None):
         self.resource = resource
         self.type = type or resource.type
         self.resource_type = resource_type or resource.resource_type
         if name is None:
             name = self.public_id
         self.name = name
+        self.checksum = checksum
         self.mode = None
         self._response = None
 

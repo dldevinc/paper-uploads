@@ -25,7 +25,7 @@ class CloudinaryFile(CloudinaryFileResource):
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:
             return None
-        return CloudinaryFieldFile(self.file)
+        return CloudinaryFieldFile(self.file, checksum=self.checksum)
 
     def set_file(self, value):
         self.file = value
