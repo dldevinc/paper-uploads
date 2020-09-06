@@ -50,11 +50,15 @@ class BacklinkModelMixin(models.Model):
 
 class FileProxyMixin:
     """
-    Проксирование некоторых свойств файла на уровень модели
+    Проксирование некоторых свойств файла на уровень модели.
+
+    Открытый файл сохраняется в поле `__file`, чтобы предотвратить
+    повторное скачивание файла при повторном открытии файла.
     """
 
-    seek = property(lambda self: self.get_file().seek)
-    tell = property(lambda self: self.get_file().tell)
+    def __init__(self, *args, **kwargs):
+        self.__file = None
+        super().__init__(*args, **kwargs)
 
     def __enter__(self):
         return self
@@ -62,46 +66,99 @@ class FileProxyMixin:
     def __exit__(self, exc_type, exc_value, tb):
         self.close()
 
+    def _get_file(self):
+        return getattr(self, '_FileProxyMixin__file', None)
+
+    def _open_file(self, mode):
+        self.__file = self.get_file().open(mode)  # noqa: F821
+
+    def _close_file(self):
+        file = self._get_file()
+        if file is not None:
+            file.close()
+        self.__file = None
+
     @property
     def closed(self):
-        file = self.get_file()  # noqa: F821
+        file = self._get_file()
+        if file is None:
+            file = self.get_file()  # noqa: F821
         return not file or file.closed
 
     def open(self, mode='rb'):
         self._require_file()  # noqa: F821
-        return self.get_file().open(mode)  # noqa
+
+        file = self._get_file()
+        if file is None:
+            self._open_file(mode)
+        elif file.seekable():
+            file.seek(0)
+        else:
+            # current file is not seekable - reopen it
+            file.close()
+            self._open_file(mode)
+        return self
     open.alters_data = True  # noqa: F821
 
     def read(self, size=None):
         self._require_file()  # noqa: F821
-        return self.get_file().read(size)  # noqa: F821
+
+        file = self._get_file()
+        if file is None:
+            file = self.get_file()  # noqa: F821
+
+        return file.read(size)  # noqa: F821
 
     def close(self):
-        self.get_file().close()  # noqa
+        self._close_file()
 
     def readable(self):
-        if self.closed:
-            return False
-        file = self.get_file()  # noqa: F821
+        file = self._get_file()
+        if file is None:
+            file = self.get_file()  # noqa: F821
         if hasattr(file, 'readable'):
             return file.readable()
         return True
 
     def writable(self):
-        if self.closed:
-            return False
-        file = self.get_file()  # noqa: F821
+        file = self._get_file()
+        if file is None:
+            file = self.get_file()  # noqa: F821
         if hasattr(file, 'writable'):
             return file.writable()
         return 'w' in getattr(file, 'mode', '')
 
     def seekable(self):
-        if self.closed:
-            return False
-        file = self.get_file()  # noqa: F821
+        file = self._get_file()
+        if file is None:
+            file = self.get_file()  # noqa: F821
         if hasattr(file, 'seekable'):
             return file.seekable()
         return True
+
+    def seek(self, *args, **kwargs):
+        file = self._get_file()
+        if file is None:
+            file = self.get_file()  # noqa: F821
+        return file.seek(*args, **kwargs)
+
+    def tell(self):
+        file = self._get_file()
+        if file is None:
+            file = self.get_file()  # noqa: F821
+        return file.tell()
+
+    def multiple_chunks(self, chunk_size=None):
+        file = self._get_file()
+        if file is None:
+            file = self.get_file()  # noqa: F821
+        return file.multiple_chunks(chunk_size)
+
+    def chunks(self, chunk_size=None):
+        file = self._get_file()
+        if file is None:
+            file = self.get_file()  # noqa: F821
+        return file.chunks(chunk_size)
 
 
 class FileFieldProxyMixin:

@@ -1,6 +1,7 @@
 import os
 import posixpath
 import shutil
+import math
 from contextlib import contextmanager
 
 import pytest
@@ -248,7 +249,27 @@ class TestFileResource(TestResource):
         raise NotImplementedError
 
     @pytest.mark.skip(reason="abstract method")
+    def test_open(self, storage):
+        raise NotImplementedError
+
+    @pytest.mark.skip(reason="abstract method")
+    def test_reopen(self, storage):
+        raise NotImplementedError
+
+    @pytest.mark.skip(reason="abstract method")
+    def test_reopen_reset_position(self, storage):
+        raise NotImplementedError
+
+    @pytest.mark.skip(reason="abstract method")
     def test_read(self, storage):
+        raise NotImplementedError
+
+    @pytest.mark.skip(reason="abstract method")
+    def test_close(self, storage):
+        raise NotImplementedError
+
+    @pytest.mark.skip(reason="abstract method")
+    def test_reclose(self, storage):
         raise NotImplementedError
 
     @pytest.mark.skip(reason="abstract method")
@@ -264,15 +285,15 @@ class TestFileResource(TestResource):
         raise NotImplementedError
 
     @pytest.mark.skip(reason="abstract method")
-    def test_close(self, storage):
-        raise NotImplementedError
-
-    @pytest.mark.skip(reason="abstract method")
     def test_seek(self, storage):
         raise NotImplementedError
 
     @pytest.mark.skip(reason="abstract method")
     def test_tell(self, storage):
+        raise NotImplementedError
+
+    @pytest.mark.skip(reason="abstract method")
+    def test_chunks(self, storage):
         raise NotImplementedError
 
 
@@ -554,9 +575,38 @@ class TestFileFieldResource(TestFileResource):
             assert storage.resource.closed is False
         assert storage.resource.closed is True
 
-    def test_read(self, storage):
+    def test_open(self, storage):
         with storage.resource.open() as fp:
-            assert fp.read(4) == b'\xff\xd8\xff\xe0'
+            assert fp is storage.resource
+            assert fp._FileProxyMixin__file is storage.resource.get_file()
+
+    def test_reopen(self, storage):
+        with storage.resource.open() as opened:
+            with storage.resource.open() as reopened:
+                assert opened is reopened
+                assert opened._FileProxyMixin__file is opened._FileProxyMixin__file
+
+    def test_reopen_reset_position(self, storage):
+        with storage.resource.open():
+            storage.resource.read(4)  # change file position
+            assert storage.resource.tell() == 4
+
+            with storage.resource.open():
+                assert storage.resource.tell() == 0
+
+    def test_read(self, storage):
+        with storage.resource.open():
+            assert storage.resource.read(4) == b'\xff\xd8\xff\xe0'
+
+    def test_close(self, storage):
+        with storage.resource.open():
+            assert storage.resource._FileProxyMixin__file is not None
+        assert storage.resource._FileProxyMixin__file is None
+
+    def test_reclose(self, storage):
+        with storage.resource.open():
+            pass
+        return storage.resource.close()
 
     def test_seekable(self, storage):
         with storage.resource.open() as fp:
@@ -570,21 +620,24 @@ class TestFileFieldResource(TestFileResource):
         with storage.resource.open() as fp:
             assert fp.writable() is False
 
-    def test_close(self, storage):
-        fp = storage.resource.open()
-        assert storage.resource.closed is False
-        fp.close()
-        assert storage.resource.closed is True
-
     def test_seek(self, storage):
         with storage.resource.open() as fp:
-            if fp.seekable():
-                fp.seek(0, os.SEEK_END)
-                assert fp.tell() == self.resource_size
+            fp.seek(0, os.SEEK_END)
+            assert fp.tell() == self.resource_size
 
     def test_tell(self, storage):
         with storage.resource.open() as fp:
             assert fp.tell() == 0
+
+    def test_chunks(self, storage):
+        chunk_size = 32 * 1024
+        chunk_counter = 0
+        chunk_count = math.ceil(self.resource_size / chunk_size)
+        with storage.resource.open():
+            assert storage.resource.multiple_chunks(chunk_size) is True
+            for chunk in storage.resource.chunks(chunk_size):
+                chunk_counter += 1
+            assert chunk_counter == chunk_count
 
     def test_get_file_name(self, storage):
         file_name = storage.resource.get_file_name()

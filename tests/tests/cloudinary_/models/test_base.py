@@ -1,6 +1,5 @@
 import os
 
-import pytest
 from cloudinary import CloudinaryResource, uploader
 
 from paper_uploads.cloudinary.models.base import CloudinaryFieldFile
@@ -32,7 +31,7 @@ class TestCloudinaryFieldFile:
                 unique_filename=True,
                 overwrite=True
             )
-        storage.file = CloudinaryFieldFile(storage.resource)
+        storage.file = CloudinaryFieldFile(storage.resource, checksum=cls.resource_checksum)
         yield
         uploader.destroy(
             storage.resource.public_id,
@@ -88,9 +87,6 @@ class TestCloudinaryFieldFile:
         assert 'url' in meta
         assert 'secure_url' in meta
 
-    def test_size(self, storage):
-        assert storage.file.size == self.resource_size
-
     def test_url(self, storage):
         assert storage.file.url.startswith('https://res.cloudinary.com/')
 
@@ -104,6 +100,9 @@ class TestCloudinaryFieldFile:
             storage.resource.public_id
         ))
 
+    def test_size(self, storage):
+        assert storage.file.size == self.resource_size
+
     def test_format(self, storage):
         assert storage.file.format is None
 
@@ -116,19 +115,28 @@ class TestCloudinaryFieldFile:
         file = CloudinaryFieldFile(resource, checksum=self.resource_checksum)
         assert file.format is None
 
+    def test_closed(self, storage):
+        with storage.file.open():
+            assert storage.file.closed is False
+        assert storage.file.closed is True
+
+    def test_open(self, storage):
+        with storage.file.open() as fp:
+            assert fp is storage.file
+        assert storage.file.file is not None
+
     def test_read(self, storage):
         with storage.file.open() as fp:
             assert fp.read(4) == b'%PDF'
 
-    def test_read_text(self, storage):
-        with storage.file.open('r') as fp:
-            assert fp.read(4) == '%PDF'
+    def test_seek(self, storage):
+        with storage.file.open() as fp:
+            fp.seek(0, os.SEEK_END)
+            assert fp.tell() == self.resource_size
 
-    def test_closed(self, storage):
-        assert storage.file.closed is True
-        with storage.file.open():
-            assert storage.file.closed is False
-        assert storage.file.closed is True
+    def test_tell(self, storage):
+        with storage.file.open() as fp:
+            assert fp.tell() == 0
 
 
 class TestCloudinaryImage(TestCloudinaryFieldFile):
@@ -155,11 +163,6 @@ class TestCloudinaryImage(TestCloudinaryFieldFile):
         with storage.file.open() as fp:
             assert fp.read(4) == b'\xff\xd8\xff\xe0'
 
-    def test_read_text(self, storage):
-        with storage.file.open('r') as fp:
-            with pytest.raises(UnicodeDecodeError):
-                fp.read(4)
-
 
 class TestCloudinaryMedia(TestCloudinaryFieldFile):
     resource_type = 'video'
@@ -184,10 +187,6 @@ class TestCloudinaryMedia(TestCloudinaryFieldFile):
     def test_read(self, storage):
         with storage.file.open() as fp:
             assert fp.read(4) == b'ID3\x03'
-
-    def test_read_text(self, storage):
-        with storage.file.open('r') as fp:
-            assert fp.read(3) == 'ID3'
 
 
 class CloudinaryFileResource(TestFileResource):
@@ -218,6 +217,37 @@ class CloudinaryFileResource(TestFileResource):
             assert storage.resource.closed is False
         assert storage.resource.closed is True
 
+    def test_open(self, storage):
+        with storage.resource.open() as fp:
+            assert fp is storage.resource
+
+    def test_reopen(self, storage):
+        with storage.resource.open() as opened:
+            with storage.resource.open() as reopened:
+                assert opened is reopened
+
+    def test_reopen_reset_position(self, storage):
+        with storage.resource.open():
+            storage.resource.read(4)  # change file position
+            assert storage.resource.tell() == 4
+
+            with storage.resource.open():
+                assert storage.resource.tell() == 0
+
+    def test_read(self, storage):
+        with storage.resource.open() as fp:
+            assert fp.read(4) == b'\xff\xd8\xff\xe0'
+
+    def test_close(self, storage):
+        with storage.resource.open():
+            assert storage.resource._FileProxyMixin__file is not None
+        assert storage.resource._FileProxyMixin__file is None
+
+    def test_reclose(self, storage):
+        with storage.resource.open():
+            pass
+        return storage.resource.close()
+
     def test_seekable(self, storage):
         with storage.resource.open() as fp:
             assert fp.seekable() is True
@@ -230,21 +260,10 @@ class CloudinaryFileResource(TestFileResource):
         with storage.resource.open() as fp:
             assert fp.writable() is False
 
-    def test_read(self, storage):
-        with storage.resource.open() as fp:
-            assert fp.read(4) == b'\xff\xd8\xff\xe0'
-
-    def test_close(self, storage):
-        fp = storage.resource.open()
-        assert storage.resource.closed is False
-        fp.close()
-        assert storage.resource.closed is True
-
     def test_seek(self, storage):
         with storage.resource.open() as fp:
-            if fp.seekable():
-                fp.seek(0, os.SEEK_END)
-                assert fp.tell() == self.resource_size
+            fp.seek(0, os.SEEK_END)
+            assert fp.tell() == self.resource_size
 
     def test_tell(self, storage):
         with storage.resource.open() as fp:

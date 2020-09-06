@@ -1,6 +1,9 @@
 import datetime
+import os
 import posixpath
 import re
+import tempfile
+from io import UnsupportedOperation
 from typing import Optional
 
 import cloudinary.exceptions
@@ -9,8 +12,11 @@ from cloudinary import CloudinaryResource, uploader
 from cloudinary.utils import upload_params
 from django.core.exceptions import ValidationError
 from django.core.files import File
+from django.core.files.utils import FileProxyMixin
 from django.utils.functional import cached_property
+from filelock import FileLock
 
+from ... import utils
 from ...conf import settings
 from ...logging import logger
 from ...models.base import FileResource
@@ -19,29 +25,17 @@ from .mixins import ReadonlyCloudinaryFileProxyMixin
 re_public_id = re.compile(r'^(?P<public_id>.*?)(?:\.(?P<format>[^.]+))?$')
 
 
-class CloudinaryFieldFile:
+class CloudinaryFieldFile(FileProxyMixin):
     """
     Реализация интерфейса django.core.files.File для Cloudinary
     """
     DEFAULT_CHUNK_SIZE = 64 * 2 ** 10
 
-    fileno = property(lambda self: self._response.raw.fileno)
-    flush = property(lambda self: self._response.raw.flush)
-    isatty = property(lambda self: self._response.raw.isatty)
-    readinto = property(lambda self: self._response.raw.readinto)
-    readline = property(lambda self: self._response.raw.readline)
-    readlines = property(lambda self: self._response.raw.readlines)
-    seek = property(lambda self: self._response.raw.seek)
-    tell = property(lambda self: self._response.raw.tell)
-    truncate = property(lambda self: self._response.raw.truncate)
-    writelines = property(lambda self: self._response.raw.writelines)
-
-    def __init__(self, resource: CloudinaryResource, checksum=None):
+    def __init__(self, resource: CloudinaryResource, checksum: str = None):
         self.resource = resource
         self.name = self.public_id
         self.checksum = checksum
-        self.mode = None
-        self._response = None
+        self.file = None
 
     def __str__(self):
         return self.name or ''
@@ -57,6 +51,12 @@ class CloudinaryFieldFile:
 
     def __eq__(self, other):
         return self.url == other.url
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        self.close()
 
     @cached_property
     def public_id(self):
@@ -88,56 +88,76 @@ class CloudinaryFieldFile:
     def format(self) -> Optional[str]:
         return self.metadata.get('format')
 
-    def get_response(self, **kwargs):
-        response = requests.get(self.url, **kwargs)
-        response.raise_for_status()
-        return response
+    def _get_tempfile_path(self):
+        return os.path.join(
+            tempfile.gettempdir(),
+            settings.CLOUDINARY_TEMP_DIR,
+            self.name
+        )
 
-    def chunks(self, chunk_size=None):
+    def _download_file(self, mode='rb', chunk_size=None):
+        """
+        Скачивание файла из Cloudinary во временную директорию.
+        Загруженный файл остается там даже после закрытия, чтобы не
+        скачивать его заново в следующий раз.
+        """
         chunk_size = chunk_size or self.DEFAULT_CHUNK_SIZE
-        response = self.get_response(stream=True)
-        decode_unicode = self.mode and 'b' not in self.mode
-        for chunk in response.iter_content(chunk_size=chunk_size, decode_unicode=decode_unicode):
-            yield chunk
+        tempfile_path = self._get_tempfile_path()
+        if os.path.exists(tempfile_path):
+            with open(tempfile_path, 'rb') as fp:
+                file_checksum = utils.checksum(fp)
+            if file_checksum == self.checksum:
+                return File(open(tempfile_path, mode))
+
+        root, basename = os.path.split(tempfile_path)
+        os.makedirs(root, mode=0o755, exist_ok=True)
+
+        lock = FileLock(tempfile_path + '.lock')
+        with lock.acquire(timeout=3600):
+            response = requests.get(self.url, stream=True)
+            response.raise_for_status()
+            with open(tempfile_path, 'wb+') as fp:
+                for chunk in response.iter_content(chunk_size=chunk_size):
+                    fp.write(chunk)
+            return File(open(tempfile_path, mode))
+
+    def open(self, mode='rb'):
+        if self.file is None:
+            self.file = self._download_file(mode)
+        elif self.file.closed:
+            self.file.open(mode)
+        else:
+            self.seek(0)
+        return self
+
+    def read(self, size=None):
+        if not self.closed:
+            return self.file.read(size)
+        raise ValueError("Cannot read from file.")
+
+    def write(self, chunk):
+        if not self.closed:
+            return self.file.write(chunk)
+        raise ValueError("Cannot write to file.")
+
+    def close(self):
+        self.file.close()
 
     def multiple_chunks(self, chunk_size=None):
         return self.size > (chunk_size or self.DEFAULT_CHUNK_SIZE)
 
-    def __enter__(self):
-        return self
+    def chunks(self, chunk_size=None):
+        chunk_size = chunk_size or self.DEFAULT_CHUNK_SIZE
+        try:
+            self.seek(0)
+        except (AttributeError, UnsupportedOperation):
+            pass
 
-    def __exit__(self, exc_type, exc_value, tb):
-        self.close()
-
-    def open(self, mode=None):
-        self._response = self.get_response(stream=True)
-        self.mode = mode or 'rb'
-        return self
-
-    def close(self):
-        self._response.close()
-        self._response = None
-        self.mode = None
-
-    @property
-    def closed(self):
-        return self._response is None
-
-    def readable(self):
-        return True
-
-    def writable(self):
-        return False
-
-    def seekable(self):
-        return False
-
-    def read(self, size=None):
-        data = self._response.raw.read(size)
-        decode_unicode = self.mode and 'b' not in self.mode
-        if decode_unicode:
-            data = data.decode()
-        return data
+        while True:
+            data = self.read(chunk_size)
+            if not data:
+                break
+            yield data
 
 
 class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):

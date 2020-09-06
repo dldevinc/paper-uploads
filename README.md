@@ -95,14 +95,18 @@ class Page(models.Model):
 
 Модели файлов (`UploadedFile`, `UploadedImage` и модели элементов коллекций)
 проксирует некоторые аттрибуты и методы файла на уровень модели:
-* `url`
-* `path`
 * `open`
 * `close`
 * `closed`
 * `read`
 * `seek`
 * `tell`
+* `readable`
+* `writable`
+* `seekable`
+* `url`
+* `path`
+* `chunks`
 
 Таким образом, вместо `Page.report.file.url` можно использовать
 `Page.report.url`.
