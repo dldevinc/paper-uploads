@@ -79,7 +79,7 @@ class TestCloudinaryMedia(CloudinaryFileResource):
             'uploaded': storage.resource.uploaded_at.isoformat(),
         }
 
-    def test_open(self, storage):
+    def test_read(self, storage):
         with storage.resource.open() as fp:
             assert fp.read(4) == b'ID3\x03'
 

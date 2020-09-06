@@ -107,11 +107,11 @@ class TestCloudinaryFieldFile:
         file = CloudinaryFieldFile(resource, type=self.type, resource_type=self.resource_type)
         assert file.format is None
 
-    def test_open(self, storage):
+    def test_read(self, storage):
         with storage.file.open() as fp:
             assert fp.read(4) == b'%PDF'
 
-    def test_open_text(self, storage):
+    def test_read_text(self, storage):
         with storage.file.open('r') as fp:
             assert fp.read(4) == '%PDF'
 
@@ -137,11 +137,11 @@ class TestCloudinaryImage(TestCloudinaryFieldFile):
         file = CloudinaryFieldFile(resource, type=self.type, resource_type=self.resource_type)
         assert file.format == 'jpg'
 
-    def test_open(self, storage):
+    def test_read(self, storage):
         with storage.file.open() as fp:
             assert fp.read(4) == b'\xff\xd8\xff\xe0'
 
-    def test_open_text(self, storage):
+    def test_read_text(self, storage):
         with storage.file.open('r') as fp:
             with pytest.raises(UnicodeDecodeError):
                 fp.read(4)
@@ -162,11 +162,11 @@ class TestCloudinaryMedia(TestCloudinaryFieldFile):
         file = CloudinaryFieldFile(resource, type=self.type, resource_type=self.resource_type)
         assert file.format == 'mp3'
 
-    def test_open(self, storage):
+    def test_read(self, storage):
         with storage.file.open() as fp:
             assert fp.read(4) == b'ID3\x03'
 
-    def test_open_text(self, storage):
+    def test_read_text(self, storage):
         with storage.file.open('r') as fp:
             assert fp.read(3) == 'ID3'
 
@@ -211,7 +211,7 @@ class CloudinaryFileResource(TestFileResource):
         with storage.resource.open() as fp:
             assert fp.writable() is False
 
-    def test_open(self, storage):
+    def test_read(self, storage):
         with storage.resource.open() as fp:
             assert fp.read(4) == b'\xff\xd8\xff\xe0'
 

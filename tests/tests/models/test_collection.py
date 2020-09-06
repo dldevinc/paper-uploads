@@ -550,7 +550,7 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
             'uploaded': storage.resource.uploaded_at.isoformat(),
         }
 
-    def test_open(self, storage):
+    def test_read(self, storage):
         with storage.resource.open() as fp:
             assert fp.read(5) == b'<?xml'
 

@@ -77,7 +77,7 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
     def test_display_name(self, storage):
         assert storage.resource.display_name == self.resource_name
 
-    def test_open(self, storage):
+    def test_read(self, storage):
         with storage.resource.open() as fp:
             assert fp.read(4) == b'%PDF'
 
@@ -284,7 +284,7 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
     def test_display_name(self, storage):
         assert storage.resource.display_name == self.resource_name
 
-    def test_open(self, storage):
+    def test_read(self, storage):
         with storage.resource.open() as fp:
             assert fp.read(4) == b'ID3\x03'
 

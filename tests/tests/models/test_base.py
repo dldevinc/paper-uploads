@@ -248,6 +248,10 @@ class TestFileResource(TestResource):
         raise NotImplementedError
 
     @pytest.mark.skip(reason="abstract method")
+    def test_read(self, storage):
+        raise NotImplementedError
+
+    @pytest.mark.skip(reason="abstract method")
     def test_seekable(self, storage):
         raise NotImplementedError
 
@@ -257,10 +261,6 @@ class TestFileResource(TestResource):
 
     @pytest.mark.skip(reason="abstract method")
     def test_writable(self, storage):
-        raise NotImplementedError
-
-    @pytest.mark.skip(reason="abstract method")
-    def test_open(self, storage):
         raise NotImplementedError
 
     @pytest.mark.skip(reason="abstract method")
@@ -554,6 +554,10 @@ class TestFileFieldResource(TestFileResource):
             assert storage.resource.closed is False
         assert storage.resource.closed is True
 
+    def test_read(self, storage):
+        with storage.resource.open() as fp:
+            assert fp.read(4) == b'\xff\xd8\xff\xe0'
+
     def test_seekable(self, storage):
         with storage.resource.open() as fp:
             assert fp.seekable() is True
@@ -565,10 +569,6 @@ class TestFileFieldResource(TestFileResource):
     def test_writable(self, storage):
         with storage.resource.open() as fp:
             assert fp.writable() is False
-
-    def test_open(self, storage):
-        with storage.resource.open() as fp:
-            assert fp.read(4) == b'\xff\xd8\xff\xe0'
 
     def test_close(self, storage):
         fp = storage.resource.open()
@@ -765,12 +765,12 @@ class TestFileFieldResourceEmpty:
         storage.resource = cls.recource_class()
         yield
 
+    def test_closed(self, storage):
+        assert storage.resource.closed is True
+
     def test_open(self, storage):
         with pytest.raises(ValueError):
             storage.resource.open()  # noqa
-
-    def test_closed(self, storage):
-        assert storage.resource.closed is True
 
     def test_read(self, storage):
         with pytest.raises(ValueError):
@@ -983,7 +983,7 @@ class TestVariationFile:
     def test_height(self, storage):
         assert storage.file.height == 577
 
-    def test_open(self, storage):
+    def test_read(self, storage):
         assert storage.file.closed is True
         with storage.file.open():
             assert storage.file.closed is False
