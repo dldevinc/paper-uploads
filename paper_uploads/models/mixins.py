@@ -64,17 +64,17 @@ class FileProxyMixin:
 
     @property
     def closed(self):
-        file = self.get_file()  # noqa
+        file = self.get_file()  # noqa: F821
         return not file or file.closed
 
     def open(self, mode='rb'):
-        self._require_file()  # noqa
+        self._require_file()  # noqa: F821
         return self.get_file().open(mode)  # noqa
-    open.alters_data = True  # noqa
+    open.alters_data = True  # noqa: F821
 
     def read(self, size=None):
-        self._require_file()  # noqa
-        return self.get_file().read(size)  # noqa
+        self._require_file()  # noqa: F821
+        return self.get_file().read(size)  # noqa: F821
 
     def close(self):
         self.get_file().close()  # noqa
@@ -82,7 +82,7 @@ class FileProxyMixin:
     def readable(self):
         if self.closed:
             return False
-        file = self.get_file()
+        file = self.get_file()  # noqa: F821
         if hasattr(file, 'readable'):
             return file.readable()
         return True
@@ -90,7 +90,7 @@ class FileProxyMixin:
     def writable(self):
         if self.closed:
             return False
-        file = self.get_file()
+        file = self.get_file()  # noqa: F821
         if hasattr(file, 'writable'):
             return file.writable()
         return 'w' in getattr(file, 'mode', '')
@@ -98,7 +98,7 @@ class FileProxyMixin:
     def seekable(self):
         if self.closed:
             return False
-        file = self.get_file()
+        file = self.get_file()  # noqa: F821
         if hasattr(file, 'seekable'):
             return file.seekable()
         return True
@@ -111,10 +111,10 @@ class FileFieldProxyMixin:
 
     @property
     def path(self):
-        self._require_file()  # noqa
-        return self.get_file().path
+        self._require_file()  # noqa: F821
+        return self.get_file().path  # noqa: F821
 
     @property
     def url(self):
-        self._require_file()  # noqa
-        return self.get_file().url
+        self._require_file()  # noqa: F821
+        return self.get_file().url  # noqa: F821

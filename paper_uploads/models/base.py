@@ -412,7 +412,7 @@ class ImageFileResourceMixin(models.Model):
             ext = ext.lstrip('.').lower()
             file.name = '.'.join([root, ext])
 
-        return super()._prepare_file(file, **options)
+        return super()._prepare_file(file, **options)  # noqa: F821
 
 
 class VariationFile(File):
@@ -583,7 +583,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
                 self.recut()
 
     def attach_file(self, file: FileLike, name: str = None, **options):
-        super().attach_file(file, name=name, **options)
+        super().attach_file(file, name=name, **options)  # noqa: F821
         self.need_recut = True
         self._setup_variation_files()
 
@@ -591,11 +591,11 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         for vname, vfile in self.variation_files():
             if vfile is not None:
                 vfile.delete()
-        super()._delete_file()  # noqa
+        super()._delete_file()  # noqa: F821
         self._reset_variation_files()
 
     def _rename_file(self, new_name: str, **options):
-        super()._rename_file(new_name)  # noqa
+        super()._rename_file(new_name)  # noqa: F821
         self.recut()
         self._setup_variation_files()
 
@@ -628,7 +628,6 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
             max_height = max(max_height, size[1])
         if max_width and max_height:
             return max_width, max_height
-        return None
 
     def _save_variation(self, name: str, variation: PaperVariation, image: Image):
         """
