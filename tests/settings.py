@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'paper_uploads',
     'paper_uploads.cloudinary',
     'django_rq',
+    'django_jinja',
     'cloudinary',
     'app',
 ]
@@ -52,6 +53,7 @@ ROOT_URLCONF = 'urls'
 
 TEMPLATES = [
     {
+        'NAME': 'django',
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             os.path.join(BASE_DIR, 'templates'),
@@ -66,6 +68,10 @@ TEMPLATES = [
             ],
         },
     },
+    {
+        'NAME': 'jinja2',
+        'BACKEND': 'django_jinja.backend.Jinja2',
+    }
 ]
 
 WSGI_APPLICATION = 'wsgi.application'
