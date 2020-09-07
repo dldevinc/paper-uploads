@@ -29,7 +29,7 @@
       </label>
 
       <a href="{% if item %}{{ item.get_file_url }}{% endif %}" class="collection-item__view-button tool-item text-info"
-         target="_blank"
+         target="_blank" tabindex="0"
          data-toggle="tooltip" data-placement="top" data-trigger="hover"
          data-html="true" title="{{ _('View file') }}">
         <i class="fa fa-fw fa-eye"></i>
