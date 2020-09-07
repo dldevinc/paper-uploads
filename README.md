@@ -1,5 +1,5 @@
 # paper-uploads
-Asynchronous file upload for Django
+Асинхронная загрузка файлов для административного интерфейса Django.
 
 [![PyPI](https://img.shields.io/pypi/v/paper-uploads.svg)](https://pypi.org/project/paper-uploads/)
 [![Build Status](https://travis-ci.org/dldevinc/paper-uploads.svg?branch=master)](https://travis-ci.org/dldevinc/paper-uploads)
@@ -8,26 +8,31 @@ Asynchronous file upload for Django
 
 ## Requirements
 * Python 3.6+
-* Django 2.0+
-* [variations](https://github.com/dldevinc/variations)
+* Django 2.1+
+* [paper-admin][paper-admin]
+* [variations][variations]
 
 ## Features
 * Каждый файл представлен своей моделью, что позволяет
-хранить метаданные. Например, `alt` и `title` для изображения.
-* Загрузка файлов происходит асинхронно.
-* Поля для хранения файлов являются производными
-от `OneToOneField` и не используют `<input type="file">`. Благодаря
-этому, при ошибках валидации, прикрепленные файлы не сбрасываются.
+хранить вместе с изображением дополнительные данные. 
+Например, `alt` и `title`.
+* Загрузка файлов происходит асинхронно и начинается сразу, 
+при выборе файла в интерфейсе администратора.
+* Поля модели, ссылающиеся на файлы, являются производными
+от `OneToOneField` и не используют `<input type="file">`. 
+Благодаря этому, при ошибках валидации прикрепленные файлы 
+не сбрасываются.
 * Загруженные картинки можно нарезать на множество вариаций.
 Каждая вариация гибко настраивается. Можно указать размеры,
 качество сжатия, формат, добавить дополнительные
-[pilkit](https://github.com/matthewwithanm/pilkit)-процессоры,
-распознавание лиц и другое. См.
-[variations](https://github.com/dldevinc/variations).
-* Совместим с [django-storages](https://github.com/jschneier/django-storages).
-* Опциональная интеграция с [django-rq](https://github.com/rq/django-rq)
+[pilkit][pilkit]-процессоры, распознавание лиц и другое.
+См. [variations][variations].
+* Совместим с [django-storages][django-storages].
+* Опциональная интеграция с [django-rq][django-rq]
 для отложенной нарезки картинок на вариации.
-* Опциональная интеграция с [Cloudinary](https://cloudinary.com/documentation/cloudinary_references).
+* Внутренний подмодуль `paper_uploads.cloudinary` предоставляет
+поля и классы, реализующие хранение файлов в облаке 
+[Cloudinary][pycloudinary].
 * Возможность создавать коллекции файлов. В частности, галерей
 изображений с возможностью сортировки элементов.
 
@@ -65,7 +70,8 @@ PAPER_UPLOADS = {
 ## FileField
 Поле для загрузки файла.
 
-На загружаемые файлы можно наложить ограничения с помощью [валидаторов](#Validation).
+На загружаемые файлы можно наложить ограничения с помощью
+[валидаторов](#Validation).
 ```python
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -80,21 +86,29 @@ class Page(models.Model):
 ```
 
 При загрузке файла создается экземпляр модели `UploadedFile`.
-Помимо самого файла, хранящегося в поле `file`, модель предоставляет
-следующие поля:
-* `name` - имя файла без расширения и суффикса, добавляемого `FileStorage`.
+
+### UploadedFile
+
+Модель, представляющая загруженный файл.
+
+Поля и свойства модели:
+* `file` - ссылка на файл, хранящийся в Django-хранилище.
+* `basename` - имя файла без пути, суффикса и расширения. 
 Пример: `my_document`.
+* `extension` - расширение файла в нижнем регистре. Пример: `doc`.
+* `name` - полное имя файла. Пример: `files/my_document_19sc2Kj.pdf`.
 * `display_name`- удобочитаемое название файла для вывода на сайте.
 Пример: `Отчёт за 2019 год`.
-* `extension` - расширение файла в нижнем регистре. Пример: `doc`.
 * `size` - размер файла в байтах.
-* `checksum` - контрольная сумма файла.
+* `checksum` - контрольная сумма файла. Используется для отслеживания
+изменения файла.
 * `created_at` - дата создания экземпляра модели.
-* `uploaded_at` - дата загрузки файла.
 * `modified_at` - дата изменения модели.
+* `uploaded_at` - дата загрузки файла.
 
-Модели файлов (`UploadedFile`, `UploadedImage` и модели элементов коллекций)
-проксирует некоторые аттрибуты и методы файла на уровень модели:
+Для упрощения работы с файлами, некоторые методы и свойства
+стандартного класса `FieldFile` проксированы на уровень модели:
+`UploadedFile`:
 * `open`
 * `close`
 * `closed`
@@ -114,14 +128,10 @@ class Page(models.Model):
 ## ImageField
 Поле для загрузки изображений.
 
-Поддерживает нарезку на неограниченное количество вариаций.
-Настройки вариаций задаются в словаре `variations`. Синтаксис вариаций
-можно посмотреть в модуле [variations](https://github.com/dldevinc/variations).
-
-Исходное загруженное изображение сохраняется в файловой системе без
-изменений. При добавлении новых вариаций или изменении существующих,
-можно заново произвести нарезку с помощью команды
-[recreate_variations](#recreate_variations).
+Во многом аналогично [FileField](#FileField). Может хранить ссылку 
+как на единственное изображение (подобно стандартному полю 
+`ImageField`), так и на семейство вариаций одного изображения,
+созданных из исходного с помощью библиотеки [variations][variations]. 
 
 ```python
 from django.db import models
@@ -131,7 +141,7 @@ from paper_uploads.models import *
 
 class Page(models.Model):
     image = ImageField(_('single image'), blank=True)
-    versatile_image = ImageField(_('image with variations'),
+    image_set = ImageField(_('image with variations'),
         blank=True,
         variations=dict(
             desktop=dict(
@@ -158,24 +168,48 @@ class Page(models.Model):
 ```
 
 При загрузке изображения создается экземпляр модели `UploadedImage`.
-Помимо исходного изображения, хранящегося в поле `file`,
-модель предоставляет следующие поля:
-* `name` - имя файла без расширения и суффикса, добавляемого `FileStorage`.
-Пример: `summer_photo`.
+
+### UploadedImage
+
+Модель, представляющая загруженное изображение.
+
+Поля и свойства модели:
+* `file` - ссылка на файл, хранящийся в Django-хранилище.
+* `basename` - имя файла без пути, суффикса и расширения. 
+Пример: `my_image`.
 * `extension` - расширение файла в нижнем регистре. Пример: `jpg`.
-* `title` - текст аттрибута `title` для тэга `<img>`.
-* `description` - текст аттрибута `alt` для тэга `<img>`.
+* `name` - полное имя файла. Пример: `images/my_image_19sc2Kj.jpg`.
+* `size` - размер файла в байтах.
+* `title` - текст атрибута `title` для тэга `<img>`.
+* `description` - текст атрибута `alt` для тэга `<img>`.
 * `width` - ширина исходного изображения в пикселях.
 * `height` - высота исходного изображения в пикселях.
-* `size` - размер файла в байтах.
-* `checksum` - контрольная сумма файла.
+* `checksum` - контрольная сумма файла. Используется для отслеживания
+изменения файла.
 * `created_at` - дата создания экземпляра модели.
-* `uploaded_at` - дата загрузки файла.
 * `modified_at` - дата изменения модели.
+* `uploaded_at` - дата загрузки файла.
+
+По аналогии с `FileField`, модель `UploadedImage` проксирует
+методы и свойства стандартного класса `FieldFile`.
 
 К вариациям можно обращаться прямо из экземпляра `UploadedImage`:
 ```python
-page.versatile_image.desktop.url
+page.image_set.desktop.url
+```
+
+По умолчанию, нарезка изображения на вариации происходит
+при его загрузке. Можно перенести процесс нарезки в отложенную
+задачу `django-rq`, установив значение `RQ_ENABLED` в `True`
+в настройках модуля.
+
+```python
+# settings.py
+PAPER_UPLOADS = {
+    # ...
+    'RQ_ENABLED': True,
+    'RQ_QUEUE_NAME': 'default'
+}
 ```
 
 ## Collections
@@ -199,9 +233,9 @@ class PageFiles(Collection):
 
 Псевдо-поле `CollectionItem` подключает к коллекции модель
 элемента под заданным именем. Это имя записывается в БД при добавлении
-элемента к коллекции и позволяет работать с элементами заданного типа.
-При изменении имен псевдо-полей или при добавлении новых классов
-элементов к существующим коллекциям, разработчик должен самостоятельно
+элемента к коллекции и позволяет фильтровать элементы по их типу.
+При изменении имен псевдо-полей или при удалении класса элемента
+из существующих коллекций, разработчик должен самостоятельно
 обеспечить согласованное состояние БД.
 
 В примере выше, коллекция `PageFiles` может содержать элементы трех
@@ -746,3 +780,11 @@ Create `.devdata.env` file:
 ```.env
 CLOUDINARY_URL=cloudinary://XXXXXXXXXXXXXXX:YYYYYYYYYYYYYYYYYYYYYYYYYYY@ZZZZZZ?sign_url=1&secure=1
 ```
+
+
+[paper-admin]: https://github.com/dldevinc/paper-admin
+[variations]: https://github.com/dldevinc/variations
+[pycloudinary]: https://github.com/cloudinary/pycloudinary
+[pilkit]: https://github.com/matthewwithanm/pilkit
+[django-storages]: https://github.com/jschneier/django-storages
+[django-rq]: https://github.com/rq/django-rq
