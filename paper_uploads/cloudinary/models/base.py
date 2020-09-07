@@ -161,12 +161,13 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
     class Meta(FileResource.Meta):
         abstract = True
 
-    def get_file(self) -> CloudinaryFieldFile:
-        raise NotImplementedError
-
-    def get_file_name(self) -> str:
+    @property
+    def name(self) -> str:
         self._require_file()
         return self.get_file().name
+
+    def get_file(self) -> CloudinaryFieldFile:
+        raise NotImplementedError
 
     def get_file_size(self) -> int:
         self._require_file()
@@ -185,7 +186,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
 
         try:
             uploader.explicit(
-                self.get_file_name(),
+                self.name,
                 type=file_field.type,
                 resource_type=file_field.resource_type,
             )
@@ -268,8 +269,8 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         cloudinary_options = self.get_cloudinary_options()
         cloudinary_options.update(options.get('cloudinary', {}))
 
+        old_name = self.name
         file_field = self.get_file_field()
-        old_name = self.get_file_name()
         folder, basename = posixpath.split(old_name)
         if file_field.resource_type != 'raw':
             # video and image have no extension
@@ -323,14 +324,14 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
 
         try:
             result = uploader.destroy(
-                self.get_file_name(),
+                self.name,
                 type=file_field.type,
                 resource_type=file_field.resource_type,
                 **cloudinary_options
             )
         except cloudinary.exceptions.Error:
             logger.exception(
-                "Couldn't delete Cloudinary file: {}".format(self.get_file_name())
+                "Couldn't delete Cloudinary file: {}".format(self.name)
             )
             return
 
@@ -340,7 +341,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         else:
             logger.warning(
                 "Unable to delete Cloudinary file `{}`: {}".format(
-                    self.get_file_name(), status
+                    self.name, status
                 )
             )
         return result

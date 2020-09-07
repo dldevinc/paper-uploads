@@ -61,6 +61,9 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
         storage.resource.delete()
         storage.collection.delete()
 
+    def test_display_name(self, storage):
+        assert storage.resource.display_name == self.resource_name
+
     def test_item_type(self, storage):
         assert storage.resource.item_type == 'file'
 
@@ -74,17 +77,14 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
         pattern = posixpath.join(self.resource_location, 'document{suffix}.pdf')
         assert public_id == utils.get_target_filepath(pattern, public_id)
 
-    def test_display_name(self, storage):
-        assert storage.resource.display_name == self.resource_name
+    def test_name(self, storage):
+        file_name = storage.resource.name
+        pattern = posixpath.join(self.resource_location, 'document{suffix}.pdf')
+        assert file_name == utils.get_target_filepath(pattern, file_name)
 
     def test_read(self, storage):
         with storage.resource.open() as fp:
             assert fp.read(4) == b'%PDF'
-
-    def test_get_file_name(self, storage):
-        file_name = storage.resource.get_file_name()
-        pattern = posixpath.join(self.resource_location, 'document{suffix}.pdf')
-        assert file_name == utils.get_target_filepath(pattern, file_name)
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
@@ -274,6 +274,9 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
         storage.resource.delete()
         storage.collection.delete()
 
+    def test_display_name(self, storage):
+        assert storage.resource.display_name == self.resource_name
+
     def test_item_type(self, storage):
         assert storage.resource.item_type == 'media'
 
@@ -287,17 +290,14 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
         pattern = posixpath.join(self.resource_location, 'audio{suffix}')
         assert public_id == utils.get_target_filepath(pattern, public_id)
 
-    def test_display_name(self, storage):
-        assert storage.resource.display_name == self.resource_name
+    def test_name(self, storage):
+        file_name = storage.resource.name
+        pattern = posixpath.join(self.resource_location, 'audio{suffix}')
+        assert file_name == utils.get_target_filepath(pattern, file_name)
 
     def test_read(self, storage):
         with storage.resource.open() as fp:
             assert fp.read(4) == b'ID3\x03'
-
-    def test_get_file_name(self, storage):
-        file_name = storage.resource.get_file_name()
-        pattern = posixpath.join(self.resource_location, 'audio{suffix}')
-        assert file_name == utils.get_target_filepath(pattern, file_name)
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
@@ -569,8 +569,8 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
         pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}')
         assert public_id == utils.get_target_filepath(pattern, public_id)
 
-    def test_get_file_name(self, storage):
-        file_name = storage.resource.get_file_name()
+    def test_name(self, storage):
+        file_name = storage.resource.name
         pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}')
         assert file_name == utils.get_target_filepath(pattern, file_name)
 

@@ -180,7 +180,7 @@ class TestImplicitVariations:
 
 @pytest.mark.django_db
 def test_get_instance():
-    resource = DummyResource.objects.create(id=1, basename='Testing')
+    resource = DummyResource.objects.create(id=1)
 
     assert helpers.get_instance('app', 'dummyresource', 1) == resource
     assert helpers.get_instance('app', 'dummyresource', 1, using='default') == resource

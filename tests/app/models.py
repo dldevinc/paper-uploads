@@ -34,11 +34,12 @@ class DummyFileResource(FileResource):
             file = self._file_cache = File(buffer, name=self.basename)
         return file
 
+    @property
+    def name(self) -> str:
+        return self.__filename
+
     def get_file_field(self) -> models.FileField:
         return models.Field(name='file')
-
-    def get_file_name(self) -> str:
-        return '{}'.format(self.__filename)
 
     def get_file_size(self) -> int:
         return 28

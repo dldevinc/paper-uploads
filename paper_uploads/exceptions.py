@@ -39,5 +39,5 @@ class AjaxFormError(Exception):
 class FileNotFoundError(Exception):
     def __init__(self, file):
         self.file = file
-        self.name = file.get_file_name()
+        self.name = file.name
         super().__init__()

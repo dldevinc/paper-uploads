@@ -118,7 +118,7 @@ class Command(BaseCommand):
                                 index,
                                 type(item).__name__,
                                 item.pk,
-                                item.get_file_name(),
+                                item.name,
                             )
                         )
                     self.stdout.write('\n')
@@ -171,7 +171,7 @@ class Command(BaseCommand):
                                 index,
                                 type(item).__name__,
                                 item.pk,
-                                item.get_file_name(),
+                                item.name,
                             )
                         )
                     self.stdout.write('\n')

@@ -196,14 +196,14 @@ class CloudinaryFileResource(TestFileResource):
     def test_public_id(self, storage):
         raise NotImplementedError
 
+    def test_name(self, storage):
+        raise NotImplementedError
+
     def test_get_file_field(self, storage):
         assert (
             storage.resource.get_file_field()
             == storage.resource._meta.get_field(self.file_field_name)  # noqa: F821
         )
-
-    def test_get_file_name(self, storage):
-        raise NotImplementedError
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()

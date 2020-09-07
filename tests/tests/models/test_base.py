@@ -95,7 +95,6 @@ class TestInvalidBacklinkModelMixin:
 
 
 class TestResource(BacklinkModelMixin):
-    resource_name = 'Nature Tree'
     owner_app_label = 'app'
     owner_model_name = 'dummyfilefieldresource'
     owner_fieldname = 'file'
@@ -104,7 +103,6 @@ class TestResource(BacklinkModelMixin):
     @classmethod
     def init_class(cls, storage):
         storage.resource = DummyResource.objects.create(
-            basename=cls.resource_name,
             owner_app_label=cls.owner_app_label,
             owner_model_name=cls.owner_model_name,
             owner_fieldname=cls.owner_fieldname
@@ -114,9 +112,6 @@ class TestResource(BacklinkModelMixin):
 
     def _equal_dates(self, date1, date2, delta=5):
         return abs((date2 - date1).seconds) < delta
-
-    def test_basename(self, storage):
-        assert storage.resource.basename == self.resource_name
 
     def test_created_at(self, storage):
         # `created_at` is set before file upload. So, it can be mush lesser then `storage.now`.
@@ -128,19 +123,15 @@ class TestResource(BacklinkModelMixin):
     def test_created_at_less_than_modified_at(self, storage):
         assert storage.resource.created_at < storage.resource.modified_at
 
-    def test_str(self, storage):
-        assert str(storage.resource) == self.resource_name
-
     def test_repr(self, storage):
-        assert repr(storage.resource) == "{}('{}')".format(
+        assert repr(storage.resource) == "{} #{}".format(
             type(storage.resource).__name__,
-            self.resource_name
+            storage.resource.pk
         )
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             'id': 1,
-            'name': self.resource_name,
             'created': storage.resource.created_at.isoformat(),
             'modified': storage.resource.modified_at.isoformat(),
         }
@@ -169,6 +160,15 @@ class TestFileResource(TestResource):
         storage.resource.update_checksum()
         yield
         storage.resource.delete()
+
+    def test_name(self, storage):
+        assert storage.resource.name == '{}.{}'.format(
+            self.resource_name,
+            self.resource_extension
+        )
+
+    def test_basename(self, storage):
+        assert storage.resource.basename == self.resource_name
 
     def test_extension(self, storage):
         assert storage.resource.extension == self.resource_extension
@@ -215,12 +215,6 @@ class TestFileResource(TestResource):
 
     def test_get_basename(self, storage):
         assert storage.resource.get_basename() == '{}.{}'.format(
-            self.resource_name,
-            self.resource_extension
-        )
-
-    def test_get_file_name(self, storage):
-        assert storage.resource.get_file_name() == '{}.{}'.format(
             self.resource_name,
             self.resource_extension
         )
@@ -571,6 +565,11 @@ class TestFileFieldResource(TestFileResource):
         storage.resource.delete_file()
         storage.resource.delete()
 
+    def test_name(self, storage):
+        file_name = storage.resource.name
+        pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}.Jpeg')
+        assert file_name == utils.get_target_filepath(pattern, file_name)
+
     def test_get_file_field(self, storage):
         assert (
             storage.resource.get_file_field()
@@ -645,11 +644,6 @@ class TestFileFieldResource(TestFileResource):
             for chunk in storage.resource.chunks(chunk_size):
                 chunk_counter += 1
             assert chunk_counter == chunk_count
-
-    def test_get_file_name(self, storage):
-        file_name = storage.resource.get_file_name()
-        pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}.Jpeg')
-        assert file_name == utils.get_target_filepath(pattern, file_name)
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
@@ -834,6 +828,10 @@ class TestFileFieldResourceEmpty:
         storage.resource = cls.recource_class()
         yield
 
+    def test_name(self, storage):
+        with pytest.raises(ValueError):
+            storage.resource.name
+
     def test_closed(self, storage):
         assert storage.resource.closed is True
 
@@ -855,10 +853,6 @@ class TestFileFieldResourceEmpty:
 
     def test_get_file(self, storage):
         assert bool(storage.resource.get_file()) is False
-
-    def test_get_file_name(self, storage):
-        with pytest.raises(ValueError):
-            storage.resource.get_file_name()
 
     def test_get_file_size(self, storage):
         with pytest.raises(ValueError):
@@ -915,6 +909,11 @@ class TestImageFieldResource(TestFileFieldResource):
         assert storage.resource.description == 'Calliphora is a genus of blow flies, ' \
                                                'also known as bottle flies'
 
+    def test_name(self, storage):
+        file_name = storage.resource.name
+        pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}.jpg')
+        assert file_name == utils.get_target_filepath(pattern, file_name)
+
     def test_prepare_file(self, storage):
         obj = DummyImageFieldResource()
         with open(NASA_FILEPATH, 'rb') as fp:
@@ -945,11 +944,6 @@ class TestImageFieldResource(TestFileFieldResource):
             'modified': storage.resource.modified_at.isoformat(),
             'uploaded': storage.resource.uploaded_at.isoformat(),
         }
-
-    def test_get_file_name(self, storage):
-        file_name = storage.resource.get_file_name()
-        pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}.jpg')
-        assert file_name == utils.get_target_filepath(pattern, file_name)
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
@@ -1014,7 +1008,7 @@ class TestVariationFile:
     def test_name(self, storage):
         assert storage.file.name == utils.get_target_filepath(
             'versatile_image/milky-way-nasa{suffix}.desktop.jpg',
-            storage.resource.get_file_name()
+            storage.resource.name
         )
 
     def test_instance(self, storage):

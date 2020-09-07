@@ -59,8 +59,8 @@ class TestCloudinaryFile(CloudinaryFileResource):
         pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}.Jpeg')
         assert public_id == utils.get_target_filepath(pattern, public_id)
 
-    def test_get_file_name(self, storage):
-        file_name = storage.resource.get_file_name()
+    def test_name(self, storage):
+        file_name = storage.resource.name
         pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}.Jpeg')
         assert file_name == utils.get_target_filepath(pattern, file_name)
 

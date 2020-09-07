@@ -42,13 +42,6 @@ class ResourceBase(models.Model):
     """
     Базовый класс ресурса.
     """
-
-    basename = models.CharField(
-        _('basename'),
-        max_length=255,
-        editable=False,
-        help_text=_('human-readable resource name'),
-    )
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
     modified_at = models.DateTimeField(_('changed at'), auto_now=True, editable=False)
 
@@ -56,11 +49,8 @@ class ResourceBase(models.Model):
         abstract = True
         default_permissions = ()
 
-    def __str__(self):
-        return self.basename
-
     def __repr__(self):
-        return "{}('{}')".format(type(self).__name__, self.basename)
+        return "{} #{}".format(type(self).__name__, self.pk)
 
     def as_dict(self) -> Dict[str, Any]:
         """
@@ -69,7 +59,6 @@ class ResourceBase(models.Model):
         """
         return {
             'id': self.pk,
-            'name': self.basename,
             'created': self.created_at.isoformat(),
             'modified': self.modified_at.isoformat(),
         }
@@ -91,6 +80,12 @@ class FileResource(FileProxyMixin, Resource):
     Подкласс ресурса, представляющего файл.
     """
 
+    basename = models.CharField(
+        _('basename'),
+        max_length=255,
+        editable=False,
+        help_text=_('human-readable resource name'),
+    )
     extension = models.CharField(
         _('extension'),
         max_length=32,
@@ -114,6 +109,24 @@ class FileResource(FileProxyMixin, Resource):
     def __repr__(self):
         return "{}('{}')".format(type(self).__name__, self.get_basename())
 
+    @property
+    def name(self) -> str:
+        """
+        Полное имя загруженного файла.
+        В отличие от `self.basename` это имя включает относительный путь,
+        суффикс и расширение.
+        """
+        raise NotImplementedError
+
+    def get_basename(self) -> str:
+        """
+        Человекопонятное имя файла.
+        Не содержит суффикса, которое может быть добавлено файловым хранилищем.
+        """
+        if self.extension:
+            return '{}.{}'.format(self.basename, self.extension)
+        return self.basename
+
     def _require_file(self):
         """
         Требование наличия непустой ссылки на файл.
@@ -128,6 +141,7 @@ class FileResource(FileProxyMixin, Resource):
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
+            'name': self.basename,
             'extension': self.extension,
             'size': self.size,
             'url': self.get_file_url(),
@@ -147,15 +161,6 @@ class FileResource(FileProxyMixin, Resource):
             self.checksum = new_checksum
         return old_checksum != new_checksum
 
-    def get_basename(self) -> str:
-        """
-        Человекопонятное имя файла.
-        Не содержит суффикса, которое может быть добавлено файловым хранилищем.
-        """
-        if self.extension:
-            return '{}.{}'.format(self.basename, self.extension)
-        return self.basename
-
     def get_file(self) -> File:
         raise NotImplementedError
 
@@ -170,14 +175,6 @@ class FileResource(FileProxyMixin, Resource):
     def get_file_field(self):
         """
         Получение файлового поля модели.
-        """
-        raise NotImplementedError
-
-    def get_file_name(self) -> str:
-        """
-        Получение имени загруженного файла.
-        В отличие от `self.basename` это имя может содержать суффиксы, добавляемые
-        файловым хранилищем.
         """
         raise NotImplementedError
 
@@ -266,7 +263,7 @@ class FileResource(FileProxyMixin, Resource):
         if not self.file_exists():
             raise exceptions.FileNotFoundError(self)
 
-        old_name = self.get_file_name()
+        old_name = self.name
         basename = helpers.get_filename(new_name)
         extension = helpers.get_extension(new_name)
 
@@ -320,12 +317,13 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
     class Meta(FileResource.Meta):
         abstract = True
 
-    def get_file(self) -> FieldFile:
-        raise NotImplementedError
-
-    def get_file_name(self) -> str:
+    @property
+    def name(self) -> str:
         self._require_file()
         return self.get_file().name
+
+    def get_file(self) -> FieldFile:
+        raise NotImplementedError
 
     def get_file_size(self) -> int:
         self._require_file()
@@ -345,7 +343,7 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
         self.get_file().save(file.name, file, save=False)
 
         self.basename = helpers.get_filename(file.name)
-        self.extension = helpers.get_extension(self.get_file_name())
+        self.extension = helpers.get_extension(self.name)
 
     def _rename_file(self, new_name: str, **options):
         file = self.get_file()
@@ -353,7 +351,7 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
             file.save(new_name, fp, save=False)
 
         self.basename = helpers.get_filename(new_name)
-        self.extension = helpers.get_extension(self.get_file_name())
+        self.extension = helpers.get_extension(self.name)
 
     def _delete_file(self, **options):
         self.get_file().delete(save=False)
@@ -426,7 +424,7 @@ class VariationFile(File):
         self.instance = instance
         self.variation_name = variation_name
         self.storage = instance.get_file().storage
-        filename = self.variation.get_output_filename(instance.get_file_name())
+        filename = self.variation.get_output_filename(instance.name)
         super().__init__(None, filename)
 
     def __eq__(self, other):

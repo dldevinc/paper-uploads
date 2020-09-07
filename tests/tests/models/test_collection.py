@@ -511,8 +511,8 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
     def test_item_type(self, storage):
         assert storage.resource.item_type == 'svg'
 
-    def test_get_file_name(self, storage):
-        file_name = storage.resource.get_file_name()
+    def test_name(self, storage):
+        file_name = storage.resource.name
         pattern = posixpath.join(self.resource_location, 'Meditation{suffix}.svg')
         assert file_name == utils.get_target_filepath(pattern, file_name)
 
@@ -709,8 +709,8 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
     def test_item_type(self, storage):
         assert storage.resource.item_type == 'image'
 
-    def test_get_file_name(self, storage):
-        file_name = storage.resource.get_file_name()
+    def test_name(self, storage):
+        file_name = storage.resource.name
         pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}.jpg')
         assert file_name == utils.get_target_filepath(pattern, file_name)
 
