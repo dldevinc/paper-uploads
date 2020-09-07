@@ -104,7 +104,7 @@ class TestResource(BacklinkModelMixin):
     @classmethod
     def init_class(cls, storage):
         storage.resource = DummyResource.objects.create(
-            name=cls.resource_name,
+            basename=cls.resource_name,
             owner_app_label=cls.owner_app_label,
             owner_model_name=cls.owner_model_name,
             owner_fieldname=cls.owner_fieldname
@@ -115,8 +115,8 @@ class TestResource(BacklinkModelMixin):
     def _equal_dates(self, date1, date2, delta=5):
         return abs((date2 - date1).seconds) < delta
 
-    def test_name(self, storage):
-        assert storage.resource.name == self.resource_name
+    def test_basename(self, storage):
+        assert storage.resource.basename == self.resource_name
 
     def test_created_at(self, storage):
         # `created_at` is set before file upload. So, it can be mush lesser then `storage.now`.
@@ -159,7 +159,7 @@ class TestFileResource(TestResource):
     @classmethod
     def init_class(cls, storage):
         storage.resource = DummyFileResource.objects.create(
-            name=cls.resource_name,
+            basename=cls.resource_name,
             extension=cls.resource_extension,
             size=cls.resource_size,
             owner_app_label=cls.owner_app_label,
@@ -329,9 +329,9 @@ class TestFileResourceSignals:
             assert instance is resource
 
             # ensure instance not filled yet
-            assert instance.name == ''
-            assert instance.size == 0
+            assert instance.basename == ''
             assert instance.extension == ''
+            assert instance.size == 0
             assert instance.checksum == ''
 
             # ensure file type
@@ -367,9 +367,9 @@ class TestFileResourceSignals:
             assert instance is resource
 
             # ensure instance filled
-            assert instance.name == 'milky-way-nasa'
-            assert instance.size == 28
+            assert instance.basename == 'milky-way-nasa'
             assert instance.extension == 'jpg'
+            assert instance.size == 28
             assert instance.checksum == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
 
             # ensure file type
@@ -430,7 +430,7 @@ class TestFileResourceSignals:
             signal_fired = True
             assert sender is DummyFileResource
             assert instance is resource
-            assert instance.name == 'milky-way-nasa'
+            assert instance.basename == 'milky-way-nasa'
             assert instance.extension == 'jpg'
             assert old_name == 'milky-way-nasa.jpg'
             assert new_name == 'new name.png'
@@ -462,7 +462,7 @@ class TestFileResourceSignals:
             signal_fired = True
             assert sender is DummyFileResource
             assert instance is resource
-            assert instance.name == 'new name'
+            assert instance.basename == 'new name'
             assert instance.extension == 'png'
             assert old_name == 'milky-way-nasa.jpg'
             assert new_name == 'new name.png'
@@ -697,7 +697,7 @@ class TestFileFieldResourceAttach:
             with open(NASA_FILEPATH, 'rb') as fp:
                 resource.attach_file(fp)
 
-            assert resource.name == 'milky-way-nasa'
+            assert resource.basename == 'milky-way-nasa'
             assert resource.extension == 'jpg'
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
@@ -708,7 +708,7 @@ class TestFileFieldResourceAttach:
                 file = File(fp, name='milky-way-nasa.jpg')
                 resource.attach_file(file)
 
-            assert resource.name == 'milky-way-nasa'
+            assert resource.basename == 'milky-way-nasa'
             assert resource.extension == 'jpg'
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
@@ -718,7 +718,7 @@ class TestFileFieldResourceAttach:
             with open(NASA_FILEPATH, 'rb') as fp:
                 resource.attach_file(fp, name='overwritten.jpg')
 
-            assert resource.name == 'overwritten'
+            assert resource.basename == 'overwritten'
             assert resource.extension == 'jpg'
 
     def test_override_django_name(self):
@@ -727,7 +727,7 @@ class TestFileFieldResourceAttach:
                 file = File(fp, name='not_used.png')
                 resource.attach_file(file, name='overwritten.jpg')
 
-            assert resource.name == 'overwritten'
+            assert resource.basename == 'overwritten'
             assert resource.extension == 'jpg'
 
     def test_wrong_extension(self):
@@ -735,7 +735,7 @@ class TestFileFieldResourceAttach:
             with open(NASA_FILEPATH, 'rb') as fp:
                 resource.attach_file(fp, name='overwritten.gif')
 
-            assert resource.name == 'overwritten'
+            assert resource.basename == 'overwritten'
             assert resource.extension == 'gif'
 
     def test_file_position_at_end(self):
@@ -786,10 +786,10 @@ class TestFileFieldResourceRename:
             file.name
         )
 
-    def test_name(self, storage):
-        assert storage.resource.name == utils.get_target_filepath(
+    def test_basename(self, storage):
+        assert storage.resource.basename == utils.get_target_filepath(
             'new_name{suffix}',
-            storage.resource.name
+            storage.resource.basename
         )
 
     def test_extension(self, storage):
@@ -975,7 +975,7 @@ class TestImageFieldResourceAttach(TestFileFieldResourceAttach):
             with open(NASA_FILEPATH, 'rb') as fp:
                 resource.attach_file(fp, name='overwritten.gif')
 
-            assert resource.name == 'overwritten'
+            assert resource.basename == 'overwritten'
             assert resource.extension == 'jpg'  # extension detected by content
 
 

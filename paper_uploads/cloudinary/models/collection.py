@@ -57,7 +57,7 @@ class CloudinaryFileItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:
-            self.display_name = self.name
+            self.display_name = self.basename
         super().save(*args, **kwargs)
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
@@ -95,7 +95,7 @@ class CloudinaryMediaItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:
-            self.display_name = self.name
+            self.display_name = self.basename
         super().save(*args, **kwargs)
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:

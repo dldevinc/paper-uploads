@@ -155,10 +155,10 @@ class TestCloudinaryFileRename(TestFileFieldResourceRename):
             file.name
         )
 
-    def test_name(self, storage):
-        assert storage.resource.name == utils.get_target_filepath(
+    def test_basename(self, storage):
+        assert storage.resource.basename == utils.get_target_filepath(
             'new_file_name{suffix}',
-            storage.resource.name
+            storage.resource.basename
         )
 
 

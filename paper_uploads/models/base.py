@@ -43,11 +43,11 @@ class ResourceBase(models.Model):
     Базовый класс ресурса.
     """
 
-    name = models.CharField(
-        _('name'),
+    basename = models.CharField(
+        _('basename'),
         max_length=255,
         editable=False,
-        help_text=_('human readable resource name'),
+        help_text=_('human-readable resource name'),
     )
     created_at = models.DateTimeField(_('created at'), default=now, editable=False)
     modified_at = models.DateTimeField(_('changed at'), auto_now=True, editable=False)
@@ -57,10 +57,10 @@ class ResourceBase(models.Model):
         default_permissions = ()
 
     def __str__(self):
-        return self.name
+        return self.basename
 
     def __repr__(self):
-        return "{}('{}')".format(type(self).__name__, self.name)
+        return "{}('{}')".format(type(self).__name__, self.basename)
 
     def as_dict(self) -> Dict[str, Any]:
         """
@@ -69,7 +69,7 @@ class ResourceBase(models.Model):
         """
         return {
             'id': self.pk,
-            'name': self.name,
+            'name': self.basename,
             'created': self.created_at.isoformat(),
             'modified': self.modified_at.isoformat(),
         }
@@ -153,8 +153,8 @@ class FileResource(FileProxyMixin, Resource):
         Не содержит суффикса, которое может быть добавлено файловым хранилищем.
         """
         if self.extension:
-            return '{}.{}'.format(self.name, self.extension)
-        return self.name
+            return '{}.{}'.format(self.basename, self.extension)
+        return self.basename
 
     def get_file(self) -> File:
         raise NotImplementedError
@@ -176,7 +176,7 @@ class FileResource(FileProxyMixin, Resource):
     def get_file_name(self) -> str:
         """
         Получение имени загруженного файла.
-        В отличие от `self.name` это имя может содержать суффиксы, добавляемые
+        В отличие от `self.basename` это имя может содержать суффиксы, добавляемые
         файловым хранилищем.
         """
         raise NotImplementedError
@@ -267,11 +267,11 @@ class FileResource(FileProxyMixin, Resource):
             raise exceptions.FileNotFoundError(self)
 
         old_name = self.get_file_name()
-        name = helpers.get_filename(new_name)
+        basename = helpers.get_filename(new_name)
         extension = helpers.get_extension(new_name)
 
         # если новое имя идентично прежнему - ничего не делаем
-        if name == self.name and extension == self.extension:
+        if basename == self.basename and extension == self.extension:
             return
 
         signals.pre_rename_file.send(
@@ -344,7 +344,7 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
     def _attach_file(self, file: File, **options):
         self.get_file().save(file.name, file, save=False)
 
-        self.name = helpers.get_filename(file.name)
+        self.basename = helpers.get_filename(file.name)
         self.extension = helpers.get_extension(self.get_file_name())
 
     def _rename_file(self, new_name: str, **options):
@@ -352,7 +352,7 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
         with file.open() as fp:
             file.save(new_name, fp, save=False)
 
-        self.name = helpers.get_filename(new_name)
+        self.basename = helpers.get_filename(new_name)
         self.extension = helpers.get_extension(self.get_file_name())
 
     def _delete_file(self, **options):
@@ -372,9 +372,8 @@ class ImageFileResourceMixin(models.Model):
             'The title is being used as a tooltip when the user hovers the mouse over the image'
         ),
     )
-    description = models.CharField(
+    description = models.TextField(
         _('description'),
-        max_length=255,
         blank=True,
         help_text=_(
             'This text will be used by screen readers, search engines, or when the image cannot be loaded'

@@ -23,7 +23,7 @@ class DummyResource(Resource):
 class DummyFileResource(FileResource):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__filename = '{}.{}'.format(self.name, self.extension)
+        self.__filename = '{}.{}'.format(self.basename, self.extension)
 
     def get_file(self) -> File:
         file = getattr(self, '_file_cache', None)
@@ -31,7 +31,7 @@ class DummyFileResource(FileResource):
             buffer = io.BytesIO()
             buffer.write(b'This is example file content')
             buffer.seek(0)
-            file = self._file_cache = File(buffer, name=self.name)
+            file = self._file_cache = File(buffer, name=self.basename)
         return file
 
     def get_file_field(self) -> models.FileField:
@@ -51,7 +51,7 @@ class DummyFileResource(FileResource):
 
     def _attach_file(self, file: File, **options):
         self.__filename = file.name
-        self.name = helpers.get_filename(file.name)
+        self.basename = helpers.get_filename(file.name)
         self.extension = helpers.get_extension(file.name)
         return {
             'success': True,
@@ -59,7 +59,7 @@ class DummyFileResource(FileResource):
 
     def _rename_file(self, new_name: str, **options):
         self.__filename = new_name
-        self.name = helpers.get_filename(new_name)
+        self.basename = helpers.get_filename(new_name)
         self.extension = helpers.get_extension(new_name)
         return {
             'success': True,

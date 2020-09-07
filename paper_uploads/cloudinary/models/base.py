@@ -259,7 +259,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
 
         self.set_file(resource)
 
-        self.name = helpers.get_filename(file.name)
+        self.basename = helpers.get_filename(file.name)
         self.extension = file_format or ''
         return result
 
@@ -307,7 +307,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         )
         self.set_file(resource)
 
-        self.name = helpers.get_filename(new_name)
+        self.basename = helpers.get_filename(new_name)
         self.extension = file_format or ''
         return result
 

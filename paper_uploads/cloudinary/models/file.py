@@ -35,7 +35,7 @@ class CloudinaryFile(CloudinaryFileResource):
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:
-            self.display_name = self.name
+            self.display_name = self.basename
         super().save(*args, **kwargs)
 
     def as_dict(self) -> Dict[str, Any]:

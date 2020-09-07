@@ -109,7 +109,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
             with open(AUDIO_FILEPATH, 'rb') as fp:
                 resource.attach_file(fp)
 
-            assert resource.name == 'audio'
+            assert resource.basename == 'audio'
             assert resource.extension == 'mp3'
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
@@ -120,7 +120,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
                 file = File(fp, name='audio.ogg')
                 resource.attach_file(file)
 
-            assert resource.name == 'audio'
+            assert resource.basename == 'audio'
             assert resource.extension == 'mp3'
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
@@ -130,7 +130,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
             with open(AUDIO_FILEPATH, 'rb') as fp:
                 resource.attach_file(fp, name='overwritten.ogg')
 
-            assert resource.name == 'overwritten'
+            assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
 
     def test_override_django_name(self):
@@ -139,7 +139,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
                 file = File(fp, name='not_used.ogg')
                 resource.attach_file(file, name='overwritten.mp3')
 
-            assert resource.name == 'overwritten'
+            assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
 
     def test_wrong_extension(self):
@@ -147,7 +147,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
             with open(AUDIO_FILEPATH, 'rb') as fp:
                 resource.attach_file(fp, name='overwritten.gif')
 
-            assert resource.name == 'overwritten'
+            assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
 
     def test_file_position_at_end(self):
@@ -221,10 +221,10 @@ class TestCloudinaryMediaRename(TestFileFieldResourceRename):
             file.name
         )
 
-    def test_name(self, storage):
-        assert storage.resource.name == utils.get_target_filepath(
+    def test_basename(self, storage):
+        assert storage.resource.basename == utils.get_target_filepath(
             'new_media_name{suffix}',
-            storage.resource.name
+            storage.resource.basename
         )
 
     def test_extension(self, storage):
