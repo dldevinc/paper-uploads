@@ -84,7 +84,7 @@ class FileResource(FileProxyMixin, Resource):
         _('basename'),
         max_length=255,
         editable=False,
-        help_text=_('human-readable resource name'),
+        help_text=_('Human-readable resource name'),
     )
     extension = models.CharField(
         _('extension'),
@@ -92,7 +92,7 @@ class FileResource(FileProxyMixin, Resource):
         editable=False,
         help_text=_('Lowercase, without leading dot'),
     )
-    size = models.PositiveIntegerField(_('Size'), default=0, editable=False)
+    size = models.PositiveIntegerField(_('size'), default=0, editable=False)
     checksum = models.CharField(
         _('checksum'),
         max_length=64,
@@ -136,7 +136,7 @@ class FileResource(FileProxyMixin, Resource):
         file = self.get_file()
         if not file:
             file_field = self.get_file_field()
-            raise ValueError("The '%s' attribute has no file associated with it." % file_field.name)
+            raise ValueError(_("The '%s' attribute has no file associated with it.") % file_field.name)
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -401,7 +401,7 @@ class ImageFileResourceMixin(models.Model):
             image = Image.open(file)
         except OSError:
             raise ValidationError(
-                'File `%s` is not an image' % file.name
+                _('File `%s` is not an image') % file.name
             )
         else:
             self.width, self.height = image.size
@@ -438,7 +438,7 @@ class VariationFile(File):
     def _require_file(self):
         if not self:
             raise ValueError(
-                "Variation '%s' has no file associated with it." % self.variation_name
+                _("Variation '%s' has no file associated with it.") % self.variation_name
             )
 
     def _get_file(self) -> File:

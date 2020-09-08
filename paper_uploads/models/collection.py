@@ -140,7 +140,7 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMetaclass):
         if item_type is None:
             return self.items.order_by('order')
         if item_type not in self.item_types:
-            raise ValueError('Unsupported collection item type: %s' % item_type)
+            raise ValueError(_('Unsupported collection item type: %s') % item_type)
         return self.items.filter(item_type=item_type).order_by('order')
 
     def detect_file_type(self, file: File) -> Optional[str]:
@@ -326,7 +326,7 @@ class CollectionItemBase(PolymorphicModel):
                 self.item_type = name
                 break
         else:
-            raise TypeError('Unsupported collection item: %s' % type(self).__name__)
+            raise TypeError(_('Unsupported collection item: %s') % type(self).__name__)
 
     def get_caption(self):
         """ Заголовок для виджета в админке """
