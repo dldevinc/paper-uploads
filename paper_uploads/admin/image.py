@@ -13,18 +13,18 @@ class UploadedImageAdmin(UploadedFileBase):
         urlpatterns = [
             path(
                 'upload/',
-                self.admin_site.admin_view(views.image.upload),
+                self.admin_site.admin_view(views.image.UploadFileView.as_view()),
                 name='%s_%s_upload' % info,
             ),
             path(
-                'change/',
-                self.admin_site.admin_view(views.image.ChangeView.as_view()),
-                name='%s_%s_change' % info,
+                'delete/',
+                self.admin_site.admin_view(views.image.DeleteFileView.as_view()),
+                name='%s_%s_delete' % info,
             ),
             path(
-                'delete/',
-                self.admin_site.admin_view(views.image.delete),
-                name='%s_%s_delete' % info,
+                'change/',
+                self.admin_site.admin_view(views.image.ChangeFileView.as_view()),
+                name='%s_%s_change' % info,
             ),
         ]
         return urlpatterns

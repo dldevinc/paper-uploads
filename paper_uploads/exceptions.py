@@ -19,7 +19,9 @@ class InvalidChunking(InvalidRequest):
 
 
 class InvalidUUID(InvalidRequest):
-    pass
+    def __init__(self, value):
+        self.value = value
+        super().__init__()
 
 
 class ContinueUpload(Exception):
