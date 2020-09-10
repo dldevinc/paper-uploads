@@ -39,7 +39,9 @@ def get_extension(filename: str) -> str:
 def generate_scaled_versions(
     name: str, config: VariationConfig, scale_factor: int = 1, webp: bool = False
 ) -> Iterator[PaperVariation]:
-    """Геренирует масштабированную версию вариации с опциональной WebP-версией"""
+    """
+    Геренирует Retina-версию вариации с опциональной WebP-версией того же размера.
+    """
     variation_size = tuple(x * scale_factor for x in config.get('size', (0, 0)))
 
     if scale_factor == 1:
@@ -60,12 +62,13 @@ def generate_scaled_versions(
         yield PaperVariation(**variation_config)
 
 
-def generate_all_versions(
+def generate_variation_versions(
     name: str, config: VariationConfig, versions: Set[str],
 ) -> Iterator[PaperVariation]:
-    """Геренирует все перечисленные версии вариации"""
+    """
+    Геренирует все указанные версии вариации по словарю конфигурации
+    """
     webp = 'webp' in versions and config.get('format', '').upper() != 'WEBP'
-
     yield from generate_scaled_versions(name, config, scale_factor=1, webp=webp)
     if '2x' in versions:
         yield from generate_scaled_versions(name, config, scale_factor=2, webp=webp)
@@ -77,7 +80,7 @@ def generate_all_versions(
 
 def build_variations(options: Dict[str, VariationConfig]) -> Dict[str, PaperVariation]:
     """
-    Создание объектов вариаций из словаря конфигурации.
+    Создание объектов вариаций из словаря конфигураций.
     """
     variations = {}
     for name, config in options.items():
@@ -91,7 +94,7 @@ def build_variations(options: Dict[str, VariationConfig]) -> Dict[str, PaperVari
                 'unknown variation versions: {}'.format(', '.join(unknown_versions))
             )
 
-        all_versions = generate_all_versions(name, new_config, versions)
+        all_versions = generate_variation_versions(name, new_config, versions)
         for variation in all_versions:
             if name == variation.name:
                 # явно заданная вариация переопредеяет любую неявную
