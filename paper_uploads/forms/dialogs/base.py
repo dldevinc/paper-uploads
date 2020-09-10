@@ -13,7 +13,7 @@ class UploadedFileBaseForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance:
-            self.fields['new_name'].initial = self.instance.name
+            self.fields['new_name'].initial = self.instance.basename
 
     def save(self, commit=True):
         old_name = self.instance.name
