@@ -13,6 +13,7 @@ from django.db import models
 from django.http import JsonResponse
 
 from .. import exceptions
+from ..files import TemporaryUploadedFile
 
 T = TypeVar('T')
 
@@ -52,21 +53,6 @@ def get_exception_messages(exception: ValidationError) -> List[str]:
         else:
             messages.append(msg)
     return messages
-
-
-class TemporaryUploadedFile(UploadedFile):
-    def temporary_file_path(self):
-        """Return the full path of this file."""
-        return self.file.name
-
-    def close(self):
-        try:
-            super().close()
-        finally:
-            try:
-                os.unlink(self.temporary_file_path())
-            except OSError:
-                pass
 
 
 def read_file(request) -> UploadedFile:
