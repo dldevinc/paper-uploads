@@ -543,5 +543,6 @@ class ImageCollection(Collection):
     def get_validation(cls) -> Dict[str, Any]:
         # TODO: магический метод
         return {
+            'image': True,
             'acceptFiles': ['image/*'],
         }
