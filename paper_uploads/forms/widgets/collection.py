@@ -3,9 +3,10 @@ from django.urls import reverse_lazy
 
 from ...conf import settings
 from .base import FileWidgetBase
+from .mixins import FileUploaderWidgetMixin
 
 
-class CollectionWidget(FileWidgetBase):
+class CollectionWidget(FileUploaderWidgetMixin, FileWidgetBase):
     template_name = 'paper_uploads/collection_widget.html'
 
     @property
