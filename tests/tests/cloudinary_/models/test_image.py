@@ -4,10 +4,10 @@ from contextlib import contextmanager
 import cloudinary.exceptions
 import pytest
 from cloudinary import uploader
-from django.core.exceptions import ValidationError
 
 from app.models import CloudinaryImageExample
 from paper_uploads.cloudinary.models import CloudinaryImage
+from paper_uploads.exceptions import UnsupportedFileError
 
 from ... import utils
 from ...dummy import *
@@ -106,7 +106,7 @@ class TestCloudinaryImageAttach(TestImageFieldResourceAttach):
     def test_unsupported_file(self):
         with self.get_resource() as resource:
             with open(DOCUMENT_FILEPATH, 'rb') as fp:
-                with pytest.raises(ValidationError):
+                with pytest.raises(UnsupportedFileError):
                     resource.attach_file(fp)
 
 

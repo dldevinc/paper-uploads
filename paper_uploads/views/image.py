@@ -21,7 +21,10 @@ class UploadFileView(UploadFileViewBase):
             owner_fieldname=request.POST.get('paperOwnerFieldname'),
         )
 
-        instance.attach_file(file)
+        try:
+            instance.attach_file(file)
+        except exceptions.UnsupportedFileError as e:
+            return self.error_response(e.message)
 
         try:
             instance.full_clean()

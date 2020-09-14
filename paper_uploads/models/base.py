@@ -202,6 +202,10 @@ class FileResource(FileProxyMixin, Resource):
         Присоединение файла к экземпляру ресурса.
         В действительности, сохранение файла происходит в методе `_attach_file`.
         Не переопределяйте этот метод, если не уверены в том, что вы делаете.
+
+        Если на данном этапе обнаруживается, что переданный файл не может
+        быть представлен этой моделью, необходимо вызвать исключение
+        UnsupportedFileError.
         """
         if not isinstance(file, File):
             name = name or getattr(file, 'name', None)
@@ -401,7 +405,7 @@ class ImageFileResourceMixin(models.Model):
         try:
             image = Image.open(file)
         except OSError:
-            raise ValidationError(
+            raise exceptions.UnsupportedFileError(
                 _('File `%s` is not an image') % file.name
             )
         else:

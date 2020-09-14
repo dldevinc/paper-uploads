@@ -143,8 +143,15 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMetaclass):
             raise ValueError(_('Unsupported collection item type: %s') % item_type)
         return self.items.filter(item_type=item_type).order_by('order')
 
-    def detect_file_type(self, file: File) -> Optional[str]:
-        raise NotImplementedError
+    def detect_item_type(self, *args, **kwargs) -> Optional[str]:
+        """
+        Генератор, поочередно проверяющий классы элементов коллекции
+        на возможность представления данных, переданных в параметрах.
+        """
+        for item_type, field in self.item_types.items():
+            if hasattr(field.model, 'file_supported'):
+                if field.model.file_supported(*args, **kwargs):
+                    yield item_type
 
 
 class CollectionManager(models.Manager):
@@ -179,16 +186,6 @@ class Collection(CollectionBase):
                 self, for_concrete_model=False
             )
         super().save(*args, **kwargs)
-
-    def detect_file_type(self, file: File) -> Optional[str]:
-        """
-        Определение класса элемента, которому нужно отнести загружаемый файл.
-        """
-        for item_type, field in self.item_types.items():
-            if hasattr(field.model, 'file_supported'):
-                if field.model.file_supported(file):
-                    return item_type
-        return None
 
 
 # ======================================================================================

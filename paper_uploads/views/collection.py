@@ -90,34 +90,38 @@ class UploadFileView(UploadFileViewBase):
             logger.exception('Error')
             return self.error_response(_('Multiple objects returned'))
 
-        # Определение типа элемента галереи
-        item_type = collection.detect_file_type(file)  # noqa: F821
-        if item_type is None:
-            return self.error_response(_('Unsupported file'))
-
-        item_type_field = collection_cls.item_types[item_type]
-        instance = item_type_field.model(
-            collection_content_type_id=content_type_id,
-            collection_id=collection.pk,
-            item_type=item_type,
-            size=file.size,
-        )
-
         try:
-            order = int(request.POST.get('order'))
+            order = max(0, int(request.POST.get('order')))
         except (TypeError, ValueError):
-            pass
+            order = 0
+
+        # перебираем все подходящие классы элементов пока
+        # не найдем тот, который будет успешно создан
+        for item_type in collection.detect_item_type(file):  # noqa: F821
+            item_type_field = collection_cls.item_types[item_type]
+            instance = item_type_field.model(
+                collection_content_type_id=content_type_id,
+                collection_id=collection.pk,
+                item_type=item_type,
+                size=file.size,
+                order=order
+            )
+
+            try:
+                instance.attach_file(file)
+            except exceptions.UnsupportedFileError:
+                continue
+
+            try:
+                instance.full_clean()
+                run_validators(file, item_type_field.validators)
+            except Exception:
+                instance.delete_file()
+                raise
+
+            break
         else:
-            instance.order = max(order, 0)
-
-        instance.attach_file(file)
-
-        try:
-            instance.full_clean()
-            run_validators(file, item_type_field.validators)
-        except Exception:
-            instance.delete_file()
-            raise
+            return self.error_response(_('Unsupported file: %s') % file.name)
 
         instance.save()
         return self.success_response({

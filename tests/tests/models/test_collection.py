@@ -139,6 +139,10 @@ class TestCollection:
         assert storage.image_collection.items.count() == 1
         assert storage.global_collection.items.count() == 3
 
+    def test_order(self, storage):
+        order_values = storage.global_collection.items.values_list('order', flat=True)
+        assert sorted(order_values) == [0, 1, 2]
+
     def test_get_items(self, storage):
         assert storage.file_collection.get_items('file').count() == 1
         assert storage.global_collection.get_items('file').count() == 1
@@ -223,28 +227,29 @@ class TestCollection:
         file_item = FileItem(extension='py')
         assert file_item.get_preview_url() == '/static/paper_uploads/dist/image/unknown.svg'
 
-    def test_detect_file_type(self, storage):
+    def test_detect_item_type(self, storage):
         with open(DOCUMENT_FILEPATH, 'rb') as fp:
             file = File(fp)
-            assert storage.file_collection.detect_file_type(file) == 'file'
+            assert next(storage.file_collection.detect_item_type(file)) == 'file'
 
         with open(NATURE_FILEPATH, 'rb') as fp:
             file = File(fp)
-            assert storage.image_collection.detect_file_type(file) == 'image'
+            assert next(storage.image_collection.detect_item_type(file)) == 'image'
 
         with open(MEDITATION_FILEPATH, 'rb') as fp:
             file = File(fp)
-            assert storage.global_collection.detect_file_type(file) == 'svg'
+            assert next(storage.global_collection.detect_item_type(file)) == 'svg'
 
-    def test_detect_file_type_unsupported(self, storage):
+    def test_detect_item_type_unsupported(self, storage):
         with open(DOCUMENT_FILEPATH, 'rb') as fp:
             file = File(fp)
-            assert storage.image_collection.detect_file_type(file) is None
+            with pytest.raises(StopIteration):
+                next(storage.image_collection.detect_item_type(file))
 
     def test_svg_detects_as_image(self, storage):
         with open(MEDITATION_FILEPATH, 'rb') as fp:
             file = File(fp)
-            assert storage.image_collection.detect_file_type(file) == 'image'
+            assert next(storage.image_collection.detect_item_type(file)) == 'image'
 
 
 class CollectionItemMixin:

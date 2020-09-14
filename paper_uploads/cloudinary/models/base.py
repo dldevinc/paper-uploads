@@ -13,9 +13,10 @@ from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.utils import FileProxyMixin
 from django.utils.functional import cached_property
+from django.utils.translation import gettext_lazy as _
 from filelock import FileLock
 
-from ... import helpers, utils
+from ... import exceptions, helpers, utils
 from ...conf import settings
 from ...logging import logger
 from ...models.base import FileResource
@@ -238,7 +239,12 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
                 **cloudinary_options,
             )
         except cloudinary.exceptions.Error as e:
-            raise ValidationError(*e.args)
+            if e.args and 'Unsupported file type' in e.args[0]:
+                raise exceptions.UnsupportedFileError(
+                    _('File `%s` is not an image') % file.name
+                )
+            else:
+                raise ValidationError(*e.args)
 
         # fix difference between `public_id` in response
         # and `public_id` in CloudinaryField

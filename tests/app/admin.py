@@ -94,7 +94,7 @@ class CloudinaryCollectionFieldObjectAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             'fields': (
-                'file_collection', 'image_collection', 'full_collection'
+                'file_collection', 'image_collection', 'media_collection', 'full_collection'
             ),
         }),
     )
