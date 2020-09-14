@@ -93,28 +93,26 @@ class FileResourceFieldBase(ResourceFieldBase):
     """
 
     def formfield(self, **kwargs):
-        return super().formfield(**{'validation': self.get_validation(), **kwargs})
+        return super().formfield(**{'configuration': self.get_configuration(), **kwargs})
 
-    def get_validation(self) -> Dict[str, Any]:
+    def get_configuration(self) -> Dict[str, Any]:
         """
-        Возвращает конфигурацию валидации загружаемых файлов FineUploader.
-        См. https://docs.fineuploader.com/branch/master/api/options.html#validation
-
-        image.minWidth и т.п. не используются из-за отсутствия возможности
-        кастомизировать текст об ошибках.
+        Превращает Django-валидаторы в словарь конфигурации,
+        который может использоваться для вывода или проверки
+        на стороне клиента.
         """
-        validation = {}  # type: Dict[str, Any]
+        config = {}
         for v in self.validators:
-            if isinstance(v, validators.ExtensionValidator):
-                validation['allowedExtensions'] = v.allowed
-            elif isinstance(v, validators.MimeTypeValidator):
-                validation['acceptFiles'] = v.allowed
+            if isinstance(v, validators.MimeTypeValidator):
+                config['acceptFiles'] = v.allowed
+            elif isinstance(v, validators.ExtensionValidator):
+                config['allowedExtensions'] = v.allowed
             elif isinstance(v, validators.SizeValidator):
-                validation['sizeLimit'] = v.limit_value
+                config['sizeLimit'] = v.limit_value
             elif isinstance(v, validators.ImageMinSizeValidator):
-                validation['minImageWidth'] = v.width_limit
-                validation['minImageHeight'] = v.height_limit
+                config['minImageWidth'] = v.width_limit
+                config['minImageHeight'] = v.height_limit
             elif isinstance(v, validators.ImageMaxSizeValidator):
-                validation['maxImageWidth'] = v.width_limit
-                validation['maxImageHeight'] = v.height_limit
-        return validation
+                config['maxImageWidth'] = v.width_limit
+                config['maxImageHeight'] = v.height_limit
+        return config

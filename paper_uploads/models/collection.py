@@ -540,7 +540,7 @@ class ImageCollection(Collection):
     image = CollectionItem(ImageItem)
 
     @classmethod
-    def get_validation(cls) -> Dict[str, Any]:
+    def get_configuration(cls) -> Dict[str, Any]:
         # TODO: магический метод
         return {
             'image': True,

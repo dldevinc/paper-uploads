@@ -37,7 +37,7 @@ function Uploader(element, options) {
         button: null,
         dropzones: null,
         params: null,
-        validation: {},
+        configuration: {},
         filters: []
     }, options);
 
@@ -94,9 +94,9 @@ Uploader.prototype._makeUploader = function() {
         },
         validation: {
             stopOnFirstInvalidFile: false,
-            sizeLimit: _this._opts.validation.sizeLimit || 0,
-            acceptFiles: _this._opts.validation.acceptFiles || null,
-            allowedExtensions: _this._opts.validation.allowedExtensions || []
+            acceptFiles: _this._opts.configuration.acceptFiles || null,
+            sizeLimit: _this._opts.configuration.sizeLimit || 0,
+            allowedExtensions: _this._opts.configuration.allowedExtensions || []
         },
         messages: {
             typeError: "File <b>`{file}`</b> has an invalid extension. Valid extension(s): {extensions}.",
@@ -126,10 +126,10 @@ Uploader.prototype._makeUploader = function() {
                     }
                 }
 
-                const validationOptions = _this._opts.validation;
+                const configuration = _this._opts.configuration;
                 if (isFile(file)) {
                     // check mimetypes
-                    const allowedMimeTypes = validationOptions.acceptFiles;
+                    const allowedMimeTypes = configuration.accept;
                     if (allowedMimeTypes && allowedMimeTypes.length) {
                         let allowed = false;
                         if (Array.isArray(allowedMimeTypes)) {
@@ -148,7 +148,7 @@ Uploader.prototype._makeUploader = function() {
                     }
 
                     // check image size
-                    if (validationOptions.image) {
+                    if (configuration.image) {
                         return new Promise(function(resolve, reject) {
                             const image = new Image();
                             const url = window.URL && window.URL.createObjectURL ? window.URL : window.webkitURL && window.webkitURL.createObjectURL ? window.webkitURL : null;
@@ -167,23 +167,23 @@ Uploader.prototype._makeUploader = function() {
                                 reject("No createObjectURL function available to generate image URL!");
                             }
                         }).then(function(size) {
-                            if (validationOptions.minImageWidth && (size.width < validationOptions.minImageWidth)) {
-                                const reason = `File <b>\`${file.name}\`</b> is not wide enough. Minimum width is ${validationOptions.minImageWidth}px`;
+                            if (configuration.minImageWidth && (size.width < configuration.minImageWidth)) {
+                                const reason = `File <b>\`${file.name}\`</b> is not wide enough. Minimum width is ${configuration.minImageWidth}px`;
                                 _this.trigger('error', [id, reason]);
                                 throw new Error(reason);
                             }
-                            if (validationOptions.minImageHeight && (size.height < validationOptions.minImageHeight)) {
-                                const reason = `File <b>\`${file.name}\`</b> is not tall enough. Minimum height is ${validationOptions.minImageHeight}px`;
+                            if (configuration.minImageHeight && (size.height < configuration.minImageHeight)) {
+                                const reason = `File <b>\`${file.name}\`</b> is not tall enough. Minimum height is ${configuration.minImageHeight}px`;
                                 _this.trigger('error', [id, reason]);
                                 throw new Error(reason);
                             }
-                            if (validationOptions.maxImageWidth && (size.width > validationOptions.maxImageWidth)) {
-                                const reason = `File <b>\`${file.name}\`</b> is too wide. Maximum width is ${validationOptions.maxImageWidth}px`;
+                            if (configuration.maxImageWidth && (size.width > configuration.maxImageWidth)) {
+                                const reason = `File <b>\`${file.name}\`</b> is too wide. Maximum width is ${configuration.maxImageWidth}px`;
                                 _this.trigger('error', [id, reason]);
                                 throw new Error(reason);
                             }
-                            if (validationOptions.maxImageHeight && (size.height > validationOptions.maxImageHeight)) {
-                                const reason = `File <b>\`${file.name}\`</b> is too tall. Maximum height is ${validationOptions.maxImageHeight}px`;
+                            if (configuration.maxImageHeight && (size.height > configuration.maxImageHeight)) {
+                                const reason = `File <b>\`${file.name}\`</b> is too tall. Maximum height is ${configuration.maxImageHeight}px`;
                                 _this.trigger('error', [id, reason]);
                                 throw new Error(reason);
                             }

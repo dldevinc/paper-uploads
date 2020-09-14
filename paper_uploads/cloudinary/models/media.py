@@ -48,7 +48,7 @@ class CloudinaryMedia(CloudinaryFileResource):
         }
 
     @classmethod
-    def get_validation(cls) -> Dict[str, Any]:
+    def get_configuration(cls) -> Dict[str, Any]:
         # TODO: магический метод
         return {
             'acceptFiles': [

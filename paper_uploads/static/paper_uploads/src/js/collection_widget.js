@@ -260,7 +260,7 @@ Collection.prototype.initUploader = function() {
         maxConnections: 4,
         button: this.uploadButton,
         dropzones: this.element.querySelectorAll(this._opts.collection.dropzone),
-        validation: JSON.parse(this.element.dataset.validation),
+        configuration: JSON.parse(this.element.dataset.configuration),
         params: {
             collectionId: function() {
                 return _this.collectionId;
