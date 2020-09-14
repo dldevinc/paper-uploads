@@ -63,19 +63,19 @@ class FileWidgetBase(widgets.Widget):
         if not validation:
             return limits
 
-        if 'allowedExtensions' in validation:
-            limits.append(
-                (_('Allowed extensions'), ", ".join(validation['allowedExtensions']))
-            )
         if 'acceptFiles' in validation:
             accept_files = validation['acceptFiles']
             limits.append(
                 (
-                    _('Allowed MIME types'),
+                    _('Allowed files'),
                     accept_files
                     if isinstance(accept_files, str)
                     else ", ".join(accept_files),
                 )
+            )
+        if 'allowedExtensions' in validation:
+            limits.append(
+                (_('Allowed extensions'), ", ".join(validation['allowedExtensions']))
             )
         if 'sizeLimit' in validation:
             limits.append(
