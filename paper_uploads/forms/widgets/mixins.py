@@ -1,8 +1,8 @@
 import json
-from typing import List, Tuple
 
 from django.template.defaultfilters import filesizeformat
 from django.utils.translation import gettext_lazy as _
+from ...typing import Limitations
 
 
 class FileUploaderWidgetMixin:
@@ -17,7 +17,7 @@ class FileUploaderWidgetMixin:
         context.update(
             {
                 'validation': json.dumps(self.get_validation()),
-                'validation_lines': self.get_validation_text(),
+                'limitations': self.get_limitations(),
             }
         )
         return context
@@ -34,11 +34,12 @@ class FileUploaderWidgetMixin:
             **self.validation,
         }
 
-    def get_validation_text(self) -> List[Tuple[str, str]]:
+    def get_limitations(self) -> Limitations:
         """
-        Получение ограничений на загружаемые файлы в виде текстового описания
+        Список ограничений, накладываемых на загружаемые файлы.
+        Используется только для вывода в виде текста.
         """
-        limits = []  # type: List[Tuple[str, str]]
+        limits = []  # type: Limitations
         validation = self.get_validation()
         if not validation:
             return limits

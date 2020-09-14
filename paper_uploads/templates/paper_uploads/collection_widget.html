@@ -52,12 +52,12 @@
     </small>
   </div>
 
-  {% if validation_lines %}
+  {% if limitations %}
     <div class="image-uploader__limitations small text-muted mt-2">
       <span>{{ _('Please consider the following limitations') }}:</span>
       <ul class="pl-3 mb-0">
-        {% for rule, limit in validation_lines %}
-          <li>{{ rule }}: <em>{{ limit }}</em></li>
+        {% for label, limits in limitations %}
+          <li>{{ label }}: <em>{{ limits }}</em></li>
         {% endfor %}
       </ul>
     </div>
