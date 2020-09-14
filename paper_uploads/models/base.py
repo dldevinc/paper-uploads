@@ -1,7 +1,6 @@
 import os
 from typing import Any, Dict, Iterable, Optional, Tuple
 
-from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import models
 from django.db.models.fields.files import FieldFile

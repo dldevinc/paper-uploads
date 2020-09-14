@@ -10,7 +10,7 @@ class FileWidgetBase(widgets.Widget):
 
     @cached_property
     def model(self):
-        return self.choices.queryset.model
+        return self.choices.queryset.model  # noqa: F821
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
