@@ -59,10 +59,12 @@ module.exports = {
                 {
                     loader: 'postcss-loader',
                     options: {
-                        plugins: [
-                            pixrem(),
-                            autoprefixer()
-                        ]
+                        postcssOptions: {
+                            plugins: [
+                                pixrem(),
+                                autoprefixer()
+                            ]
+                        }
                     }
                 },
                 {
