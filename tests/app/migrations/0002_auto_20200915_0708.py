@@ -43,7 +43,6 @@ class Migration(migrations.Migration):
             options={
                 'proxy': True,
                 'indexes': [],
-                'constraints': [],
             },
             bases=('paper_uploads_cloudinary.cloudinarycollection',),
             managers=[
@@ -57,7 +56,6 @@ class Migration(migrations.Migration):
             options={
                 'proxy': True,
                 'indexes': [],
-                'constraints': [],
             },
             bases=('paper_uploads.collection',),
             managers=[
@@ -71,7 +69,6 @@ class Migration(migrations.Migration):
             options={
                 'proxy': True,
                 'indexes': [],
-                'constraints': [],
             },
             bases=('paper_uploads.collection',),
             managers=[
@@ -85,7 +82,6 @@ class Migration(migrations.Migration):
             options={
                 'proxy': True,
                 'indexes': [],
-                'constraints': [],
             },
             bases=('paper_uploads_cloudinary.cloudinaryimagecollection',),
             managers=[
@@ -99,7 +95,6 @@ class Migration(migrations.Migration):
             options={
                 'proxy': True,
                 'indexes': [],
-                'constraints': [],
             },
             bases=('paper_uploads.collection',),
             managers=[
@@ -113,7 +108,6 @@ class Migration(migrations.Migration):
             options={
                 'proxy': True,
                 'indexes': [],
-                'constraints': [],
             },
             bases=('paper_uploads.collection',),
             managers=[
@@ -127,7 +121,6 @@ class Migration(migrations.Migration):
             options={
                 'proxy': True,
                 'indexes': [],
-                'constraints': [],
             },
             bases=('paper_uploads.imagecollection',),
             managers=[
@@ -261,7 +254,6 @@ class Migration(migrations.Migration):
             options={
                 'proxy': True,
                 'indexes': [],
-                'constraints': [],
             },
             bases=('app.isolatedfilecollection',),
             managers=[
