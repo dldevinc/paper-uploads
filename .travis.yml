@@ -16,7 +16,7 @@ script:
 - python setup.py sdist
 - python setup.py bdist_wheel
 - twine check dist/*
-- tox -n auto
+- tox -- -n auto
 deploy:
   provider: pypi
   distributions: sdist bdist_wheel
