@@ -71,7 +71,7 @@ PAPER_UPLOADS = {
 Поле для загрузки файла.
 
 На загружаемые файлы можно наложить ограничения с помощью
-[валидаторов](#Validation).
+[валидаторов](#validators).
 ```python
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
