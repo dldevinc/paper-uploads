@@ -500,9 +500,9 @@ class PageGallery(Collection):
 Допустим, у нас есть изображение, которое нужно отобразить в трех
 вариантах: `desktop`, `tablet` и `mobile`. Если мы хотим поддерживать
 дисплеи Retina, нам нужно добавить ещё три вариации
-для размера `2x`. Если мы хотим использовать формат `WebP`
-(сохранив исходные изображения для обратной совместимостьи),
-то общее количество вариаций достигает 12.
+для размера `2x`. Если мы также хотим использовать формат `WebP`
+(сохранив исходные изображения для обратной совместимости),
+то общее количество вариаций достигает **12**.
 
 Поскольку Retina-вариации отличаются от обычных только увеличенным
 на постоянный коэффициент размером, а `WebP`-вариации — принудительной
@@ -560,8 +560,7 @@ class Page(models.Model):
 ## Cloudinary
 Во встроенном модуле `paper_uploads.cloudinary` описаны поля и классы,
 позволяющие загружать файлы и картинки в облачный сервис Cloudinary.
-В этом случае постобработка и нарезка вариаций не имеют смысла,
-и поэтому отключены.
+В этом случае нарезка вариаций не имеет смысла и поэтому недоступна.
 
 ### Installation
 1) `pip install cloudinary`
@@ -644,15 +643,24 @@ class Page(models.Model):
 ```
 
 ### Usage
-В шаблонах доступен Jinja2-аналог шаблонного тэга `cloudinary_url`,
-входящего в состав библиотеки [cloudinary](https://github.com/cloudinary/pycloudinary).
+
+Для вывода ссылки на файл, загруженный в Cloudinary, библиотека содержит 
+шаблонный тэг `paper_cloudinary_url`:
+
+```djangotemplate
+{% load paper_cloudinary %}
+
+<img src={% paper_cloudinary_url page.image width=1024 crop=fill %}>
+```
+
+#### Jinja2
 ```jinja2
-<img src={% cloudinary_url page.image width=1024 crop=fill %}>
+<img src={% paper_cloudinary_url page.image, width=1024, crop=fill %}>
 ```
 
 Также доступна одноименная глобальная функция:
 ```jinja2
-<img src={{ cloudinary_url(page.image, width=1024, crop='fill') }}>
+<img src={{ paper_cloudinary_url(page.image, width=1024, crop='fill') }}>
 ```
 
 ## Settings
