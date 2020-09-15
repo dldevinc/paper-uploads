@@ -1,19 +1,19 @@
 import os
-from typing import Sequence
+from typing import Sequence, Union
 
 import magic
 from django.core.exceptions import ValidationError
-from django.core.files import File
 from django.template.defaultfilters import filesizeformat
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
 from PIL import Image
 
-from .utils import remove_dulpicates
+from .typing import FileLike
+from .utils import parse_filesize, remove_dulpicates
 
 __all__ = [
     "ExtensionValidator",
-    "MimetypeValidator",
+    "MimeTypeValidator",
     "SizeValidator",
     "ImageMinSizeValidator",
     "ImageMaxSizeValidator",
@@ -22,7 +22,7 @@ __all__ = [
 
 @deconstructible
 class ExtensionValidator:
-    message = _("`%(name)s` has an invalid extension. Valid extension(s): %(allowed)s")
+    message = _("File `%(name)s` has an invalid extension. Valid extension(s): %(allowed)s")
     code = 'invalid_extension'
 
     def __init__(self, allowed: Sequence[str], message=None):
@@ -30,7 +30,7 @@ class ExtensionValidator:
         if message:
             self.message = message
 
-    def __call__(self, file: File):
+    def __call__(self, file: FileLike):
         _, ext = os.path.splitext(file.name)
         ext = ext.lstrip('.').lower()
         params = {
@@ -46,8 +46,8 @@ class ExtensionValidator:
 
 
 @deconstructible
-class MimetypeValidator:
-    message = _("`%(name)s` has an invalid mimetype '%(mimetype)s'")
+class MimeTypeValidator:
+    message = _("File `%(name)s` has an invalid mimetype '%(mimetype)s'")
     code = 'invalid_mimetype'
 
     def __init__(self, allowed: Sequence[str], message=None):
@@ -55,7 +55,8 @@ class MimetypeValidator:
         if message:
             self.message = message
 
-    def __call__(self, file: File):
+    def __call__(self, file: FileLike):
+        file.seek(0)  # ensure read from the start
         mimetype = magic.from_buffer(file.read(1024), mime=True)
         file.seek(0)  # correct file position after mimetype detection
         basetype, subtype = mimetype.split('/', 1)
@@ -73,15 +74,19 @@ class MimetypeValidator:
 
 @deconstructible
 class SizeValidator:
-    message = _("`%(name)s` is too large. Maximum file size is %(limit_value)s.")
+    message = _("File `%(name)s` is too large. Maximum file size is %(limit_value)s.")
     code = 'size_limit'
 
-    def __init__(self, limit_value: int, message=None):
-        self.limit_value = limit_value
+    def __init__(self, limit_value: Union[int, str], message=None):
+        if isinstance(limit_value, str):
+            self.limit_value = parse_filesize(limit_value)
+        else:
+            self.limit_value = limit_value
+
         if message:
             self.message = message
 
-    def __call__(self, file: File):
+    def __call__(self, file: FileLike):
         params = {
             'name': file.name,
             'size': file.size,
@@ -98,13 +103,13 @@ class SizeValidator:
 class ImageMinSizeValidator:
     error_messages = {
         'min_width': _(
-            '`%(name)s` is not wide enough. Minimum width is %(width_limit)s pixels.'
+            'File `%(name)s` is not wide enough. Minimum width is %(width_limit)s pixels.'
         ),
         'min_height': _(
-            '`%(name)s` is not tall enough. Minimum height is %(height_limit)s pixels.'
+            'File `%(name)s` is not tall enough. Minimum height is %(height_limit)s pixels.'
         ),
         'min_size': _(
-            '`%(name)s` is too small. Image should be at least %(width_limit)sx%(height_limit)s pixels.'
+            'File `%(name)s` is too small. Image should be at least %(width_limit)sx%(height_limit)s pixels.'
         ),
     }
 
@@ -112,15 +117,15 @@ class ImageMinSizeValidator:
         self.width_limit = width
         self.height_limit = height
 
-    def __call__(self, file: File):
+    def __call__(self, file: FileLike):
         if file.closed:
-            raise ValidationError('`%s` is closed' % os.path.basename(file.name))
+            raise ValidationError('File `%s` is closed' % os.path.basename(file.name))
 
         try:
             img = Image.open(file)
             image_size = img.size
         except OSError:
-            raise ValidationError('`%s` is not an image' % os.path.basename(file.name))
+            raise ValidationError('File `%s` is not an image' % os.path.basename(file.name))
 
         params = {
             'width_limit': self.width_limit,
@@ -161,13 +166,13 @@ class ImageMinSizeValidator:
 class ImageMaxSizeValidator:
     error_messages = {
         'max_width': _(
-            '`%(name)s` is too wide. Maximum width is %(width_limit)s pixels.'
+            'File `%(name)s` is too wide. Maximum width is %(width_limit)s pixels.'
         ),
         'max_height': _(
-            '`%(name)s` is too tall. Maximum height is %(height_limit)s pixels.'
+            'File `%(name)s` is too tall. Maximum height is %(height_limit)s pixels.'
         ),
         'max_size': _(
-            '`%(name)s` is too big. Image should be at most %(width_limit)sx%(height_limit)s pixels.'
+            'File `%(name)s` is too big. Image should be at most %(width_limit)sx%(height_limit)s pixels.'
         ),
     }
 
@@ -175,15 +180,15 @@ class ImageMaxSizeValidator:
         self.width_limit = width
         self.height_limit = height
 
-    def __call__(self, file: File):
+    def __call__(self, file: FileLike):
         if file.closed:
-            raise ValidationError('`%s` is closed' % os.path.basename(file.name))
+            raise ValidationError('File `%s` is closed' % os.path.basename(file.name))
 
         try:
             img = Image.open(file)
             image_size = img.size
         except OSError:
-            raise ValidationError('`%s` is not an image' % os.path.basename(file.name))
+            raise ValidationError('File `%s` is not an image' % os.path.basename(file.name))
 
         params = {
             'width_limit': self.width_limit,

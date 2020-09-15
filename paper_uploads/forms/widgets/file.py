@@ -2,9 +2,10 @@ from django import forms
 from django.urls import reverse_lazy
 
 from .base import FileWidgetBase
+from .mixins import FileUploaderWidgetMixin
 
 
-class FileWidget(FileWidgetBase):
+class FileWidget(FileUploaderWidgetMixin, FileWidgetBase):
     template_name = 'paper_uploads/file_widget.html'
 
     @property

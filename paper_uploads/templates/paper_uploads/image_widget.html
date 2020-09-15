@@ -6,13 +6,13 @@
      data-paper-owner-app-label="{{ owner_app_label }}"
      data-paper-owner-model-name="{{ owner_model_name }}"
      data-paper-owner-fieldname="{{ owner_fieldname }}"
-     data-validation='{{ validation|safe }}'>
+     data-configuration='{{ configuration|safe }}'>
   <input type="hidden" class="image-uploader__input"
          name="{{ widget.name }}"
          value="{{ widget.value|default:'' }}"
          {% include "django/forms/widgets/attrs.html" %}/>
 
-  <div class="input-group">
+  <div class="input-group input-group-lg">
     <div class="input-group-prepend">
       <button type="button" class="image-uploader__upload-button input-group-text"
          data-toggle="tooltip" data-placement="top" data-trigger="hover"
@@ -23,13 +23,13 @@
 
     <div class="form-control">
       <span class="file-name">
-        {% if instance %}{{ instance.name }}{% endif %}
+        {% if instance %}{{ instance.basename }}{% endif %}
       </span>
-      <small class="file-info text-muted">
+      <span class="file-info text-muted">
         {% if instance %}
           ({{ instance.extension }}, {{ instance.width }}x{{ instance.height }}, {{ instance.size|filesizeformat }})
         {% endif %}
-      </small>
+      </span>
       <div class="progress">
         <div class="progress-bar progress-bar-animated progress-bar-striped"
              role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
@@ -39,7 +39,7 @@
 
     <div class="input-group-append">
       <div class="image-uploader__ready-buttons">
-        <a {% if instance %}href="{{ instance.file.url }}"{% endif %}
+        <a {% if instance %}href="{{ instance.get_file_url }}"{% endif %}
            target="_blank" tabindex="-1"
            class="image-uploader__link input-group-text text-info"
            data-toggle="tooltip" data-placement="top" data-trigger="hover"
@@ -72,12 +72,12 @@
     </div>
   </div>
 
-  {% if validation_lines %}
+  {% if limitations %}
     <div class="image-uploader__limitations small text-muted mt-2">
       <span>{{ _('Please consider the following limitations') }}:</span>
       <ul class="pl-3 mb-0">
-        {% for rule, limit in validation_lines %}
-          <li>{{ rule }}: <em>{{ limit }}</em></li>
+        {% for label, limits in limitations %}
+          <li>{{ label }}: <em>{{ limits }}</em></li>
         {% endfor %}
       </ul>
     </div>

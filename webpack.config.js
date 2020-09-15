@@ -59,18 +59,22 @@ module.exports = {
                 {
                     loader: 'postcss-loader',
                     options: {
-                        plugins: [
-                            pixrem(),
-                            autoprefixer()
-                        ]
+                        postcssOptions: {
+                            plugins: [
+                                pixrem(),
+                                autoprefixer()
+                            ]
+                        }
                     }
                 },
                 {
                     loader: 'sass-loader',
                     options: {
-                        includePaths: [
-                            path.resolve(`${SOURCE_DIR}/css/`)
-                        ]
+                        sassOptions: {
+                            includePaths: [
+                                path.resolve(`${SOURCE_DIR}/css/`)
+                            ]
+                        }
                     }
                 }]
             },

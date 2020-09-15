@@ -10,9 +10,11 @@ class Config(AppConfig):
 
     def ready(self):
         from .signals import handlers
-        from .models import CollectionBase
+        from .models.collection import CollectionBase
         from .admin import CollectionAdminBase
 
+        # Переименование поля файла или модели-владельца файла,
+        # изменит также и соответствующие значения, хранящиеся в БД
         pre_migrate.connect(handlers.inject_rename_filefield_operations, sender=self)
 
         # автоматическая регистрация моделей галерей в админке

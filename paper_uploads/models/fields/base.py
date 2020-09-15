@@ -1,4 +1,3 @@
-import os
 from typing import Any, Dict
 
 from django.core import checks
@@ -8,9 +7,9 @@ from django.db.models.signals import post_delete
 from ... import validators
 
 
-class FileFieldBase(models.OneToOneField):
+class ResourceFieldBase(models.OneToOneField):
     """
-    Базовый класс для ссылок на модели файлов.
+    Базовый класс для ссылок на ресурсы.
     """
 
     def __init__(self, verbose_name=None, **kwargs):
@@ -21,14 +20,18 @@ class FileFieldBase(models.OneToOneField):
         super().__init__(**kwargs)
 
     def check(self, **kwargs):
-        return [
-            *super().check(**kwargs),
-            *self._check_relation_class()
-        ]
+        return [*super().check(**kwargs), *self._check_relation()]
 
-    def _check_relation_class(self):
-        from ...models.base import FileResource, ReverseFieldModelMixin
+    def _check_relation(self):
+        from ...models.base import Resource
 
+        return self._check_relation_class(
+            Resource,
+            "Field defines a relation with model '%s', "
+            "which is not subclass of Resource model",
+        )
+
+    def _check_relation_class(self, base, error_message):
         rel_is_string = isinstance(self.remote_field.model, str)
         if rel_is_string:
             return []
@@ -39,17 +42,8 @@ class FileFieldBase(models.OneToOneField):
             else self.remote_field.model._meta.object_name
         )
 
-        if not issubclass(self.remote_field.model, FileResource) or not issubclass(
-            self.remote_field.model, ReverseFieldModelMixin
-        ):
-            return [
-                checks.Error(
-                    "Field defines a relation with model '%s', which is not "
-                    "subclass of both FileResource and ReverseFieldModelMixin"
-                    % model_name,
-                    obj=self,
-                )
-            ]
+        if not issubclass(self.remote_field.model, base):
+            return [checks.Error(error_message % model_name, obj=self)]
         return []
 
     def deconstruct(self):
@@ -66,10 +60,16 @@ class FileFieldBase(models.OneToOneField):
                 'owner_app_label': self.opts.app_label.lower(),
                 'owner_model_name': self.opts.model_name.lower(),
                 'owner_fieldname': self.name,
-                'validation': self.get_validation(),
                 **kwargs,
             }
         )
+
+    def run_validators(self, value):
+        """
+        Валидаторы мы хотим запускать по отношению в экземпляру File,
+        а не к ID экземпляа модели.
+        """
+        pass
 
     def contribute_to_class(self, cls, *args, **kwargs):
         super().contribute_to_class(cls, *args, **kwargs)
@@ -78,53 +78,41 @@ class FileFieldBase(models.OneToOneField):
 
     def post_delete_callback(self, **kwargs):
         """
-        Удаление модели файла при удалении владельца
+        При удалении модели-владельца поля, удаляем и связанный
+        в ним экземпляр ресурса.
         """
-        uploaded = getattr(kwargs['instance'], self.name)
-        if uploaded:
-            uploaded.delete()
+        resource = getattr(kwargs['instance'], self.name)
+        if resource:
+            resource.delete()
 
-    def run_validators(self, value):
-        """
-        Отключение валидаторов для файловых полей, т.к. нам нужно валидировать
-        не ID OneToOneField, а загружаемые файлы.
-        """
-        return
 
-    def get_validation(self) -> Dict[str, Any]:
-        """
-        Возвращает конфигурацию валидации загружаемых файлов FineUploader.
-        см. https://docs.fineuploader.com/branch/master/api/options.html#validation
+class FileResourceFieldBase(ResourceFieldBase):
+    """
+    Базовый класс для полей, которые загружают файлы с помощью FineUploader.
+    См. https://fineuploader.com/
+    """
 
-        image.minWidth и т.п. не используются из-за недостатка кастомизации
-        текста об ошибках.
+    def formfield(self, **kwargs):
+        return super().formfield(**{'configuration': self.get_configuration(), **kwargs})
+
+    def get_configuration(self) -> Dict[str, Any]:
         """
-        validation = {}     # type: Dict[str, Any]
+        Превращает Django-валидаторы в словарь конфигурации,
+        который может использоваться для вывода или проверки
+        на стороне клиента.
+        """
+        config = {}
         for v in self.validators:
-            if isinstance(v, validators.ExtensionValidator):
-                validation['allowedExtensions'] = v.allowed
-            elif isinstance(v, validators.MimetypeValidator):
-                validation['acceptFiles'] = v.allowed
+            if isinstance(v, validators.MimeTypeValidator):
+                config['acceptFiles'] = v.allowed
+            elif isinstance(v, validators.ExtensionValidator):
+                config['allowedExtensions'] = v.allowed
             elif isinstance(v, validators.SizeValidator):
-                validation['sizeLimit'] = v.limit_value
+                config['sizeLimit'] = v.limit_value
             elif isinstance(v, validators.ImageMinSizeValidator):
-                validation['minImageWidth'] = v.width_limit
-                validation['minImageHeight'] = v.height_limit
+                config['minImageWidth'] = v.width_limit
+                config['minImageHeight'] = v.height_limit
             elif isinstance(v, validators.ImageMaxSizeValidator):
-                validation['maxImageWidth'] = v.width_limit
-                validation['maxImageHeight'] = v.height_limit
-        return validation
-
-
-class FormattedFileField(models.FileField):
-    """
-    Обертка над стандартным файловым полем, форматирующее расширение файлов.
-    """
-
-    def generate_filename(self, instance, filename):
-        file_root, file_ext = os.path.splitext(filename)
-        file_ext = file_ext.lower()
-        if file_ext == '.jpeg':
-            file_ext = '.jpg'
-        filename = ''.join([file_root, file_ext])
-        return super().generate_filename(instance, filename)
+                config['maxImageWidth'] = v.width_limit
+                config['maxImageHeight'] = v.height_limit
+        return config

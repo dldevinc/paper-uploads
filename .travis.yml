@@ -1,0 +1,30 @@
+language: python
+python:
+- 3.8
+- 3.7
+- 3.6
+before_install:
+- pip install twine
+- pip install -U pip setuptools wheel tox-travis
+install:
+- pip install -r ./requirements_dev.txt
+branches:
+  only:
+  - master
+  - "/^v?\\d(\\.\\d+)+$/"
+script:
+- python setup.py sdist
+- python setup.py bdist_wheel
+- twine check dist/*
+- tox
+deploy:
+  provider: pypi
+  distributions: sdist bdist_wheel
+  skip_existing: true
+  user: __token__
+  password:
+    secure: GwzVlC/6Ea5AaGQM4UF7y2semaxAbkZT50fhyAWQu++unRb2E8fRbzqfRqvCcpKtOMZKPeQAEdsg7cghRLk+VYkr/RtbYMTO8+Bcv/nJxBW8Cgt3U45o12CDgMmxynGydzKDVtXa2KCNV6kny6y0rWlPctYVRuqVJ8Wo+uU5XhAhcwOscqwUb1flYyIGsdEbGtmBN0UYgvqVeNJd7IVvvCIB7nhigLsiKkVUIWA6CTxFA7goexeNLaFH0yOAknd5YupDvjPm9wnlycpQhUknCVaW7z7zyEqD0bJMlo4tsuYPao64rQSbWOI5NmvowHo0z9xI27K01Si4CGpgP6ZY8piMCWubTVK50/zeKULaCTRhsSCQxFuNt1xeEtWX4KmpG+lukRJrPHmJy1h5RdZhdYl8RJUlquQEWY3rB5A+emb0IP9iggwXIVfeoXA//CSEPZk51GosHCG8+yGw/TN+bUW3ULf7oAzJjsyoeoQ39xMENydbuqH+BVzQoUcDnnQP2dOob69qs0zfAHzplfiwvkwG4CxdFtxwXCj2J6RP5doJ+4rij+JjVZY94+ZbzpsBKKZEg282D0dOVVRbWQHmXM+AJcsRjYqGGwg5UceDwfBrhZ/sxso0GD8uA/MLJZYatilANOYBmpL1uSv19FHIQL5YTGhVt6BsfwHFlKT/aEU=
+  on:
+    repo: dldevinc/paper-uploads
+    condition: "$TRAVIS_PYTHON_VERSION = 3.8"
+    tags: true

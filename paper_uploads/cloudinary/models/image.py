@@ -1,38 +1,36 @@
-from typing import IO, Any, Dict, Union
+from typing import Any, Dict, Optional
 
-from django.core.files import File
-from django.dispatch import receiver
+from cloudinary.models import CloudinaryField
 from django.template.defaultfilters import filesizeformat
 from django.utils.translation import gettext_lazy as _
 
-from ... import signals
 from ...conf import settings
-from ...models.base import ImageFileResourceMixin, ReverseFieldModelMixin
-from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
+from ...models.base import ImageFileResourceMixin
+from .base import CloudinaryFieldFile, CloudinaryFileResource
 
 
-class CloudinaryImage(
-    ReverseFieldModelMixin,
-    ReadonlyCloudinaryFileProxyMixin,
-    ImageFileResourceMixin,
-    CloudinaryFileResource,
-):
-    cloudinary_resource_type = 'image'
+class CloudinaryImage(ImageFileResourceMixin, CloudinaryFileResource):
+    file = CloudinaryField(
+        _('file'),
+        type=settings.CLOUDINARY_TYPE,
+        resource_type='image',
+        folder=settings.IMAGES_UPLOAD_TO
+    )
 
     class Meta(CloudinaryFileResource.Meta):
         verbose_name = _('image')
         verbose_name_plural = _('images')
 
-    def attach_file(self, file: Union[File, IO], name: str = None, **options):
-        """
-        Установка опций загрузки файла из параметров поля
-        """
-        cloudinary_options = settings.CLOUDINARY.copy()
-        owner_field = self.get_owner_field()
-        if owner_field is not None and hasattr(owner_field, 'cloudinary_options'):
-            cloudinary_options.update(owner_field.cloudinary_options or {})
-        options.setdefault('cloudinary', cloudinary_options)
-        return super().attach_file(file, name, **options)
+    def get_file(self) -> Optional[CloudinaryFieldFile]:
+        if not self.file:
+            return None
+        return CloudinaryFieldFile(self.file, checksum=self.checksum)
+
+    def set_file(self, value):
+        self.file = value
+
+    def get_file_field(self) -> CloudinaryField:
+        return self._meta.get_field('file')
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -46,19 +44,9 @@ class CloudinaryImage(
         }
 
     @classmethod
-    def get_validation(cls) -> Dict[str, Any]:
+    def get_configuration(cls) -> Dict[str, Any]:
         # TODO: магический метод
         return {
+            'image': True,
             'acceptFiles': ['image/*'],
         }
-
-
-@receiver(signals.post_attach_file)
-def on_attach(sender, **kwargs):
-    instance = kwargs['instance']
-    response = kwargs['response']
-    if isinstance(response, dict):
-        if 'width' in response:
-            instance.width = response['width']
-        if 'height' in response:
-            instance.height = response['height']

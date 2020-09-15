@@ -1,7 +1,7 @@
-{% load cloudinary %}
+{% load paper_cloudinary %}
 
-<img src="{% cloudinary_url item.file width=preview_width height=preview_height crop="fill" %}"
-     class="collection__item-image"
-     width="{{ preview_width }}"
-     height="{{ preview_height }}"
+<img src="{% paper_cloudinary_url item width=width height=height crop="fill" %}"
+     class="collection-item__image"
+     width="{{ width }}"
+     height="{{ height }}"
      alt="{% if item %}{{ item.alt }}{% endif %}">

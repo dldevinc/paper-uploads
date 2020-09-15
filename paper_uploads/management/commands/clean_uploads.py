@@ -115,7 +115,10 @@ class Command(BaseCommand):
                     for index, item in enumerate(qs, start=1):
                         self.stdout.write(
                             '  {}) {} #{} (File: {})'.format(
-                                index, type(item).__name__, item.pk, item.get_file_name()
+                                index,
+                                type(item).__name__,
+                                item.pk,
+                                item.name,
                             )
                         )
                     self.stdout.write('\n')
@@ -132,7 +135,7 @@ class Command(BaseCommand):
         sourceless_items = set()
         related_model = queryset.model
         for instance in queryset.iterator():
-            if not instance.is_file_exists():
+            if not instance.file_exists():
                 sourceless_items.add(instance.pk)
 
         if not sourceless_items:
@@ -165,7 +168,10 @@ class Command(BaseCommand):
                     for index, item in enumerate(qs, start=1):
                         self.stdout.write(
                             '  {}) {} #{} (File: {})'.format(
-                                index, type(item).__name__, item.pk, item.get_file_name()
+                                index,
+                                type(item).__name__,
+                                item.pk,
+                                item.name,
                             )
                         )
                     self.stdout.write('\n')

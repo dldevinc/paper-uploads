@@ -1,42 +1,100 @@
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
-from paper_admin.admin.sortable import SortableAdminMixin
 
-from .models import Document, Page
+from .models import (
+    CloudinaryCollectionFieldObject,
+    CloudinaryFileExample,
+    CloudinaryImageExample,
+    CloudinaryMediaExample,
+    CollectionFieldObject,
+    FileFieldObject,
+    ImageFieldObject,
+)
 
 
-@admin.register(Page)
-class PageAdmin(SortableAdminMixin, admin.ModelAdmin):
+@admin.register(FileFieldObject)
+class FileFieldObjectAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             'fields': (
-                'header', 'file', 'image', 'image_ext', 'files', 'gallery',
+                'file', 'file_required',
             ),
         }),
         (_('Validators'), {
             'fields': (
-                'ext_file', 'mime_file', 'size_file', 'min_image', 'max_image',
-                'png_gallery'
+                'file_extensions', 'file_mimetypes', 'file_size'
             ),
         }),
-        (_('Cloudinary'), {
-            'fields': (
-                'cloud_file', 'cloud_video', 'cloud_image',
-                'cloud_files', 'cloud_gallery',
-            )
-        })
     )
-    sortable = 'order'
-    search_fields = ['header']
 
 
-@admin.register(Document)
-class DocumentAdmin(admin.ModelAdmin):
+@admin.register(ImageFieldObject)
+class ImageFieldObjectAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             'fields': (
-                'page', 'title', 'image', 'files'
+                'image', 'image_required',
+            ),
+        }),
+        (_('Validators'), {
+            'fields': (
+                'image_extensions', 'image_mimetypes', 'image_size',
+                'image_min_size', 'image_max_size'
             ),
         }),
     )
-    autocomplete_fields = ['page']
+
+
+@admin.register(CollectionFieldObject)
+class CollectionFieldObjectAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {
+            'fields': (
+                'file_collection', 'image_collection', 'full_collection'
+            ),
+        }),
+    )
+
+
+@admin.register(CloudinaryFileExample)
+class CloudinaryFileExampleAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {
+            'fields': (
+                'file',
+            ),
+        }),
+    )
+
+
+@admin.register(CloudinaryImageExample)
+class CloudinaryImageExampleAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {
+            'fields': (
+                'image',
+            ),
+        }),
+    )
+
+
+@admin.register(CloudinaryMediaExample)
+class CloudinaryMediaExampleAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {
+            'fields': (
+                'media',
+            ),
+        }),
+    )
+
+
+@admin.register(CloudinaryCollectionFieldObject)
+class CloudinaryCollectionFieldObjectAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {
+            'fields': (
+                'file_collection', 'image_collection', 'media_collection', 'full_collection'
+            ),
+        }),
+    )

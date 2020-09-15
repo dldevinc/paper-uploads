@@ -1,41 +1,42 @@
-from typing import IO, Any, Dict, Union
+from typing import Any, Dict, Optional
 
-from django.core.files import File
+from cloudinary.models import CloudinaryField
 from django.db import models
 from django.template.defaultfilters import filesizeformat
 from django.utils.translation import gettext_lazy as _
 
 from ...conf import settings
-from ...models.base import ReverseFieldModelMixin
-from .base import CloudinaryFileResource, ReadonlyCloudinaryFileProxyMixin
+from .base import CloudinaryFieldFile, CloudinaryFileResource
 
 
-class CloudinaryMedia(
-    ReverseFieldModelMixin, ReadonlyCloudinaryFileProxyMixin, CloudinaryFileResource
-):
-    cloudinary_resource_type = 'video'
-
+class CloudinaryMedia(CloudinaryFileResource):
+    file = CloudinaryField(
+        _('file'),
+        type=settings.CLOUDINARY_TYPE,
+        resource_type='video',
+        folder=settings.FILES_UPLOAD_TO
+    )
     display_name = models.CharField(_('display name'), max_length=255, blank=True)
 
     class Meta(CloudinaryFileResource.Meta):
         verbose_name = _('media')
         verbose_name_plural = _('media')
 
+    def get_file(self) -> Optional[CloudinaryFieldFile]:
+        if not self.file:
+            return None
+        return CloudinaryFieldFile(self.file, checksum=self.checksum)
+
+    def set_file(self, value):
+        self.file = value
+
+    def get_file_field(self) -> CloudinaryField:
+        return self._meta.get_field('file')
+
     def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:
-            self.display_name = self.name
+            self.display_name = self.basename
         super().save(*args, **kwargs)
-
-    def attach_file(self, file: Union[File, IO], name: str = None, **options):
-        """
-        Установка опций загрузки файла из параметров поля
-        """
-        cloudinary_options = settings.CLOUDINARY.copy()
-        owner_field = self.get_owner_field()
-        if owner_field is not None and hasattr(owner_field, 'cloudinary_options'):
-            cloudinary_options.update(owner_field.cloudinary_options or {})
-        options.setdefault('cloudinary', cloudinary_options)
-        return super().attach_file(file, name, **options)
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -47,7 +48,7 @@ class CloudinaryMedia(
         }
 
     @classmethod
-    def get_validation(cls) -> Dict[str, Any]:
+    def get_configuration(cls) -> Dict[str, Any]:
         # TODO: магический метод
         return {
             'acceptFiles': [

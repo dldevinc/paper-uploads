@@ -5,25 +5,13 @@ from django.template.defaultfilters import filesizeformat
 from django.utils.translation import gettext_lazy as _
 
 from ..conf import settings
-from ..postprocess import postprocess_variation
 from ..storage import upload_storage
 from ..variations import PaperVariation
-from .base import (
-    PostprocessableFileFieldResource,
-    ReadonlyFileProxyMixin,
-    ReverseFieldModelMixin,
-    VariationFile,
-    VersatileImageResourceMixin,
-)
+from .base import FileFieldResource, VersatileImageResourceMixin
 from .fields import VariationalFileField
 
 
-class UploadedImage(
-    ReverseFieldModelMixin,
-    ReadonlyFileProxyMixin,
-    VersatileImageResourceMixin,
-    PostprocessableFileFieldResource,
-):
+class UploadedImage(VersatileImageResourceMixin, FileFieldResource):
     file = VariationalFileField(
         _('file'),
         max_length=255,
@@ -31,20 +19,18 @@ class UploadedImage(
         storage=upload_storage,
     )
 
-    class Meta(PostprocessableFileFieldResource.Meta):
+    class Meta(FileFieldResource.Meta):
         verbose_name = _('image')
         verbose_name_plural = _('images')
 
     def get_file(self) -> FieldFile:
         return self.file
 
-    def postprocess(self, **kwargs):
-        # Исходник изображения не обрабатываем
-        pass
+    def set_file(self, value):
+        self.file = value
 
-    def postprocess_variation(self, file: VariationFile, variation: PaperVariation):
-        owner_field = self.get_owner_field()
-        postprocess_variation(file, variation, field=owner_field)
+    def get_file_field(self) -> VariationalFileField:
+        return self._meta.get_field('file')
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -67,8 +53,9 @@ class UploadedImage(
         return self._variations_cache
 
     @classmethod
-    def get_validation(cls) -> Dict[str, Any]:
+    def get_configuration(cls) -> Dict[str, Any]:
         # TODO: магический метод
         return {
+            'image': True,
             'acceptFiles': ['image/*'],
         }

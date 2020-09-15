@@ -1,6 +1,6 @@
 from ..widgets import FileWidget
-from .base import FileFieldBase
+from .base import FileResourceFieldBase
 
 
-class FileField(FileFieldBase):
+class FileField(FileResourceFieldBase):
     widget = FileWidget
