@@ -2,12 +2,9 @@ from django.apps import apps
 from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 
-from ...models.base import (
-    FileResource,
-    ReverseFieldModelMixin,
-    VersatileImageResourceMixin,
-)
-from ...models.collection import Collection, CollectionResourceItem
+from ...models.base import FileResource, VersatileImageResourceMixin
+from ...models.collection import Collection, CollectionItemBase
+from ...models.mixins import BacklinkModelMixin
 
 
 class Command(BaseCommand):
@@ -52,7 +49,7 @@ class Command(BaseCommand):
                     model._meta.app_label, model._meta.model_name, instance=instance
                 )
 
-                if not instance.is_file_exists():
+                if not instance.file_exists():
                     invalid = True
                     message += "\n  Not found source file"
 
@@ -104,9 +101,7 @@ class Command(BaseCommand):
 
                 if missed_variations:
                     invalid = True
-                    recreatable = (
-                        self.options['fix_missing'] and instance.is_file_exists()
-                    )
+                    recreatable = self.options['fix_missing'] and instance.file_exists()
                     for vname in missed_variations:
                         message += "\n  Not found variation '{}'".format(vname)
                         if recreatable:
@@ -136,7 +131,7 @@ class Command(BaseCommand):
 
     def check_owners(self):
         for model in apps.get_models():
-            if not issubclass(model, ReverseFieldModelMixin):
+            if not issubclass(model, BacklinkModelMixin):
                 continue
 
             if model._meta.proxy:
@@ -149,7 +144,7 @@ class Command(BaseCommand):
             for index, instance in enumerate(
                 model._base_manager.using(self.database).iterator(), start=1
             ):
-                assert isinstance(instance, ReverseFieldModelMixin)
+                assert isinstance(instance, BacklinkModelMixin)
 
                 if self.verbosity >= 2:
                     self.stdout.write('\r' + (' ' * 80), ending='\r')
@@ -211,11 +206,11 @@ class Command(BaseCommand):
                 self.stdout.write('')
 
     def check_item_types(self):
-        total = CollectionResourceItem.objects.using(self.database).count()
+        total = CollectionItemBase.objects.using(self.database).count()
         for index, item in enumerate(
-            CollectionResourceItem.objects.using(self.database).iterator(), start=1
+            CollectionItemBase.objects.using(self.database).iterator(), start=1
         ):
-            assert isinstance(item, CollectionResourceItem)
+            assert isinstance(item, CollectionItemBase)
 
             if self.verbosity >= 2:
                 self.stdout.write('\r' + (' ' * 80), ending='\r')

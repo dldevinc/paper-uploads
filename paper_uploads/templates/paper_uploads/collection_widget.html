@@ -9,7 +9,7 @@
      data-paper-owner-model-name="{{ owner_model_name }}"
      data-paper-owner-fieldname="{{ owner_fieldname }}"
      data-paper-collection-content-type="{{ content_type.pk }}"
-     data-validation='{{ validation|safe }}'>
+     data-configuration='{{ configuration|safe }}'>
 
   <input type="hidden" class="collection__input"
          name="{{ widget.name }}"
@@ -19,26 +19,26 @@
   <div class="collection__items">
     {% if widget.value %}
       {% for item in instance.get_items %}
-        {% include item.admin_template_name %}
+        {% include item.template_name %}
       {% endfor %}
     {% endif %}
   </div>
 
-  <button type="button" class="collection__create-button btn btn-success" {% if widget.value %}disabled{% endif %}
+  <button type="button" class="collection__create-button btn btn-success" {% if widget.value %}hidden{% endif %}
           data-toggle="tooltip" data-placement="top" data-trigger="hover"
           data-html="true" title="{{ _('Create collection') }}">
     <i class="fa fa-fw fa-plus"></i>
     {{ _('Create collection') }}
   </button>
 
-  <button type="button" class="collection__upload-button btn btn-success" {% if not widget.value %}disabled{% endif %}
+  <button type="button" class="collection__upload-button btn btn-success" {% if not widget.value %}hidden{% endif %}
           data-toggle="tooltip" data-placement="top" data-trigger="hover"
           data-html="true" title="{{ _('Select files') }}">
     <i class="fa fa-fw fa-folder-open"></i>
     {{ _('Select files') }}
   </button>
 
-  <button type="button" class="collection__delete-button btn btn-danger" {% if not widget.value %}disabled{% endif %}
+  <button type="button" class="collection__delete-button btn btn-danger" {% if not widget.value %}hidden{% endif %}
           data-toggle="tooltip" data-placement="top" data-trigger="hover"
           data-html="true" title="{{ _('Delete collection') }}">
     <i class="fa fa-fw fa-trash"></i>
@@ -52,12 +52,12 @@
     </small>
   </div>
 
-  {% if validation_lines %}
+  {% if limitations %}
     <div class="image-uploader__limitations small text-muted mt-2">
       <span>{{ _('Please consider the following limitations') }}:</span>
       <ul class="pl-3 mb-0">
-        {% for rule, limit in validation_lines %}
-          <li>{{ rule }}: <em>{{ limit }}</em></li>
+        {% for label, limits in limitations %}
+          <li>{{ label }}: <em>{{ limits }}</em></li>
         {% endfor %}
       </ul>
     </div>
@@ -70,13 +70,13 @@
     </div>
   </div>
 
-  <template class="collection__item-preloader">
+  <template class="collection__preloader-item-template">
     {% include 'paper_uploads/collection_item/preloader.html' %}
   </template>
 
   {% for name, field in collection_cls.item_types.items %}
     <template class="collection__{{ name }}-item-template">
-      {% include field.model.admin_template_name %}
+      {% include field.model.template_name %}
     </template>
   {% endfor %}
 </div>

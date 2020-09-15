@@ -1,61 +1,53 @@
-import time
-from typing import IO, Any, Dict, Iterable, List, Union
+import hashlib
+import re
+from typing import Any, Dict, Iterable, Set, Tuple
 
-from django.apps import apps
-from django.core import exceptions
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.files import File
-from django.db import DEFAULT_DB_ALIAS
+from .typing import FileLike
 
-from .logging import logger
-
-MAX_DB_ATTEMPTS = 3
+filesize_regex = re.compile(r'^([.\d]+)\s*([KMGT])?B?$')
+filesize_units = {"K": 2 ** 10, "M": 2 ** 20, "G": 2 ** 30, "T": 2 ** 40}
 
 
-def remove_dulpicates(seq):
+def checksum(file: FileLike) -> str:
+    """
+    DropBox checksum realization.
+    https://www.dropbox.com/developers/reference/content-hash
+    """
+    if file.closed:
+        file.open('rb')
+    elif file.seekable():
+        file.seek(0)
+
+    blocks = []
+    while True:
+        data = file.read(4 * 1024 * 1024)
+        if not data:
+            break
+        blocks.append(hashlib.sha256(data).digest())
+    return hashlib.sha256(b''.join(blocks)).hexdigest()
+
+
+def remove_dulpicates(seq: Iterable) -> Tuple:
     """
     https://stackoverflow.com/questions/480214/how-do-you-remove-duplicates-from-a-list-whilst-preserving-order
     """
-    seen = set()
+    seen = set()  # type: Set[Any]
     seen_add = seen.add
     return tuple(x for x in seq if not (x in seen or seen_add(x)))
 
 
-def run_validators(value: Union[IO, File], validators: Iterable[Any]):
-    errors = []  # type: List[Any]
-    for v in validators:
-        try:
-            v(value)
-        except exceptions.ValidationError as e:
-            errors.extend(e.error_list)
-
-    if errors:
-        raise exceptions.ValidationError(errors)
-
-
-def lowercase_copy(options: Dict[str, Any]) -> Dict[str, Any]:
+def lowercased_dict_keys(options: Dict[str, Any]) -> Dict[str, Any]:
     """
     Возвращает копию словаря с ключами, приведенными к нижнему регистру.
     """
     return {key.lower(): value for key, value in options.items()}
 
 
-def get_instance(
-    app_label: str, model_name: str, object_id: int, using: str = DEFAULT_DB_ALIAS
-):
+def parse_filesize(value: str) -> int:
     """
-    Получение экземпляра модели по названию приложения, модели и ID.
+    Парсинг человеко-понятного значения размера файла.
+    Допустимые форматы значения: 4k, 4kb, 4KB, 4 K, 4 Kb
     """
-    model_class = apps.get_model(app_label, model_name)
-    attempts = 1
-    while True:
-        try:
-            return model_class._base_manager.using(using).get(pk=object_id)
-        except ObjectDoesNotExist:
-            # delay recheck if transaction not committed yet
-            attempts += 1
-            if attempts > MAX_DB_ATTEMPTS:
-                logger.exception('Instance #%s not found' % object_id)
-                raise
-            else:
-                time.sleep(1)
+    match = filesize_regex.match(value.upper().strip())
+    number, unit = match.groups()
+    return int(float(number) * filesize_units.get(unit, 1))

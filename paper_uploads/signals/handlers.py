@@ -10,7 +10,7 @@ class RenameFileField(migrations.RunPython):
         super().__init__(self.rename_forward, self.rename_backward)
 
     def _rename(self, apps, schema_editor, old_name, new_name):
-        from ..models.fields import FileFieldBase
+        from ..models.fields.base import FileResourceFieldBase
 
         db = schema_editor.connection.alias
         state_model = apps.get_model(self.app_label, self.model_name)
@@ -18,7 +18,7 @@ class RenameFileField(migrations.RunPython):
             if field.name != self.new_name:
                 continue
 
-            if isinstance(field, FileFieldBase):
+            if isinstance(field, FileResourceFieldBase):
                 with transaction.atomic(using=db):
                     field.related_model.objects.db_manager(db).filter(
                         owner_app_label=self.app_label,
@@ -41,14 +41,14 @@ class RenameFileModel(migrations.RunPython):
         super().__init__(self.rename_forward, self.rename_backward)
 
     def _rename(self, apps, schema_editor, old_name, new_name, backward=False):
-        from ..models.fields import FileFieldBase
+        from ..models.fields.base import FileResourceFieldBase
 
         old_name = old_name.lower()
         new_name = new_name.lower()
         db = schema_editor.connection.alias
         state_model = apps.get_model(self.app_label, old_name if backward else new_name)
         for field in state_model._meta.fields:
-            if isinstance(field, FileFieldBase):
+            if isinstance(field, FileResourceFieldBase):
                 with transaction.atomic(using=db):
                     field.related_model.objects.db_manager(db).filter(
                         owner_app_label=self.app_label,

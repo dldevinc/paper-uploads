@@ -1,14 +1,30 @@
 from typing import Any, List
 
+from django.contrib.contenttypes.fields import GenericRelation
 from django.core import checks
+from django.db import DEFAULT_DB_ALIAS
 from django.db.models import Field
 from django.utils.functional import cached_property
 
 from ... import forms
-from .base import FileFieldBase
+from ...helpers import _get_item_types
+from .base import FileResourceFieldBase
 
 
-class CollectionField(FileFieldBase):
+class ContentItemRelation(GenericRelation):
+    """
+    FIX: cascade delete polymorphic
+    https://github.com/django-polymorphic/django-polymorphic/issues/34
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def bulk_related_objects(self, objs, using=DEFAULT_DB_ALIAS):
+        return super().bulk_related_objects(objs).non_polymorphic()
+
+
+class CollectionField(FileResourceFieldBase):
     def __init__(self, to, **kwargs):
         kwargs['blank'] = True
         super().__init__(to=to, **kwargs)
@@ -19,7 +35,7 @@ class CollectionField(FileFieldBase):
             del kwargs['blank']
         return name, path, args, kwargs
 
-    def _check_relation_class(self):
+    def _check_relation_class(self, base, error_message):
         from ...models.collection import CollectionBase
 
         rel_is_string = isinstance(self.remote_field.model, str)
@@ -42,21 +58,18 @@ class CollectionField(FileFieldBase):
         return []
 
     def formfield(self, **kwargs):
-        return super().formfield(**{
-            'form_class': forms.CollectionField,
-            **kwargs
-        })
+        return super().formfield(**{'form_class': forms.CollectionField, **kwargs})
 
 
-class ItemField:
+class CollectionItem:
     """
-    Поле для подключения классов элементов галереи.
-    Допустимо для использования только в подклассах галерей.
+    Поле для подключения классов элементов коллекции.
+    Может использоваться только в подклассах CollectionBase.
     """
 
-    default_validators = []     # type: List[Any]
+    default_validators = []  # type: List[Any]
 
-    def __init__(self, to, name=None, validators=(), postprocess=None, options=None):
+    def __init__(self, to, name=None, validators=(), options=None):
         self.name = name
 
         try:
@@ -69,7 +82,6 @@ class ItemField:
 
         self.model = to
         self.options = options or {}
-        self.postprocess = postprocess
         self._validators = list(validators)
 
     def check(self, **kwargs):
@@ -84,7 +96,6 @@ class ItemField:
 
     def contribute_to_class(self, cls, name, **kwargs):
         self.name = self.name or name
-        item_types_attribute = '_{}__item_types'.format(cls.__name__)
-        item_types = getattr(cls, item_types_attribute, None)
+        item_types = _get_item_types(cls)
         if item_types is not None:
             item_types[self.name] = self

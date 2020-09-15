@@ -13,11 +13,13 @@ class UploadedFileBaseForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance:
-            self.fields['new_name'].initial = self.instance.name
+            self.fields['new_name'].initial = self.instance.basename
 
     def save(self, commit=True):
         old_name = self.instance.name
         new_name = self.cleaned_data['new_name']
         if old_name != new_name:
+            if self.instance.extension:
+                new_name += '.' + self.instance.extension
             self.instance.rename_file(new_name)
         return super().save(commit)

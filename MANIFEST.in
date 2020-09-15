@@ -1,8 +1,9 @@
 include LICENSE
 include README.md
+include CHANGELOG.md
 
 recursive-include paper_uploads *.html
 recursive-include paper_uploads/static/paper_uploads/dist *.svg *.css *.js *.map
 recursive-exclude tests *
-recursive-exclude paper_uploads/tests *
-recursive-exclude paper_uploads/cloudinary/tests *
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]

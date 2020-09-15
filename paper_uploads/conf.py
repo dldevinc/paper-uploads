@@ -4,12 +4,10 @@ from django.utils.module_loading import import_string
 DEFAULTS = {
     'STORAGE': 'django.core.files.storage.FileSystemStorage',
     'STORAGE_OPTIONS': {},
-
     'FILES_UPLOAD_TO': 'files/%Y-%m-%d',
     'IMAGES_UPLOAD_TO': 'images/%Y-%m-%d',
     'COLLECTION_FILES_UPLOAD_TO': 'collections/files/%Y-%m-%d',
     'COLLECTION_IMAGES_UPLOAD_TO': 'collections/images/%Y-%m-%d',
-
     'COLLECTION_ITEM_PREVIEW_WIDTH': 144,
     'COLLECTION_ITEM_PREVIEW_HEIGTH': 108,
     'COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS': dict(
@@ -22,26 +20,25 @@ DEFAULTS = {
             ),
             webp=dict(
                 quality=65
-            )
+            ),
         ),
     ),
-
     'RQ_ENABLED': False,
     'RQ_QUEUE_NAME': 'default',
+    'VARIATION_DEFAULTS': None,
 
-    'VARIATION_DEFAULTS': {},
-    'POSTPROCESS': {},
-    'CLOUDINARY': {
+    'CLOUDINARY_TYPE': 'private',
+    'CLOUDINARY_TEMP_DIR': 'cloudinary',
+    'CLOUDINARY_UPLOADER_OPTIONS': {
         'use_filename': True,
         'unique_filename': True,
         'overwrite': True,
-    }
+        'invalidate': True
+    },
 }
 
 # List of settings that may be in string import notation.
-IMPORT_STRINGS = (
-    'STORAGE',
-)
+IMPORT_STRINGS = ('STORAGE',)
 
 # Иконки для файлов в галерее
 FILE_ICON_DEFAULT = 'unknown'
@@ -52,6 +49,7 @@ FILE_ICON_OVERRIDES = {
     'flac': 'audio',
     'flv': 'video',
     'gz': 'archive',
+    'jpeg': 'jpg',
     'm4a': 'audio',
     'm4v': 'video',
     'mkv': 'video',
@@ -134,16 +132,7 @@ class Settings:
             return perform_import(value, name)
         return value
 
-    def prepare_postprocess(self, value):
-        from .utils import lowercase_copy
-
-        if value is False or value is None:
-            return value
-        return lowercase_copy(value)
-
 
 settings = Settings(
-    getattr(conf.settings, 'PAPER_UPLOADS', {}),
-    DEFAULTS,
-    IMPORT_STRINGS
+    getattr(conf.settings, 'PAPER_UPLOADS', {}), DEFAULTS, IMPORT_STRINGS
 )
