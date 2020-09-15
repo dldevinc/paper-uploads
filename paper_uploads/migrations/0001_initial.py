@@ -203,7 +203,6 @@ class Migration(migrations.Migration):
             options={
                 'proxy': True,
                 'indexes': [],
-                'constraints': [],
             },
             bases=('paper_uploads.collection',),
             managers=[
