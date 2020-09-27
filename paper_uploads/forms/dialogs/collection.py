@@ -1,3 +1,4 @@
+from django import forms
 from ...models.collection import FileItem, ImageItem
 from .base import UploadedFileBaseForm
 
@@ -12,3 +13,8 @@ class ImageItemDialog(UploadedFileBaseForm):
     class Meta:
         model = ImageItem
         fields = ('new_name', 'title', 'description')
+        widgets = {
+            'description': forms.Textarea(attrs={
+                'rows': 3
+            })
+        }

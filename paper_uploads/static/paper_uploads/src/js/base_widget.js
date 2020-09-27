@@ -6,8 +6,7 @@ import {showError} from "./_utils";
 
 // PaperAdmin API
 const EventEmitter = window.paperAdmin.EventEmitter;
-const bootbox = window.paperAdmin.bootbox;
-const preloader = window.paperAdmin.preloader;
+const modals = window.paperAdmin.modals;
 const formUtils = window.paperAdmin.formUtils;
 
 /**
@@ -176,25 +175,22 @@ BaseWidget.prototype.initUploader = function() {
 
 /**
  * Отправка формы редактирования файла.
- * @param $dialog
+ * @param modal
  * @private
  */
-BaseWidget.prototype._change = function($dialog) {
+BaseWidget.prototype._change = function(modal) {
     if (isNaN(this.instanceId)) {
         return
     }
 
     const _this = this;
-    const $form = $dialog.find('form');
-    Promise.all([
-        preloader.show(),
-        fetch($form.prop('action'), {
-            method: 'POST',
-            credentials: 'same-origin',
-            body: new FormData($form.get(0))
-        })
-    ]).then(function(values) {
-        const response = values[1];
+    const $form = $(modal._element).find('form');
+    const preloader = modals.showPreloader();
+    fetch($form.prop('action'), {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: new FormData($form.get(0))
+    }).then(function(response) {
         if (!response.ok) {
             const error = new Error(`${response.status} ${response.statusText}`);
             error.response = response;
@@ -208,12 +204,12 @@ BaseWidget.prototype._change = function($dialog) {
             throw error
         }
 
-        preloader.hide();
+        preloader.destroy();
         formUtils.cleanFormErrors($form.get(0));
         if (response.form_errors) {
             formUtils.addFormErrorsFromJSON($form.get(0), response.form_errors);
         } else {
-            $dialog.modal('hide');
+            modal.destroy();
 
             const fileName = _this.element.querySelector('.file-name');
             fileName && (fileName.textContent = response.name);
@@ -225,7 +221,8 @@ BaseWidget.prototype._change = function($dialog) {
             previewLink && (previewLink.href = response.url);
         }
     }).catch(function(error) {
-        preloader.hide();
+        preloader.destroy();
+
         if ((typeof error === 'object') && error.response && error.response.errors) {
             showError(error.response.errors);
         } else if (error instanceof Error) {
@@ -253,15 +250,12 @@ BaseWidget.prototype._delete = function() {
     data.append('instance_id', this.instanceId.toString());
 
     const _this = this;
-    Promise.all([
-        preloader.show(),
-        fetch(this._opts.urls.delete, {
-            method: 'POST',
-            credentials: 'same-origin',
-            body: data
-        })
-    ]).then(function(values) {
-        const response = values[1];
+    const preloader = modals.showPreloader();
+    fetch(this._opts.urls.delete, {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: data
+    }).then(function(response) {
         if (!response.ok) {
             const error = new Error(`${response.status} ${response.statusText}`);
             error.response = response;
@@ -275,7 +269,7 @@ BaseWidget.prototype._delete = function() {
             throw error
         }
 
-        preloader.hide();
+        preloader.destroy();
         _this.empty = true;
         _this.instanceId = '';
 
@@ -287,7 +281,8 @@ BaseWidget.prototype._delete = function() {
 
         _this.trigger('upload:deleted');
     }).catch(function(error) {
-        preloader.hide();
+        preloader.destroy();
+
         if ((typeof error === 'object') && error.response && error.response.errors) {
             showError(error.response.errors);
         } else if (error instanceof Error) {
@@ -312,25 +307,21 @@ BaseWidget.prototype.addListeners = function() {
     this.deleteButton.addEventListener('click', function(event) {
         event.preventDefault();
 
-        bootbox.dialog({
-            size: 'small',
+        modals.createModal({
             title: gettext('Confirmation'),
             message: gettext('Are you sure you want to <b>DELETE</b> this file?'),
-            onEscape: true,
-            buttons: {
-                cancel: {
-                    label: gettext('Cancel'),
-                    className: 'btn-outline-info'
-                },
-                confirm: {
-                    label: gettext('Delete'),
-                    className: 'btn-danger',
-                    callback: function() {
-                        _this._delete();
-                    }
+            buttons: [{
+                label: gettext('Cancel'),
+                className: 'btn-outline-info'
+            }, {
+                autofocus: true,
+                label: gettext('Delete'),
+                className: 'btn-danger',
+                callback: function() {
+                    _this._delete();
                 }
-            }
-        });
+            }]
+        }).show();
     });
 
     // редактирование файла
@@ -345,19 +336,15 @@ BaseWidget.prototype.addListeners = function() {
         data.append('instance_id', _this.instanceId.toString());
         const queryString = new URLSearchParams(data).toString();
 
-        Promise.all([
-            preloader.show(),
-            fetch(`${_this._opts.urls.change}?${queryString}`, {
-                credentials: 'same-origin',
-            })
-        ]).then(function(values) {
-            const response = values[1];
+        const preloader = modals.showPreloader();
+        fetch(`${_this._opts.urls.change}?${queryString}`, {
+            credentials: 'same-origin',
+        }).then(function(response) {
             if (!response.ok) {
                 const error = new Error(`${response.status} ${response.statusText}`);
                 error.response = response;
                 throw error;
             }
-
             return response.json();
         }).then(function(response) {
             if (response.errors && response.errors.length) {
@@ -366,34 +353,33 @@ BaseWidget.prototype.addListeners = function() {
                 throw error
             }
 
-            preloader.hide();
-            const $dialog = bootbox.dialog({
+            preloader.destroy();
+
+            const modal = modals.createModal({
                 title: gettext('Edit file'),
                 message: response.form,
-                onEscape: true,
-                buttons: {
-                    cancel: {
-                        label: gettext('Cancel'),
-                        className: 'btn-outline-info'
-                    },
-                    ok: {
-                        label: gettext('Save'),
-                        className: 'btn-success',
-                        callback: function() {
-                            _this._change(this);
-                            return false;
-                        }
+                buttons: [{
+                    label: gettext('Cancel'),
+                    className: 'btn-outline-info'
+                }, {
+                    autofocus: true,
+                    label: gettext('Save'),
+                    className: 'btn-success',
+                    callback: function() {
+                        _this._change(this);
+                        return false;
                     }
-                }
-            });
+                }]
+            }).show();
 
-            const $form = $dialog.find('form');
+            const $form = $(modal._element).find('form');
             $form.on('submit', function() {
-                _this._change($dialog);
+                _this._change(modal);
                 return false;
             });
         }).catch(function(error) {
-            preloader.hide();
+            preloader.destroy();
+
             if ((typeof error === 'object') && error.response && error.response.errors) {
                 showError(error.response.errors);
             } else if (error instanceof Error) {
