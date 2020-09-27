@@ -40,21 +40,21 @@
     <div class="input-group-append">
       <div class="image-uploader__ready-buttons">
         <a {% if instance %}href="{{ instance.get_file_url }}"{% endif %}
-           target="_blank" tabindex="-1"
+           target="_blank" tabindex="0"
            class="image-uploader__link input-group-text text-info"
            data-toggle="tooltip" data-placement="top" data-trigger="hover"
            data-html="true" title="{{ _('View file') }}">
           <i class="fa fa-fw fa-eye"></i>
         </a>
 
-        <button type="button" tabindex="-1"
+        <button type="button" tabindex="0"
                 class="image-uploader__change-button input-group-text text-info"
                 data-toggle="tooltip" data-placement="top" data-trigger="hover"
                 data-html="true" title="{{ _('Edit file') }}">
           <i class="fa fa-fw fa-pencil"></i>
         </button>
 
-        <button type="button" tabindex="-1"
+        <button type="button" tabindex="0"
                 class="image-uploader__delete-button input-group-text text-danger"
                 data-toggle="tooltip" data-placement="top" data-trigger="hover"
                 data-html="true" title="{{ _('Delete file') }}">
@@ -62,7 +62,7 @@
         </button>
       </div>
       <div class="image-uploader__loading-buttons">
-        <button type="button" tabindex="-1"
+        <button type="button" tabindex="0"
                 class="image-uploader__cancel-button input-group-text text-danger"
                 data-toggle="tooltip" data-placement="top" data-trigger="hover"
                 data-html="true" title="{{ _('Cancel upload') }}">
