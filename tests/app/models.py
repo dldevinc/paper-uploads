@@ -191,6 +191,8 @@ class CompleteCollection(Collection):
 
 
 class FileFieldObject(models.Model):
+    name = models.CharField(_('name'), max_length=128)
+
     file = FileField(_('file'), blank=True)
     file_required = FileField(_('required file'))
 
@@ -224,13 +226,12 @@ class FileFieldObject(models.Model):
         verbose_name_plural = _('Files')
 
     def __str__(self):
-        if self.file:
-            return self.file.name
-        else:
-            return 'FileObject'
+        return self.name
 
 
 class ImageFieldObject(models.Model):
+    name = models.CharField(_('name'), max_length=128)
+
     image = ImageField(_('image'), blank=True)
     image_required = ImageField(_('required image'))
 
@@ -280,10 +281,7 @@ class ImageFieldObject(models.Model):
         verbose_name_plural = _('Images')
 
     def __str__(self):
-        if self.image:
-            return self.image.name
-        else:
-            return 'ImageObject'
+        return self.name
 
 
 class CollectionFieldObject(models.Model):
