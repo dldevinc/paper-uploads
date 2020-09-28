@@ -185,26 +185,27 @@ BaseWidget.prototype._change = function(modal) {
 
     const _this = this;
     const $form = $(modal._element).find('form');
-    const preloader = modals.showPreloader();
-    fetch($form.prop('action'), {
-        method: 'POST',
-        credentials: 'same-origin',
-        body: new FormData($form.get(0))
-    }).then(function(response) {
-        if (!response.ok) {
-            const error = new Error(`${response.status} ${response.statusText}`);
-            error.response = response;
-            throw error;
-        }
-        return response.json();
-    }).then(function(response) {
+
+    modals.softPreloaderPromise(
+        fetch($form.prop('action'), {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: new FormData($form.get(0))
+        }).then(function(response) {
+            if (!response.ok) {
+                const error = new Error(`${response.status} ${response.statusText}`);
+                error.response = response;
+                throw error;
+            }
+            return response.json();
+        })
+    ).then(function(response) {
         if (response.errors && response.errors.length) {
             const error = new Error('Invalid request');
             error.response = response;
             throw error
         }
 
-        preloader.destroy();
         formUtils.cleanFormErrors($form.get(0));
         if (response.form_errors) {
             formUtils.addFormErrorsFromJSON($form.get(0), response.form_errors);
@@ -221,8 +222,6 @@ BaseWidget.prototype._change = function(modal) {
             previewLink && (previewLink.href = response.url);
         }
     }).catch(function(error) {
-        preloader.destroy();
-
         if ((typeof error === 'object') && error.response && error.response.errors) {
             showError(error.response.errors);
         } else if (error instanceof Error) {
@@ -250,26 +249,26 @@ BaseWidget.prototype._delete = function() {
     data.append('instance_id', this.instanceId.toString());
 
     const _this = this;
-    const preloader = modals.showPreloader();
-    fetch(this._opts.urls.delete, {
-        method: 'POST',
-        credentials: 'same-origin',
-        body: data
-    }).then(function(response) {
-        if (!response.ok) {
-            const error = new Error(`${response.status} ${response.statusText}`);
-            error.response = response;
-            throw error;
-        }
-        return response.json();
-    }).then(function(response) {
+    modals.softPreloaderPromise(
+        fetch(this._opts.urls.delete, {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: data
+        }).then(function(response) {
+            if (!response.ok) {
+                const error = new Error(`${response.status} ${response.statusText}`);
+                error.response = response;
+                throw error;
+            }
+            return response.json();
+        })
+    ).then(function(response) {
         if (response.errors && response.errors.length) {
             const error = new Error('Invalid request');
             error.response = response;
             throw error
         }
 
-        preloader.destroy();
         _this.empty = true;
         _this.instanceId = '';
 
@@ -281,8 +280,6 @@ BaseWidget.prototype._delete = function() {
 
         _this.trigger('upload:deleted');
     }).catch(function(error) {
-        preloader.destroy();
-
         if ((typeof error === 'object') && error.response && error.response.errors) {
             showError(error.response.errors);
         } else if (error instanceof Error) {
@@ -336,24 +333,23 @@ BaseWidget.prototype.addListeners = function() {
         data.append('instance_id', _this.instanceId.toString());
         const queryString = new URLSearchParams(data).toString();
 
-        const preloader = modals.showPreloader();
-        fetch(`${_this._opts.urls.change}?${queryString}`, {
-            credentials: 'same-origin',
-        }).then(function(response) {
-            if (!response.ok) {
-                const error = new Error(`${response.status} ${response.statusText}`);
-                error.response = response;
-                throw error;
-            }
-            return response.json();
-        }).then(function(response) {
+        modals.softPreloaderPromise(
+            fetch(`${_this._opts.urls.change}?${queryString}`, {
+                credentials: 'same-origin',
+            }).then(function(response) {
+                if (!response.ok) {
+                    const error = new Error(`${response.status} ${response.statusText}`);
+                    error.response = response;
+                    throw error;
+                }
+                return response.json();
+            })
+        ).then(function(response) {
             if (response.errors && response.errors.length) {
                 const error = new Error('Invalid request');
                 error.response = response;
                 throw error
             }
-
-            preloader.destroy();
 
             const modal = modals.createModal({
                 title: gettext('Edit file'),
@@ -378,8 +374,6 @@ BaseWidget.prototype.addListeners = function() {
                 return false;
             });
         }).catch(function(error) {
-            preloader.destroy();
-
             if ((typeof error === 'object') && error.response && error.response.errors) {
                 showError(error.response.errors);
             } else if (error instanceof Error) {

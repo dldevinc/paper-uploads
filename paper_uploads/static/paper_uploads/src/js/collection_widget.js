@@ -625,11 +625,9 @@ Collection.prototype.addListeners = function() {
 
         event.preventDefault();
 
-        const preloader = modals.showPreloader();
-        _this._createCollection().then(function() {
-            preloader.destroy();
-        }).catch(function(error) {
-            preloader.destroy();
+        modals.softPreloaderPromise(
+            _this._createCollection()
+        ).catch(function(error) {
             if ((typeof error === 'object') && error.response && error.response.errors) {
                 showError(error.response.errors);
             } else if (error instanceof Error) {
@@ -659,11 +657,9 @@ Collection.prototype.addListeners = function() {
                 label: gettext('Delete'),
                 className: 'btn-danger',
                 callback: function() {
-                    const preloader = modals.showPreloader();
-                    _this._deleteCollection().then(function() {
-                        preloader.destroy();
-                    }).catch(function(error) {
-                        preloader.destroy();
+                    modals.softPreloaderPromise(
+                        _this._deleteCollection()
+                    ).catch(function(error) {
                         if ((typeof error === 'object') && error.response && error.response.errors) {
                             showError(error.response.errors);
                         } else if (error instanceof Error) {
@@ -701,24 +697,23 @@ Collection.prototype.addListeners = function() {
         data.append('item_type', item.dataset.itemType);
         const queryString = new URLSearchParams(data).toString();
 
-        const preloader = modals.showPreloader();
-        fetch(`${_this._opts.urls.changeItem}?${queryString}`, {
-            credentials: 'same-origin',
-        }).then(function(response) {
-            if (!response.ok) {
-                const error = new Error(`${response.status} ${response.statusText}`);
-                error.response = response;
-                throw error;
-            }
-            return response.json();
-        }).then(function(response) {
+        modals.softPreloaderPromise(
+            fetch(`${_this._opts.urls.changeItem}?${queryString}`, {
+                credentials: 'same-origin',
+            }).then(function(response) {
+                if (!response.ok) {
+                    const error = new Error(`${response.status} ${response.statusText}`);
+                    error.response = response;
+                    throw error;
+                }
+                return response.json();
+            })
+        ).then(function(response) {
             if (response.errors && response.errors.length) {
                 const error = new Error('Invalid request');
                 error.response = response;
                 throw error
             }
-
-            preloader.destroy();
 
             const modal = modals.createModal({
                 title: gettext('Edit file'),
@@ -731,11 +726,9 @@ Collection.prototype.addListeners = function() {
                     label: gettext('Save'),
                     className: 'btn-success',
                     callback: function() {
-                        const preloader = modals.showPreloader();
-                        _this._changeItem(item, modal).then(function() {
-                            preloader.destroy();
-                        }).catch(function(error) {
-                            preloader.destroy();
+                        modals.softPreloaderPromise(
+                            _this._changeItem(item, modal)
+                        ).catch(function(error) {
                             if ((typeof error === 'object') && error.response && error.response.errors) {
                                 showError(error.response.errors);
                             } else if (error instanceof Error) {
@@ -751,11 +744,9 @@ Collection.prototype.addListeners = function() {
 
             const $form = $(modal._element).find('form');
             $form.on('submit', function() {
-                const preloader = modals.showPreloader();
-                _this._changeItem(item, modal).then(function() {
-                    preloader.destroy();
-                }).catch(function(error) {
-                    preloader.destroy();
+                modals.softPreloaderPromise(
+                    _this._changeItem(item, modal)
+                ).catch(function(error) {
                     if ((typeof error === 'object') && error.response && error.response.errors) {
                         showError(error.response.errors);
                     } else if (error instanceof Error) {
@@ -767,7 +758,6 @@ Collection.prototype.addListeners = function() {
                 return false;
             });
         }).catch(function(error) {
-            preloader.destroy();
             if ((typeof error === 'object') && error.response && error.response.errors) {
                 showError(error.response.errors);
             } else if (error instanceof Error) {
@@ -799,11 +789,10 @@ Collection.prototype.addListeners = function() {
         event.preventDefault();
 
         const item = event.target.closest(_this._opts.collection.item);
-        const preloader = modals.showPreloader();
-        _this._deleteItem(item).then(function() {
-            preloader.destroy();
-        }).catch(function(error) {
-            preloader.destroy();
+
+        modals.softPreloaderPromise(
+            _this._deleteItem(item)
+        ).catch(function(error) {
             if ((typeof error === 'object') && error.response && error.response.errors) {
                 showError(error.response.errors);
             } else if (error instanceof Error) {
@@ -883,11 +872,9 @@ Collection.prototype.addListeners = function() {
                                 return _this._deleteItem(item)
                             });
 
-                            const preloader = modals.showPreloader();
-                            allSettled(
-                                delete_promises
+                            modals.softPreloaderPromise(
+                                allSettled(delete_promises)
                             ).then(function(results) {
-                                preloader.destroy();
                                 for (let result of results) {
                                     if (result.status === 'rejected') {
                                         const error = result.reason;
