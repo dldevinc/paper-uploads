@@ -41,13 +41,15 @@
 
 
 .collection-item {
-  overflow: hidden;
   margin-right: 0.75rem;
   margin-bottom: 1rem;
   flex: 0 0 auto;
   user-select: none;
+  outline-offset: 1px;
   border-radius: 0.25rem;
-  background-color: darken(#f8f9fa, 2%);
+  background-color: #f8f6f4;
+  border: 1px solid #ced4da;
+  box-sizing: content-box;
 
   &.sortable-ghost {
     opacity: 0.5;
@@ -59,24 +61,20 @@
 
   &__header {
     display: flex;
-    border: 1px solid #ced4da;
-    border-top-left-radius: inherit;
-    border-top-right-radius: inherit;
+    border-bottom: 1px solid #ced4da;
   }
 
   &__footer {
-    padding: 0.125rem;
-    min-height: 36px;
-    border: 1px solid #ced4da;
-    border-bottom-left-radius: inherit;
-    border-bottom-right-radius: inherit;
+    padding: 0.25rem;
+    min-height: 40px;
+    border-top: 1px solid #ced4da;
   }
 
   &__name {
     flex: 1 0 0;
-    padding: 0.125rem 0.25rem 0.125rem 0.375rem;
+    padding: 0.125rem 0.25rem 0.125rem 0.5rem;
     overflow: hidden;
-    font-size: 12px;
+    font-size: 14px;
     align-self: center;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -93,7 +91,7 @@
   }
 
   &__checkbox-holder {
-    line-height: 1;
+
   }
 
   &__checkbox {
@@ -103,8 +101,9 @@
 
   &__delete-button,
   &__cancel-button {
-    padding: .25rem .375rem;
-    line-height: 1.25;
+    padding: .25rem .4375rem;
+    font-size: 1rem;
+    line-height: 1.375;
     text-decoration: none;
     border: none;
     background-color: transparent;
@@ -130,8 +129,6 @@
   &--preloader {
     .collection-item__preview {
       position: relative;
-      border-left: 1px solid #ced4da;
-      border-right: 1px solid #ced4da;
     }
 
     .progress {
@@ -169,15 +166,6 @@
   &--file {
     .collection-item__preview {
       padding: 10px;
-      border-left: 1px solid #ced4da;
-      border-right: 1px solid #ced4da;
-    }
-  }
-
-  &--svg {
-    .collection-item__preview {
-      border-left: 1px solid #ced4da;
-      border-right: 1px solid #ced4da;
     }
   }
 }
