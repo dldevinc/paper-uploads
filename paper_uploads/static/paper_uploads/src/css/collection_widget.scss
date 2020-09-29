@@ -24,7 +24,7 @@
   }
 
   &__help-text {
-    margin-top: 2px;
+    margin-top: 6px;
   }
 
   &__kbd {
@@ -65,8 +65,8 @@
   }
 
   &__footer {
-    padding: 0.25rem;
-    min-height: 40px;
+    padding: .125rem;
+    min-height: 36px;
     border-top: 1px solid #ced4da;
   }
 
@@ -165,7 +165,7 @@
 
   &--file {
     .collection-item__preview {
-      padding: 10px;
+      padding: 20px;
     }
   }
 }
