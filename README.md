@@ -717,7 +717,7 @@ PAPER_UPLOADS = {
 ### `COLLECTION_ITEM_PREVIEW_WIDTH`, `COLLECTION_ITEM_PREVIEW_HEIGTH`
 Размеры превью элементов коллекций в админке.
 
-Значение по умолчанию: `144` x `108`
+Значение по умолчанию: `180` x `135`
 
 ### `COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS`
 Вариации, добавляемые к каждому классу изображений коллекций
