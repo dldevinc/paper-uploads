@@ -1,42 +1,17 @@
 // PaperAdmin API
-const bootbox = window.paperAdmin.bootbox;
+const modals = window.paperAdmin.modals;
 
 let _errors = [];
 
 
-function formatErrors(errors) {
-    if (Array.isArray(errors)) {
-        if (errors.length === 1) {
-            return errors[0]
-        } else {
-            let output = [
-                `Please correct the following errors:`,
-                `<ul class="px-4 mb-0">`,
-            ];
-            for (let i=0, l=errors.length; i<l; i++) {
-                output.push(`<li>${errors[i]}</li>`);
-            }
-            output.push(`</ul>`);
-            output = output.join('\n');
-            return output
-        }
-    }
-    return errors
-}
-
-
 /**
  * Мгновенный показ сообщения.
- *
  * @param {String|String[]} error
  */
 function showError(error) {
     console.debug(`Show error: ${error}`);
-    setTimeout(function() {
-        bootbox.alert({
-            title: 'Error',
-            message: formatErrors(error)
-        });
+    return modals.showErrors(error, {
+        title: 'Error'
     });
 }
 
@@ -61,18 +36,12 @@ function showCollectedErrors() {
         return
     }
 
-    setTimeout(function() {
-        if (!_errors || !_errors.length) {
-            return
-        }
-
-        bootbox.alert({
-            title: 'Error',
-            message: formatErrors(_errors)
-        });
-
-        _errors = [];
+    const modal = modals.showErrors(_errors, {
+        title: 'Error'
     });
+
+    _errors = [];
+    return modal;
 }
 
 export {

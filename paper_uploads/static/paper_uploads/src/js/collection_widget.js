@@ -9,9 +9,8 @@ import {showError, collectError, showCollectedErrors} from "./_utils";
 const EventEmitter = window.paperAdmin.EventEmitter;
 const whenDomReady = window.paperAdmin.whenDomReady;
 const Sortable = window.paperAdmin.Sortable;
-const bootbox = window.paperAdmin.bootbox;
+const modals = window.paperAdmin.modals;
 const emitters = window.paperAdmin.emitters;
-const preloader = window.paperAdmin.preloader;
 const formUtils = window.paperAdmin.formUtils;
 
 // CSS
@@ -479,11 +478,11 @@ Collection.prototype._deleteItem = function(item) {
 /**
  * Отправка формы редактирования элемента.
  * @param item
- * @param $dialog
+ * @param modal
  * @private
  * @returns {Promise}
  */
-Collection.prototype._changeItem = function(item, $dialog) {
+Collection.prototype._changeItem = function(item, modal) {
     if (isNaN(this.collectionId)) {
         return Promise.reject('collection required');
     }
@@ -494,7 +493,7 @@ Collection.prototype._changeItem = function(item, $dialog) {
     }
 
     const _this = this;
-    const $form = $dialog.find('form');
+    const $form = $(modal._element).find('form');
     return fetch($form.prop('action'), {
         method: 'POST',
         credentials: 'same-origin',
@@ -517,7 +516,7 @@ Collection.prototype._changeItem = function(item, $dialog) {
         if (response.form_errors) {
             formUtils.addFormErrorsFromJSON($form.get(0), response.form_errors);
         } else {
-            $dialog.modal('hide');
+            modal.destroy();
 
             const preview = item.querySelector(_this._opts.item.preview);
             preview && (preview.innerHTML = response.preview);
@@ -626,13 +625,9 @@ Collection.prototype.addListeners = function() {
 
         event.preventDefault();
 
-        Promise.all([
-            preloader.show(),
+        modals.softPreloaderPromise(
             _this._createCollection()
-        ]).then(function() {
-            preloader.hide();
-        }).catch(function(error) {
-            preloader.hide();
+        ).catch(function(error) {
             if ((typeof error === 'object') && error.response && error.response.errors) {
                 showError(error.response.errors);
             } else if (error instanceof Error) {
@@ -651,39 +646,31 @@ Collection.prototype.addListeners = function() {
 
         event.preventDefault();
 
-        bootbox.dialog({
-            size: 'small',
+        modals.createModal({
             title: gettext('Confirmation'),
             message: gettext('Are you sure you want to <b>DELETE</b> this collection?'),
-            onEscape: true,
-            buttons: {
-                cancel: {
-                    label: gettext('Cancel'),
-                    className: 'btn-outline-info'
-                },
-                confirm: {
-                    label: gettext('Delete'),
-                    className: 'btn-danger',
-                    callback: function() {
-                        Promise.all([
-                            preloader.show(),
-                            _this._deleteCollection()
-                        ]).then(function() {
-                            preloader.hide()
-                        }).catch(function(error) {
-                            preloader.hide();
-                            if ((typeof error === 'object') && error.response && error.response.errors) {
-                                showError(error.response.errors);
-                            } else if (error instanceof Error) {
-                                showError(error.message);
-                            } else {
-                                showError(error);
-                            }
-                        });
-                    }
+            buttons: [{
+                label: gettext('Cancel'),
+                className: 'btn-outline-info'
+            }, {
+                autofocus: true,
+                label: gettext('Delete'),
+                className: 'btn-danger',
+                callback: function() {
+                    modals.softPreloaderPromise(
+                        _this._deleteCollection()
+                    ).catch(function(error) {
+                        if ((typeof error === 'object') && error.response && error.response.errors) {
+                            showError(error.response.errors);
+                        } else if (error instanceof Error) {
+                            showError(error.message);
+                        } else {
+                            showError(error);
+                        }
+                    });
                 }
-            }
-        });
+            }]
+        }).show();
     });
 
     // редактирование элемента
@@ -710,71 +697,56 @@ Collection.prototype.addListeners = function() {
         data.append('item_type', item.dataset.itemType);
         const queryString = new URLSearchParams(data).toString();
 
-        Promise.all([
-            preloader.show(),
+        modals.softPreloaderPromise(
             fetch(`${_this._opts.urls.changeItem}?${queryString}`, {
                 credentials: 'same-origin',
+            }).then(function(response) {
+                if (!response.ok) {
+                    const error = new Error(`${response.status} ${response.statusText}`);
+                    error.response = response;
+                    throw error;
+                }
+                return response.json();
             })
-        ]).then(function(values) {
-            const response = values[1];
-            if (!response.ok) {
-                const error = new Error(`${response.status} ${response.statusText}`);
-                error.response = response;
-                throw error;
-            }
-
-            return response.json();
-        }).then(function(response) {
+        ).then(function(response) {
             if (response.errors && response.errors.length) {
                 const error = new Error('Invalid request');
                 error.response = response;
                 throw error
             }
 
-            preloader.hide();
-            const $dialog = bootbox.dialog({
+            const modal = modals.createModal({
                 title: gettext('Edit file'),
                 message: response.form,
-                onEscape: true,
-                buttons: {
-                    cancel: {
-                        label: gettext('Cancel'),
-                        className: 'btn-outline-info'
-                    },
-                    ok: {
-                        label: gettext('Save'),
-                        className: 'btn-success',
-                        callback: function() {
-                            Promise.all([
-                                preloader.show(),
-                                _this._changeItem(item, $dialog)
-                            ]).then(function() {
-                                preloader.hide();
-                            }).catch(function(error) {
-                                preloader.hide();
-                                if ((typeof error === 'object') && error.response && error.response.errors) {
-                                    showError(error.response.errors);
-                                } else if (error instanceof Error) {
-                                    showError(error.message);
-                                } else {
-                                    showError(error);
-                                }
-                            });
-                            return false;
-                        }
+                buttons: [{
+                    label: gettext('Cancel'),
+                    className: 'btn-outline-info'
+                }, {
+                    autofocus: true,
+                    label: gettext('Save'),
+                    className: 'btn-success',
+                    callback: function() {
+                        modals.softPreloaderPromise(
+                            _this._changeItem(item, modal)
+                        ).catch(function(error) {
+                            if ((typeof error === 'object') && error.response && error.response.errors) {
+                                showError(error.response.errors);
+                            } else if (error instanceof Error) {
+                                showError(error.message);
+                            } else {
+                                showError(error);
+                            }
+                        });
+                        return false;
                     }
-                }
-            });
+                }]
+            }).show();
 
-            const $form = $dialog.find('form');
+            const $form = $(modal._element).find('form');
             $form.on('submit', function() {
-                Promise.all([
-                    preloader.show(),
-                    _this._changeItem(item, $dialog)
-                ]).then(function() {
-                    preloader.hide();
-                }).catch(function(error) {
-                    preloader.hide();
+                modals.softPreloaderPromise(
+                    _this._changeItem(item, modal)
+                ).catch(function(error) {
                     if ((typeof error === 'object') && error.response && error.response.errors) {
                         showError(error.response.errors);
                     } else if (error instanceof Error) {
@@ -786,7 +758,6 @@ Collection.prototype.addListeners = function() {
                 return false;
             });
         }).catch(function(error) {
-            preloader.hide();
             if ((typeof error === 'object') && error.response && error.response.errors) {
                 showError(error.response.errors);
             } else if (error instanceof Error) {
@@ -818,13 +789,10 @@ Collection.prototype.addListeners = function() {
         event.preventDefault();
 
         const item = event.target.closest(_this._opts.collection.item);
-        Promise.all([
-            preloader.show(),
+
+        modals.softPreloaderPromise(
             _this._deleteItem(item)
-        ]).then(function() {
-            preloader.hide();
-        }).catch(function(error) {
-            preloader.hide();
+        ).catch(function(error) {
             if ((typeof error === 'object') && error.response && error.response.errors) {
                 showError(error.response.errors);
             } else if (error instanceof Error) {
@@ -889,47 +857,41 @@ Collection.prototype.addListeners = function() {
             });
 
             if (checkedItems.length) {
-                bootbox.dialog({
-                    size: 'small',
+                modals.createModal({
                     title: gettext('Confirmation'),
                     message: gettext(`Are you sure you want to <b>DELETE</b> the selected <b>${checkedItems.length}</b> file(s)?`),
-                    onEscape: true,
-                    buttons: {
-                        cancel: {
-                            label: gettext('Cancel'),
-                            className: 'btn-outline-info'
-                        },
-                        confirm: {
-                            label: gettext('Delete'),
-                            className: 'btn-danger',
-                            callback: function() {
-                                const delete_promises = checkedItems.map(function(item) {
-                                    return _this._deleteItem(item)
-                                });
-                                delete_promises.unshift(preloader.show());
+                    buttons: [{
+                        label: gettext('Cancel'),
+                        className: 'btn-outline-info'
+                    }, {
+                        autofocus: true,
+                        label: gettext('Delete'),
+                        className: 'btn-danger',
+                        callback: function() {
+                            const delete_promises = checkedItems.map(function(item) {
+                                return _this._deleteItem(item)
+                            });
 
-                                allSettled(
-                                    delete_promises
-                                ).then(function(results) {
-                                    preloader.hide();
-                                    for (let result of results) {
-                                        if (result.status === 'rejected') {
-                                            const error = result.reason;
-                                            if ((typeof error === 'object') && error.response && error.response.errors) {
-                                                collectError(error.response.errors);
-                                            } else if (error instanceof Error) {
-                                                collectError(error.message);
-                                            } else {
-                                                collectError(error);
-                                            }
+                            modals.softPreloaderPromise(
+                                allSettled(delete_promises)
+                            ).then(function(results) {
+                                for (let result of results) {
+                                    if (result.status === 'rejected') {
+                                        const error = result.reason;
+                                        if ((typeof error === 'object') && error.response && error.response.errors) {
+                                            collectError(error.response.errors);
+                                        } else if (error instanceof Error) {
+                                            collectError(error.message);
+                                        } else {
+                                            collectError(error);
                                         }
                                     }
-                                    showCollectedErrors();
-                                });
-                            }
+                                }
+                                showCollectedErrors();
+                            });
                         }
-                    }
-                });
+                    }]
+                }).show();
             }
         }
     });

@@ -1,13 +1,13 @@
 <div class="collection__item collection-item collection-item--file"
      style="width: {{ preview_width }}px"
      tabindex="-1"
-     data-pk="{% if item %}{{ item.pk }}{% endif %}"
-     data-item-type="{% if item %}{{ item.item_type }}{% endif %}">
+     data-pk="{{ item.pk }}"
+     data-item-type="{{ item.item_type }}">
 
   <div class="collection-item__header">
     <div class="collection-item__name text-muted"
-         title="{% if item %}{{ item.get_caption }}{% endif %}">
-      {% if item %}{{ item.get_caption }}{% endif %}
+         title="{{ item.get_caption }}">
+      {{ item.get_caption }}
     </div>
     <div>
       <button type="button" class="collection-item__delete-button text-danger"
@@ -24,18 +24,24 @@
 
   <div class="collection-item__footer">
     <div class="tool-items d-flex align-items-center">
-      <label class="collection-item__checkbox-holder tool-item">
-        <input type="checkbox" name="{{ widget.name }}-check" class="collection-item__checkbox">
-      </label>
+      <div class="collection-item__checkbox-holder tool-item tool-item--transparent">
+        <div class="custom-control user-select-none vCustomCheckbox" data-hook-unload="prevent">
+          <input type="checkbox" name="{{ widget.name }}-check" id="item-{{ item.pk }}"
+                 class="collection-item__checkbox custom-control-input">
+          <label class="custom-control-label" for="item-{{ item.pk }}"></label>
+        </div>
+      </div>
 
-      <a href="{% if item %}{{ item.get_file_url }}{% endif %}" class="collection-item__view-button tool-item text-info"
+      <a href="{{ item.get_file_url }}"
+         class="collection-item__view-button tool-item tool-item--transparent text-info"
          target="_blank" tabindex="0"
          data-toggle="tooltip" data-placement="top" data-trigger="hover"
          data-html="true" title="{{ _('View file') }}">
         <i class="fa fa-fw fa-eye"></i>
       </a>
 
-      <button type="button" class="collection-item__edit-button tool-item text-info"
+      <button type="button"
+              class="collection-item__edit-button tool-item tool-item--transparent text-info"
               data-toggle="tooltip" data-placement="top" data-trigger="hover"
               data-html="true" title="{{ _('Edit file') }}">
         <i class="fa fa-fw fa-pencil"></i>

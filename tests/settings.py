@@ -181,4 +181,5 @@ PAPER_UPLOADS = {
     }
 }
 
-load_dotenv('.devdata.env')
+load_dotenv()
+load_dotenv()
