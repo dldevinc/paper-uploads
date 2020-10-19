@@ -94,9 +94,9 @@ class ImageField(FileResourceFieldBase):
         super().__init__(*args, **kwargs)
 
     def check(self, **kwargs):
-        return [*super().check(**kwargs), *self._check_variations(**kwargs)]
+        return [*super().check(**kwargs), *self._check_variations()]
 
-    def _check_variations(self, **kwargs):
+    def _check_variations(self):
         if not self.variations:
             return []
         for name, variation in self.variations.items():

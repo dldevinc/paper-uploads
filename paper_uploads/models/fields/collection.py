@@ -86,8 +86,8 @@ class CollectionItem:
 
     def check(self, **kwargs):
         return [
-            *Field._check_field_name(self, **kwargs),
-            *Field._check_validators(self, **kwargs),
+            *Field._check_field_name(self),
+            *Field._check_validators(self),
         ]
 
     @cached_property
