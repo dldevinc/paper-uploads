@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.4.4](https://github.com/dldevinc/paper-uploads/tree/v0.4.4) - 2020-10-19
+- Fix missing templates
+
 ## [0.4.3](https://github.com/dldevinc/paper-uploads/tree/v0.4.3) - 2020-10-19
 - Fix model checks
 
