@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.4.1](https://github.com/dldevinc/paper-uploads/tree/v0.4.1) - 2020-10-19
+## [0.4.2](https://github.com/dldevinc/paper-uploads/tree/v0.4.1) - 2020-10-19
 - Fix missing static files
 
 ## [0.4.0](https://github.com/dldevinc/paper-uploads/tree/v0.4.0) - 2020-09-04
