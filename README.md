@@ -784,7 +784,7 @@ npm i
 npx webpack
 ```
 
-Create `.devdata.env` file:
+Create `.env` file:
 ```.env
 CLOUDINARY_URL=cloudinary://XXXXXXXXXXXXXXX:YYYYYYYYYYYYYYYYYYYYYYYYYYY@ZZZZZZ?sign_url=1&secure=1
 ```
