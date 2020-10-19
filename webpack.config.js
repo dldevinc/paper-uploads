@@ -4,7 +4,7 @@ const pixrem = require('pixrem');
 const autoprefixer = require('autoprefixer');
 const TerserPlugin = require('terser-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 
 const SOURCE_DIR = 'paper_uploads/static/paper_uploads/src';
 const DIST_DIR = 'paper_uploads/static/paper_uploads/dist';
@@ -98,12 +98,9 @@ module.exports = {
     optimization: {
         minimizer: [
             new TerserPlugin({
-                parallel: true,
-                cache: 'cache',
-                sourceMap: true,
-                extractComments: true,
+
             }),
-            new OptimizeCSSAssetsPlugin({
+            new CssMinimizerPlugin({
 
             })
         ]
