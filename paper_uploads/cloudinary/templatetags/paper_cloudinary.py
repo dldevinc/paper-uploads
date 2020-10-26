@@ -1,10 +1,9 @@
 from functools import partial
 
-from cloudinary.templatetags import cloudinary
 from django.template import Library
 from jinja2_simple_tags import StandaloneTag
 
-from ..models.base import CloudinaryFileResource
+from ..helpers import paper_cloudinary_url
 
 try:
     import jinja2
@@ -12,12 +11,6 @@ except ImportError:
     jinja2 = None
 
 register = Library()
-
-
-def paper_cloudinary_url(context, source, options_dict=None, **options):
-    if isinstance(source, CloudinaryFileResource):
-        source = source.get_file().resource
-    return cloudinary.cloudinary_url(context, source, options_dict, **options)
 
 
 @register.simple_tag(takes_context=True, name='paper_cloudinary_url')
