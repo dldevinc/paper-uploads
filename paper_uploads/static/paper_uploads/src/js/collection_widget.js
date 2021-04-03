@@ -7,7 +7,6 @@ import {Uploader, ValidationError, getPaperParams} from "./_uploader";
 import {showError, collectError, showCollectedErrors} from "./_utils";
 
 // PaperAdmin API
-const whenDomReady = window.paperAdmin.whenDomReady;
 const Sortable = window.paperAdmin.Sortable;
 const modals = window.paperAdmin.modals;
 const emitters = window.paperAdmin.emitters;
@@ -939,5 +938,5 @@ function initWidgets(root = document.body) {
 }
 
 
-whenDomReady(initWidgets);
+initWidgets();
 emitters.dom.on('mutate', initWidgets);

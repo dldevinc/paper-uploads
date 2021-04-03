@@ -1,7 +1,6 @@
 import {BaseWidget} from "./base_widget";
 
 // PaperAdmin API
-const whenDomReady = window.paperAdmin.whenDomReady;
 const emitters = window.paperAdmin.emitters;
 
 // CSS
@@ -36,5 +35,5 @@ function initWidgets(root = document.body) {
 }
 
 
-whenDomReady(initWidgets);
+initWidgets();
 emitters.dom.on('mutate', initWidgets);
