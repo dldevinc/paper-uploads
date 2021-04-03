@@ -1,11 +1,11 @@
 /* global gettext */
 
 import deepmerge from "deepmerge";
+import EventEmitter from "wolfy87-eventemitter";
 import {Uploader, getPaperParams} from "./_uploader";
 import {showError} from "./_utils";
 
 // PaperAdmin API
-const EventEmitter = window.paperAdmin.EventEmitter;
 const modals = window.paperAdmin.modals;
 const formUtils = window.paperAdmin.formUtils;
 

@@ -1,9 +1,7 @@
+import EventEmitter from "wolfy87-eventemitter";
 import {FineUploaderBasic, isFile} from "./fine-uploader/fine-uploader.core";
 import {DragAndDrop} from "./fine-uploader/dnd";
 import match from 'mime-match';
-
-// PaperAdmin API
-const EventEmitter = window.paperAdmin.EventEmitter;
 
 
 /**
