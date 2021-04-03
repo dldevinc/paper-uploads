@@ -15,6 +15,7 @@ before_install:
 branches:
   only:
     - master
+    - dev
     - "/^v?\\d(\\.\\d+)+$/"
 script:
   - python setup.py sdist
