@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.5.0](https://github.com/dldevinc/paper-uploads/tree/v0.5.0) - 2021-04-03
+- Add Python 3.9 support
+
 ## [0.4.5](https://github.com/dldevinc/paper-uploads/tree/v0.4.5) - 2020-10-26
 - Add `cloudinary/helpers.py` file
 
