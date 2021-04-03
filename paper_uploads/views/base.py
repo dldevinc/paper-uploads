@@ -61,9 +61,9 @@ class AjaxView(View):
 
 
 class ActionView(AjaxView):
-    def perform_action(self, *args, **kwargs):
+    def perform_action(self, request, *args, **kwargs):
         try:
-            return self.handle(*args, **kwargs)
+            return self.handle(request, *args, **kwargs)
         except exceptions.InvalidContentType:
             logger.exception('Error')
             return self.error_response(_('Invalid content type'))
@@ -79,7 +79,7 @@ class ActionView(AjaxView):
                 message = type(e).__name__
             return self.error_response(message)
 
-    def handle(self, *args, **kwargs):
+    def handle(self, request, *args, **kwargs):
         raise NotImplementedError
 
 

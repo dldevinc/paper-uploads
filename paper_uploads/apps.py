@@ -9,9 +9,9 @@ class Config(AppConfig):
     verbose_name = _('Uploaded Files')
 
     def ready(self):
-        from .signals import handlers
-        from .models.collection import CollectionBase
         from .admin import CollectionAdminBase
+        from .models.collection import CollectionBase
+        from .signals import handlers
 
         # Переименование поля файла или модели-владельца файла,
         # изменит также и соответствующие значения, хранящиеся в БД

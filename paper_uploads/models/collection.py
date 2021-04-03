@@ -88,7 +88,7 @@ class CollectionMetaclass(ModelBase):
     def __prepare__(cls, name, bases):
         return OrderedDict()
 
-    def __new__(mcs, name, bases, attrs, **kwargs):
+    def __new__(mcs, name, bases, attrs, **kwargs):  # noqa: N804
         # set proxy=True by default
         meta = attrs.pop('Meta', None)
         if meta is None:

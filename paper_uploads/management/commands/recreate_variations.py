@@ -7,6 +7,7 @@ from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS, models
 from django.db.models.fields import Field
 from django.db.models.utils import make_model_tuple
+
 from paper_uploads.models import CollectionItem
 
 from ...models.base import VersatileImageResourceMixin
@@ -269,12 +270,12 @@ class Command(BaseCommand):
                 )
             self.stdout.write(' {}) Exit'.format(self.style.SUCCESS('0')))
 
-            answer = input().strip()
-            if answer == '0':
+            answer_string = input().strip()
+            if answer_string == '0':
                 sys.exit()
 
             try:
-                answer = int(answer)
+                answer = int(answer_string)
             except ValueError:
                 self.stderr.write(
                     'Invalid selection. Press Enter to try again... ', ending=''
@@ -309,8 +310,8 @@ class Command(BaseCommand):
                 )
             self.stdout.write(' {}) Exit'.format(self.style.SUCCESS('0')))
 
-            answer = input().strip()
-            answers = tuple(map(str.strip, answer.split(',')))
+            answer_string = input().strip()
+            answers = tuple(map(str.strip, answer_string.split(',')))
             if '0' in answers:
                 sys.exit()
             if '*' in answers:

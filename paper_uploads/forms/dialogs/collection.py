@@ -1,4 +1,5 @@
 from django import forms
+
 from ...models.collection import FileItem, ImageItem
 from .base import UploadedFileBaseForm
 
