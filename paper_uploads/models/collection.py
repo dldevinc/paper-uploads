@@ -370,7 +370,7 @@ class FilePreviewMixin(models.Model):
     def get_preview_url(self):
         extension = self.extension.lower()  # noqa
         extension = FILE_ICON_OVERRIDES.get(extension, extension)
-        icon_path_template = 'paper_uploads/dist/image/{}.svg'
+        icon_path_template = 'paper_uploads/dist/assets/{}.svg'
         icon_path = icon_path_template.format(extension)
         if find(icon_path) is None:
             icon_path = icon_path_template.format(FILE_ICON_DEFAULT)

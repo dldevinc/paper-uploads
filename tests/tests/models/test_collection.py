@@ -213,19 +213,19 @@ class TestCollection:
 
     def test_get_preview_url(self):
         file_item = FileItem(extension='pdf')
-        assert file_item.get_preview_url() == '/static/paper_uploads/dist/image/pdf.svg'
+        assert file_item.get_preview_url() == '/static/paper_uploads/dist/assets/pdf.svg'
 
         file_item = FileItem(extension='mp4')
-        assert file_item.get_preview_url() == '/static/paper_uploads/dist/image/mp4.svg'
+        assert file_item.get_preview_url() == '/static/paper_uploads/dist/assets/mp4.svg'
 
         file_item = FileItem(extension='docx')
-        assert file_item.get_preview_url() == '/static/paper_uploads/dist/image/doc.svg'
+        assert file_item.get_preview_url() == '/static/paper_uploads/dist/assets/doc.svg'
 
         file_item = FileItem(extension='ogg')
-        assert file_item.get_preview_url() == '/static/paper_uploads/dist/image/audio.svg'
+        assert file_item.get_preview_url() == '/static/paper_uploads/dist/assets/audio.svg'
 
         file_item = FileItem(extension='py')
-        assert file_item.get_preview_url() == '/static/paper_uploads/dist/image/unknown.svg'
+        assert file_item.get_preview_url() == '/static/paper_uploads/dist/assets/unknown.svg'
 
     def test_detect_item_type(self, storage):
         with open(DOCUMENT_FILEPATH, 'rb') as fp:
@@ -340,7 +340,7 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
         assert storage.resource.item_type == 'file'
 
     def test_get_preview_url(self, storage):
-        assert storage.resource.get_preview_url() == '/static/paper_uploads/dist/image/jpg.svg'
+        assert storage.resource.get_preview_url() == '/static/paper_uploads/dist/assets/jpg.svg'
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
