@@ -1,8 +1,10 @@
+from datetime import timedelta
+
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS, models, transaction
-from django.utils.timezone import now, timedelta
+from django.utils.timezone import now
 from polymorphic.models import PolymorphicModel
 
 from ...models.base import FileResource
@@ -10,6 +12,17 @@ from ...models.collection import CollectionBase
 
 
 class Command(BaseCommand):
+    help = """
+    Поиск и удаление экземпляров файловых моделей с утерянными файлами.
+    Также удаляются экземпляров файловых моделей, на которые нет ссылок.
+    
+    Создание экземпляра файловой модели и загрузка в неё файла - это 
+    две отдельные операции. Между ними может пройти какое-то время.
+    Для того, чтобы сохранить экземпляры, в которые ещё не загрузились файлы,
+    эта команда пропускает те экземпляры, которые созданы раньше, чем
+    `--min-age` минут назад. Значение параметра `--min-age` по умолчанию 
+    установлено в 30 минут.
+    """
     verbosity = None
     database = DEFAULT_DB_ALIAS
     interactive = True
@@ -69,9 +82,6 @@ class Command(BaseCommand):
                 continue
 
             with transaction.atomic(self.database):
-                # db_cursor = connections[self.database].cursor()
-                # db_cursor.execute('LOCK TABLE %s IN ACCESS SHARE MODE' % model._meta.db_table)
-
                 for field in fields:
                     used_values = (
                         model._base_manager.using(self.database)

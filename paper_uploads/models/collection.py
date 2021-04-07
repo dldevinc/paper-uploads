@@ -523,10 +523,10 @@ class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
 
     @classmethod
     def get_variation_config(
-        cls, field: Optional[CollectionItem], collection_cls: Type[CollectionBase]
+        cls, rel: Optional[CollectionItem], collection_cls: Type[CollectionBase]
     ) -> Dict[str, Any]:
-        if field is not None and "variations" in field.options:
-            variations = field.options["variations"]
+        if rel is not None and "variations" in rel.options:
+            variations = rel.options["variations"]
         else:
             variations = getattr(collection_cls, "VARIATIONS", None)
         variations = (variations or {}).copy()

@@ -112,6 +112,9 @@ def get_itemtype_field(model: Type[Collection], fieldname: str) -> CollectionIte
 
 
 class Command(BaseCommand):
+    help = """
+    Заново создает вариации для указанной модели.
+    """
     verbosity = None
     database = DEFAULT_DB_ALIAS
 
@@ -164,6 +167,7 @@ class Command(BaseCommand):
             fieldname = self.select_field_dialog(model)
         elif fieldname is None:
             raise RuntimeError("the following arguments are required: field")
+
         if is_gallery(model):
             field = get_itemtype_field(model, fieldname)
         else:

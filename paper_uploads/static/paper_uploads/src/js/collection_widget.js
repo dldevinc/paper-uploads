@@ -292,7 +292,7 @@ Collection.prototype.initUploader = function() {
     }).on('complete', function(id, response) {
         if (isNaN(_this.collectionId)) {
             _this.collectionId = response.collectionId;
-            _this.trigger('collection:created');  // TODO: ?
+            _this.trigger('collection:created');
         }
 
         const preloader = _this._findPreloader(id);

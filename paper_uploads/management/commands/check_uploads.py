@@ -8,6 +8,12 @@ from ...models.mixins import BacklinkModelMixin
 
 
 class Command(BaseCommand):
+    help = """
+    Проверка целостности экземпляров файловых моделей.
+    
+    Если указан параметр `--fix-missing`, недостающие файлы вариаций
+    создаются из исходного изображения.
+    """
     options = None
     verbosity = None
     database = DEFAULT_DB_ALIAS
@@ -36,11 +42,8 @@ class Command(BaseCommand):
             if not total:
                 continue
 
-            for index, instance in enumerate(
-                model._base_manager.using(self.database).iterator(), start=1
-            ):
-                assert isinstance(instance, FileResource)
-
+            queryset = model._base_manager.using(self.database)
+            for index, instance in enumerate(queryset.iterator(), start=1):
                 if self.verbosity >= 2:
                     self.stdout.write("\r" + (" " * 80), ending="\r")
 
