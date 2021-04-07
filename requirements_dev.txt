@@ -1,6 +1,6 @@
 jinja2==2.11.3
 python-dotenv==0.17.0
-pytest==6.2.2
+pytest==6.2.3
 pytest-cov==2.11.1
 pytest-dotenv==0.5.2
 pytest-django==4.1.0

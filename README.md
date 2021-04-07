@@ -775,12 +775,13 @@ in a virtualenv and set up for development:
 virtualenv .venv
 source .venv/bin/activate
 pip install -r ./requirements_dev.txt
+pip install django-jinja==2.7.0
 pre-commit install
 ```
 
 Install `npm` dependencies and build static files:
 ```shell script
-npm i
+npm ci
 npx webpack
 ```
 
