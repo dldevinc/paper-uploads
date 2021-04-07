@@ -17,13 +17,14 @@ from django.template import loader
 from django.utils.module_loading import import_string
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
+from polymorphic.base import PolymorphicModelBase
 from polymorphic.models import PolymorphicModel
 
 from ..conf import FILE_ICON_DEFAULT, FILE_ICON_OVERRIDES, settings
 from ..helpers import _get_item_types, _set_item_types, build_variations
 from ..storage import upload_storage
 from ..variations import PaperVariation
-from .base import FileFieldResource, VersatileImageResourceMixin
+from .base import NoPermissionsMetaBase, ResourceBaseMeta, FileFieldResource, VersatileImageResourceMixin
 from .fields import CollectionItem
 from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
@@ -79,9 +80,10 @@ class ItemTypesDescriptor:
         return item_types
 
 
-class CollectionMetaclass(ModelBase):
+class CollectionMeta(NoPermissionsMetaBase, ModelBase):
     """
-    Хак, создающий прокси-модели вместо наследования, если явно не указано обратное.
+    Хак, при котором вместо наследования создаются прокси-модели,
+    если явно не указано обратное.
     """
 
     @classmethod
@@ -112,7 +114,7 @@ class CollectionMetaclass(ModelBase):
         return new_class
 
 
-class CollectionBase(BacklinkModelMixin, metaclass=CollectionMetaclass):
+class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
     items = ContentItemRelation(
         'paper_uploads.CollectionItemBase',
         content_type_field='collection_content_type',
@@ -191,7 +193,11 @@ class Collection(CollectionBase):
 # ======================================================================================
 
 
-class CollectionItemBase(PolymorphicModel):
+class CollectionItemMetaBase(PolymorphicModelBase, ResourceBaseMeta):
+    pass
+
+
+class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
     """
     Базовый класс элемента коллекции.
     """
@@ -222,7 +228,6 @@ class CollectionItemBase(PolymorphicModel):
     order = models.IntegerField(_('order'), default=0, editable=False)
 
     class Meta:
-        default_permissions = ()
         verbose_name = _('item')
         verbose_name_plural = _('items')
 
@@ -342,7 +347,7 @@ class CollectionItemBase(PolymorphicModel):
         }
 
 
-class CollectionFileItemBase(CollectionItemBase, FileFieldResource):
+class CollectionFileItemBase(CollectionItemBase, FileFieldResource, metaclass=CollectionItemMetaBase):
     """
     Базовый класс элемента галереи, содержащего файл.
     """

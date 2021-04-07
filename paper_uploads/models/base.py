@@ -18,6 +18,8 @@ from ..variations import PaperVariation
 from .mixins import BacklinkModelMixin, FileFieldProxyMixin, FileProxyMixin
 
 __all__ = [
+    'NoPermissionsMetaBase',
+    'ResourceBaseMeta',
     'Resource',
     'FileResource',
     'FileFieldResource',
@@ -38,7 +40,28 @@ class Permissions(models.Model):
         )
 
 
-class ResourceBase(models.Model):
+class NoPermissionsMetaBase:
+    """
+    Отменяет создание автоматических объектов Permission у наследников класса.
+    """
+    def __new__(mcs, name, bases, attrs, **kwargs):
+        meta = attrs.pop('Meta', None)
+        if meta is None:
+            meta = type('Meta', (), {'default_permissions': ()})
+        else:
+            meta_attrs = meta.__dict__.copy()
+            meta_attrs.setdefault('default_permissions', ())
+            meta = type('Meta', meta.__bases__, meta_attrs)
+        attrs['Meta'] = meta
+
+        return super().__new__(mcs, name, bases, attrs, **kwargs)
+
+
+class ResourceBaseMeta(NoPermissionsMetaBase, models.base.ModelBase):
+    pass
+
+
+class ResourceBase(models.Model, metaclass=ResourceBaseMeta):
     """
     Базовый класс ресурса.
     """
@@ -47,7 +70,6 @@ class ResourceBase(models.Model):
 
     class Meta:
         abstract = True
-        default_permissions = ()
 
     def __repr__(self):
         return "{} #{}".format(type(self).__name__, self.pk)
