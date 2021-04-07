@@ -14,11 +14,11 @@ module.exports = {
     devtool: "source-map",
     mode: "production",
     entry: {
-        widget: path.resolve(`${SOURCE_DIR}/js/widget.js`),
+        widget: path.resolve(SOURCE_DIR, "js/widget.js"),
     },
     output: {
         clean: true,
-        path: path.resolve(`${DIST_DIR}`),
+        path: path.resolve(DIST_DIR),
         publicPath: "/static/paper_uploads/dist/",
         filename: "[name].min.js",
         assetModuleFilename: "assets/[name][ext][query]"
@@ -32,7 +32,7 @@ module.exports = {
                     {
                         loader: "babel-loader",
                         options: {
-                            cacheDirectory: "cache"
+                            cacheDirectory: path.resolve(__dirname, "cache")
                         }
                     }
                 ]
@@ -72,7 +72,7 @@ module.exports = {
                     options: {
                         sassOptions: {
                             includePaths: [
-                                path.resolve(`${SOURCE_DIR}/css/`)
+                                path.resolve(SOURCE_DIR, "css")
                             ]
                         }
                     }
