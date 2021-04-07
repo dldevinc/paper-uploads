@@ -201,8 +201,10 @@ class Command(BaseCommand):
         for model in apps.get_models():
             if not issubclass(model, FileResource):
                 continue
+
             if issubclass(model, PolymorphicModel):
                 continue
+
             if model._meta.abstract:
                 continue
 
@@ -216,13 +218,15 @@ class Command(BaseCommand):
         for model in apps.get_models():
             if not issubclass(model, FileResource):
                 continue
+
             if not issubclass(model, PolymorphicModel):
                 continue
+
             if model._meta.abstract:
                 continue
 
             self.clean_source_missing(
-                model._base_manager.using(self.database).non_polymorphic()
+                model.objects.using(self.database).non_polymorphic()
             )
 
         # Do not touch fresh galleries - they may not be saved yet.
