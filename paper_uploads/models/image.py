@@ -13,15 +13,15 @@ from .fields import VariationalFileField
 
 class UploadedImage(VersatileImageResourceMixin, FileFieldResource):
     file = VariationalFileField(
-        _('file'),
+        _("file"),
         max_length=255,
         upload_to=settings.IMAGES_UPLOAD_TO,
         storage=upload_storage,
     )
 
     class Meta(FileFieldResource.Meta):
-        verbose_name = _('image')
-        verbose_name_plural = _('images')
+        verbose_name = _("image")
+        verbose_name_plural = _("images")
 
     def get_file(self) -> FieldFile:
         return self.file
@@ -30,12 +30,12 @@ class UploadedImage(VersatileImageResourceMixin, FileFieldResource):
         self.file = value
 
     def get_file_field(self) -> VariationalFileField:
-        return self._meta.get_field('file')
+        return self._meta.get_field("file")
 
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
-            'file_info': '({ext}, {width}x{height}, {size})'.format(
+            "file_info": "({ext}, {width}x{height}, {size})".format(
                 ext=self.extension,
                 width=self.width,
                 height=self.height,
@@ -44,10 +44,10 @@ class UploadedImage(VersatileImageResourceMixin, FileFieldResource):
         }
 
     def get_variations(self) -> Dict[str, PaperVariation]:
-        if not hasattr(self, '_variations_cache'):
+        if not hasattr(self, "_variations_cache"):
             owner_field = self.get_owner_field()
             if owner_field is not None:
-                self._variations_cache = getattr(owner_field, 'variations', {}).copy()
+                self._variations_cache = getattr(owner_field, "variations", {}).copy()
             else:
                 return {}
         return self._variations_cache
@@ -56,6 +56,6 @@ class UploadedImage(VersatileImageResourceMixin, FileFieldResource):
     def get_configuration(cls) -> Dict[str, Any]:
         # TODO: магический метод
         return {
-            'image': True,
-            'acceptFiles': ['image/*'],
+            "image": True,
+            "acceptFiles": ["image/*"],
         }

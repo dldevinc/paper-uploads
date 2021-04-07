@@ -5,6 +5,6 @@ class CloudinaryOptionsMixin:
 
     def deconstruct(self):
         name, path, args, kwargs = super().deconstruct()
-        if 'cloudinary' in kwargs:
-            del kwargs['cloudinary']
+        if "cloudinary" in kwargs:
+            del kwargs["cloudinary"]
         return name, path, args, kwargs

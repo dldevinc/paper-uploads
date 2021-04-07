@@ -16,24 +16,24 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--min-age',
+            "--min-age",
             type=int,
             default=30,
-            help='Minimum instance age in minutes to look for',
+            help="Minimum instance age in minutes to look for",
         )
         parser.add_argument(
-            '--database',
-            action='store',
-            dest='database',
+            "--database",
+            action="store",
+            dest="database",
             default=DEFAULT_DB_ALIAS,
-            help='Nominates the database to use. Defaults to the "default" database.',
+            help="Nominates the database to use. Defaults to the 'default' database.",
         )
         parser.add_argument(
-            '--noinput',
-            '--no-input',
-            action='store_false',
-            dest='interactive',
-            help='Do NOT prompt the user for input of any kind.',
+            "--noinput",
+            "--no-input",
+            action="store_false",
+            dest="interactive",
+            help="Do NOT prompt the user for input of any kind.",
         )
 
     @staticmethod
@@ -103,28 +103,28 @@ class Command(BaseCommand):
         if self.interactive:
             while True:
                 answer = input(
-                    'Found \033[92m%d unused %s\033[0m objects. '
-                    'What would you like to do with them?\n'
-                    '(p)rint / (k)eep / (d)elete [default=keep]? '
+                    "Found \033[92m%d unused %s\033[0m objects. "
+                    "What would you like to do with them?\n"
+                    "(p)rint / (k)eep / (d)elete [default=keep]? "
                     % (unused_count, related_model.__name__)
                 )
-                answer = answer.lower() or 'k'
-                if answer in {'p', 'print'}:
-                    self.stdout.write('\n')
-                    qs = unused_qs.order_by('pk').only('file')
+                answer = answer.lower() or "k"
+                if answer in {"p", "print"}:
+                    self.stdout.write("\n")
+                    qs = unused_qs.order_by("pk").only("file")
                     for index, item in enumerate(qs, start=1):
                         self.stdout.write(
-                            '  {}) {} #{} (File: {})'.format(
+                            "  {}) {} #{} (File: {})".format(
                                 index,
                                 type(item).__name__,
                                 item.pk,
                                 item.name,
                             )
                         )
-                    self.stdout.write('\n')
-                elif answer in {'k', 'keep'}:
+                    self.stdout.write("\n")
+                elif answer in {"k", "keep"}:
                     return
-                elif answer in {'d', 'delete'}:
+                elif answer in {"d", "delete"}:
                     unused_qs.delete()
                     return
 
@@ -152,41 +152,41 @@ class Command(BaseCommand):
         if self.interactive:
             while True:
                 answer = input(
-                    'Found \033[92m%d %s\033[0m objects which are linked to a non-existent files.\n'
-                    'What would you like to do with them?\n'
-                    '(p)rint / (k)eep / (d)elete [default=keep]? '
+                    "Found \033[92m%d %s\033[0m objects which are linked to a non-existent files.\n"
+                    "What would you like to do with them?\n"
+                    "(p)rint / (k)eep / (d)elete [default=keep]? "
                     % (len(sourceless_items), related_model.__name__)
                 )
-                answer = answer.lower() or 'k'
-                if answer in {'p', 'print'}:
-                    self.stdout.write('\n')
+                answer = answer.lower() or "k"
+                if answer in {"p", "print"}:
+                    self.stdout.write("\n")
                     qs = (
                         queryset.filter(pk__in=sourceless_items)
-                        .order_by('pk')
-                        .only('file')
+                        .order_by("pk")
+                        .only("file")
                     )
                     for index, item in enumerate(qs, start=1):
                         self.stdout.write(
-                            '  {}) {} #{} (File: {})'.format(
+                            "  {}) {} #{} (File: {})".format(
                                 index,
                                 type(item).__name__,
                                 item.pk,
                                 item.name,
                             )
                         )
-                    self.stdout.write('\n')
-                elif answer in {'k', 'keep'}:
+                    self.stdout.write("\n")
+                elif answer in {"k", "keep"}:
                     return
-                elif answer in {'d', 'delete'}:
+                elif answer in {"d", "delete"}:
                     queryset.filter(pk__in=sourceless_items).delete()
                     return
 
     def handle(self, *args, **options):
-        self.verbosity = options['verbosity']
-        self.database = options['database']
-        self.interactive = options['interactive']
+        self.verbosity = options["verbosity"]
+        self.database = options["database"]
+        self.interactive = options["interactive"]
 
-        min_age = now() - timedelta(minutes=options['min_age'])
+        min_age = now() - timedelta(minutes=options["min_age"])
 
         for model in apps.get_models():
             if not issubclass(model, FileResource):

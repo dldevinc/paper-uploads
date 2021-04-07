@@ -26,13 +26,13 @@ class ContentItemRelation(GenericRelation):
 
 class CollectionField(FileResourceFieldBase):
     def __init__(self, to, **kwargs):
-        kwargs['blank'] = True
+        kwargs["blank"] = True
         super().__init__(to=to, **kwargs)
 
     def deconstruct(self):
         name, path, args, kwargs = super().deconstruct()
-        if 'blank' in kwargs:
-            del kwargs['blank']
+        if "blank" in kwargs:
+            del kwargs["blank"]
         return name, path, args, kwargs
 
     def _check_relation_class(self, base, error_message):
@@ -58,7 +58,7 @@ class CollectionField(FileResourceFieldBase):
         return []
 
     def formfield(self, **kwargs):
-        return super().formfield(**{'form_class': forms.CollectionField, **kwargs})
+        return super().formfield(**{"form_class": forms.CollectionField, **kwargs})
 
 
 class CollectionItem:

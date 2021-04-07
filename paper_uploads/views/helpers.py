@@ -5,7 +5,7 @@ from django.db import models
 
 from .. import exceptions
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def get_model_class(content_type_id: int, base_class: Type[T]) -> Type[T]:

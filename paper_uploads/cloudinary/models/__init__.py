@@ -11,15 +11,15 @@ from .image import CloudinaryImage
 from .media import CloudinaryMedia
 
 __all__ = [
-    'CloudinaryFile',
-    'CloudinaryImage',
-    'CloudinaryMedia',
-    'CloudinaryFileField',
-    'CloudinaryImageField',
-    'CloudinaryMediaField',
-    'CloudinaryCollection',
-    'CloudinaryImageCollection',
-    'CloudinaryFileItem',
-    'CloudinaryImageItem',
-    'CloudinaryMediaItem',
+    "CloudinaryFile",
+    "CloudinaryImage",
+    "CloudinaryMedia",
+    "CloudinaryFileField",
+    "CloudinaryImageField",
+    "CloudinaryMediaField",
+    "CloudinaryCollection",
+    "CloudinaryImageCollection",
+    "CloudinaryFileItem",
+    "CloudinaryImageItem",
+    "CloudinaryMediaItem",
 ]

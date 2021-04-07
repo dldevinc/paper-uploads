@@ -11,16 +11,16 @@ from .base import CloudinaryFieldFile, CloudinaryFileResource
 
 class CloudinaryMedia(CloudinaryFileResource):
     file = CloudinaryField(
-        _('file'),
+        _("file"),
         type=settings.CLOUDINARY_TYPE,
-        resource_type='video',
+        resource_type="video",
         folder=settings.FILES_UPLOAD_TO
     )
-    display_name = models.CharField(_('display name'), max_length=255, blank=True)
+    display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
     class Meta(CloudinaryFileResource.Meta):
-        verbose_name = _('media')
-        verbose_name_plural = _('media')
+        verbose_name = _("media")
+        verbose_name_plural = _("media")
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:
@@ -31,7 +31,7 @@ class CloudinaryMedia(CloudinaryFileResource):
         self.file = value
 
     def get_file_field(self) -> CloudinaryField:
-        return self._meta.get_field('file')
+        return self._meta.get_field("file")
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:
@@ -41,8 +41,8 @@ class CloudinaryMedia(CloudinaryFileResource):
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
-            'name': self.display_name,
-            'file_info': '({ext}, {size})'.format(
+            "name": self.display_name,
+            "file_info": "({ext}, {size})".format(
                 ext=self.extension, size=filesizeformat(self.size)
             ),
         }
@@ -51,16 +51,16 @@ class CloudinaryMedia(CloudinaryFileResource):
     def get_configuration(cls) -> Dict[str, Any]:
         # TODO: магический метод
         return {
-            'acceptFiles': [
-                '.3gp',
-                '.avi',
-                '.flv',
-                '.mkv',
-                '.mov',
-                '.wmv',
-                '.aac',
-                '.wma',
-                'video/*',
-                'audio/*',
+            "acceptFiles": [
+                ".3gp",
+                ".avi",
+                ".flv",
+                ".mkv",
+                ".mov",
+                ".wmv",
+                ".aac",
+                ".wma",
+                "video/*",
+                "audio/*",
             ],
         }

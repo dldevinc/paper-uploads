@@ -18,14 +18,14 @@ from ..variations import PaperVariation
 from .mixins import BacklinkModelMixin, FileFieldProxyMixin, FileProxyMixin
 
 __all__ = [
-    'NoPermissionsMetaBase',
-    'ResourceBaseMeta',
-    'Resource',
-    'FileResource',
-    'FileFieldResource',
-    'ImageFileResourceMixin',
-    'VariationFile',
-    'VersatileImageResourceMixin',
+    "NoPermissionsMetaBase",
+    "ResourceBaseMeta",
+    "Resource",
+    "FileResource",
+    "FileFieldResource",
+    "ImageFileResourceMixin",
+    "VariationFile",
+    "VersatileImageResourceMixin",
 ]
 
 
@@ -34,9 +34,9 @@ class Permissions(models.Model):
         managed = False
         default_permissions = ()
         permissions = (
-            ('upload', 'Can upload files'),
-            ('change', 'Can change files'),
-            ('delete', 'Can delete files'),
+            ("upload", "Can upload files"),
+            ("change", "Can change files"),
+            ("delete", "Can delete files"),
         )
 
 
@@ -45,14 +45,14 @@ class NoPermissionsMetaBase:
     Отменяет создание автоматических объектов Permission у наследников класса.
     """
     def __new__(mcs, name, bases, attrs, **kwargs):
-        meta = attrs.pop('Meta', None)
+        meta = attrs.pop("Meta", None)
         if meta is None:
-            meta = type('Meta', (), {'default_permissions': ()})
+            meta = type("Meta", (), {"default_permissions": ()})
         else:
             meta_attrs = meta.__dict__.copy()
-            meta_attrs.setdefault('default_permissions', ())
-            meta = type('Meta', meta.__bases__, meta_attrs)
-        attrs['Meta'] = meta
+            meta_attrs.setdefault("default_permissions", ())
+            meta = type("Meta", meta.__bases__, meta_attrs)
+        attrs["Meta"] = meta
 
         return super().__new__(mcs, name, bases, attrs, **kwargs)
 
@@ -65,8 +65,8 @@ class ResourceBase(models.Model, metaclass=ResourceBaseMeta):
     """
     Базовый класс ресурса.
     """
-    created_at = models.DateTimeField(_('created at'), default=now, editable=False)
-    modified_at = models.DateTimeField(_('changed at'), auto_now=True, editable=False)
+    created_at = models.DateTimeField(_("created at"), default=now, editable=False)
+    modified_at = models.DateTimeField(_("changed at"), auto_now=True, editable=False)
 
     class Meta:
         abstract = True
@@ -80,9 +80,9 @@ class ResourceBase(models.Model, metaclass=ResourceBaseMeta):
         Служит для формирования виджета файла без перезагрузки страницы.
         """
         return {
-            'id': self.pk,
-            'created': self.created_at.isoformat(),
-            'modified': self.modified_at.isoformat(),
+            "id": self.pk,
+            "created": self.created_at.isoformat(),
+            "modified": self.modified_at.isoformat(),
         }
 
 
@@ -103,24 +103,24 @@ class FileResource(FileProxyMixin, Resource):
     """
 
     basename = models.CharField(
-        _('basename'),
+        _("basename"),
         max_length=255,
         editable=False,
-        help_text=_('Human-readable resource name'),
+        help_text=_("Human-readable resource name"),
     )
     extension = models.CharField(
-        _('extension'),
+        _("extension"),
         max_length=32,
         editable=False,
-        help_text=_('Lowercase, without leading dot'),
+        help_text=_("Lowercase, without leading dot"),
     )
-    size = models.PositiveIntegerField(_('size'), default=0, editable=False)
+    size = models.PositiveIntegerField(_("size"), default=0, editable=False)
     checksum = models.CharField(
-        _('checksum'),
+        _("checksum"),
         max_length=64,
         editable=False,
     )
-    uploaded_at = models.DateTimeField(_('uploaded at'), default=now, editable=False)
+    uploaded_at = models.DateTimeField(_("uploaded at"), default=now, editable=False)
 
     class Meta(Resource.Meta):
         abstract = True
@@ -146,7 +146,7 @@ class FileResource(FileProxyMixin, Resource):
         Не содержит суффикса, которое может быть добавлено файловым хранилищем.
         """
         if self.extension:
-            return '{}.{}'.format(self.basename, self.extension)
+            return "{}.{}".format(self.basename, self.extension)
         return self.basename
 
     def _require_file(self):
@@ -163,11 +163,11 @@ class FileResource(FileProxyMixin, Resource):
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
-            'name': self.basename,
-            'extension': self.extension,
-            'size': self.size,
-            'url': self.get_file_url(),
-            'uploaded': self.uploaded_at.isoformat()
+            "name": self.basename,
+            "extension": self.extension,
+            "size": self.size,
+            "url": self.get_file_url(),
+            "uploaded": self.uploaded_at.isoformat()
         }
 
     def update_checksum(self, file: FileLike = None) -> bool:
@@ -229,7 +229,7 @@ class FileResource(FileProxyMixin, Resource):
         UnsupportedFileError.
         """
         if not isinstance(file, File):
-            name = name or getattr(file, 'name', None)
+            name = name or getattr(file, "name", None)
             if name:
                 name = os.path.basename(name)
             file = File(file, name=name)
@@ -389,24 +389,24 @@ class ImageFileResourceMixin(models.Model):
     """
 
     title = models.CharField(
-        _('title'),
+        _("title"),
         max_length=255,
         blank=True,
         help_text=_(
-            'The title is being used as a tooltip when the user hovers the mouse over the image'
+            "The title is being used as a tooltip when the user hovers the mouse over the image"
         ),
     )
     description = models.TextField(
-        _('description'),
+        _("description"),
         blank=True,
         help_text=_(
-            'This text will be used by screen readers, search engines, or when the image cannot be loaded'
+            "This text will be used by screen readers, search engines, or when the image cannot be loaded"
         ),
     )
-    width = models.PositiveSmallIntegerField(_('width'), default=0, editable=False)
-    height = models.PositiveSmallIntegerField(_('height'), default=0, editable=False)
+    width = models.PositiveSmallIntegerField(_("width"), default=0, editable=False)
+    height = models.PositiveSmallIntegerField(_("height"), default=0, editable=False)
     cropregion = models.CharField(
-        _('crop region'), max_length=24, blank=True, editable=False
+        _("crop region"), max_length=24, blank=True, editable=False
     )
 
     class Meta:
@@ -415,11 +415,11 @@ class ImageFileResourceMixin(models.Model):
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),  # noqa
-            'width': self.width,
-            'height': self.height,
-            'cropregion': self.cropregion,
-            'title': self.title,
-            'description': self.description,
+            "width": self.width,
+            "height": self.height,
+            "cropregion": self.cropregion,
+            "title": self.title,
+            "description": self.description,
         }
 
     def _prepare_file(self, file: File, **options) -> File:
@@ -427,7 +427,7 @@ class ImageFileResourceMixin(models.Model):
             image = Image.open(file)
         except OSError:
             raise exceptions.UnsupportedFileError(
-                _('File `%s` is not an image') % file.name
+                _("File `%s` is not an image") % file.name
             )
         else:
             self.width, self.height = image.size
@@ -435,8 +435,8 @@ class ImageFileResourceMixin(models.Model):
             # format extension
             file.name = replace_extension(file.name, format=image.format)
             root, ext = os.path.splitext(file.name)
-            ext = ext.lstrip('.').lower()
-            file.name = '.'.join([root, ext])
+            ext = ext.lstrip(".").lower()
+            file.name = ".".join([root, ext])
 
         return super()._prepare_file(file, **options)  # noqa: F821
 
@@ -544,7 +544,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         Запись изображения в файловое хранилище
         """
         variation_file = self.get_variation_file(name)
-        with variation_file.open('wb') as fp:
+        with variation_file.open("wb") as fp:
             variation.save(image, fp)
 
     def recut(self, names: Iterable[str] = ()):
@@ -582,11 +582,11 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         queue.enqueue_call(
             self._recut_task,
             kwargs={
-                'app_label': self._meta.app_label,
-                'model_name': self._meta.model_name,
-                'object_id': self.pk,
-                'using': self._state.db,
-                'names': names,
+                "app_label": self._meta.app_label,
+                "model_name": self._meta.model_name,
+                "object_id": self.pk,
+                "using": self._state.db,
+                "names": names,
             },
         )
 

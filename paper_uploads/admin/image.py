@@ -12,19 +12,19 @@ class UploadedImageAdmin(UploadedFileBase):
         info = self.model._meta.app_label, self.model._meta.model_name
         urlpatterns = [
             path(
-                'upload/',
+                "upload/",
                 self.admin_site.admin_view(views.image.UploadFileView.as_view()),
-                name='%s_%s_upload' % info,
+                name="%s_%s_upload" % info,
             ),
             path(
-                'delete/',
+                "delete/",
                 self.admin_site.admin_view(views.image.DeleteFileView.as_view()),
-                name='%s_%s_delete' % info,
+                name="%s_%s_delete" % info,
             ),
             path(
-                'change/',
+                "change/",
                 self.admin_site.admin_view(views.image.ChangeFileView.as_view()),
-                name='%s_%s_change' % info,
+                name="%s_%s_change" % info,
             ),
         ]
         return urlpatterns

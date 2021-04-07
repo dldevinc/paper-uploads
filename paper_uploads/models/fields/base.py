@@ -13,10 +13,10 @@ class ResourceFieldBase(models.OneToOneField):
     """
 
     def __init__(self, verbose_name=None, **kwargs):
-        kwargs.setdefault('null', True)
-        kwargs.setdefault('related_name', '+')
-        kwargs.setdefault('on_delete', models.SET_NULL)
-        kwargs['verbose_name'] = verbose_name
+        kwargs.setdefault("null", True)
+        kwargs.setdefault("related_name", "+")
+        kwargs.setdefault("on_delete", models.SET_NULL)
+        kwargs["verbose_name"] = verbose_name
         super().__init__(**kwargs)
 
     def check(self, **kwargs):
@@ -48,18 +48,18 @@ class ResourceFieldBase(models.OneToOneField):
 
     def deconstruct(self):
         name, path, args, kwargs = super().deconstruct()
-        if 'null' in kwargs and self.null:
-            del kwargs['null']
-        if 'related_name' in kwargs and kwargs['related_name'] == '+':
-            del kwargs['related_name']
+        if "null" in kwargs and self.null:
+            del kwargs["null"]
+        if "related_name" in kwargs and kwargs["related_name"] == "+":
+            del kwargs["related_name"]
         return name, path, args, kwargs
 
     def formfield(self, **kwargs):
         return super().formfield(
             **{
-                'owner_app_label': self.opts.app_label.lower(),
-                'owner_model_name': self.opts.model_name.lower(),
-                'owner_fieldname': self.name,
+                "owner_app_label": self.opts.app_label.lower(),
+                "owner_model_name": self.opts.model_name.lower(),
+                "owner_fieldname": self.name,
                 **kwargs,
             }
         )
@@ -81,7 +81,7 @@ class ResourceFieldBase(models.OneToOneField):
         При удалении модели-владельца поля, удаляем и связанный
         в ним экземпляр ресурса.
         """
-        resource = getattr(kwargs['instance'], self.name)
+        resource = getattr(kwargs["instance"], self.name)
         if resource:
             resource.delete()
 
@@ -93,7 +93,7 @@ class FileResourceFieldBase(ResourceFieldBase):
     """
 
     def formfield(self, **kwargs):
-        return super().formfield(**{'configuration': self.get_configuration(), **kwargs})
+        return super().formfield(**{"configuration": self.get_configuration(), **kwargs})
 
     def get_configuration(self) -> Dict[str, Any]:
         """
@@ -104,15 +104,15 @@ class FileResourceFieldBase(ResourceFieldBase):
         config = {}
         for v in self.validators:
             if isinstance(v, validators.MimeTypeValidator):
-                config['acceptFiles'] = v.allowed
+                config["acceptFiles"] = v.allowed
             elif isinstance(v, validators.ExtensionValidator):
-                config['allowedExtensions'] = v.allowed
+                config["allowedExtensions"] = v.allowed
             elif isinstance(v, validators.SizeValidator):
-                config['sizeLimit'] = v.limit_value
+                config["sizeLimit"] = v.limit_value
             elif isinstance(v, validators.ImageMinSizeValidator):
-                config['minImageWidth'] = v.width_limit
-                config['minImageHeight'] = v.height_limit
+                config["minImageWidth"] = v.width_limit
+                config["minImageHeight"] = v.height_limit
             elif isinstance(v, validators.ImageMaxSizeValidator):
-                config['maxImageWidth'] = v.width_limit
-                config['maxImageHeight'] = v.height_limit
+                config["maxImageWidth"] = v.width_limit
+                config["maxImageHeight"] = v.height_limit
         return config

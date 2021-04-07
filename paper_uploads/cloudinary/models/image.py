@@ -11,15 +11,15 @@ from .base import CloudinaryFieldFile, CloudinaryFileResource
 
 class CloudinaryImage(ImageFileResourceMixin, CloudinaryFileResource):
     file = CloudinaryField(
-        _('file'),
+        _("file"),
         type=settings.CLOUDINARY_TYPE,
-        resource_type='image',
+        resource_type="image",
         folder=settings.IMAGES_UPLOAD_TO
     )
 
     class Meta(CloudinaryFileResource.Meta):
-        verbose_name = _('image')
-        verbose_name_plural = _('images')
+        verbose_name = _("image")
+        verbose_name_plural = _("images")
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:
@@ -30,12 +30,12 @@ class CloudinaryImage(ImageFileResourceMixin, CloudinaryFileResource):
         self.file = value
 
     def get_file_field(self) -> CloudinaryField:
-        return self._meta.get_field('file')
+        return self._meta.get_field("file")
 
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
-            'file_info': '({ext}, {width}x{height}, {size})'.format(
+            "file_info": "({ext}, {width}x{height}, {size})".format(
                 ext=self.extension,
                 width=self.width,
                 height=self.height,
@@ -47,6 +47,6 @@ class CloudinaryImage(ImageFileResourceMixin, CloudinaryFileResource):
     def get_configuration(cls) -> Dict[str, Any]:
         # TODO: магический метод
         return {
-            'image': True,
-            'acceptFiles': ['image/*'],
+            "image": True,
+            "acceptFiles": ["image/*"],
         }

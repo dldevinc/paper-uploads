@@ -5,8 +5,8 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Config(AppConfig):
-    name = 'paper_uploads'
-    verbose_name = _('Uploaded Files')
+    name = "paper_uploads"
+    verbose_name = _("Uploaded Files")
 
     def ready(self):
         from .admin import CollectionAdminBase

@@ -1,3 +1,3 @@
 import logging
 
-logger = logging.getLogger('paper_uploads')
+logger = logging.getLogger("paper_uploads")

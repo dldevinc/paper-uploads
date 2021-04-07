@@ -25,7 +25,7 @@ class AjaxView(View):
     @staticmethod
     def success_response(data: Optional[Dict[str, Any]] = None) -> JsonResponse:
         data = data or {}
-        data['success'] = True
+        data["success"] = True
         return JsonResponse(data)
 
     @staticmethod
@@ -45,7 +45,7 @@ class AjaxView(View):
 
     @staticmethod
     def error_response(
-        errors: Union[str, Iterable[str]] = '', **extra_data
+        errors: Union[str, Iterable[str]] = "", **extra_data
     ) -> JsonResponse:
         if not errors:
             errors = []
@@ -53,8 +53,8 @@ class AjaxView(View):
             errors = [errors]
 
         data = {
-            'success': False,
-            'errors': errors,
+            "success": False,
+            "errors": errors,
         }
         data.update(extra_data)
         return JsonResponse(data)
@@ -65,16 +65,16 @@ class ActionView(AjaxView):
         try:
             return self.handle(request, *args, **kwargs)
         except exceptions.InvalidContentType:
-            logger.exception('Error')
-            return self.error_response(_('Invalid content type'))
+            logger.exception("Error")
+            return self.error_response(_("Invalid content type"))
         except ValidationError as e:
             messages = self.get_exception_messages(e)
             logger.debug(messages)
             return self.error_response(messages)
         except Exception as e:
-            logger.exception('Error')
-            if hasattr(e, 'args'):
-                message = '{}: {}'.format(type(e).__name__, e.args[0])
+            logger.exception("Error")
+            if hasattr(e, "args"):
+                message = "{}: {}".format(type(e).__name__, e.args[0])
             else:
                 message = type(e).__name__
             return self.error_response(message)
@@ -84,15 +84,15 @@ class ActionView(AjaxView):
 
 
 class UploadFileViewBase(ActionView):
-    http_method_names = ['post']
+    http_method_names = ["post"]
 
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        if not request.user.has_perm('paper_uploads.upload'):
-            return self.error_response(_('Access denied'))
+        if not request.user.has_perm("paper_uploads.upload"):
+            return self.error_response(_("Access denied"))
 
         try:
             file = self.upload_chunk(request)
@@ -101,11 +101,11 @@ class UploadFileViewBase(ActionView):
         except exceptions.UncompleteUpload:
             return self.error_response(preventRetry=True)
         except exceptions.InvalidUUID as e:
-            logger.exception('Error')
-            return self.error_response(_('Invalid UUID: %s') % e.value, preventRetry=True)
+            logger.exception("Error")
+            return self.error_response(_("Invalid UUID: %s") % e.value, preventRetry=True)
         except exceptions.InvalidChunking:
-            logger.exception('Error')
-            return self.error_response(_('Invalid chunking'), preventRetry=True)
+            logger.exception("Error")
+            return self.error_response(_("Invalid chunking"), preventRetry=True)
 
         try:
             return self.perform_action(request, file)
@@ -119,8 +119,8 @@ class UploadFileViewBase(ActionView):
         # TODO: search for new uploader library
         """
         try:
-            chunk_index = int(request.POST['qqpartindex'])
-            total_chunks = int(request.POST['qqtotalparts'])
+            chunk_index = int(request.POST["qqpartindex"])
+            total_chunks = int(request.POST["qqtotalparts"])
         except KeyError:
             # small file, no chunks
             chunk_index = 0
@@ -128,28 +128,28 @@ class UploadFileViewBase(ActionView):
         except (ValueError, TypeError):
             raise exceptions.InvalidChunking
 
-        uuid = request.POST.get('qquuid')
+        uuid = request.POST.get("qquuid")
         try:
             uid = UUID(uuid)
         except (AttributeError, ValueError):
             raise exceptions.InvalidUUID(uuid)
 
-        tempdir = request.session.get('paper_uploads_tempdir')
+        tempdir = request.session.get("paper_uploads_tempdir")
         if tempdir is None or not os.path.isdir(tempdir):
             if request.user.pk is not None:
-                tempdir_suffix = '.user_{}'.format(request.user.pk)
+                tempdir_suffix = ".user_{}".format(request.user.pk)
             else:
                 tempdir_suffix = None
 
             tempdir = tempfile.mkdtemp(
-                prefix='paper_uploads.',
+                prefix="paper_uploads.",
                 suffix=tempdir_suffix,
                 dir=settings.FILE_UPLOAD_TEMP_DIR
             )
-            request.session['paper_uploads_tempdir'] = tempdir
+            request.session["paper_uploads_tempdir"] = tempdir
 
         tempfilepath = os.path.join(tempdir, str(uid))
-        file = request.FILES.get('qqfile')
+        file = request.FILES.get("qqfile")
         if file is None:
             # бывает при отмене загрузки на медленном интернете
             if os.path.isfile(tempfilepath):
@@ -157,60 +157,60 @@ class UploadFileViewBase(ActionView):
             raise exceptions.UncompleteUpload
 
         if total_chunks > 1:
-            with open(tempfilepath, 'a+b') as fp:
+            with open(tempfilepath, "a+b") as fp:
                 shutil.copyfileobj(file, fp)
 
             if chunk_index < total_chunks - 1:
                 raise exceptions.ContinueUpload
 
             file = TemporaryUploadedFile(
-                open(tempfilepath, 'rb'),
-                name=request.POST.get('qqfilename'),
+                open(tempfilepath, "rb"),
+                name=request.POST.get("qqfilename"),
                 size=os.path.getsize(tempfilepath)
             )
         return file
 
 
 class DeleteFileViewBase(ActionView):
-    http_method_names = ['post']
+    http_method_names = ["post"]
 
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        if not request.user.has_perm('paper_uploads.delete'):
-            return self.error_response(_('Access denied'))
+        if not request.user.has_perm("paper_uploads.delete"):
+            return self.error_response(_("Access denied"))
         return self.perform_action(request, *args, **kwargs)
 
 
 class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
-    http_method_names = ['get', 'post']
+    http_method_names = ["get", "post"]
     instance = None
 
     def get(self, request, *args, **kwargs):
-        if not request.user.has_perm('paper_uploads.change'):
-            return self.error_response(_('Access denied'))
+        if not request.user.has_perm("paper_uploads.change"):
+            return self.error_response(_("Access denied"))
 
         try:
             self.instance = self.get_instance(request, *args, **kwargs)
         except exceptions.AjaxFormError as exc:
-            logger.exception('Error')
+            logger.exception("Error")
             return self.error_response(exc.message)
 
         context = self.get_context_data(**kwargs)
         return self.success_response({
-            'form': loader.render_to_string(self.template_name, context, request=request)
+            "form": loader.render_to_string(self.template_name, context, request=request)
         })
 
     def post(self, request, *args, **kwargs):
-        if not request.user.has_perm('paper_uploads.change'):
-            return self.error_response(_('Access denied'))
+        if not request.user.has_perm("paper_uploads.change"):
+            return self.error_response(_("Access denied"))
 
         try:
             self.instance = self.get_instance(request, *args, **kwargs)
         except exceptions.AjaxFormError as exc:
-            logger.exception('Error')
+            logger.exception("Error")
             return self.error_response(exc.message)
 
         form = self.get_form()
@@ -224,24 +224,24 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
             logger.debug(messages)
             return self.error_response(messages)
         except exceptions.FileNotFoundError as e:
-            error = _('File not found: %s') % e.name
+            error = _("File not found: %s") % e.name
             logger.debug(error)
             return self.error_response(error)
         except exceptions.AjaxFormError as exc:
-            logger.exception('Error')
+            logger.exception("Error")
             return self.error_response(exc.message)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({
-            'action': self.request.get_full_path(),
-            'instance': self.instance,
+            "action": self.request.get_full_path(),
+            "instance": self.instance,
         })
         return context
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['instance'] = self.instance
+        kwargs["instance"] = self.instance
         return kwargs
 
     def get_instance(self, request, *args, **kwargs):
@@ -253,5 +253,5 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
 
     def form_invalid(self, form):
         return self.success_response({
-            'form_errors': form.errors.get_json_data()
+            "form_errors": form.errors.get_json_data()
         })

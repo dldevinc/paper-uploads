@@ -17,14 +17,14 @@ class FileUploaderWidgetMixin:
         context = super().get_context(name, value, attrs)  # noqa: F821
         context.update(
             {
-                'configuration': json.dumps(self.get_configuration()),
-                'limitations': self.get_limitations(),
+                "configuration": json.dumps(self.get_configuration()),
+                "limitations": self.get_limitations(),
             }
         )
         return context
 
     def get_configuration(self):
-        configuration_method = getattr(self.model, 'get_configuration', None)  # noqa: F821
+        configuration_method = getattr(self.model, "get_configuration", None)  # noqa: F821
         if configuration_method is not None and callable(configuration_method):
             config = configuration_method()
         else:
@@ -43,53 +43,53 @@ class FileUploaderWidgetMixin:
         if not configuration:
             return limits
 
-        if 'acceptFiles' in configuration:
-            accept_files = configuration['acceptFiles']
+        if "acceptFiles" in configuration:
+            accept_files = configuration["acceptFiles"]
             limits.append(
                 (
-                    _('Allowed files'),
+                    _("Allowed files"),
                     accept_files
                     if isinstance(accept_files, str)
                     else ", ".join(accept_files),
                 )
             )
-        if 'allowedExtensions' in configuration:
+        if "allowedExtensions" in configuration:
             limits.append(
-                (_('Allowed extensions'), ", ".join(configuration['allowedExtensions']))
+                (_("Allowed extensions"), ", ".join(configuration["allowedExtensions"]))
             )
-        if 'sizeLimit' in configuration:
+        if "sizeLimit" in configuration:
             limits.append(
-                (_('Maximum file size'), filesizeformat(configuration['sizeLimit']))
+                (_("Maximum file size"), filesizeformat(configuration["sizeLimit"]))
             )
 
-        min_width = configuration.get('minImageWidth', 0)
-        min_height = configuration.get('minImageHeight', 0)
+        min_width = configuration.get("minImageWidth", 0)
+        min_height = configuration.get("minImageHeight", 0)
         if min_width:
             if min_height:
                 limits.append(
                     (
-                        _('Minimum image size'),
-                        _('%sx%s pixels') % (min_width, min_height),
+                        _("Minimum image size"),
+                        _("%sx%s pixels") % (min_width, min_height),
                     )
                 )
             else:
-                limits.append((_('Minimum image width'), _('%s pixels') % min_width))
+                limits.append((_("Minimum image width"), _("%s pixels") % min_width))
         elif min_height:
-            limits.append((_('Minimum image height'), _('%s pixels') % min_height))
+            limits.append((_("Minimum image height"), _("%s pixels") % min_height))
 
-        max_width = configuration.get('maxImageWidth', 0)
-        max_height = configuration.get('maxImageHeight', 0)
+        max_width = configuration.get("maxImageWidth", 0)
+        max_height = configuration.get("maxImageHeight", 0)
         if max_width:
             if max_height:
                 limits.append(
                     (
-                        _('Maximum image size'),
-                        _('%sx%s pixels') % (max_width, max_height),
+                        _("Maximum image size"),
+                        _("%sx%s pixels") % (max_width, max_height),
                     )
                 )
             else:
-                limits.append((_('Maximum image width'), _('%s pixels') % max_width))
+                limits.append((_("Maximum image width"), _("%s pixels") % max_width))
         elif max_height:
-            limits.append((_('Maximum image height'), _('%s pixels') % max_height))
+            limits.append((_("Maximum image height"), _("%s pixels") % max_height))
 
         return limits
