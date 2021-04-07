@@ -433,25 +433,23 @@ python3 manage.py clean_uploads --min-age=10
 
 #### recreate_variations
 Перенарезает вариации для указанных моделей.
+Модель указывается в формате `app_label.model_name`.
 
-Рекомендуется запускать в интерактивном режиме:
+Если модель является коллекцией, необходимо указать параметр `--item-type`:
 ```shell
-python3 manage.py recreate_variations --interactive
+python3 manage.py recreate_variations 'app.Photos' --item-type='image'
 ```
 
-Возможен вызов и в неинтерактивном режиме. Для этого
-необходимо указать модель в виде строки вида
-`AppLabel.ModelName` и имя поля, ссылающегося на изображение.
-
+Для обычных моделей необходимо указать параметр `--field`:
 ```shell
-python3 manage.py recreate_variations 'app.Page' 'image'
+python3 manage.py recreate_variations 'app.Page' --field='image'
 ```
 
-Если нужно перенарезать не все вариации, а только некоторые,
-то их можно перечислить в параметре `--variations`.
-
+По умолчанию перенарезаются все возможные вариации для каждого
+экземпляра указанной модели. Можно указать конкретные вариации,
+которые нужно перенарезать:
 ```shell
-python3 manage.py recreate_variations 'app.Page' 'image' --variations big small
+python3 manage.py recreate_variations 'app.Page' --field='image' --variations big small
 ```
 
 Также, изображения можно перенарезать через код, для конкретных
@@ -460,7 +458,7 @@ python3 manage.py recreate_variations 'app.Page' 'image' --variations big small
 # перенарезка `big` и `medium` вариаций поля ImageField
 page.image.recut(['big', 'medium'])
 
-# перенарезка всех вариаций для всех картинок галереи
+# перенарезка всех вариаций для всех картинок коллекции
 for image in page.gallery.get_items('image'):
     image.recut()
 ```
