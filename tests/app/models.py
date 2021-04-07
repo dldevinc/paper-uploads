@@ -233,7 +233,21 @@ class ImageFieldObject(models.Model):
     name = models.CharField(_('name'), max_length=128)
 
     image = ImageField(_('image'), blank=True)
-    image_required = ImageField(_('required image'))
+    image_required = ImageField(
+        _('required image'),
+        variations=dict(
+            desktop=dict(
+                name='desktop',
+                size=(800, 0),
+                clip=False
+            ),
+            mobile=dict(
+                name='mobile',
+                size=(0, 600),
+                clip=False
+            ),
+        )
+    )
 
     image_extensions = ImageField(
         _('Extension'),

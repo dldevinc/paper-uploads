@@ -463,6 +463,15 @@ for image in page.gallery.get_items('image'):
     image.recut()
 ```
 
+#### remove_variations
+Удаление файлов вариаций.
+Параметры аналогичны параметрам `recreate_variations`.
+
+```shell
+python3 manage.py remove_variations 'app.Page' --field='image'
+```
+
+
 ## Validators
 Для добавления ограничений на загружаемые файлы применяются
 специальные валидаторы:
