@@ -10,9 +10,7 @@ const SOURCE_DIR = "paper_uploads/static/paper_uploads/src";
 const DIST_DIR = "paper_uploads/static/paper_uploads/dist";
 
 
-module.exports = {
-    devtool: "source-map",
-    mode: "production",
+let config = {
     entry: {
         widget: path.resolve(SOURCE_DIR, "js/widget.js"),
     },
@@ -27,7 +25,7 @@ module.exports = {
         rules: [
             {
                 test: /\.(js|jsx)$/,
-                exclude: /(node_modules|bower_components)/,
+                exclude: /node_modules/,
                 use: [
                     {
                         loader: "babel-loader",
@@ -72,7 +70,8 @@ module.exports = {
                     options: {
                         sassOptions: {
                             includePaths: [
-                                path.resolve(SOURCE_DIR, "css")
+                                path.resolve(SOURCE_DIR, "css"),
+                                path.resolve("node_modules"),
                             ]
                         }
                     }
@@ -95,13 +94,45 @@ module.exports = {
     ],
     optimization: {
         moduleIds: "deterministic",
-        minimizer: [
-            new TerserPlugin({
+    },
+    watchOptions: {
+        ignored: ["**/node_modules"]
+    },
+    stats: {
+        assets: false,
+        chunks: true
+    }
+}
 
+module.exports = (env, argv) => {
+    config.mode = (argv.mode === "production") ? "production" : "development";
+
+    if (argv.mode === "production") {
+        config.devtool = "source-map";
+    } else {
+        config.devtool = "eval";
+    }
+
+    if (argv.mode === "development") {
+        config.cache = {
+            type: "filesystem",
+            cacheDirectory: path.resolve(__dirname, "cache"),
+            buildDependencies: {
+                config: [__filename]
+            }
+        }
+    }
+
+    if (argv.mode === "production") {
+        config.optimization.minimizer = [
+            new TerserPlugin({
+                parallel: true,
             }),
             new CssMinimizerPlugin({
 
             })
-        ]
+        ];
     }
+
+    return config;
 };
