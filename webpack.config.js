@@ -18,14 +18,14 @@ let config = {
         clean: true,
         path: path.resolve(DIST_DIR),
         publicPath: "/static/paper_uploads/dist/",
-        filename: "[name].min.js",
+        filename: "[name].[contenthash].js",
         assetModuleFilename: "assets/[name][ext][query]"
     },
     module: {
         rules: [
             {
                 test: /\.(js|jsx)$/,
-                exclude: /node_modules/,
+                exclude: /[\\/]node_modules[\\/]/,
                 use: [
                     {
                         loader: "babel-loader",
@@ -35,6 +35,7 @@ let config = {
                     }
                 ]
             },
+
             {
                 test: /\.css$/,
                 use: [{
@@ -43,12 +44,12 @@ let config = {
                     loader: "fast-css-loader"
                 }]
             },
+
             {
                 test: /\.scss$/,
                 use: [{
                     loader: MiniCssExtractPlugin.loader,
-                },
-                {
+                }, {
                     loader: "fast-css-loader",
                     options: {
                         importLoaders: 2
@@ -71,12 +72,13 @@ let config = {
                         sassOptions: {
                             includePaths: [
                                 path.resolve(SOURCE_DIR, "css"),
-                                path.resolve("node_modules"),
+                                path.resolve(__dirname, "node_modules"),
                             ]
                         }
                     }
                 }]
             },
+
             {
                 test: /\.(jpe?g|png|gif|woff2?|ttf|eot|svg)$/i,
                 type: "asset/resource",
@@ -89,13 +91,14 @@ let config = {
     plugins: [
         new webpack.ProgressPlugin(),
         new MiniCssExtractPlugin({
-            filename: "[name].min.css",
+            filename: "[name].[contenthash].css"
         }),
     ],
     optimization: {
-        moduleIds: "deterministic",
+        moduleIds: "deterministic"
     },
     watchOptions: {
+        aggregateTimeout: 2000,
         ignored: ["**/node_modules"]
     },
     stats: {
@@ -107,13 +110,13 @@ let config = {
 module.exports = (env, argv) => {
     config.mode = (argv.mode === "production") ? "production" : "development";
 
-    if (argv.mode === "production") {
+    if (config.mode === "production") {
         config.devtool = "source-map";
     } else {
         config.devtool = "eval";
     }
 
-    if (argv.mode === "development") {
+    if (config.mode === "development") {
         config.cache = {
             type: "filesystem",
             cacheDirectory: path.resolve(__dirname, "cache"),
@@ -123,14 +126,12 @@ module.exports = (env, argv) => {
         }
     }
 
-    if (argv.mode === "production") {
+    if (config.mode === "production") {
         config.optimization.minimizer = [
             new TerserPlugin({
                 parallel: true,
             }),
-            new CssMinimizerPlugin({
-
-            })
+            new CssMinimizerPlugin({})
         ];
     }
 
