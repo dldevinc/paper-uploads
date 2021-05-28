@@ -656,7 +656,7 @@ Collection.prototype.addListeners = function() {
                 label: gettext('Delete'),
                 className: 'btn-danger',
                 callback: function() {
-                    modals.softPreloaderPromise(
+                    modals.showSmartPreloader(
                         _this._deleteCollection()
                     ).catch(function(error) {
                         if ((typeof error === 'object') && error.response && error.response.errors) {
@@ -696,7 +696,7 @@ Collection.prototype.addListeners = function() {
         data.append('item_type', item.dataset.itemType);
         const queryString = new URLSearchParams(data).toString();
 
-        modals.softPreloaderPromise(
+        modals.showSmartPreloader(
             fetch(`${_this._opts.urls.changeItem}?${queryString}`, {
                 credentials: 'same-origin',
             }).then(function(response) {
@@ -725,7 +725,7 @@ Collection.prototype.addListeners = function() {
                     label: gettext('Save'),
                     className: 'btn-success',
                     callback: function() {
-                        modals.softPreloaderPromise(
+                        modals.showSmartPreloader(
                             _this._changeItem(item, modal)
                         ).catch(function(error) {
                             if ((typeof error === 'object') && error.response && error.response.errors) {
@@ -743,7 +743,7 @@ Collection.prototype.addListeners = function() {
 
             const $form = $(modal._element).find('form');
             $form.on('submit', function() {
-                modals.softPreloaderPromise(
+                modals.showSmartPreloader(
                     _this._changeItem(item, modal)
                 ).catch(function(error) {
                     if ((typeof error === 'object') && error.response && error.response.errors) {
@@ -789,7 +789,7 @@ Collection.prototype.addListeners = function() {
 
         const item = event.target.closest(_this._opts.collection.item);
 
-        modals.softPreloaderPromise(
+        modals.showSmartPreloader(
             _this._deleteItem(item)
         ).catch(function(error) {
             if ((typeof error === 'object') && error.response && error.response.errors) {
@@ -871,7 +871,7 @@ Collection.prototype.addListeners = function() {
                                 return _this._deleteItem(item)
                             });
 
-                            modals.softPreloaderPromise(
+                            modals.showSmartPreloader(
                                 allSettled(delete_promises)
                             ).then(function(results) {
                                 for (let result of results) {

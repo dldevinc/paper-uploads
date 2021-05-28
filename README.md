@@ -7,9 +7,9 @@
 ![](http://joxi.net/gmvnGZBtqKOOjm.png)
 
 ## Requirements
-* Python 3.6+
-* Django 2.1+
-* [paper-admin][paper-admin]
+* Python >= 3.6
+* Django >= 2.1
+* [paper-admin][paper-admin] >= 3.0
 * [variations][variations]
 
 ## Features

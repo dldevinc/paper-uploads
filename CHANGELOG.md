@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.6.0](https://github.com/dldevinc/paper-uploads/tree/v0.6.0) - 2021-06-06
+- Requires `paper-admin` >= 3.0
+
 ## [0.5.0](https://github.com/dldevinc/paper-uploads/tree/v0.5.0) - 2021-04-07
 - Added `remove_variations` management command.
 - The `recreate_variations` management command has been completely rewritten.

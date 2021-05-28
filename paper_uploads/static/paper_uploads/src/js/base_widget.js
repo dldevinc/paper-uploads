@@ -186,7 +186,7 @@ BaseWidget.prototype._change = function(modal) {
     const _this = this;
     const $form = $(modal._element).find('form');
 
-    modals.softPreloaderPromise(
+    modals.showSmartPreloader(
         fetch($form.prop('action'), {
             method: 'POST',
             credentials: 'same-origin',
@@ -249,7 +249,7 @@ BaseWidget.prototype._delete = function() {
     data.append('instance_id', this.instanceId.toString());
 
     const _this = this;
-    modals.softPreloaderPromise(
+    modals.showSmartPreloader(
         fetch(this._opts.urls.delete, {
             method: 'POST',
             credentials: 'same-origin',
@@ -333,7 +333,7 @@ BaseWidget.prototype.addListeners = function() {
         data.append('instance_id', _this.instanceId.toString());
         const queryString = new URLSearchParams(data).toString();
 
-        modals.softPreloaderPromise(
+        modals.showSmartPreloader(
             fetch(`${_this._opts.urls.change}?${queryString}`, {
                 credentials: 'same-origin',
             }).then(function(response) {

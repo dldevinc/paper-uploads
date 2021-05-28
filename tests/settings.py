@@ -126,11 +126,6 @@ RQ_QUEUES = {
 # =============
 #  Paper Admin
 # =============
-PAPER_SUPPORT_PHONE = '+1 267 626 2554'
-PAPER_SUPPORT_EMAIL = 'office@directlinedev.com'
-PAPER_SUPPORT_COMPANY = 'Direct Line Development'
-PAPER_SUPPORT_WEBSITE = 'https://directlinedev.com/'
-
 PAPER_ENVIRONMENT_NAME = 'development'
 PAPER_ENVIRONMENT_COLOR = '#FFFF00'
 
