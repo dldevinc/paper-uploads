@@ -180,4 +180,3 @@ PAPER_UPLOADS = {
 }
 
 load_dotenv()
-load_dotenv()
