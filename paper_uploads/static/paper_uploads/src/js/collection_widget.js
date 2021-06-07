@@ -3,8 +3,8 @@
 import deepmerge from "deepmerge";
 import allSettled from "promise.allsettled";
 import EventEmitter from "wolfy87-eventemitter";
-import {Uploader, ValidationError, getPaperParams} from "./_uploader";
-import {showError, collectError, showCollectedErrors} from "./_utils";
+import {Uploader, ValidationError} from "./_uploader";
+import {getPaperParams, showError, collectError, showCollectedErrors} from "./_utils";
 
 // PaperAdmin API
 const Sortable = window.paperAdmin.Sortable;

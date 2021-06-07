@@ -2,8 +2,8 @@
 
 import deepmerge from "deepmerge";
 import EventEmitter from "wolfy87-eventemitter";
-import {Uploader, getPaperParams} from "./_uploader";
-import {showError} from "./_utils";
+import {Uploader} from "./_uploader";
+import {getPaperParams, showError} from "./_utils";
 
 // PaperAdmin API
 const modals = window.paperAdmin.modals;

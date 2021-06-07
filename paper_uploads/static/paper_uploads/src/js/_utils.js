@@ -5,6 +5,22 @@ let _errors = [];
 
 
 /**
+ * Вычленение из data-атрибутов тех, которые начинаются с "data-paper-".
+ * @param element
+ * @returns {Object}
+ */
+function getPaperParams(element) {
+    const params = {};
+    const dataset = element.dataset;
+    Object.keys(dataset).forEach(function(name) {
+        if (/^paper(?:[^a-z0-9]|$)/.test(name)) {
+            params[name] = dataset[name];
+        }
+    });
+    return params;
+}
+
+/**
  * Мгновенный показ сообщения.
  * @param {String|String[]} error
  */
@@ -45,6 +61,7 @@ function showCollectedErrors() {
 }
 
 export {
+    getPaperParams,
     showError,
     collectError,
     showCollectedErrors

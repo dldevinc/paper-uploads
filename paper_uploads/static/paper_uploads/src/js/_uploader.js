@@ -1,7 +1,8 @@
+import match from 'mime-match';
 import EventEmitter from "wolfy87-eventemitter";
 import {FineUploaderBasic, isFile} from "./fine-uploader/fine-uploader.core";
 import {DragAndDrop} from "./fine-uploader/dnd";
-import match from 'mime-match';
+import {getPaperParams} from "./_utils";
 
 
 /**
@@ -263,17 +264,4 @@ Uploader.prototype._makeUploader = function() {
     return uploader;
 };
 
-
-function getPaperParams(element) {
-    const params = {};
-    const dataset = element.dataset;
-    Object.keys(dataset).forEach(function(name) {
-        if (/^paper(?:[^a-z0-9]|$)/.test(name)) {
-            params[name] = dataset[name];
-        }
-    });
-    return params;
-}
-
-
-export {Uploader, ValidationError, getPaperParams};
+export {Uploader, ValidationError};
