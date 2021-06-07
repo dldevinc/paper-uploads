@@ -206,9 +206,9 @@ BaseWidget.prototype._change = function(modal) {
             throw error
         }
 
-        formUtils.cleanFormErrors($form.get(0));
+        formUtils.cleanAllErrors(modal._body);
         if (response.form_errors) {
-            formUtils.addFormErrorsFromJSON($form.get(0), response.form_errors);
+            formUtils.setErrorsFromJSON(modal._body, response.form_errors);
         } else {
             modal.destroy();
 
@@ -305,17 +305,22 @@ BaseWidget.prototype.addListeners = function() {
         event.preventDefault();
 
         modals.createModal({
+            modalClass: "paper-modal--warning fade",
             title: gettext('Confirmation'),
-            message: gettext('Are you sure you want to <b>DELETE</b> this file?'),
+            body: gettext('Are you sure you want to <b>DELETE</b> this file?'),
             buttons: [{
                 label: gettext('Cancel'),
-                className: 'btn-outline-info'
+                buttonClass: 'btn-outline-info',
+                onClick: function() {
+                    this.destroy();
+                }
             }, {
                 autofocus: true,
                 label: gettext('Delete'),
-                className: 'btn-danger',
-                callback: function() {
+                buttonClass: 'btn-danger',
+                onClick: function() {
                     _this._delete();
+                    this.destroy();
                 }
             }]
         }).show();
@@ -353,20 +358,23 @@ BaseWidget.prototype.addListeners = function() {
 
             const modal = modals.createModal({
                 title: gettext('Edit file'),
-                message: response.form,
+                body: response.form,
                 buttons: [{
                     label: gettext('Cancel'),
-                    className: 'btn-outline-info'
+                    buttonClass: 'btn-outline-info',
+                    onClick: function() {
+                        this.destroy();
+                    }
                 }, {
                     autofocus: true,
                     label: gettext('Save'),
-                    className: 'btn-success',
-                    callback: function() {
+                    buttonClass: 'btn-success',
+                    onClick: function() {
                         _this._change(this);
-                        return false;
                     }
                 }]
-            }).show();
+            });
+            modal.show();
 
             const $form = $(modal._element).find('form');
             $form.on('submit', function() {

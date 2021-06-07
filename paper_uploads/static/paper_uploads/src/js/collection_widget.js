@@ -511,9 +511,9 @@ Collection.prototype._changeItem = function(item, modal) {
             throw error
         }
 
-        formUtils.cleanFormErrors($form.get(0));
+        formUtils.cleanAllErrors(modal._body);
         if (response.form_errors) {
-            formUtils.addFormErrorsFromJSON($form.get(0), response.form_errors);
+            formUtils.setErrorsFromJSON(modal._body, response.form_errors);
         } else {
             modal.destroy();
 
@@ -646,16 +646,20 @@ Collection.prototype.addListeners = function() {
         event.preventDefault();
 
         modals.createModal({
+            modalClass: "paper-modal--warning fade",
             title: gettext('Confirmation'),
-            message: gettext('Are you sure you want to <b>DELETE</b> this collection?'),
+            body: gettext('Are you sure you want to <b>DELETE</b> this collection?'),
             buttons: [{
                 label: gettext('Cancel'),
-                className: 'btn-outline-info'
+                buttonClass: 'btn-outline-info',
+                onClick: function() {
+                    this.destroy();
+                }
             }, {
                 autofocus: true,
                 label: gettext('Delete'),
-                className: 'btn-danger',
-                callback: function() {
+                buttonClass: 'btn-danger',
+                onClick: function() {
                     modals.showSmartPreloader(
                         _this._deleteCollection()
                     ).catch(function(error) {
@@ -667,6 +671,8 @@ Collection.prototype.addListeners = function() {
                             showError(error);
                         }
                     });
+
+                    this.destroy();
                 }
             }]
         }).show();
@@ -716,15 +722,18 @@ Collection.prototype.addListeners = function() {
 
             const modal = modals.createModal({
                 title: gettext('Edit file'),
-                message: response.form,
+                body: response.form,
                 buttons: [{
                     label: gettext('Cancel'),
-                    className: 'btn-outline-info'
+                    buttonClass: 'btn-outline-info',
+                    onClick: function() {
+                        this.destroy();
+                    }
                 }, {
                     autofocus: true,
                     label: gettext('Save'),
-                    className: 'btn-success',
-                    callback: function() {
+                    buttonClass: 'btn-success',
+                    onClick: function() {
                         modals.showSmartPreloader(
                             _this._changeItem(item, modal)
                         ).catch(function(error) {
@@ -736,10 +745,12 @@ Collection.prototype.addListeners = function() {
                                 showError(error);
                             }
                         });
-                        return false;
+
+                        this.destroy();
                     }
                 }]
-            }).show();
+            });
+            modal.show();
 
             const $form = $(modal._element).find('form');
             $form.on('submit', function() {
@@ -858,15 +869,18 @@ Collection.prototype.addListeners = function() {
             if (checkedItems.length) {
                 modals.createModal({
                     title: gettext('Confirmation'),
-                    message: gettext(`Are you sure you want to <b>DELETE</b> the selected <b>${checkedItems.length}</b> file(s)?`),
+                    body: gettext(`Are you sure you want to <b>DELETE</b> the selected <b>${checkedItems.length}</b> file(s)?`),
                     buttons: [{
                         label: gettext('Cancel'),
-                        className: 'btn-outline-info'
+                        buttonClass: 'btn-outline-info',
+                        onClick: function() {
+                            this.destroy();
+                        }
                     }, {
                         autofocus: true,
                         label: gettext('Delete'),
-                        className: 'btn-danger',
-                        callback: function() {
+                        buttonClass: 'btn-danger',
+                        onClick: function() {
                             const delete_promises = checkedItems.map(function(item) {
                                 return _this._deleteItem(item)
                             });
@@ -888,6 +902,8 @@ Collection.prototype.addListeners = function() {
                                 }
                                 showCollectedErrors();
                             });
+
+                            this.destroy();
                         }
                     }]
                 }).show();
