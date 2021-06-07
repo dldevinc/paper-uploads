@@ -2,7 +2,7 @@ import "./file_widget";
 import "./image_widget";
 import "./collection_widget";
 
-// Images
+// import all SVG images
 function importAll(r) {
     return r.keys().map(r);
 }

@@ -2,24 +2,8 @@ import match from 'mime-match';
 import EventEmitter from "wolfy87-eventemitter";
 import {FineUploaderBasic, isFile} from "./fine-uploader/fine-uploader.core";
 import {DragAndDrop} from "./fine-uploader/dnd";
+import {ValidationError} from "./_exceptions";
 import {getPaperParams} from "./_utils";
-
-
-/**
- * Класс ошибки валидации файла при событии onSubmit()
- * @constructor
- */
-function ValidationError() {
-    Error.apply(this, arguments) ;
-    this.name = "ValidationError";
-    if (Error.captureStackTrace) {
-        Error.captureStackTrace(this, ValidationError);
-    } else {
-        this.stack = (new Error()).stack;
-    }
-}
-
-ValidationError.prototype = Object.create(Error.prototype);
 
 
 /**
@@ -193,7 +177,7 @@ Uploader.prototype._makeUploader = function() {
                 try {
                     _this.trigger('submit', [id]);
                 } catch (e) {
-                    if (e.name === 'ValidationError') {
+                    if (e instanceof ValidationError) {
                         return false;
                     } else {
                         throw e;
@@ -264,4 +248,6 @@ Uploader.prototype._makeUploader = function() {
     return uploader;
 };
 
-export {Uploader, ValidationError};
+export {
+    Uploader
+};

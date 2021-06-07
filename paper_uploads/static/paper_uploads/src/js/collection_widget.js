@@ -3,7 +3,8 @@
 import deepmerge from "deepmerge";
 import allSettled from "promise.allsettled";
 import EventEmitter from "wolfy87-eventemitter";
-import {Uploader, ValidationError} from "./_uploader";
+import {Uploader} from "./_uploader";
+import {ValidationError} from "./_exceptions";
 import {getPaperParams, showError, collectError, showCollectedErrors} from "./_utils";
 
 // PaperAdmin API
@@ -270,7 +271,7 @@ Collection.prototype.initUploader = function() {
         },
     }).on('submit', function() {
         if (isNaN(_this.collectionId)) {
-            throw new ValidationError();
+            throw new ValidationError("empty collectionId");
         }
     }).on('submitted', function(id) {
         const preloader = _this._createPreloader(id);
