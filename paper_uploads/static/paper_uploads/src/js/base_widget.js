@@ -26,18 +26,18 @@ function BaseWidget(element, options) {
      * @type object
      */
     this._opts = deepmerge({
-        input: '',
-        uploadButton: '',
-        cancelButton: '',
-        changeButton: '',
-        deleteButton: '',
+        input: "",
+        uploadButton: "",
+        cancelButton: "",
+        changeButton: "",
+        deleteButton: "",
 
-        link: '',
+        link: "",
 
         urls: {
-            upload: '',
-            change: '',
-            delete: ''
+            upload: "",
+            change: "",
+            delete: ""
         }
     }, options || {});
 
@@ -78,16 +78,16 @@ function BaseWidget(element, options) {
 
 BaseWidget.prototype = Object.create(EventEmitter.prototype);
 
-Object.defineProperty(BaseWidget.prototype, 'instanceId', {
+Object.defineProperty(BaseWidget.prototype, "instanceId", {
     get: function() {
         return parseInt(this.input.value);
     },
     set: function(value) {
-        this.input.value = parseInt(value) || '';
+        this.input.value = parseInt(value) || "";
     }
 });
 
-Object.defineProperty(BaseWidget.prototype, 'empty', {
+Object.defineProperty(BaseWidget.prototype, "empty", {
     get: function() {
         return Boolean(this._empty);
     },
@@ -97,15 +97,15 @@ Object.defineProperty(BaseWidget.prototype, 'empty', {
             return
         }
         if (newValue) {
-            this.element.classList.add('empty');
+            this.element.classList.add("empty");
         } else {
-            this.element.classList.remove('empty');
+            this.element.classList.remove("empty");
         }
         this._empty = newValue;
     }
 });
 
-Object.defineProperty(BaseWidget.prototype, 'loading', {
+Object.defineProperty(BaseWidget.prototype, "loading", {
     get: function() {
         return Boolean(this._loading);
     },
@@ -115,10 +115,10 @@ Object.defineProperty(BaseWidget.prototype, 'loading', {
             return
         }
         if (newValue) {
-            this.element.classList.add('loading');
+            this.element.classList.add("loading");
         } else {
-            this.element.classList.remove('loading');
-            this.element.classList.remove('processing');
+            this.element.classList.remove("loading");
+            this.element.classList.remove("processing");
         }
         this._loading = newValue;
     }
@@ -132,43 +132,43 @@ BaseWidget.prototype.initUploader = function() {
     return new Uploader(this.element, {
         url: this._opts.urls.upload,
         button: this.uploadButton,
-        dropzones: this.element.querySelectorAll('.dropzone-overlay'),
+        dropzones: this.element.querySelectorAll(".dropzone-overlay"),
         configuration: JSON.parse(this.element.dataset.configuration),
-    }).on('submitted', function(id) {
-        _this.trigger('upload:submitted', [id]);
-    }).on('upload', function(id) {
+    }).on("submitted", function(id) {
+        _this.trigger("upload:submitted", [id]);
+    }).on("upload", function(id) {
         _this.loading = true;
 
-        const progressBar = _this.element.querySelector('.progress-bar');
-        progressBar && (progressBar.style.width = '');
-        _this.trigger('upload:upload', [id]);
-    }).on('progress', function(id, percentage) {
-        const progressBar = _this.element.querySelector('.progress-bar');
-        progressBar && (progressBar.style.width = percentage + '%');
+        const progressBar = _this.element.querySelector(".progress-bar");
+        progressBar && (progressBar.style.width = "");
+        _this.trigger("upload:upload", [id]);
+    }).on("progress", function(id, percentage) {
+        const progressBar = _this.element.querySelector(".progress-bar");
+        progressBar && (progressBar.style.width = percentage + "%");
 
         if (percentage >= 100) {
-            _this.element.classList.add('processing');
+            _this.element.classList.add("processing");
         }
-    }).on('complete', function(id, response) {
+    }).on("complete", function(id, response) {
         _this.empty = false;
         _this.instanceId = response.id;
-        _this.trigger('upload:created');
+        _this.trigger("upload:created");
 
-        const fileName = _this.element.querySelector('.file-name');
+        const fileName = _this.element.querySelector(".file-name");
         fileName && (fileName.textContent = response.name);
 
-        const fileInfo = _this.element.querySelector('.file-info');
+        const fileInfo = _this.element.querySelector(".file-info");
         fileInfo && (fileInfo.textContent = response.file_info);
 
         const previewLink = _this.element.querySelector(_this._opts.link);
         previewLink && (previewLink.href = response.url);
 
-        _this.trigger('upload:complete');
-    }).on('cancel', function(id) {
-        _this.trigger('upload:cancel', [id]);
-    }).on('error', function(id, messages) {
+        _this.trigger("upload:complete");
+    }).on("cancel", function(id) {
+        _this.trigger("upload:cancel", [id]);
+    }).on("error", function(id, messages) {
         showErrors(messages);
-    }).on('all_complete', function() {
+    }).on("all_complete", function() {
         _this.loading = false;
     });
 };
@@ -184,12 +184,12 @@ BaseWidget.prototype._change = function(modal) {
     }
 
     const _this = this;
-    const $form = $(modal._element).find('form');
+    const $form = $(modal._element).find("form");
 
     modals.showSmartPreloader(
-        fetch($form.prop('action'), {
-            method: 'POST',
-            credentials: 'same-origin',
+        fetch($form.prop("action"), {
+            method: "POST",
+            credentials: "same-origin",
             body: new FormData($form.get(0))
         }).then(function(response) {
             if (!response.ok) {
@@ -201,7 +201,7 @@ BaseWidget.prototype._change = function(modal) {
         })
     ).then(function(response) {
         if (response.errors && response.errors.length) {
-            const error = new Error('Invalid request');
+            const error = new Error("Invalid request");
             error.response = response;
             throw error
         }
@@ -212,17 +212,17 @@ BaseWidget.prototype._change = function(modal) {
         } else {
             modal.destroy();
 
-            const fileName = _this.element.querySelector('.file-name');
+            const fileName = _this.element.querySelector(".file-name");
             fileName && (fileName.textContent = response.name);
 
-            const fileInfo = _this.element.querySelector('.file-info');
+            const fileInfo = _this.element.querySelector(".file-info");
             fileInfo && (fileInfo.textContent = response.file_info);
 
             const previewLink = _this.element.querySelector(_this._opts.link);
             previewLink && (previewLink.href = response.url);
         }
     }).catch(function(error) {
-        if ((typeof error === 'object') && error.response && error.response.errors) {
+        if ((typeof error === "object") && error.response && error.response.errors) {
             showErrors(error.response.errors);
         } else if (error instanceof Error) {
             showErrors(error.message);
@@ -246,13 +246,13 @@ BaseWidget.prototype._delete = function() {
     Object.keys(params).forEach(function(name) {
         data.append(name, params[name]);
     });
-    data.append('instance_id', this.instanceId.toString());
+    data.append("instance_id", this.instanceId.toString());
 
     const _this = this;
     modals.showSmartPreloader(
         fetch(this._opts.urls.delete, {
-            method: 'POST',
-            credentials: 'same-origin',
+            method: "POST",
+            credentials: "same-origin",
             body: data
         }).then(function(response) {
             if (!response.ok) {
@@ -264,23 +264,23 @@ BaseWidget.prototype._delete = function() {
         })
     ).then(function(response) {
         if (response.errors && response.errors.length) {
-            const error = new Error('Invalid request');
+            const error = new Error("Invalid request");
             error.response = response;
             throw error
         }
 
         _this.empty = true;
-        _this.instanceId = '';
+        _this.instanceId = "";
 
-        const fileName = _this.element.querySelector('.file-name');
-        fileName && (fileName.textContent = '');
+        const fileName = _this.element.querySelector(".file-name");
+        fileName && (fileName.textContent = "");
 
-        const fileInfo = _this.element.querySelector('.file-info');
-        fileInfo && (fileInfo.textContent = '');
+        const fileInfo = _this.element.querySelector(".file-info");
+        fileInfo && (fileInfo.textContent = "");
 
-        _this.trigger('upload:deleted');
+        _this.trigger("upload:deleted");
     }).catch(function(error) {
-        if ((typeof error === 'object') && error.response && error.response.errors) {
+        if ((typeof error === "object") && error.response && error.response.errors) {
             showErrors(error.response.errors);
         } else if (error instanceof Error) {
             showErrors(error.message);
@@ -294,30 +294,30 @@ BaseWidget.prototype.addListeners = function() {
     const _this = this;
 
     // отмена загрузки
-    this.cancelButton.addEventListener('click', function(event) {
+    this.cancelButton.addEventListener("click", function(event) {
         event.preventDefault();
         _this.loading = false;
         _this.uploader.uploader.cancelAll();
     });
 
     // удаление файла
-    this.deleteButton.addEventListener('click', function(event) {
+    this.deleteButton.addEventListener("click", function(event) {
         event.preventDefault();
 
         modals.createModal({
             modalClass: "paper-modal--warning fade",
-            title: gettext('Confirmation'),
-            body: gettext('Are you sure you want to <b>DELETE</b> this file?'),
+            title: gettext("Confirmation"),
+            body: gettext("Are you sure you want to <b>DELETE</b> this file?"),
             buttons: [{
-                label: gettext('Cancel'),
-                buttonClass: 'btn-outline-info',
+                label: gettext("Cancel"),
+                buttonClass: "btn-outline-info",
                 onClick: function() {
                     this.destroy();
                 }
             }, {
                 autofocus: true,
-                label: gettext('Delete'),
-                buttonClass: 'btn-danger',
+                label: gettext("Delete"),
+                buttonClass: "btn-danger",
                 onClick: function() {
                     _this._delete();
                     this.destroy();
@@ -327,7 +327,7 @@ BaseWidget.prototype.addListeners = function() {
     });
 
     // редактирование файла
-    this.changeButton.addEventListener('click', function(event) {
+    this.changeButton.addEventListener("click", function(event) {
         event.preventDefault();
 
         const data = new FormData();
@@ -335,12 +335,12 @@ BaseWidget.prototype.addListeners = function() {
         Object.keys(params).forEach(function(name) {
             data.append(name, params[name]);
         });
-        data.append('instance_id', _this.instanceId.toString());
+        data.append("instance_id", _this.instanceId.toString());
         const queryString = new URLSearchParams(data).toString();
 
         modals.showSmartPreloader(
             fetch(`${_this._opts.urls.change}?${queryString}`, {
-                credentials: 'same-origin',
+                credentials: "same-origin",
             }).then(function(response) {
                 if (!response.ok) {
                     const error = new Error(`${response.status} ${response.statusText}`);
@@ -351,24 +351,24 @@ BaseWidget.prototype.addListeners = function() {
             })
         ).then(function(response) {
             if (response.errors && response.errors.length) {
-                const error = new Error('Invalid request');
+                const error = new Error("Invalid request");
                 error.response = response;
                 throw error
             }
 
             const modal = modals.createModal({
-                title: gettext('Edit file'),
+                title: gettext("Edit file"),
                 body: response.form,
                 buttons: [{
-                    label: gettext('Cancel'),
-                    buttonClass: 'btn-outline-info',
+                    label: gettext("Cancel"),
+                    buttonClass: "btn-outline-info",
                     onClick: function() {
                         this.destroy();
                     }
                 }, {
                     autofocus: true,
-                    label: gettext('Save'),
-                    buttonClass: 'btn-success',
+                    label: gettext("Save"),
+                    buttonClass: "btn-success",
                     onClick: function() {
                         _this._change(this);
                     }
@@ -376,13 +376,13 @@ BaseWidget.prototype.addListeners = function() {
             });
             modal.show();
 
-            const $form = $(modal._element).find('form');
-            $form.on('submit', function() {
+            const $form = $(modal._element).find("form");
+            $form.on("submit", function() {
                 _this._change(modal);
                 return false;
             });
         }).catch(function(error) {
-            if ((typeof error === 'object') && error.response && error.response.errors) {
+            if ((typeof error === "object") && error.response && error.response.errors) {
                 showErrors(error.response.errors);
             } else if (error instanceof Error) {
                 showErrors(error.message);

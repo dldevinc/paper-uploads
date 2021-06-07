@@ -14,7 +14,7 @@ import {getPaperParams} from "./_utils";
  */
 function Uploader(element, options) {
     this._opts = Object.assign({
-        url: '',
+        url: "",
         multiple: false,
         maxConnections: 1,
         button: null,
@@ -31,9 +31,9 @@ function Uploader(element, options) {
 Uploader.prototype = Object.create(EventEmitter.prototype);
 
 Uploader.prototype.getParams = function(id) {
-    if (typeof this._opts.params === 'function') {
+    if (typeof this._opts.params === "function") {
         return Object.assign(getPaperParams(this.element), this._opts.params.call(this, id));
-    } else if (typeof this._opts.params === 'object') {
+    } else if (typeof this._opts.params === "object") {
         return Object.assign(getPaperParams(this.element), this._opts.params);
     } else {
         return getPaperParams(this.element);
@@ -43,7 +43,7 @@ Uploader.prototype.getParams = function(id) {
 Uploader.prototype.formatParams = function(params, id) {
     const plain_params = {};
     for (let [key, value] of Object.entries(params)) {
-        if (typeof value === 'function') {
+        if (typeof value === "function") {
             plain_params[key] = value(id);
         } else {
             plain_params[key] = value;
@@ -73,7 +73,7 @@ Uploader.prototype._makeUploader = function() {
             }
         },
         text: {
-            fileInputTitle: ''
+            fileInputTitle: ""
         },
         validation: {
             stopOnFirstInvalidFile: false,
@@ -103,7 +103,7 @@ Uploader.prototype._makeUploader = function() {
                         try {
                             filter.call(uploader, id, file);
                         } catch (error) {
-                            _this.trigger('error', [id, error.message]);
+                            _this.trigger("error", [id, error.message]);
                             return false;
                         }
                     }
@@ -119,13 +119,13 @@ Uploader.prototype._makeUploader = function() {
                             allowed = allowedMimeTypes.some(function(template) {
                                 return match(file.type, template);
                             });
-                        } else if (typeof allowedMimeTypes === 'string') {
+                        } else if (typeof allowedMimeTypes === "string") {
                             allowed = match(file.type, allowedMimeTypes);
                         }
 
                         if (!allowed) {
                             const reason = `File <b>\`${file.name}\`</b> has an invalid mimetype '${file.type}'`;
-                            _this.trigger('error', [id, reason]);
+                            _this.trigger("error", [id, reason]);
                             return false;
                         }
                     }
@@ -152,22 +152,22 @@ Uploader.prototype._makeUploader = function() {
                         }).then(function(size) {
                             if (configuration.minImageWidth && (size.width < configuration.minImageWidth)) {
                                 const reason = `File <b>\`${file.name}\`</b> is not wide enough. Minimum width is ${configuration.minImageWidth}px`;
-                                _this.trigger('error', [id, reason]);
+                                _this.trigger("error", [id, reason]);
                                 throw new Error(reason);
                             }
                             if (configuration.minImageHeight && (size.height < configuration.minImageHeight)) {
                                 const reason = `File <b>\`${file.name}\`</b> is not tall enough. Minimum height is ${configuration.minImageHeight}px`;
-                                _this.trigger('error', [id, reason]);
+                                _this.trigger("error", [id, reason]);
                                 throw new Error(reason);
                             }
                             if (configuration.maxImageWidth && (size.width > configuration.maxImageWidth)) {
                                 const reason = `File <b>\`${file.name}\`</b> is too wide. Maximum width is ${configuration.maxImageWidth}px`;
-                                _this.trigger('error', [id, reason]);
+                                _this.trigger("error", [id, reason]);
                                 throw new Error(reason);
                             }
                             if (configuration.maxImageHeight && (size.height > configuration.maxImageHeight)) {
                                 const reason = `File <b>\`${file.name}\`</b> is too tall. Maximum height is ${configuration.maxImageHeight}px`;
-                                _this.trigger('error', [id, reason]);
+                                _this.trigger("error", [id, reason]);
                                 throw new Error(reason);
                             }
                         });
@@ -175,7 +175,7 @@ Uploader.prototype._makeUploader = function() {
                 }
 
                 try {
-                    _this.trigger('submit', [id]);
+                    _this.trigger("submit", [id]);
                 } catch (e) {
                     if (e instanceof ValidationError) {
                         return false;
@@ -185,7 +185,7 @@ Uploader.prototype._makeUploader = function() {
                 }
             },
             onSubmitted: function(id) {
-                _this.trigger('submitted', [id]);
+                _this.trigger("submitted", [id]);
                 let params = _this.getParams(id);
                 if (params) {
                     params = _this.formatParams(params, id);
@@ -193,23 +193,23 @@ Uploader.prototype._makeUploader = function() {
                 }
             },
             onUpload: function(id) {
-                _this.trigger('upload', [id]);
+                _this.trigger("upload", [id]);
             },
             onProgress: function(id, name, uploadedBytes, totalBytes) {
                 const percentage = Math.ceil(100 * (uploadedBytes / totalBytes));
-                _this.trigger('progress', [id, percentage]);
+                _this.trigger("progress", [id, percentage]);
             },
             onCancel: function(id) {
-                _this.trigger('cancel', [id]);
+                _this.trigger("cancel", [id]);
             },
             onComplete: function(id, name, response) {
                 if (response.success) {
-                    _this.trigger('complete', [id, response]);
+                    _this.trigger("complete", [id, response]);
                 }
             },
             onAllComplete: function(succeeded, failed) {
                 is_loading = false;
-                _this.trigger('all_complete', [succeeded, failed]);
+                _this.trigger("all_complete", [succeeded, failed]);
             },
             onError: function(id, name, reason, xhr) {
                 let response, messages;
@@ -225,7 +225,7 @@ Uploader.prototype._makeUploader = function() {
                     messages = reason;
                 }
 
-                _this.trigger('error', [id, messages]);
+                _this.trigger("error", [id, messages]);
             }
         }
     });
@@ -235,7 +235,7 @@ Uploader.prototype._makeUploader = function() {
             dropZoneElements: this._opts.dropzones,
             allowMultipleItems: this._opts.multiple,
             classes: {
-                dropActive: 'dropzone-highlighted'
+                dropActive: "dropzone-highlighted"
             },
             callbacks: {
                 processingDroppedFilesComplete: function(files) {

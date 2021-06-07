@@ -33,47 +33,47 @@ function Collection(element, options) {
      * @type Object
      */
     this._opts = deepmerge({
-        preloaderItem: '.collection-item--preloader',
+        preloaderItem: ".collection-item--preloader",
 
-        templates: '.collection__{}-item-template',
+        templates: ".collection__{}-item-template",
 
         collection: {
-            input: '.collection__input',
-            itemList: '.collection__items',
-            item: '.collection__item',
-            dropzone: '.dropzone-overlay',
-            createButton: '.collection__create-button',
-            uploadButton: '.collection__upload-button',
-            deleteButton: '.collection__delete-button',
+            input: ".collection__input",
+            itemList: ".collection__items",
+            item: ".collection__item",
+            dropzone: ".dropzone-overlay",
+            createButton: ".collection__create-button",
+            uploadButton: ".collection__upload-button",
+            deleteButton: ".collection__delete-button",
 
             states: {
-                empty: 'collection--empty',
+                empty: "collection--empty",
             },
         },
 
         item: {
-            caption: '.collection-item__name',
-            preview: '.collection-item__preview',
-            checkbox: '.collection-item__checkbox',
-            view_button: '.collection-item__view-button',
-            edit_button: '.collection-item__edit-button',
-            cancel_button: '.collection-item__cancel-button',
-            delete_button: '.collection-item__delete-button',
+            caption: ".collection-item__name",
+            preview: ".collection-item__preview",
+            checkbox: ".collection-item__checkbox",
+            view_button: ".collection-item__view-button",
+            edit_button: ".collection-item__edit-button",
+            cancel_button: ".collection-item__cancel-button",
+            delete_button: ".collection-item__delete-button",
 
             states: {
-                checked: 'collection-item--checked',
-                removing: 'collection-item--removing',
-                processing: 'collection-item--processing',
+                checked: "collection-item--checked",
+                removing: "collection-item--removing",
+                processing: "collection-item--processing",
             },
         },
 
         urls: {
-            createCollection: '',
-            deleteCollection: '',
-            uploadItem: '',
-            changeItem: '',
-            deleteItem: '',
-            sortItems: ''
+            createCollection: "",
+            deleteCollection: "",
+            uploadItem: "",
+            changeItem: "",
+            deleteItem: "",
+            sortItems: ""
         }
     }, options || {});
 
@@ -109,7 +109,7 @@ function Collection(element, options) {
 
 Collection.prototype = Object.create(EventEmitter.prototype);
 
-Object.defineProperty(Collection.prototype, 'collectionId', {
+Object.defineProperty(Collection.prototype, "collectionId", {
     get: function() {
         return parseInt(this.input.value);
     },
@@ -117,13 +117,13 @@ Object.defineProperty(Collection.prototype, 'collectionId', {
         const newValue = parseInt(value);
         if (isNaN(newValue)) {
             // удаление коллекции
-            this.input.value = '';
+            this.input.value = "";
             this.createButton.hidden = false;
             this.uploadButton.hidden = true;
             this.deleteButton.hidden = true;
             this.element.classList.add(this._opts.collection.states.empty);
 
-            const uploadInput = this.uploadButton.querySelector('input[type="file"]');
+            const uploadInput = this.uploadButton.querySelector("input[type='file']");
             uploadInput && (uploadInput.disabled = true);
         } else {
             // коллекция инициализирована
@@ -133,13 +133,13 @@ Object.defineProperty(Collection.prototype, 'collectionId', {
             this.deleteButton.hidden = false;
             this.element.classList.remove(this._opts.collection.states.empty);
 
-            const uploadInput = this.uploadButton.querySelector('input[type="file"]');
+            const uploadInput = this.uploadButton.querySelector("input[type='file']");
             uploadInput && (uploadInput.disabled = false);
         }
     }
 });
 
-Object.defineProperty(Collection.prototype, 'loading', {
+Object.defineProperty(Collection.prototype, "loading", {
     get: function() {
         return Boolean(this._loading);
     },
@@ -149,10 +149,10 @@ Object.defineProperty(Collection.prototype, 'loading', {
             return
         }
         if (newValue) {
-            this.element.classList.add('loading');
+            this.element.classList.add("loading");
             this.deleteButton.disabled = true;
         } else {
-            this.element.classList.remove('loading');
+            this.element.classList.remove("loading");
             this.deleteButton.disabled = false;
         }
         this._loading = newValue;
@@ -167,7 +167,7 @@ Object.defineProperty(Collection.prototype, 'loading', {
  * @private
  */
 Collection.prototype._createItem = function(type) {
-    const selector = this._opts.templates.replace('{}', type);
+    const selector = this._opts.templates.replace("{}", type);
     const template = this.element.querySelector(selector);
     return document.importNode(template.content, true);
 };
@@ -179,7 +179,7 @@ Collection.prototype._createItem = function(type) {
  * @private
  */
 Collection.prototype._createPreloader = function(id) {
-    const clone = this._createItem('preloader');
+    const clone = this._createItem("preloader");
     const preloader = clone.querySelector(this._opts.collection.item);
     this.itemList.append(clone);
 
@@ -218,8 +218,8 @@ Collection.prototype._createUploadedItem = function(response) {
     const clone = this._createItem(itemType);
 
     const item = clone.querySelector(this._opts.collection.item);
-    item.setAttribute('data-pk', response.id);
-    item.setAttribute('data-item-type', itemType);
+    item.setAttribute("data-pk", response.id);
+    item.setAttribute("data-item-type", itemType);
 
     const preview = clone.querySelector(this._opts.item.preview);
     preview && (preview.innerHTML = response.preview);
@@ -269,58 +269,58 @@ Collection.prototype.initUploader = function() {
                 return Array.from(_this.itemList.children).indexOf(preloader);
             }
         },
-    }).on('submit', function() {
+    }).on("submit", function() {
         if (isNaN(_this.collectionId)) {
             throw new ValidationError("empty collectionId");
         }
-    }).on('submitted', function(id) {
+    }).on("submitted", function(id) {
         const preloader = _this._createPreloader(id);
-        emitters.dom.trigger('mutate', [preloader]);
-        _this.trigger('collection:submit_item', [preloader, id]);
-    }).on('upload', function(id) {
+        emitters.dom.trigger("mutate", [preloader]);
+        _this.trigger("collection:submit_item", [preloader, id]);
+    }).on("upload", function(id) {
         _this.loading = true;
 
         const preloader = _this._findPreloader(id);
-        _this.trigger('collection:upload_item', [preloader, id]);
-    }).on('progress', function(id, percentage) {
+        _this.trigger("collection:upload_item", [preloader, id]);
+    }).on("progress", function(id, percentage) {
         const preloader = _this._findPreloader(id);
-        const progressBar = preloader.querySelector('.progress-bar');
-        progressBar && (progressBar.style.height = percentage + '%');
+        const progressBar = preloader.querySelector(".progress-bar");
+        progressBar && (progressBar.style.height = percentage + "%");
 
         if (percentage >= 100) {
             preloader.classList.add(_this._opts.item.states.processing);
         }
-    }).on('complete', function(id, response) {
+    }).on("complete", function(id, response) {
         if (isNaN(_this.collectionId)) {
             _this.collectionId = response.collectionId;
-            _this.trigger('collection:created');
+            _this.trigger("collection:created");
         }
 
         const preloader = _this._findPreloader(id);
-        _this.trigger('collection:complete_item', [preloader, id]);
+        _this.trigger("collection:complete_item", [preloader, id]);
 
         const clone = _this._createUploadedItem(response);
         preloader.before(clone);
         preloader.remove();
-    }).on('cancel', function(id) {
+    }).on("cancel", function(id) {
         const preloader = _this._findPreloader(id);
-        _this.trigger('collection:cancel_item', [preloader, id]);
+        _this.trigger("collection:cancel_item", [preloader, id]);
 
         // анимация удаления
-        preloader.addEventListener('animationend', function() {
+        preloader.addEventListener("animationend", function() {
             preloader.remove();
         });
         preloader.classList.add(_this._opts.item.states.removing);
-    }).on('error', function(id, messages) {
+    }).on("error", function(id, messages) {
         collectError(messages);
         const preloader = _this._findPreloader(id);
 
         // анимация удаления
-        preloader.addEventListener('animationend', function() {
+        preloader.addEventListener("animationend", function() {
             preloader.remove();
         });
         preloader.classList.add(_this._opts.item.states.removing);
-    }).on('all_complete', function() {
+    }).on("all_complete", function() {
         _this.loading = false;
         showCollectedErrors();
     });
@@ -335,8 +335,8 @@ Collection.prototype.initSortable = function() {
         animation: 0,
         draggable: this._opts.collection.item,
         filter: this._opts.preloaderItem,
-        handle: '.sortable-handler',
-        ghostClass: 'sortable-ghost',
+        handle: ".sortable-handler",
+        ghostClass: "sortable-ghost",
         onEnd: function() {
             const items = Array.from(_this.itemList.querySelectorAll(_this._opts.collection.item));
             const order = items.map(function(item) {
@@ -350,12 +350,12 @@ Collection.prototype.initSortable = function() {
             Object.keys(params).forEach(function(name) {
                 data.append(name, params[name]);
             });
-            data.append('collectionId', _this.collectionId.toString());
-            data.append('order', order.join(','));
+            data.append("collectionId", _this.collectionId.toString());
+            data.append("order", order.join(","));
 
             fetch(_this._opts.urls.sortItems, {
-                method: 'POST',
-                credentials: 'same-origin',
+                method: "POST",
+                credentials: "same-origin",
                 body: data
             }).then(function(response) {
                 if (!response.ok) {
@@ -366,12 +366,12 @@ Collection.prototype.initSortable = function() {
                 return response.json();
             }).then(function(response) {
                 if (response.errors && response.errors.length) {
-                    const error = new Error('Invalid request');
+                    const error = new Error("Invalid request");
                     error.response = response;
                     throw error
                 }
             }).catch(function(error) {
-                if ((typeof error === 'object') && error.response && error.response.errors) {
+                if ((typeof error === "object") && error.response && error.response.errors) {
                     showErrors(error.response.errors);
                 } else if (error instanceof Error) {
                     showErrors(error.message);
@@ -390,7 +390,7 @@ Collection.prototype.initSortable = function() {
  */
 Collection.prototype._createCollection = function() {
     if (!isNaN(this.collectionId)) {
-        return Promise.reject('collection already exists');
+        return Promise.reject("collection already exists");
     }
 
     const data = new FormData();
@@ -401,8 +401,8 @@ Collection.prototype._createCollection = function() {
 
     const _this = this;
     return fetch(this._opts.urls.createCollection, {
-        method: 'POST',
-        credentials: 'same-origin',
+        method: "POST",
+        credentials: "same-origin",
         body: data
     }).then(function(response) {
         if (!response.ok) {
@@ -413,13 +413,13 @@ Collection.prototype._createCollection = function() {
         return response.json();
     }).then(function(response) {
         if (response.errors && response.errors.length) {
-            const error = new Error('Invalid request');
+            const error = new Error("Invalid request");
             error.response = response;
             throw error
         }
 
         _this.collectionId = response.collection_id;
-        _this.trigger('collection:created');
+        _this.trigger("collection:created");
     });
 };
 
@@ -431,12 +431,12 @@ Collection.prototype._createCollection = function() {
  */
 Collection.prototype._deleteItem = function(item) {
     if (isNaN(this.collectionId)) {
-        return Promise.reject('collection required');
+        return Promise.reject("collection required");
     }
 
     const instance_id = parseInt(item && item.dataset.pk);
     if (isNaN(instance_id)) {
-        return Promise.reject('invalid ID')
+        return Promise.reject("invalid ID")
     }
 
     const data = new FormData();
@@ -444,14 +444,14 @@ Collection.prototype._deleteItem = function(item) {
     Object.keys(params).forEach(function(name) {
         data.append(name, params[name]);
     });
-    data.append('collectionId', this.collectionId.toString());
-    data.append('instance_id', instance_id.toString());
-    data.append('item_type', item.dataset.itemType);
+    data.append("collectionId", this.collectionId.toString());
+    data.append("instance_id", instance_id.toString());
+    data.append("item_type", item.dataset.itemType);
 
     const _this = this;
     return fetch(this._opts.urls.deleteItem, {
-        method: 'POST',
-        credentials: 'same-origin',
+        method: "POST",
+        credentials: "same-origin",
         body: data
     }).then(function(response) {
         if (!response.ok) {
@@ -462,13 +462,13 @@ Collection.prototype._deleteItem = function(item) {
         return response.json();
     }).then(function(response) {
         if (response.errors && response.errors.length) {
-            const error = new Error('Invalid request');
+            const error = new Error("Invalid request");
             error.response = response;
             throw error
         }
 
         // анимация удаления
-        item.addEventListener('animationend', function() {
+        item.addEventListener("animationend", function() {
             item.remove();
         });
         item.classList.add(_this._opts.item.states.removing);
@@ -484,19 +484,19 @@ Collection.prototype._deleteItem = function(item) {
  */
 Collection.prototype._changeItem = function(item, modal) {
     if (isNaN(this.collectionId)) {
-        return Promise.reject('collection required');
+        return Promise.reject("collection required");
     }
 
     const instance_id = parseInt(item && item.dataset.pk);
     if (isNaN(instance_id)) {
-        return Promise.reject('invalid ID')
+        return Promise.reject("invalid ID")
     }
 
     const _this = this;
-    const $form = $(modal._element).find('form');
-    return fetch($form.prop('action'), {
-        method: 'POST',
-        credentials: 'same-origin',
+    const $form = $(modal._element).find("form");
+    return fetch($form.prop("action"), {
+        method: "POST",
+        credentials: "same-origin",
         body: new FormData($form.get(0))
     }).then(function(response) {
         if (!response.ok) {
@@ -507,7 +507,7 @@ Collection.prototype._changeItem = function(item, modal) {
         return response.json();
     }).then(function(response) {
         if (response.errors && response.errors.length) {
-            const error = new Error('Invalid request');
+            const error = new Error("Invalid request");
             error.response = response;
             throw error
         }
@@ -549,7 +549,7 @@ Collection.prototype.cleanItems = function() {
  */
 Collection.prototype._deleteCollection = function() {
     if (isNaN(this.collectionId)) {
-        return Promise.reject('collection required')
+        return Promise.reject("collection required")
     }
 
     const data = new FormData();
@@ -557,7 +557,7 @@ Collection.prototype._deleteCollection = function() {
     Object.keys(params).forEach(function(name) {
         data.append(name, params[name]);
     });
-    data.append('collectionId', this.collectionId.toString());
+    data.append("collectionId", this.collectionId.toString());
 
     // отмена всех текущих загрузок. По идее, их и так быть не должно,
     // т.к. кнопка блокируется.
@@ -565,8 +565,8 @@ Collection.prototype._deleteCollection = function() {
 
     const _this = this;
     return fetch(this._opts.urls.deleteCollection, {
-        method: 'POST',
-        credentials: 'same-origin',
+        method: "POST",
+        credentials: "same-origin",
         body: data
     }).then(function(response) {
         if (!response.ok) {
@@ -577,7 +577,7 @@ Collection.prototype._deleteCollection = function() {
         return response.json();
     }).then(function(response) {
         if (response.errors && response.errors.length) {
-            const error = new Error('Invalid request');
+            const error = new Error("Invalid request");
             error.response = response;
             throw error
         }
@@ -589,15 +589,15 @@ Collection.prototype._deleteCollection = function() {
         });
 
         if (lastItem) {
-            lastItem.addEventListener('animationend', function() {
+            lastItem.addEventListener("animationend", function() {
                 _this.cleanItems();
-                _this.collectionId = '';
-                _this.trigger('collection:deleted');
+                _this.collectionId = "";
+                _this.trigger("collection:deleted");
             });
         } else {
             _this.cleanItems();
-            _this.collectionId = '';
-            _this.trigger('collection:deleted');
+            _this.collectionId = "";
+            _this.trigger("collection:deleted");
         }
     });
 };
@@ -618,7 +618,7 @@ Collection.prototype.addListeners = function() {
     const _this = this;
 
     // создание галереи
-    this.element.addEventListener('click', function(event) {
+    this.element.addEventListener("click", function(event) {
         if (!event.target.closest(_this._opts.collection.createButton)) {
             return
         }
@@ -628,7 +628,7 @@ Collection.prototype.addListeners = function() {
         modals.softPreloaderPromise(
             _this._createCollection()
         ).catch(function(error) {
-            if ((typeof error === 'object') && error.response && error.response.errors) {
+            if ((typeof error === "object") && error.response && error.response.errors) {
                 showErrors(error.response.errors);
             } else if (error instanceof Error) {
                 showErrors(error.message);
@@ -639,7 +639,7 @@ Collection.prototype.addListeners = function() {
     });
 
     // удаление галереи
-    this.element.addEventListener('click', function(event) {
+    this.element.addEventListener("click", function(event) {
         if (!event.target.closest(_this._opts.collection.deleteButton)) {
             return
         }
@@ -648,23 +648,23 @@ Collection.prototype.addListeners = function() {
 
         modals.createModal({
             modalClass: "paper-modal--warning fade",
-            title: gettext('Confirmation'),
-            body: gettext('Are you sure you want to <b>DELETE</b> this collection?'),
+            title: gettext("Confirmation"),
+            body: gettext("Are you sure you want to <b>DELETE</b> this collection?"),
             buttons: [{
-                label: gettext('Cancel'),
-                buttonClass: 'btn-outline-info',
+                label: gettext("Cancel"),
+                buttonClass: "btn-outline-info",
                 onClick: function() {
                     this.destroy();
                 }
             }, {
                 autofocus: true,
-                label: gettext('Delete'),
-                buttonClass: 'btn-danger',
+                label: gettext("Delete"),
+                buttonClass: "btn-danger",
                 onClick: function() {
                     modals.showSmartPreloader(
                         _this._deleteCollection()
                     ).catch(function(error) {
-                        if ((typeof error === 'object') && error.response && error.response.errors) {
+                        if ((typeof error === "object") && error.response && error.response.errors) {
                             showErrors(error.response.errors);
                         } else if (error instanceof Error) {
                             showErrors(error.message);
@@ -680,7 +680,7 @@ Collection.prototype.addListeners = function() {
     });
 
     // редактирование элемента
-    this.element.addEventListener('click', function(event) {
+    this.element.addEventListener("click", function(event) {
         if (!event.target.closest(_this._opts.item.edit_button)) {
             return
         }
@@ -698,14 +698,14 @@ Collection.prototype.addListeners = function() {
         Object.keys(params).forEach(function(name) {
             data.append(name, params[name]);
         });
-        data.append('collectionId', _this.collectionId.toString());
-        data.append('instance_id', instance_id.toString());
-        data.append('item_type', item.dataset.itemType);
+        data.append("collectionId", _this.collectionId.toString());
+        data.append("instance_id", instance_id.toString());
+        data.append("item_type", item.dataset.itemType);
         const queryString = new URLSearchParams(data).toString();
 
         modals.showSmartPreloader(
             fetch(`${_this._opts.urls.changeItem}?${queryString}`, {
-                credentials: 'same-origin',
+                credentials: "same-origin",
             }).then(function(response) {
                 if (!response.ok) {
                     const error = new Error(`${response.status} ${response.statusText}`);
@@ -716,29 +716,29 @@ Collection.prototype.addListeners = function() {
             })
         ).then(function(response) {
             if (response.errors && response.errors.length) {
-                const error = new Error('Invalid request');
+                const error = new Error("Invalid request");
                 error.response = response;
                 throw error
             }
 
             const modal = modals.createModal({
-                title: gettext('Edit file'),
+                title: gettext("Edit file"),
                 body: response.form,
                 buttons: [{
-                    label: gettext('Cancel'),
-                    buttonClass: 'btn-outline-info',
+                    label: gettext("Cancel"),
+                    buttonClass: "btn-outline-info",
                     onClick: function() {
                         this.destroy();
                     }
                 }, {
                     autofocus: true,
-                    label: gettext('Save'),
-                    buttonClass: 'btn-success',
+                    label: gettext("Save"),
+                    buttonClass: "btn-success",
                     onClick: function() {
                         modals.showSmartPreloader(
                             _this._changeItem(item, modal)
                         ).catch(function(error) {
-                            if ((typeof error === 'object') && error.response && error.response.errors) {
+                            if ((typeof error === "object") && error.response && error.response.errors) {
                                 showErrors(error.response.errors);
                             } else if (error instanceof Error) {
                                 showErrors(error.message);
@@ -753,12 +753,12 @@ Collection.prototype.addListeners = function() {
             });
             modal.show();
 
-            const $form = $(modal._element).find('form');
-            $form.on('submit', function() {
+            const $form = $(modal._element).find("form");
+            $form.on("submit", function() {
                 modals.showSmartPreloader(
                     _this._changeItem(item, modal)
                 ).catch(function(error) {
-                    if ((typeof error === 'object') && error.response && error.response.errors) {
+                    if ((typeof error === "object") && error.response && error.response.errors) {
                         showErrors(error.response.errors);
                     } else if (error instanceof Error) {
                         showErrors(error.message);
@@ -769,7 +769,7 @@ Collection.prototype.addListeners = function() {
                 return false;
             });
         }).catch(function(error) {
-            if ((typeof error === 'object') && error.response && error.response.errors) {
+            if ((typeof error === "object") && error.response && error.response.errors) {
                 showErrors(error.response.errors);
             } else if (error instanceof Error) {
                 showErrors(error.message);
@@ -780,7 +780,7 @@ Collection.prototype.addListeners = function() {
     });
 
     // отмена загрузки
-    this.element.addEventListener('click', function(event) {
+    this.element.addEventListener("click", function(event) {
         if (!event.target.closest(_this._opts.item.cancel_button)) {
             return
         }
@@ -792,7 +792,7 @@ Collection.prototype.addListeners = function() {
     });
 
     // удаление элемента
-    this.element.addEventListener('click', function(event) {
+    this.element.addEventListener("click", function(event) {
         if (!event.target.closest(_this._opts.item.delete_button)) {
             return
         }
@@ -804,7 +804,7 @@ Collection.prototype.addListeners = function() {
         modals.showSmartPreloader(
             _this._deleteItem(item)
         ).catch(function(error) {
-            if ((typeof error === 'object') && error.response && error.response.errors) {
+            if ((typeof error === "object") && error.response && error.response.errors) {
                 showErrors(error.response.errors);
             } else if (error instanceof Error) {
                 showErrors(error.message);
@@ -816,7 +816,7 @@ Collection.prototype.addListeners = function() {
 
     // выделение элемента галереи
     let lastChecked = null;
-    this.element.addEventListener('click', function(event) {
+    this.element.addEventListener("click", function(event) {
         const item = event.target.closest(_this._opts.collection.item);
         if (!item) {
             return
@@ -859,8 +859,8 @@ Collection.prototype.addListeners = function() {
     });
 
     // удаление выделенных элементов при нажатии Delete
-    this.element.addEventListener('keyup', function(event) {
-        if (event.code === 'Delete') {
+    this.element.addEventListener("keyup", function(event) {
+        if (event.code === "Delete") {
             const items = Array.from(_this.itemList.querySelectorAll(_this._opts.collection.item));
             const checkedItems = items.filter(function(item) {
                 const checkbox = item.querySelector(_this._opts.item.checkbox);
@@ -869,18 +869,18 @@ Collection.prototype.addListeners = function() {
 
             if (checkedItems.length) {
                 modals.createModal({
-                    title: gettext('Confirmation'),
+                    title: gettext("Confirmation"),
                     body: gettext(`Are you sure you want to <b>DELETE</b> the selected <b>${checkedItems.length}</b> file(s)?`),
                     buttons: [{
-                        label: gettext('Cancel'),
-                        buttonClass: 'btn-outline-info',
+                        label: gettext("Cancel"),
+                        buttonClass: "btn-outline-info",
                         onClick: function() {
                             this.destroy();
                         }
                     }, {
                         autofocus: true,
-                        label: gettext('Delete'),
-                        buttonClass: 'btn-danger',
+                        label: gettext("Delete"),
+                        buttonClass: "btn-danger",
                         onClick: function() {
                             const delete_promises = checkedItems.map(function(item) {
                                 return _this._deleteItem(item)
@@ -890,9 +890,9 @@ Collection.prototype.addListeners = function() {
                                 allSettled(delete_promises)
                             ).then(function(results) {
                                 for (let result of results) {
-                                    if (result.status === 'rejected') {
+                                    if (result.status === "rejected") {
                                         const error = result.reason;
-                                        if ((typeof error === 'object') && error.response && error.response.errors) {
+                                        if ((typeof error === "object") && error.response && error.response.errors) {
                                             collectError(error.response.errors);
                                         } else if (error instanceof Error) {
                                             collectError(error.message);
@@ -913,7 +913,7 @@ Collection.prototype.addListeners = function() {
     });
 
     // просмотр при двойном клике
-    this.element.addEventListener('dblclick', function(event) {
+    this.element.addEventListener("dblclick", function(event) {
         const item = event.target.closest(_this._opts.collection.item);
         if (!item) {
             return
@@ -921,7 +921,7 @@ Collection.prototype.addListeners = function() {
 
         const viewButton = item.querySelector(_this._opts.item.view_button);
         if (viewButton) {
-            viewButton.dispatchEvent(new MouseEvent('click', {
+            viewButton.dispatchEvent(new MouseEvent("click", {
                 bubbles: true,
                 cancelable: true
             }));
@@ -964,11 +964,11 @@ function initWidget(element) {
 
 
 function initWidgets(root = document.body) {
-    let file_selector = '.collection';
+    let file_selector = ".collection";
     root.matches(file_selector) && initWidget(root);
     root.querySelectorAll(file_selector).forEach(initWidget);
 }
 
 
 initWidgets();
-emitters.dom.on('mutate', initWidgets);
+emitters.dom.on("mutate", initWidgets);

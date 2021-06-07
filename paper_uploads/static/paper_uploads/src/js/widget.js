@@ -6,4 +6,4 @@ import "./collection_widget";
 function importAll(r) {
     return r.keys().map(r);
 }
-importAll(require.context('../img/files/', false, /\.svg$/));
+importAll(require.context("../img/files/", false, /\.svg$/));
