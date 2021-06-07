@@ -21,26 +21,23 @@ function getPaperParams(element) {
 }
 
 /**
- * Мгновенный показ сообщения.
- * @param {String|String[]} error
+ * Единая точка входа для показа ошибок.
+ * Используется для глобальной модификации параметров окна сообщений об ошибках.
+ * @param {String|String[]} errors
  */
-function showError(error) {
-    console.debug(`Show error: ${error}`);
-    return modals.showErrors(error, {
-        title: 'Error'
-    });
+function showErrors(errors) {
+    return modals.showErrors(errors);
 }
 
 /**
  * Добавление ошибки в словарь для отложенного показа.
- * @param {String|String[]} error
+ * @param {String|String[]} errors
  */
-function collectError(error) {
-    console.debug(`Collect error: ${error}`);
-    if (typeof error === 'string') {
-        _errors.push(error);
-    } else if (Array.isArray(error)) {
-        _errors = _errors.concat(error);
+function collectError(errors) {
+    if (typeof errors === "string") {
+        _errors.push(errors);
+    } else if (Array.isArray(errors)) {
+        _errors = _errors.concat(errors);
     }
 }
 
@@ -52,17 +49,14 @@ function showCollectedErrors() {
         return
     }
 
-    const modal = modals.showErrors(_errors, {
-        title: 'Error'
-    });
-
+    const modal = showErrors(_errors);
     _errors = [];
     return modal;
 }
 
 export {
     getPaperParams,
-    showError,
+    showErrors,
     collectError,
     showCollectedErrors
 };

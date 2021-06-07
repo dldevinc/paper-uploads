@@ -5,7 +5,7 @@ import allSettled from "promise.allsettled";
 import EventEmitter from "wolfy87-eventemitter";
 import {Uploader} from "./_uploader";
 import {ValidationError} from "./_exceptions";
-import {getPaperParams, showError, collectError, showCollectedErrors} from "./_utils";
+import {getPaperParams, showErrors, collectError, showCollectedErrors} from "./_utils";
 
 // PaperAdmin API
 const Sortable = window.paperAdmin.Sortable;
@@ -372,11 +372,11 @@ Collection.prototype.initSortable = function() {
                 }
             }).catch(function(error) {
                 if ((typeof error === 'object') && error.response && error.response.errors) {
-                    showError(error.response.errors);
+                    showErrors(error.response.errors);
                 } else if (error instanceof Error) {
-                    showError(error.message);
+                    showErrors(error.message);
                 } else {
-                    showError(error);
+                    showErrors(error);
                 }
             })
         },
@@ -629,11 +629,11 @@ Collection.prototype.addListeners = function() {
             _this._createCollection()
         ).catch(function(error) {
             if ((typeof error === 'object') && error.response && error.response.errors) {
-                showError(error.response.errors);
+                showErrors(error.response.errors);
             } else if (error instanceof Error) {
-                showError(error.message);
+                showErrors(error.message);
             } else {
-                showError(error);
+                showErrors(error);
             }
         });
     });
@@ -665,11 +665,11 @@ Collection.prototype.addListeners = function() {
                         _this._deleteCollection()
                     ).catch(function(error) {
                         if ((typeof error === 'object') && error.response && error.response.errors) {
-                            showError(error.response.errors);
+                            showErrors(error.response.errors);
                         } else if (error instanceof Error) {
-                            showError(error.message);
+                            showErrors(error.message);
                         } else {
-                            showError(error);
+                            showErrors(error);
                         }
                     });
 
@@ -739,11 +739,11 @@ Collection.prototype.addListeners = function() {
                             _this._changeItem(item, modal)
                         ).catch(function(error) {
                             if ((typeof error === 'object') && error.response && error.response.errors) {
-                                showError(error.response.errors);
+                                showErrors(error.response.errors);
                             } else if (error instanceof Error) {
-                                showError(error.message);
+                                showErrors(error.message);
                             } else {
-                                showError(error);
+                                showErrors(error);
                             }
                         });
 
@@ -759,22 +759,22 @@ Collection.prototype.addListeners = function() {
                     _this._changeItem(item, modal)
                 ).catch(function(error) {
                     if ((typeof error === 'object') && error.response && error.response.errors) {
-                        showError(error.response.errors);
+                        showErrors(error.response.errors);
                     } else if (error instanceof Error) {
-                        showError(error.message);
+                        showErrors(error.message);
                     } else {
-                        showError(error);
+                        showErrors(error);
                     }
                 });
                 return false;
             });
         }).catch(function(error) {
             if ((typeof error === 'object') && error.response && error.response.errors) {
-                showError(error.response.errors);
+                showErrors(error.response.errors);
             } else if (error instanceof Error) {
-                showError(error.message);
+                showErrors(error.message);
             } else {
-                showError(error);
+                showErrors(error);
             }
         });
     });
@@ -805,11 +805,11 @@ Collection.prototype.addListeners = function() {
             _this._deleteItem(item)
         ).catch(function(error) {
             if ((typeof error === 'object') && error.response && error.response.errors) {
-                showError(error.response.errors);
+                showErrors(error.response.errors);
             } else if (error instanceof Error) {
-                showError(error.message);
+                showErrors(error.message);
             } else {
-                showError(error);
+                showErrors(error);
             }
         });
     });

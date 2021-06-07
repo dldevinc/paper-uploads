@@ -3,7 +3,7 @@
 import deepmerge from "deepmerge";
 import EventEmitter from "wolfy87-eventemitter";
 import {Uploader} from "./_uploader";
-import {getPaperParams, showError} from "./_utils";
+import {getPaperParams, showErrors} from "./_utils";
 
 // PaperAdmin API
 const modals = window.paperAdmin.modals;
@@ -167,7 +167,7 @@ BaseWidget.prototype.initUploader = function() {
     }).on('cancel', function(id) {
         _this.trigger('upload:cancel', [id]);
     }).on('error', function(id, messages) {
-        showError(messages);
+        showErrors(messages);
     }).on('all_complete', function() {
         _this.loading = false;
     });
@@ -223,11 +223,11 @@ BaseWidget.prototype._change = function(modal) {
         }
     }).catch(function(error) {
         if ((typeof error === 'object') && error.response && error.response.errors) {
-            showError(error.response.errors);
+            showErrors(error.response.errors);
         } else if (error instanceof Error) {
-            showError(error.message);
+            showErrors(error.message);
         } else {
-            showError(error);
+            showErrors(error);
         }
     });
 };
@@ -281,11 +281,11 @@ BaseWidget.prototype._delete = function() {
         _this.trigger('upload:deleted');
     }).catch(function(error) {
         if ((typeof error === 'object') && error.response && error.response.errors) {
-            showError(error.response.errors);
+            showErrors(error.response.errors);
         } else if (error instanceof Error) {
-            showError(error.message);
+            showErrors(error.message);
         } else {
-            showError(error);
+            showErrors(error);
         }
     });
 };
@@ -383,11 +383,11 @@ BaseWidget.prototype.addListeners = function() {
             });
         }).catch(function(error) {
             if ((typeof error === 'object') && error.response && error.response.errors) {
-                showError(error.response.errors);
+                showErrors(error.response.errors);
             } else if (error instanceof Error) {
-                showError(error.message);
+                showErrors(error.message);
             } else {
-                showError(error);
+                showErrors(error);
             }
         });
     });
