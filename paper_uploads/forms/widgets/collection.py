@@ -13,11 +13,11 @@ class CollectionWidget(FileUploaderWidgetMixin, FileWidgetBase):
     def media(self):
         return forms.Media(
             js=[
-                "paper_uploads/dist/widget.min.js",
+                "paper_uploads/dist/widget.js",
             ],
             css={
                 "screen": [
-                    "paper_uploads/dist/widget.min.css",
+                    "paper_uploads/dist/widget.css",
                 ],
             },
         )

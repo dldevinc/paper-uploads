@@ -18,7 +18,7 @@ let config = {
         clean: true,
         path: path.resolve(DIST_DIR),
         publicPath: "/static/paper_uploads/dist/",
-        filename: "[name].[contenthash].js",
+        filename: "[name].js",
         assetModuleFilename: "assets/[name][ext][query]"
     },
     module: {
@@ -91,7 +91,7 @@ let config = {
     plugins: [
         new webpack.ProgressPlugin(),
         new MiniCssExtractPlugin({
-            filename: "[name].[contenthash].css"
+            filename: "[name].css"
         }),
     ],
     optimization: {
