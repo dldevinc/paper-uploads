@@ -79,7 +79,7 @@ class ActionView(AjaxView):
                 message = type(e).__name__
             return self.error_response(message)
 
-    def handle(self, request, *args, **kwargs):
+    def handle(self, *args, **kwargs):
         raise NotImplementedError
 
 
