@@ -8,10 +8,6 @@ import "../css/image_widget.scss";
 
 
 function initWidget(element) {
-    if (element.closest('.empty-form')) {
-        return
-    }
-
     new BaseWidget(element, {
         input: '.image-uploader__input',
         uploadButton: '.image-uploader__upload-button',

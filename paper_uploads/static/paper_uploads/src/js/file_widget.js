@@ -9,10 +9,6 @@ import "../css/file_widget.scss";
 
 
 function initWidget(element) {
-    if (element.closest('.empty-form')) {
-        return
-    }
-
     new BaseWidget(element, {
         input: '.file-uploader__input',
         uploadButton: '.file-uploader__upload-button',

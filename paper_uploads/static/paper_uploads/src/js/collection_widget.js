@@ -949,10 +949,6 @@ document.addEventListener("click", function(event) {
 
 
 function initWidget(element) {
-    if (element.closest('.empty-form')) {
-        return
-    }
-
     new Collection(element, {
         urls: {
             createCollection: element.dataset.createCollectionUrl,
