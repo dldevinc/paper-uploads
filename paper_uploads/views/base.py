@@ -151,7 +151,7 @@ class UploadFileViewBase(ActionView):
         tempfilepath = os.path.join(tempdir, str(uid))
         file = request.FILES.get("qqfile")
         if file is None:
-            # бывает при отмене загрузки на медленном интернете
+            # случается при отмене загрузки на медленном интернете
             if os.path.isfile(tempfilepath):
                 os.unlink(tempfilepath)
             raise exceptions.UncompleteUpload

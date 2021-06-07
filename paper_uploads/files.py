@@ -8,6 +8,13 @@ from .variations import PaperVariation
 
 
 class TemporaryUploadedFile(UploadedFile):
+    """
+    Обертка над файлом, удаляющая его при закрытии.
+
+    В отличие от django.core.files.uploadedfile.TemporaryUploadedFile, не создает
+    новый временный файл, а оборачивает уже существующий. Используется для передачи
+    загруженного файла в функцию сохранения.
+    """
     def close(self):
         super().close()
         try:
@@ -18,7 +25,7 @@ class TemporaryUploadedFile(UploadedFile):
 
 class VariationFile(File):
     """
-    Файл вариации изображения
+    Файл вариации изображения.
     """
 
     def __init__(self, instance, variation_name):
