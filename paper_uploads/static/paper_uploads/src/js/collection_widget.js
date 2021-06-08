@@ -929,6 +929,25 @@ Collection.prototype.addListeners = function() {
 };
 
 
+/**
+ * Перенос клика на кнопку с чекбоксом в сам чекбокс.
+ */
+document.addEventListener("click", function(event) {
+    const checkboxButton = event.target.closest(".collection-item__checkbox-holder");
+    const checkboxControl = event.target.closest(".custom-control");
+    if (checkboxButton && !checkboxControl) {
+        event.preventDefault();
+        const checkboxInput = checkboxButton.querySelector(".custom-control-input");
+        if (checkboxInput) {
+            checkboxInput.dispatchEvent(new MouseEvent("click", {
+                bubbles: true,
+                cancelable: true
+            }));
+        }
+    }
+});
+
+
 function initWidget(element) {
     if (element.closest('.empty-form')) {
         return
