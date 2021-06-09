@@ -20,8 +20,7 @@ function Uploader(element, options) {
         button: null,
         dropzones: null,
         params: null,
-        configuration: {},
-        filters: []
+        configuration: {}
     }, options);
 
     this.element = element;
@@ -94,19 +93,6 @@ Uploader.prototype._makeUploader = function() {
                     return false
                 } else {
                     is_loading = true;
-                }
-
-                // пользовательские фильтры для загружаемых файлов
-                if (_this._opts.filters && _this._opts.filters.length) {
-                    for (let index=0; index<_this._opts.filters.length; index++) {
-                        const filter = _this._opts.filters[index];
-                        try {
-                            filter.call(uploader, id, file);
-                        } catch (error) {
-                            _this.trigger("error", [id, error.message]);
-                            return false;
-                        }
-                    }
                 }
 
                 const configuration = _this._opts.configuration;
