@@ -7,7 +7,7 @@
      data-paper-content-type="{{ content_type.pk }}"
      data-paper-owner-app-label="{{ owner_app_label }}"
      data-paper-owner-model-name="{{ owner_model_name }}"
-     data-paper-owner-fieldname="{{ owner_fieldname }}"
+     data-paper-owner-field-name="{{ owner_fieldname }}"
      data-configuration='{{ configuration|safe }}'>
   <input type="hidden" class="file-uploader__input"
          name="{{ widget.name }}"
@@ -43,7 +43,7 @@
       <div class="file-uploader__ready-buttons">
         <a {% if instance %}href="{{ instance.get_file_url }}"{% endif %}
            target="_blank" tabindex="0"
-           class="file-uploader__link input-group-text"
+           class="file-uploader__view-button input-group-text"
            data-toggle="tooltip" data-placement="top" data-trigger="hover"
            data-html="true" title="{{ _('View file') }}">
           <i class="fa fa-fw fa-eye"></i>

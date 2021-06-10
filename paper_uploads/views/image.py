@@ -18,7 +18,7 @@ class UploadFileView(UploadFileViewBase):
         instance = model_class(
             owner_app_label=request.POST.get("paperOwnerAppLabel"),
             owner_model_name=request.POST.get("paperOwnerModelName"),
-            owner_fieldname=request.POST.get("paperOwnerFieldname"),
+            owner_fieldname=request.POST.get("paperOwnerFieldName"),
         )
 
         try:

@@ -15,7 +15,7 @@ function initWidget(element) {
         cancelButton: ".file-uploader__cancel-button",
         changeButton: ".file-uploader__change-button",
         deleteButton: ".file-uploader__delete-button",
-        link: ".file-uploader__link",
+        link: ".file-uploader__view-button",
         urls: {
             upload: element.dataset.uploadUrl,
             change: element.dataset.changeUrl,

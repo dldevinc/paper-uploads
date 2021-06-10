@@ -32,7 +32,7 @@ class CreateCollectionView(ActionView):
         collection = collection_cls.objects.create(
             owner_app_label=request.POST.get("paperOwnerAppLabel"),
             owner_model_name=request.POST.get("paperOwnerModelName"),
-            owner_fieldname=request.POST.get("paperOwnerFieldname"),
+            owner_fieldname=request.POST.get("paperOwnerFieldName"),
         )
         return self.success_response({
             "collection_id": collection.pk
