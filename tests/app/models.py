@@ -208,9 +208,9 @@ class FileFieldObject(models.Model):
         _('MimeType'),
         blank=True,
         validators=[
-            MimeTypeValidator(['image/svg', 'image/gif'])
+            MimeTypeValidator(['image/svg+xml', 'image/gif'])
         ],
-        help_text=_('Only `image/svg` and `image/gif` allowed')
+        help_text=_('Only `image/svg+xml` and `image/gif` allowed')
     )
     file_size = FileField(
         _('Size'),
