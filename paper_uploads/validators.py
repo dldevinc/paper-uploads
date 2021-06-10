@@ -3,13 +3,12 @@ from typing import Sequence, Union
 
 import magic
 from django.core.exceptions import ValidationError
-from django.template.defaultfilters import filesizeformat
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
 from PIL import Image
 
 from .typing import FileLike
-from .utils import parse_filesize, remove_dulpicates
+from .utils import filesizeformat, parse_filesize, remove_dulpicates
 
 __all__ = [
     "ExtensionValidator",

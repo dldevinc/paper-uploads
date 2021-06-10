@@ -72,7 +72,7 @@ class TestCloudinaryMedia(CloudinaryFileResource):
             'name': self.resource_name,
             'extension': self.resource_extension,
             'size': self.resource_size,
-            'file_info': '(mp3, 2.0\xa0MB)',
+            'file_info': '(mp3, 2.1\xa0MB)',
             'url': storage.resource.get_file_url(),
             'created': storage.resource.created_at.isoformat(),
             'modified': storage.resource.modified_at.isoformat(),

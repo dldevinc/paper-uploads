@@ -31,8 +31,17 @@ def test_lowercased_dict_keys():
 
 def test_parse_filesize():
     assert utils.parse_filesize('45') == 45
-    assert utils.parse_filesize('8k') == 8 * 1024
-    assert utils.parse_filesize('26.5kb') == 26.5 * 1024
-    assert utils.parse_filesize('32 mB') == 32 * 1024 * 1024
-    assert utils.parse_filesize('9M') == 9 * 1024 * 1024
-    assert utils.parse_filesize('2.25 GB') == 2.25 * 1024 * 1024 * 1024
+    assert utils.parse_filesize('8k') == 8 * 1000
+    assert utils.parse_filesize('26.5kb') == 26.5 * 1000
+    assert utils.parse_filesize('32 mB') == 32 * 1000 * 1000
+    assert utils.parse_filesize('9M') == 9 * 1000 * 1000
+    assert utils.parse_filesize('2.25 GB') == 2.25 * 1000 * 1000 * 1000
+
+
+def test_filesizeformat():
+    assert utils.filesizeformat(45) == '45\xa0bytes'
+    assert utils.filesizeformat(8 * 1024) == '8.2\xa0KB'
+    assert utils.filesizeformat(26.5 * 1000) == '26.5\xa0KB'
+    assert utils.filesizeformat(32 * 1024 * 1024) == '33.6\xa0MB'
+    assert utils.filesizeformat(9 * 1000 * 1000) == '9.0\xa0MB'
+    assert utils.filesizeformat(2.25 * 1000 * 1000 * 1000) == '2.2\xa0GB'

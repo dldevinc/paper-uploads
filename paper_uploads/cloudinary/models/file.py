@@ -2,10 +2,10 @@ from typing import Any, Dict, Optional
 
 from cloudinary.models import CloudinaryField
 from django.db import models
-from django.template.defaultfilters import filesizeformat
 from django.utils.translation import gettext_lazy as _
 
 from ...conf import settings
+from ...utils import filesizeformat
 from .base import CloudinaryFieldFile, CloudinaryFileResource
 
 

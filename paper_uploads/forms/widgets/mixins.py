@@ -1,9 +1,9 @@
 import json
 
-from django.template.defaultfilters import filesizeformat
 from django.utils.translation import gettext_lazy as _
 
 from ...typing import Limitations
+from ...utils import filesizeformat
 
 
 class FileUploaderWidgetMixin:

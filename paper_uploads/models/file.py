@@ -2,11 +2,11 @@ from typing import Any, Dict
 
 from django.db import models
 from django.db.models.fields.files import FieldFile
-from django.template.defaultfilters import filesizeformat
 from django.utils.translation import gettext_lazy as _
 
 from ..conf import settings
 from ..storage import upload_storage
+from ..utils import filesizeformat
 from .base import FileFieldResource
 
 

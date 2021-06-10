@@ -1,11 +1,11 @@
 from typing import Any, Dict
 
 from django.db.models.fields.files import FieldFile
-from django.template.defaultfilters import filesizeformat
 from django.utils.translation import gettext_lazy as _
 
 from ..conf import settings
 from ..storage import upload_storage
+from ..utils import filesizeformat
 from ..variations import PaperVariation
 from .base import FileFieldResource, VersatileImageResourceMixin
 from .fields import VariationalFileField

@@ -1,3 +1,5 @@
+{% load filesizeformat %}
+
 <div class="file-uploader dropzone {% if not widget.value %}empty{% endif %}"
      data-upload-url="{{ upload_url }}"
      data-change-url="{{ change_url }}"

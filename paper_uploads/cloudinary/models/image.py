@@ -1,11 +1,11 @@
 from typing import Any, Dict, Optional
 
 from cloudinary.models import CloudinaryField
-from django.template.defaultfilters import filesizeformat
 from django.utils.translation import gettext_lazy as _
 
 from ...conf import settings
 from ...models.base import ImageFileResourceMixin
+from ...utils import filesizeformat
 from .base import CloudinaryFieldFile, CloudinaryFileResource
 
 
