@@ -47,7 +47,7 @@ class FileUploaderWidgetMixin:
             accept_files = configuration["acceptFiles"]
             limits.append(
                 (
-                    _("Allowed files"),
+                    _("Allowed types"),
                     accept_files
                     if isinstance(accept_files, str)
                     else ", ".join(accept_files),
@@ -68,7 +68,7 @@ class FileUploaderWidgetMixin:
             if min_height:
                 limits.append(
                     (
-                        _("Minimum image size"),
+                        _("Minimum dimensions"),
                         _("%sx%s pixels") % (min_width, min_height),
                     )
                 )
@@ -83,7 +83,7 @@ class FileUploaderWidgetMixin:
             if max_height:
                 limits.append(
                     (
-                        _("Maximum image size"),
+                        _("Maximum dimensions"),
                         _("%sx%s pixels") % (max_width, max_height),
                     )
                 )

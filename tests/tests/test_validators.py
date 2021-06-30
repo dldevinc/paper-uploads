@@ -89,7 +89,7 @@ class TestMimetypeValidator:
 
     def test_help_text(self):
         validator = validators.MimeTypeValidator(allowed=['video/mp4', 'video/ogg', 'image/*'])
-        assert str(validator.get_help_text()) == 'Allowed MIME types: video/mp4, video/ogg, image/*'
+        assert str(validator.get_help_text()) == 'Allowed types: video/mp4, video/ogg, image/*'
 
 
 class TestSizeValidator:
@@ -161,7 +161,7 @@ class TestImageMinSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "File `something.jpg` is not wide enough. Minimum width is 40 pixels."
+            == "File `something.jpg` is not wide enough. The minimum width is 40 pixels."
         )
 
         with pytest.raises(ValidationError) as exc:
@@ -169,7 +169,7 @@ class TestImageMinSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "File `something.jpg` is not tall enough. Minimum height is 60 pixels."
+            == "File `something.jpg` is not tall enough. The minimum height is 60 pixels."
         )
 
         with pytest.raises(ValidationError) as exc:
@@ -182,7 +182,7 @@ class TestImageMinSizeValidator:
 
     def test_help_text(self):
         validator = validators.ImageMinSizeValidator(640, 480)
-        assert str(validator.get_help_text()) == 'Minimum image size: 640x480'
+        assert str(validator.get_help_text()) == 'Minimum dimensions: 640x480 pixels'
 
         validator = validators.ImageMinSizeValidator(640, 0)
         assert str(validator.get_help_text()) == 'Minimum image width: 640 pixels'
@@ -228,7 +228,7 @@ class TestImageMaxSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "File `something.jpg` is too tall. Maximum height is 60 pixels."
+            == "File `something.jpg` is too tall. The maximum height is 60 pixels."
         )
 
         with pytest.raises(ValidationError) as exc:
@@ -236,7 +236,7 @@ class TestImageMaxSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "File `something.jpg` is too wide. Maximum width is 40 pixels."
+            == "File `something.jpg` is too wide. The maximum width is 40 pixels."
         )
 
         with pytest.raises(ValidationError) as exc:
@@ -249,7 +249,7 @@ class TestImageMaxSizeValidator:
 
     def test_help_text(self):
         validator = validators.ImageMaxSizeValidator(640, 480)
-        assert str(validator.get_help_text()) == 'Maximum image size: 640x480'
+        assert str(validator.get_help_text()) == 'Maximum dimensions: 640x480 pixels'
 
         validator = validators.ImageMaxSizeValidator(640, 0)
         assert str(validator.get_help_text()) == 'Maximum image width: 640 pixels'

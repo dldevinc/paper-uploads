@@ -41,7 +41,7 @@ class ExtensionValidator:
             raise ValidationError(self.message, code=self.code, params=params)
 
     def get_help_text(self):
-        return _("Allowed extensions: {}".format(", ".join(self.allowed)))
+        return "{}: {}".format(_("Allowed extensions"), ", ".join(self.allowed))
 
 
 @deconstructible
@@ -68,7 +68,7 @@ class MimeTypeValidator:
             raise ValidationError(self.message, code=self.code, params=params)
 
     def get_help_text(self):
-        return _("Allowed MIME types: {}".format(", ".join(self.allowed)))
+        return "{}: {}".format(_("Allowed types"), ", ".join(self.allowed))
 
 
 @deconstructible
@@ -95,17 +95,17 @@ class SizeValidator:
             raise ValidationError(self.message, code=self.code, params=params)
 
     def get_help_text(self):
-        return _("Maximum file size: {}".format(filesizeformat(self.limit_value)))
+        return "{}: {}".format(_("Maximum file size"), filesizeformat(self.limit_value))
 
 
 @deconstructible
 class ImageMinSizeValidator:
     error_messages = {
         "min_width": _(
-            "File `%(name)s` is not wide enough. Minimum width is %(width_limit)s pixels."
+            "File `%(name)s` is not wide enough. The minimum width is %(width_limit)s pixels."
         ),
         "min_height": _(
-            "File `%(name)s` is not tall enough. Minimum height is %(height_limit)s pixels."
+            "File `%(name)s` is not tall enough. The minimum height is %(height_limit)s pixels."
         ),
         "min_size": _(
             "File `%(name)s` is too small. Image should be at least %(width_limit)sx%(height_limit)s pixels."
@@ -118,13 +118,13 @@ class ImageMinSizeValidator:
 
     def __call__(self, file: FileLike):
         if file.closed:
-            raise ValidationError("File `%s` is closed" % os.path.basename(file.name))
+            raise ValidationError("File `%(name)s` is closed" % {"name": os.path.basename(file.name)})
 
         try:
             img = Image.open(file)
             image_size = img.size
         except OSError:
-            raise ValidationError("File `%s` is not an image" % os.path.basename(file.name))
+            raise ValidationError("File `%(name)s` is not an image" % {"name": os.path.basename(file.name)})
 
         params = {
             "width_limit": self.width_limit,
@@ -150,25 +150,24 @@ class ImageMinSizeValidator:
     def get_help_text(self):
         if self.width_limit:
             if self.height_limit:
-                return _(
-                    "Minimum image size: {}x{}".format(
-                        self.width_limit, self.height_limit
-                    )
+                return "{}: {}".format(
+                    _("Minimum dimensions"),
+                    _("%sx%s pixels") % (self.width_limit, self.height_limit)
                 )
             else:
-                return _("Minimum image width: {} pixels".format(self.width_limit))
+                return "{}: {}".format(_("Minimum image width"), _("%s pixels") % self.width_limit)
         elif self.height_limit:
-            return _("Minimum image height: {} pixels".format(self.height_limit))
+            return "{}: {}".format(_("Minimum image height"), _("%s pixels") % self.height_limit)
 
 
 @deconstructible
 class ImageMaxSizeValidator:
     error_messages = {
         "max_width": _(
-            "File `%(name)s` is too wide. Maximum width is %(width_limit)s pixels."
+            "File `%(name)s` is too wide. The maximum width is %(width_limit)s pixels."
         ),
         "max_height": _(
-            "File `%(name)s` is too tall. Maximum height is %(height_limit)s pixels."
+            "File `%(name)s` is too tall. The maximum height is %(height_limit)s pixels."
         ),
         "max_size": _(
             "File `%(name)s` is too big. Image should be at most %(width_limit)sx%(height_limit)s pixels."
@@ -181,13 +180,13 @@ class ImageMaxSizeValidator:
 
     def __call__(self, file: FileLike):
         if file.closed:
-            raise ValidationError("File `%s` is closed" % os.path.basename(file.name))
+            raise ValidationError("File `%(name)s` is closed" % {"name": os.path.basename(file.name)})
 
         try:
             img = Image.open(file)
             image_size = img.size
         except OSError:
-            raise ValidationError("File `%s` is not an image" % os.path.basename(file.name))
+            raise ValidationError("File `%(name)s` is not an image" % {"name": os.path.basename(file.name)})
 
         params = {
             "width_limit": self.width_limit,
@@ -213,12 +212,11 @@ class ImageMaxSizeValidator:
     def get_help_text(self):
         if self.width_limit:
             if self.height_limit:
-                return _(
-                    "Maximum image size: {}x{}".format(
-                        self.width_limit, self.height_limit
-                    )
+                return "{}: {}".format(
+                    _("Maximum dimensions"),
+                    _("%sx%s pixels") % (self.width_limit, self.height_limit),
                 )
             else:
-                return _("Maximum image width: {} pixels".format(self.width_limit))
+                return "{}: {}".format(_("Maximum image width"), _("%s pixels") % self.width_limit)
         elif self.height_limit:
-            return _("Maximum image height: {} pixels".format(self.height_limit))
+            return "{}: {}".format(_("Maximum image height"), _("%s pixels") % self.height_limit)
