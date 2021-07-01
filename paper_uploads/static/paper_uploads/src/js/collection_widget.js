@@ -41,7 +41,7 @@ function Collection(element, options) {
             input: ".collection__input",
             itemList: ".collection__items",
             item: ".collection__item",
-            dropzone: ".dropzone-overlay",
+            dropzone: ".dropzone__overlay",
             createButton: ".collection__create-button",
             uploadButton: ".collection__upload-button",
             deleteButton: ".collection__delete-button",

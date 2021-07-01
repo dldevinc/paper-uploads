@@ -221,7 +221,7 @@ Uploader.prototype._makeUploader = function() {
             dropZoneElements: this._opts.dropzones,
             allowMultipleItems: this._opts.multiple,
             classes: {
-                dropActive: "dropzone-highlighted"
+                dropActive: "dropzone__overlay--highlighted"
             },
             callbacks: {
                 processingDroppedFilesComplete: function(files) {

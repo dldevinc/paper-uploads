@@ -132,7 +132,7 @@ BaseWidget.prototype.initUploader = function() {
     return new Uploader(this.element, {
         url: this._opts.urls.upload,
         button: this.uploadButton,
-        dropzones: this.element.querySelectorAll(".dropzone-overlay"),
+        dropzones: this.element.querySelectorAll(".dropzone__overlay"),
         configuration: JSON.parse(this.element.dataset.configuration),
     }).on("submitted", function(id) {
         _this.trigger("upload:submitted", [id]);
