@@ -352,7 +352,7 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
             'size': self.resource_size,
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
             'preview': render_to_string(
-                'paper_uploads/collection_item/preview/file.html',
+                'paper_uploads/items/preview/file.html',
                 storage.resource.get_preview_context()
             ),
             'url': storage.resource.get_file_url(),
@@ -546,7 +546,7 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
             'size': self.resource_size,
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
             'preview': render_to_string(
-                'paper_uploads/collection_item/preview/svg.html',
+                'paper_uploads/items/preview/svg.html',
                 storage.resource.get_preview_context()
             ),
             'url': storage.resource.get_file_url(),
@@ -749,7 +749,7 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
             'description': '',
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
             'preview': render_to_string(
-                'paper_uploads/collection_item/preview/image.html',
+                'paper_uploads/items/preview/image.html',
                 storage.resource.get_preview_context()
             ),
             'url': storage.resource.get_file_url(),

@@ -40,8 +40,8 @@ class CollectionCloudinaryFileItemBase(CollectionItemBase, CloudinaryFileResourc
 
 class CloudinaryFileItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
     change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
-    template_name = "paper_uploads/collection_item/file.html"
-    preview_template_name = "paper_uploads/collection_item/preview/file.html"
+    template_name = "paper_uploads/items/file.html"
+    preview_template_name = "paper_uploads/items/preview/file.html"
 
     file = CloudinaryField(
         _("file"),
@@ -78,8 +78,8 @@ class CloudinaryFileItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
 
 class CloudinaryMediaItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
     change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
-    template_name = "paper_uploads/collection_item/file.html"
-    preview_template_name = "paper_uploads/collection_item/preview/file.html"
+    template_name = "paper_uploads/items/file.html"
+    preview_template_name = "paper_uploads/items/preview/file.html"
 
     file = CloudinaryField(
         _("file"),
@@ -120,8 +120,8 @@ class CloudinaryMediaItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
 class CloudinaryImageItem(ImageFileResourceMixin, CollectionCloudinaryFileItemBase):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
     change_form_class = "paper_uploads.forms.dialogs.collection.ImageItemDialog"
-    template_name = "paper_uploads_cloudinary/collection_item/image.html"
-    preview_template_name = "paper_uploads_cloudinary/collection_item/preview/image.html"
+    template_name = "paper_uploads_cloudinary/items/image.html"
+    preview_template_name = "paper_uploads_cloudinary/items/preview/image.html"
 
     file = CloudinaryField(
         _("file"),

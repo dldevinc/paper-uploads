@@ -392,8 +392,8 @@ class FilePreviewMixin(models.Model):
 
 class FileItem(FilePreviewMixin, CollectionFileItemBase):
     change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
-    template_name = "paper_uploads/collection_item/file.html"
-    preview_template_name = "paper_uploads/collection_item/preview/file.html"
+    template_name = "paper_uploads/items/file.html"
+    preview_template_name = "paper_uploads/items/preview/file.html"
 
     file = models.FileField(
         _("file"),
@@ -428,8 +428,8 @@ class FileItem(FilePreviewMixin, CollectionFileItemBase):
 
 class SVGItem(CollectionFileItemBase):
     change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
-    template_name = "paper_uploads/collection_item/svg.html"
-    preview_template_name = "paper_uploads/collection_item/preview/svg.html"
+    template_name = "paper_uploads/items/svg.html"
+    preview_template_name = "paper_uploads/items/preview/svg.html"
 
     file = models.FileField(
         _("file"),
@@ -466,8 +466,8 @@ class SVGItem(CollectionFileItemBase):
 class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
     change_form_class = "paper_uploads.forms.dialogs.collection.ImageItemDialog"
-    template_name = "paper_uploads/collection_item/image.html"
-    preview_template_name = "paper_uploads/collection_item/preview/image.html"
+    template_name = "paper_uploads/items/image.html"
+    preview_template_name = "paper_uploads/items/preview/image.html"
 
     file = VariationalFileField(
         _("file"),
