@@ -54,8 +54,15 @@ class UploadedImage(VersatileImageResourceMixin, FileFieldResource):
 
     @classmethod
     def get_configuration(cls) -> Dict[str, Any]:
-        # TODO: магический метод
         return {
-            "image": True,
-            "acceptFiles": ["image/*"],
+            "strictImageValidation": True,
+            "acceptFiles": [
+                "image/bmp",
+                "image/gif",
+                "image/jpeg",
+                "image/png",
+                # "image/svg+xml",
+                "image/tiff",
+                "image/webp",
+            ],
         }

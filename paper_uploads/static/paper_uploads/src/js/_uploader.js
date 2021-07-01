@@ -117,7 +117,7 @@ Uploader.prototype._makeUploader = function() {
                     }
 
                     // check image size
-                    if (configuration.image) {
+                    if (configuration.strictImageValidation) {
                         return new Promise(function(resolve, reject) {
                             const image = new Image();
                             const url = window.URL && window.URL.createObjectURL ? window.URL : window.webkitURL && window.webkitURL.createObjectURL ? window.webkitURL : null;

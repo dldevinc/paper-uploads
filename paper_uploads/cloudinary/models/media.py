@@ -49,18 +49,10 @@ class CloudinaryMedia(CloudinaryFileResource):
 
     @classmethod
     def get_configuration(cls) -> Dict[str, Any]:
-        # TODO: магический метод
         return {
             "acceptFiles": [
-                ".3gp",
-                ".avi",
-                ".flv",
-                ".mkv",
-                ".mov",
-                ".wmv",
-                ".aac",
-                ".wma",
-                "video/*",
                 "audio/*",
+                "video/*",
+                "application/ogg"
             ],
         }
