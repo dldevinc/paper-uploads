@@ -300,8 +300,9 @@ class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
         return {
             **super().as_dict(),
             "collectionId": self.collection_id,
-            "item_type": self.item_type,
+            "itemType": self.item_type,
             "caption": self.get_caption(),
+            "order": self.order,
             "preview": self.render_preview(),
         }
 

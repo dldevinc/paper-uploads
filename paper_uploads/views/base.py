@@ -113,14 +113,9 @@ class UploadFileViewBase(ActionView):
             file.close()
 
     def upload_chunk(self, request) -> UploadedFile:
-        """
-        Upload File chunk from FineUploader.js
-        https://fineuploader.com/
-        # TODO: search for new uploader library
-        """
         try:
-            chunk_index = int(request.POST["qqpartindex"])
-            total_chunks = int(request.POST["qqtotalparts"])
+            chunk_index = int(request.POST["paperChunkIndex"])
+            total_chunks = int(request.POST["paperTotalChunkCount"])
         except KeyError:
             # small file, no chunks
             chunk_index = 0
@@ -128,7 +123,7 @@ class UploadFileViewBase(ActionView):
         except (ValueError, TypeError):
             raise exceptions.InvalidChunking
 
-        uuid = request.POST.get("qquuid")
+        uuid = request.POST.get("paperUUID")
         try:
             uid = UUID(uuid)
         except (AttributeError, ValueError):
@@ -149,7 +144,7 @@ class UploadFileViewBase(ActionView):
             request.session["paper_uploads_tempdir"] = tempdir
 
         tempfilepath = os.path.join(tempdir, str(uid))
-        file = request.FILES.get("qqfile")
+        file = request.FILES.get("file")
         if file is None:
             # случается при отмене загрузки на медленном интернете
             if os.path.isfile(tempfilepath):
@@ -165,7 +160,7 @@ class UploadFileViewBase(ActionView):
 
             file = TemporaryUploadedFile(
                 open(tempfilepath, "rb"),
-                name=request.POST.get("qqfilename"),
+                name=os.path.basename(file.name),
                 size=os.path.getsize(tempfilepath)
             )
         return file
@@ -252,6 +247,6 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
         return self.success_response(self.instance.as_dict())  # noqa: F821
 
     def form_invalid(self, form):
-        return self.success_response({
+        return JsonResponse({
             "form_errors": form.errors.get_json_data()
         })

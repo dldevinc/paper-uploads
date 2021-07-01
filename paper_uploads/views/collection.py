@@ -54,7 +54,7 @@ class DeleteCollectionView(ActionView):
     def handle(self, request, *args, **kwargs):
         content_type_id = request.POST.get("paperCollectionContentType")
         collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
-        collection_id = request.POST.get("collectionId")
+        collection_id = request.POST.get("pk")
 
         try:
             instance = helpers.get_instance(collection_cls, collection_id)
@@ -134,7 +134,7 @@ class DeleteFileView(DeleteFileViewBase):
         content_type_id = request.POST.get("paperCollectionContentType")
         collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
 
-        item_type = request.POST.get("item_type")
+        item_type = request.POST.get("itemType")
         for name, field in collection_cls.item_types.items():
             if item_type == name:
                 model_class = field.model
@@ -142,10 +142,10 @@ class DeleteFileView(DeleteFileViewBase):
         else:
             return self.error_response(_("Invalid item type"))
 
-        instance_id = request.POST.get("instance_id")
+        item_id = request.POST.get("itemId")
 
         try:
-            instance = helpers.get_instance(model_class, instance_id)
+            item = helpers.get_instance(model_class, item_id)
         except exceptions.InvalidObjectId:
             logger.exception("Error")
             return self.error_response(_("Invalid ID"))
@@ -156,7 +156,7 @@ class DeleteFileView(DeleteFileViewBase):
             logger.exception("Error")
             return self.error_response(_("Multiple objects returned"))
 
-        instance.delete()
+        item.delete()
         return self.success_response()
 
 
@@ -170,7 +170,7 @@ class ChangeFileView(ChangeFileViewBase):
         content_type_id = self.request.GET.get("paperCollectionContentType")
         collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
 
-        item_type = self.request.GET.get("item_type")
+        item_type = self.request.GET.get("itemType")
         for name, field in collection_cls.item_types.items():
             if item_type == name:
                 model_class = field.model
@@ -178,10 +178,10 @@ class ChangeFileView(ChangeFileViewBase):
         else:
             raise exceptions.AjaxFormError(_("Invalid item type"))
 
-        instance_id = self.request.GET.get("instance_id")
+        item_id = self.request.GET.get("itemId")
 
         try:
-            return helpers.get_instance(model_class, instance_id)
+            return helpers.get_instance(model_class, item_id)
         except exceptions.InvalidObjectId:
             raise exceptions.AjaxFormError(_("Invalid ID"))
         except ObjectDoesNotExist:
@@ -220,7 +220,7 @@ class SortItemsView(ActionView):
             logger.exception("Error")
             return self.error_response(_("Multiple objects returned"))
 
-        order_string = request.POST.get("order", "")
+        order_string = request.POST.get("orderList", "")
         try:
             item_ids = (int(pk) for pk in order_string.split(","))
         except ValueError:
@@ -240,4 +240,6 @@ class SortItemsView(ActionView):
             sender=collection_cls,
             instance=instance
         )
-        return self.success_response()
+        return self.success_response({
+            "orderMap": dict(instance.items.values_list("pk", "order"))  # noqa: F821
+        })

@@ -43,10 +43,10 @@ class DeleteFileView(DeleteFileViewBase):
     def handle(self, request):
         content_type_id = request.POST.get("paperContentType")
         model_class = helpers.get_model_class(content_type_id, FileResource)
-        instance_id = request.POST.get("instance_id")
+        pk = request.POST.get("pk")
 
         try:
-            instance = helpers.get_instance(model_class, instance_id)
+            instance = helpers.get_instance(model_class, pk)
         except exceptions.InvalidObjectId:
             logger.exception("Error")
             return self.error_response(_("Invalid ID"))
@@ -68,10 +68,10 @@ class ChangeFileView(ChangeFileViewBase):
     def get_instance(self, request, *args, **kwargs):
         content_type_id = self.request.GET.get("paperContentType")
         model_class = helpers.get_model_class(content_type_id, FileResource)
-        instance_id = self.request.GET.get("instance_id")
+        pk = self.request.GET.get("pk")
 
         try:
-            return helpers.get_instance(model_class, instance_id)
+            return helpers.get_instance(model_class, pk)
         except exceptions.InvalidObjectId:
             raise exceptions.AjaxFormError(_("Invalid ID"))
         except ObjectDoesNotExist:

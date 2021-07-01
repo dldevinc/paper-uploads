@@ -346,11 +346,12 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
         assert storage.resource.as_dict() == {
             'id': 1,
             'collectionId': 1,
-            'item_type': 'file',
+            'itemType': 'file',
             'name': self.resource_name,
             'extension': self.resource_extension,
             'size': self.resource_size,
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
+            'order': 0,
             'preview': render_to_string(
                 'paper_uploads/items/preview/file.html',
                 storage.resource.get_preview_context()
@@ -540,11 +541,12 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
         assert storage.resource.as_dict() == {
             'id': 1,
             'collectionId': 1,
-            'item_type': 'svg',
+            'itemType': 'svg',
             'name': self.resource_name,
             'extension': self.resource_extension,
             'size': self.resource_size,
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
+            'order': 0,
             'preview': render_to_string(
                 'paper_uploads/items/preview/svg.html',
                 storage.resource.get_preview_context()
@@ -738,7 +740,7 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
         assert storage.resource.as_dict() == {
             'id': 1,
             'collectionId': 1,
-            'item_type': 'image',
+            'itemType': 'image',
             'name': self.resource_name,
             'extension': self.resource_extension,
             'size': self.resource_size,
@@ -748,6 +750,7 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
             'title': '',
             'description': '',
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
+            'order': 0,
             'preview': render_to_string(
                 'paper_uploads/items/preview/image.html',
                 storage.resource.get_preview_context()
