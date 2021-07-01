@@ -47,7 +47,7 @@ function Collection(element, options) {
             deleteButton: ".collection__delete-button",
 
             states: {
-                empty: "collection--empty",
+                empty: "empty",
             },
         },
 

@@ -19,10 +19,6 @@
 
   }
 
-  &__upload-button i {
-    margin-left: 0 !important;  // fix style
-  }
-
   &__help-text {
     margin-top: 6px;
   }
@@ -35,7 +31,7 @@
     background-color: #eaeaea;
   }
 
-  &--empty {
+  &.empty {
     .dropzone-overlay {
       display: none;
     }
@@ -122,7 +118,7 @@
   }
 
   &--removing {
-    animation: zoomOut cubic-bezier(0, 0, 0.2, 1) 0.4s;
+    animation: zoomOut cubic-bezier(0, 0, 0.2, 1) 0.4s forwards;
 
     .collection-item__footer {
       visibility: hidden;
