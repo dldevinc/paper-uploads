@@ -52,7 +52,6 @@ class CloudinaryMedia(CloudinaryFileResource):
         return {
             "acceptFiles": [
                 "audio/*",
-                "video/*",
-                "application/ogg"
+                "video/*"
             ],
         }

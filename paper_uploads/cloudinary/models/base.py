@@ -351,3 +351,9 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
                 )
             )
         return result
+
+    def build_url(self, **options):
+        # proxy Cloudinary method
+        self._require_file()
+        file = self.get_file()
+        return file.resource.build_url(**options)

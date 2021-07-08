@@ -83,6 +83,11 @@ class TestCloudinaryMedia(CloudinaryFileResource):
         with storage.resource.open() as fp:
             assert fp.read(4) == b'ID3\x03'
 
+    def test_build_url(self, storage):
+        url = storage.resource.build_url(audio_frequency="44100")
+        assert url.startswith('https://res.cloudinary.com/')
+        assert "/af_44100/" in url
+
 
 class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
     resource_class = CloudinaryMedia

@@ -82,6 +82,11 @@ class TestCloudinaryImage(CloudinaryFileResource):
             'uploaded': storage.resource.uploaded_at.isoformat(),
         }
 
+    def test_build_url(self, storage):
+        url = storage.resource.build_url(width=100)
+        assert url.startswith('https://res.cloudinary.com/')
+        assert "/w_100/" in url
+
 
 class TestCloudinaryImageAttach(TestImageFieldResourceAttach):
     resource_class = CloudinaryImage

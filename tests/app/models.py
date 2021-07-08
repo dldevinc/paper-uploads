@@ -315,17 +315,42 @@ class CollectionFieldObject(models.Model):
 
 
 class CloudinaryFileExample(models.Model):
-    file = CloudinaryFileField(_('file'))
+    name = models.CharField(_('name'), max_length=128)
+
+    file = CloudinaryFileField(_('file'), blank=True)
+    file_required = CloudinaryFileField(_('required file'))
+
+    file_extensions = CloudinaryFileField(
+        _('Extension'),
+        blank=True,
+        validators=[
+            ExtensionValidator(['.pdf', '.txt', '.doc'])
+        ],
+        help_text=_('Only `pdf`, `txt` and `doc` allowed')
+    )
+    file_mimetypes = CloudinaryFileField(
+        _('MimeType'),
+        blank=True,
+        validators=[
+            MimeTypeValidator(['image/svg+xml', 'image/gif'])
+        ],
+        help_text=_('Only `image/svg+xml` and `image/gif` allowed')
+    )
+    file_size = CloudinaryFileField(
+        _('Size'),
+        blank=True,
+        validators=[
+            SizeValidator('16kb')
+        ],
+        help_text=_('Maximum file size is 16Kb')
+    )
 
     class Meta:
         verbose_name = _('Cloudinary File')
         verbose_name_plural = _('Cloudinary Files')
 
     def __str__(self):
-        if self.file:
-            return self.file.name
-        else:
-            return 'FileObject'
+        return self.name
 
 
 class CloudinaryImageExample(models.Model):
