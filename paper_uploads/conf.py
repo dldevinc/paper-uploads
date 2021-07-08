@@ -54,6 +54,7 @@ FILE_ICON_OVERRIDES = {
     "m4v": "video",
     "mkv": "video",
     "mov": "video",
+    "mpeg": "video",
     "ogg": "audio",
     "ogv": "video",
     "xlsx": "xls",

@@ -1,13 +1,15 @@
 # Change Log
 
-## [0.6.0](https://github.com/dldevinc/paper-uploads/tree/v0.6.0) - 2021-06-06
+## [0.5.0](https://github.com/dldevinc/paper-uploads/tree/v0.5.0) - 2021-07-08
+### ⚠ BREAKING CHANGES
 - Requires `paper-admin` >= 3.0
-
-## [0.5.0](https://github.com/dldevinc/paper-uploads/tree/v0.5.0) - 2021-04-07
+- Migrate from `fine-uploader` to `dropzone.js`.
+- Removed default permissions from all Django models.
+- Collection previews has been reduced from `192x148` to `180x135`.
+### Features
+- Added Python 3.9 support
 - Added `remove_variations` management command.
 - The `recreate_variations` management command has been completely rewritten.
-- Removed default permissions from all models.
-- Add Python 3.9 support
 
 ## [0.4.5](https://github.com/dldevinc/paper-uploads/tree/v0.4.5) - 2020-10-26
 - Add `cloudinary/helpers.py` file
