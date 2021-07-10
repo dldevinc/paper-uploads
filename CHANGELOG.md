@@ -1,8 +1,9 @@
 # Change Log
 
-## [0.5.0](https://github.com/dldevinc/paper-uploads/tree/v0.5.0) - 2021-07-08
+## [0.5.0](https://github.com/dldevinc/paper-uploads/tree/v0.5.0) - 2021-07-10
 ### ⚠ BREAKING CHANGES
-- Requires `paper-admin` >= 3.0
+- Drop support for Django versions before 2.2.
+- Requires `paper-admin` >= 3.0.
 - Migrate from `fine-uploader` to `dropzone.js`.
 - Removed default permissions from all Django models.
 - Collection previews has been reduced from `192x148` to `180x135`.
