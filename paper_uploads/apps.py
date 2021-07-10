@@ -1,5 +1,4 @@
 from django.apps import AppConfig, apps
-from django.contrib.admin.sites import site
 from django.db.models.signals import pre_migrate
 from django.utils.translation import gettext_lazy as _
 
@@ -9,6 +8,7 @@ class Config(AppConfig):
     verbose_name = _("Uploaded Files")
 
     def ready(self):
+        from django.contrib.admin.sites import site
         from .admin import CollectionAdminBase
         from .models.collection import CollectionBase
         from .signals import handlers
