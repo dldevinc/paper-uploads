@@ -21,18 +21,6 @@
 
   }
 
-  &__help-text {
-    margin-top: 6px;
-  }
-
-  &__kbd {
-    padding-top: 0.3rem;
-    color: inherit;
-    font-size: inherit;
-    line-height: inherit;
-    background-color: #efefef;
-  }
-
   &.empty {
     // запрещаем перетаскивать файлы в пустой виджет
     .dropzone__overlay {

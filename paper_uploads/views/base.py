@@ -66,7 +66,7 @@ class ActionView(AjaxView):
             return self.handle(request, *args, **kwargs)
         except exceptions.InvalidContentType:
             logger.exception("Error")
-            return self.error_response(_("Invalid content type"))
+            return self.error_response(_("Invalid ContentType"))
         except ValidationError as e:
             messages = self.get_exception_messages(e)
             logger.debug(messages)

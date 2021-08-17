@@ -65,6 +65,13 @@ PAPER_UPLOADS = {
         )
     }
 }
+
+# Add JS translations
+PAPER_LOCALE_PACKAGES = [
+   "django.contrib.admin",
+   "paper_admin",
+   "paper_uploads",
+]
 ```
 
 ## FileField
@@ -108,7 +115,6 @@ class Page(models.Model):
 
 Для упрощения работы с файлами, некоторые методы и свойства
 стандартного класса `FieldFile` проксированы на уровень модели:
-`UploadedFile`:
 * `open`
 * `close`
 * `closed`

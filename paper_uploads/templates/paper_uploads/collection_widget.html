@@ -1,4 +1,5 @@
 {% load json %}
+{% load i18n %}
 
 <div class="collection dropzone {% if not widget.value %}empty{% endif %}"
      data-create-collection-url="{{ create_collection_url }}"
@@ -40,13 +41,6 @@
     <i class="fa fa-fw fa-trash"></i>
     {{ _('Delete collection') }}
   </button>
-
-  <div class="collection__help-text">
-    <small class="text-muted">
-      <kbd class="collection__kbd">Ctrl+Click</kbd> to select multiple items.
-      <kbd class="collection__kbd">Double-click</kbd> to open item
-    </small>
-  </div>
 
   {% if limitations %}
     <div class="image-uploader__limitations small text-muted mt-2">

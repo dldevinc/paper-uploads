@@ -938,7 +938,7 @@ class Collection extends EventEmitter {
                 body: interpolate(
                     ngettext(
                         "Are you sure you want to <b>DELETE</b> the selected item?",
-                        "Are you sure you want to <b>DELETE</b> the selected <b>%(count)s</b> items?",
+                        "Are you sure you want to <b>DELETE</b> the <b>%(count)s</b> selected items?",
                         selectedItems.length
                     ),
                     {

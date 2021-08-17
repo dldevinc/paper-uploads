@@ -165,7 +165,7 @@ function processConfiguration(configuration) {
 
                     if (tooSmall) {
                         throw interpolate(
-                            gettext("File `%(name)s` is too small. Image should be at least %(width_limit)sx%(height_limit)s pixels."),
+                            gettext("Image `%(name)s` is too small. Image should be at least %(width_limit)sx%(height_limit)s pixels."),
                             {
                                 "name": file.name,
                                 "width_limit": configuration.minImageWidth,
@@ -175,7 +175,7 @@ function processConfiguration(configuration) {
                         )
                     } else if (notWideEnough) {
                         throw interpolate(
-                            gettext("File `%(name)s` is not wide enough. The minimum width is %(width_limit)s pixels."),
+                            gettext("Image `%(name)s` is not wide enough. The minimum width is %(width_limit)s pixels."),
                             {
                                 "name": file.name,
                                 "width_limit": configuration.minImageWidth
@@ -184,7 +184,7 @@ function processConfiguration(configuration) {
                         )
                     } else if (notTallEnough) {
                         throw interpolate(
-                            gettext("File `%(name)s` is not tall enough. The minimum height is %(height_limit)s pixels."),
+                            gettext("Image `%(name)s` is not tall enough. The minimum height is %(height_limit)s pixels."),
                             {
                                 "name": file.name,
                                 "height_limit": configuration.minImageHeight
@@ -195,7 +195,7 @@ function processConfiguration(configuration) {
 
                     if (tooBig) {
                         throw interpolate(
-                            gettext("File `%(name)s` is too big. Image should be at most %(width_limit)sx%(height_limit)s pixels."),
+                            gettext("Image `%(name)s` is too big. Image should be at most %(width_limit)sx%(height_limit)s pixels."),
                             {
                                 "name": file.name,
                                 "width_limit": configuration.maxImageWidth,
@@ -205,7 +205,7 @@ function processConfiguration(configuration) {
                         )
                     } else if (tooWide) {
                         throw interpolate(
-                            gettext("File `%(name)s` is too wide. The maximum width is %(width_limit)s pixels."),
+                            gettext("Image `%(name)s` is too wide. The maximum width is %(width_limit)s pixels."),
                             {
                                 "name": file.name,
                                 "width_limit": configuration.maxImageWidth
@@ -214,7 +214,7 @@ function processConfiguration(configuration) {
                         )
                     } else if (tooTall) {
                         throw interpolate(
-                            gettext("File `%(name)s` is too tall. The maximum height is %(height_limit)s pixels."),
+                            gettext("Image `%(name)s` is too tall. The maximum height is %(height_limit)s pixels."),
                             {
                                 "name": file.name,
                                 "height_limit": configuration.maxImageHeight

@@ -102,13 +102,13 @@ class SizeValidator:
 class ImageMinSizeValidator:
     error_messages = {
         "min_width": _(
-            "File `%(name)s` is not wide enough. The minimum width is %(width_limit)s pixels."
+            "Image `%(name)s` is not wide enough. The minimum width is %(width_limit)s pixels."
         ),
         "min_height": _(
-            "File `%(name)s` is not tall enough. The minimum height is %(height_limit)s pixels."
+            "Image `%(name)s` is not tall enough. The minimum height is %(height_limit)s pixels."
         ),
         "min_size": _(
-            "File `%(name)s` is too small. Image should be at least %(width_limit)sx%(height_limit)s pixels."
+            "Image `%(name)s` is too small. Image should be at least %(width_limit)sx%(height_limit)s pixels."
         ),
     }
 
@@ -164,13 +164,13 @@ class ImageMinSizeValidator:
 class ImageMaxSizeValidator:
     error_messages = {
         "max_width": _(
-            "File `%(name)s` is too wide. The maximum width is %(width_limit)s pixels."
+            "Image `%(name)s` is too wide. The maximum width is %(width_limit)s pixels."
         ),
         "max_height": _(
-            "File `%(name)s` is too tall. The maximum height is %(height_limit)s pixels."
+            "Image `%(name)s` is too tall. The maximum height is %(height_limit)s pixels."
         ),
         "max_size": _(
-            "File `%(name)s` is too big. Image should be at most %(width_limit)sx%(height_limit)s pixels."
+            "Image `%(name)s` is too big. Image should be at most %(width_limit)sx%(height_limit)s pixels."
         ),
     }
 

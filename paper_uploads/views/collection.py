@@ -140,7 +140,7 @@ class DeleteFileView(DeleteFileViewBase):
                 model_class = field.model
                 break
         else:
-            return self.error_response(_("Invalid item type"))
+            return self.error_response(_("Invalid itemType"))
 
         item_id = request.POST.get("itemId")
 
@@ -176,7 +176,7 @@ class ChangeFileView(ChangeFileViewBase):
                 model_class = field.model
                 break
         else:
-            raise exceptions.AjaxFormError(_("Invalid item type"))
+            raise exceptions.AjaxFormError(_("Invalid itemType"))
 
         item_id = self.request.GET.get("itemId")
 
@@ -225,7 +225,7 @@ class SortItemsView(ActionView):
             item_ids = (int(pk) for pk in order_string.split(","))
         except ValueError:
             logger.exception("Error")
-            return self.error_response(_("Invalid order"))
+            return self.error_response(_("Invalid order value"))
 
         with transaction.atomic():
             for index, item_id in enumerate(item_ids):
