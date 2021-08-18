@@ -1,4 +1,5 @@
 from cloudinary.templatetags import cloudinary
+
 from .models.base import CloudinaryFileResource
 
 

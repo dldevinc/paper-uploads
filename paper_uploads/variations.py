@@ -9,7 +9,7 @@ class PaperVariation(Variation):
       * Хранение имени вариации
     """
 
-    def __init__(self, *args, name: str = '', **kwargs):
+    def __init__(self, *args, name: str = "", **kwargs):
         self.name = name
         super().__init__(*args, **kwargs)
 
@@ -29,11 +29,11 @@ class PaperVariation(Variation):
         Имя файла может включать путь — он остается неизменным.
         """
         if not self.name:
-            raise RuntimeError('`name` is empty')
+            raise RuntimeError("`name` is empty")
 
         dir_name, file_name = posixpath.split(input_filename)
         file_root, file_ext = posixpath.splitext(file_name)
         new_file_root = posixpath.extsep.join((file_root, self.name))
-        file_name = ''.join((new_file_root, file_ext))
+        file_name = "".join((new_file_root, file_ext))
         name = posixpath.join(dir_name, file_name)
         return self.replace_extension(name)

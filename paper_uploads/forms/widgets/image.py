@@ -6,17 +6,17 @@ from .mixins import FileUploaderWidgetMixin
 
 
 class ImageWidget(FileUploaderWidgetMixin, FileWidgetBase):
-    template_name = 'paper_uploads/image_widget.html'
+    template_name = "paper_uploads/image_widget.html"
 
     @property
     def media(self):
         return forms.Media(
             js=[
-                'paper_uploads/dist/widget.min.js',
+                "paper_uploads/dist/widget.js",
             ],
             css={
-                'screen': [
-                    'paper_uploads/dist/widget.min.css',
+                "screen": [
+                    "paper_uploads/dist/widget.css",
                 ],
             },
         )
@@ -28,9 +28,9 @@ class ImageWidget(FileUploaderWidgetMixin, FileWidgetBase):
         info = self.model._meta.app_label, self.model._meta.model_name
         context.update(
             {
-                'upload_url': reverse_lazy('admin:%s_%s_upload' % info),
-                'change_url': reverse_lazy('admin:%s_%s_change' % info),
-                'delete_url': reverse_lazy('admin:%s_%s_delete' % info),
+                "upload_url": reverse_lazy("admin:%s_%s_upload" % info),
+                "change_url": reverse_lazy("admin:%s_%s_change" % info),
+                "delete_url": reverse_lazy("admin:%s_%s_delete" % info),
             }
         )
         return context

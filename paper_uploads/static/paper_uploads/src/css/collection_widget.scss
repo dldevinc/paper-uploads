@@ -9,6 +9,8 @@
 
 
 .collection {
+  flex-grow: 1;
+
   &__items {
     display: flex;
     margin-right: -0.75rem;
@@ -19,24 +21,29 @@
 
   }
 
-  &__upload-button i {
-    margin-left: 0 !important;  // fix style
-  }
-
-  &__help-text {
-    margin-top: 6px;
-  }
-
-  &__kbd {
-    color: inherit;
-    background-color: #eaeaea;
-  }
-
-  &--empty {
-    .dropzone-overlay {
+  &.empty {
+    // запрещаем перетаскивать файлы в пустой виджет
+    .dropzone__overlay {
       display: none;
     }
   }
+
+  &.loading {
+    .sortable-handler {
+      cursor: default;
+    }
+  }
+}
+
+// показ кнопки создания коллекции на пустом виджете
+.collection:not(.empty) .collection__create-collection-button {
+  display: none;
+}
+
+// скрытие остальных кнопок на пустом виджете
+.collection.empty .collection__upload-item-button,
+.collection.empty .collection__delete-collection-button {
+  display: none;
 }
 
 
@@ -52,7 +59,8 @@
   box-sizing: content-box;
 
   &.sortable-ghost {
-    opacity: 0.5;
+    opacity: 0.35;
+    background-color: rgba(250, 226, 72, 0.65);
   }
 
   .sortable-handler {
@@ -66,7 +74,7 @@
 
   &__footer {
     padding: .125rem;
-    min-height: 36px;
+    min-height: 35px;
     border-top: 1px solid #ced4da;
   }
 
@@ -95,8 +103,7 @@
   }
 
   &__checkbox {
-    cursor: pointer;
-    vertical-align: middle;
+
   }
 
   &__delete-button,
@@ -114,21 +121,38 @@
   }
 
 
-  &--checked {
-    box-shadow: 0 0 3px 1px #007bff;
-  }
-
-  &--removing {
-    animation: zoomOut cubic-bezier(0, 0, 0.2, 1) 0.4s;
+  &.removing {
+    animation: zoomOut cubic-bezier(0, 0, 0.2, 1) 0.4s forwards;
 
     .collection-item__footer {
       visibility: hidden;
     }
   }
 
+
+  &.checked {
+    border-color: #1090c0;
+    box-shadow: 0 0 0 1px #1090c0;
+  }
+
+
   &--preloader {
     .collection-item__preview {
       position: relative;
+
+      &:after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        opacity: 0;
+        transition: opacity 0.1s 0.3s;
+        background-image: url(../img/preloader.svg);
+        background-repeat: no-repeat;
+        background-position: center;
+      }
     }
 
     .progress {
@@ -147,21 +171,24 @@
       height: 0;
       opacity: 0.5;
       align-self: flex-end;
-      transition: opacity 0.5s;
+      transition: opacity 0.1s 0.3s, height 0.3s ease;
+    }
+
+    &.processing {
+      .collection-item__preview:after {
+        opacity: 1;
+      }
+
+      .progress-bar {
+        opacity: 0;
+      }
+
+      .collection-item__cancel-button {
+        visibility: hidden;
+      }
     }
   }
 
-  &--processing {
-    .collection-item__preview {
-      background-image: url(../img/preloader.svg);
-      background-repeat: no-repeat;
-      background-position: center;
-    }
-
-    .collection-item__cancel-button {
-      visibility: hidden;
-    }
-  }
 
   &--file {
     .collection-item__preview {

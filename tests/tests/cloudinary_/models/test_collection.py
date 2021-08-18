@@ -90,13 +90,14 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
         assert storage.resource.as_dict() == {
             'id': 1,
             'collectionId': 1,
-            'item_type': 'file',
+            'itemType': 'file',
             'name': self.resource_name,
             'extension': self.resource_extension,
             'size': self.resource_size,
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
+            'order': 0,
             'preview': render_to_string(
-                'paper_uploads/collection_item/preview/file.html',
+                'paper_uploads/items/preview/file.html',
                 storage.resource.get_preview_context()
             ),
             'url': storage.resource.get_file_url(),
@@ -303,13 +304,14 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
         assert storage.resource.as_dict() == {
             'id': 1,
             'collectionId': 1,
-            'item_type': 'media',
+            'itemType': 'media',
             'name': self.resource_name,
             'extension': self.resource_extension,
             'size': self.resource_size,
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
+            'order': 0,
             'preview': render_to_string(
-                'paper_uploads/collection_item/preview/file.html',
+                'paper_uploads/items/preview/file.html',
                 storage.resource.get_preview_context()
             ),
             'url': storage.resource.get_file_url(),
@@ -578,7 +580,7 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
         assert storage.resource.as_dict() == {
             'id': 1,
             'collectionId': 1,
-            'item_type': 'image',
+            'itemType': 'image',
             'name': self.resource_name,
             'extension': self.resource_extension,
             'size': self.resource_size,
@@ -588,8 +590,9 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
             'title': '',
             'description': '',
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
+            'order': 0,
             'preview': render_to_string(
-                'paper_uploads_cloudinary/collection_item/preview/image.html',
+                'paper_uploads_cloudinary/items/preview/image.html',
                 storage.resource.get_preview_context()
             ),
             'url': storage.resource.get_file_url(),

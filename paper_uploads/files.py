@@ -8,6 +8,13 @@ from .variations import PaperVariation
 
 
 class TemporaryUploadedFile(UploadedFile):
+    """
+    Обертка над файлом, удаляющая его при закрытии.
+
+    В отличие от django.core.files.uploadedfile.TemporaryUploadedFile, не создает
+    новый временный файл, а оборачивает уже существующий. Используется для передачи
+    загруженного файла в функцию сохранения.
+    """
     def close(self):
         super().close()
         try:
@@ -18,7 +25,7 @@ class TemporaryUploadedFile(UploadedFile):
 
 class VariationFile(File):
     """
-    Файл вариации изображения
+    Файл вариации изображения.
     """
 
     def __init__(self, instance, variation_name):
@@ -29,7 +36,7 @@ class VariationFile(File):
         super().__init__(None, filename)
 
     def __eq__(self, other):
-        if hasattr(other, 'name'):
+        if hasattr(other, "name"):
             return self.name == other.name
         return self.name == other
 
@@ -44,8 +51,8 @@ class VariationFile(File):
 
     def _get_file(self) -> File:
         self._require_file()
-        if getattr(self, '_file', None) is None:
-            self._file = self.storage.open(self.name, 'rb')
+        if getattr(self, "_file", None) is None:
+            self._file = self.storage.open(self.name, "rb")
         return self._file
 
     def _set_file(self, file: File):
@@ -81,9 +88,9 @@ class VariationFile(File):
             return False
         return self.storage.exists(self.name)
 
-    def open(self, mode: str = 'rb'):
+    def open(self, mode: str = "rb"):
         self._require_file()
-        if getattr(self, '_file', None) is None:
+        if getattr(self, "_file", None) is None:
             self.file = self.storage.open(self.name, mode)
         else:
             self.file.open(mode)
@@ -96,7 +103,7 @@ class VariationFile(File):
         if not self:
             return
 
-        if hasattr(self, '_file'):
+        if hasattr(self, "_file"):
             self.close()
             del self.file
 
@@ -107,11 +114,11 @@ class VariationFile(File):
 
     @property
     def closed(self) -> bool:
-        file = getattr(self, '_file', None)
+        file = getattr(self, "_file", None)
         return file is None or file.closed
 
     def close(self):
-        file = getattr(self, '_file', None)
+        file = getattr(self, "_file", None)
         if file is not None:
             file.close()
 
@@ -124,7 +131,7 @@ class VariationFile(File):
         return self._get_image_dimensions()[1]
 
     def _get_image_dimensions(self):
-        if not hasattr(self, '_dimensions_cache'):
+        if not hasattr(self, "_dimensions_cache"):
             dimensions = self.variation.get_output_size(
                 (self.instance.width, self.instance.height)
             )

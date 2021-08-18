@@ -1,3 +1,5 @@
+{% load filesizeformat %}
+
 <div class="file-uploader dropzone {% if not widget.value %}empty{% endif %}"
      data-upload-url="{{ upload_url }}"
      data-change-url="{{ change_url }}"
@@ -5,14 +7,14 @@
      data-paper-content-type="{{ content_type.pk }}"
      data-paper-owner-app-label="{{ owner_app_label }}"
      data-paper-owner-model-name="{{ owner_model_name }}"
-     data-paper-owner-fieldname="{{ owner_fieldname }}"
+     data-paper-owner-field-name="{{ owner_fieldname }}"
      data-configuration='{{ configuration|safe }}'>
   <input type="hidden" class="file-uploader__input"
          name="{{ widget.name }}"
          value="{{ widget.value|default:'' }}"
          {% include "django/forms/widgets/attrs.html" %}/>
 
-  <div class="input-group input-group-lg">
+  <div class="paper-input-group input-group input-group-lg">
     <div class="input-group-prepend">
       <button type="button" class="file-uploader__upload-button input-group-text"
          data-toggle="tooltip" data-placement="top" data-trigger="hover"
@@ -41,21 +43,21 @@
       <div class="file-uploader__ready-buttons">
         <a {% if instance %}href="{{ instance.get_file_url }}"{% endif %}
            target="_blank" tabindex="0"
-           class="file-uploader__link input-group-text text-info"
+           class="file-uploader__view-button input-group-text"
            data-toggle="tooltip" data-placement="top" data-trigger="hover"
-           data-html="true" title="{{ _('View file') }}">
+           data-html="true" title="{{ _('Open file') }}">
           <i class="fa fa-fw fa-eye"></i>
         </a>
 
         <button type="button" tabindex="0"
-                class="file-uploader__change-button input-group-text text-info"
+                class="file-uploader__change-button input-group-text"
                 data-toggle="tooltip" data-placement="top" data-trigger="hover"
                 data-html="true" title="{{ _('Edit file') }}">
           <i class="fa fa-fw fa-pencil"></i>
         </button>
 
         <button type="button" tabindex="0"
-                class="file-uploader__delete-button input-group-text text-danger"
+                class="file-uploader__delete-button input-group-text input-group-text--danger"
                 data-toggle="tooltip" data-placement="top" data-trigger="hover"
                 data-html="true" title="{{ _('Delete file') }}">
           <i class="fa fa-fw fa-trash"></i>
@@ -63,7 +65,7 @@
       </div>
       <div class="file-uploader__loading-buttons">
         <button type="button" tabindex="0"
-                class="file-uploader__cancel-button input-group-text text-danger"
+                class="file-uploader__cancel-button input-group-text input-group-text--danger"
                 data-toggle="tooltip" data-placement="top" data-trigger="hover"
                 data-html="true" title="{{ _('Cancel upload') }}">
           <i class="fa fa-fw fa-times"></i>
@@ -83,8 +85,8 @@
     </div>
   {% endif %}
 
-  <div class="dropzone-overlay">
-    <div class="dropzone-hint">
+  <div class="dropzone__overlay">
+    <div class="dropzone__hint">
       <i class="fa fa-fw fa-upload"></i>
       {{ _('Drop files here to send') }}
     </div>

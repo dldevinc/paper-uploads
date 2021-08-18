@@ -1,943 +1,1270 @@
 /* global gettext */
+/* global ngettext */
+/* global interpolate */
 
-import deepmerge from "deepmerge";
 import allSettled from "promise.allsettled";
-import {Uploader, ValidationError, getPaperParams} from "./_uploader";
-import {showError, collectError, showCollectedErrors} from "./_utils";
+import deepmerge from "deepmerge";
+import EventEmitter from "wolfy87-eventemitter";
+import Mustache from "mustache";
+import {Uploader} from "./uploader";
+import * as utils from "./utils";
 
 // PaperAdmin API
-const EventEmitter = window.paperAdmin.EventEmitter;
-const whenDomReady = window.paperAdmin.whenDomReady;
 const Sortable = window.paperAdmin.Sortable;
+const Widget = window.paperAdmin.Widget;
 const modals = window.paperAdmin.modals;
-const emitters = window.paperAdmin.emitters;
 const formUtils = window.paperAdmin.formUtils;
 
 // CSS
-import "../css/collection_widget.scss";
-
+import "css/collection_widget.scss";
 
 /**
- * @param element
- * @param options
- * @fires collection:created
- * @fires collection:deleted
- * @fires collection:submit_item
- * @fires collection:upload_item
- * @fires collection:cancel_item
- * @fires collection:complete_item
- * @constructor
+ * Базовый класс элемента коллекции.
  */
-function Collection(element, options) {
+class CollectionItemBase extends EventEmitter {
+    static Defaults = {
+        removingState: "removing"
+    }
+
+    constructor(root, collection, options) {
+        super();
+
+        this.config = {
+            ...this.constructor.Defaults,
+            ...options
+        };
+
+        this.root = root;
+        if (!this.root) {
+            throw new Error("Root element required.");
+        }
+
+        this.collection = collection;
+
+        this.init();
+    }
+
+    get removing() {
+        return this.root.classList.contains(this.config.removingState);
+    }
+
+    set removing(value) {
+        this.root.classList.toggle(this.config.removingState, value);
+    }
+
+    init() {
+        // store instance
+        this.root.collectionItem = this;
+
+        this._addListeners();
+    }
+
+    destroy() {
+        this.root.collectionItem = null;
+        this.root.remove();
+    }
+
+    _addListeners() {
+
+    }
+
     /**
-     * @type Object
+     * Анимированное удаление DOM-элемента.
      */
-    this._opts = deepmerge({
-        preloaderItem: '.collection-item--preloader',
+    removeDOM() {
+        const animationPromise = new Promise(function(resolve) {
+            this.root.addEventListener("animationend", () => { resolve() });
+            this.removing = true;
+        }.bind(this));
 
-        templates: '.collection__{}-item-template',
+        const fallbackPromise = new Promise(function(resolve) {
+            setTimeout(resolve, 600);
+        });
 
-        collection: {
-            input: '.collection__input',
-            itemList: '.collection__items',
-            item: '.collection__item',
-            dropzone: '.dropzone-overlay',
-            createButton: '.collection__create-button',
-            uploadButton: '.collection__upload-button',
-            deleteButton: '.collection__delete-button',
-
-            states: {
-                empty: 'collection--empty',
-            },
-        },
-
-        item: {
-            caption: '.collection-item__name',
-            preview: '.collection-item__preview',
-            checkbox: '.collection-item__checkbox',
-            view_button: '.collection-item__view-button',
-            edit_button: '.collection-item__edit-button',
-            cancel_button: '.collection-item__cancel-button',
-            delete_button: '.collection-item__delete-button',
-
-            states: {
-                checked: 'collection-item--checked',
-                removing: 'collection-item--removing',
-                processing: 'collection-item--processing',
-            },
-        },
-
-        urls: {
-            createCollection: '',
-            deleteCollection: '',
-            uploadItem: '',
-            changeItem: '',
-            deleteItem: '',
-            sortItems: ''
-        }
-    }, options || {});
-
-    this.element = element;
-
-    this.input = this.element.querySelector(this._opts.collection.input);
-    if (!this.input) {
-        throw new Error(`Not found element "${this._opts.collection.input}"`);
+        return Promise.race([animationPromise, fallbackPromise]).then(function() {
+            this.destroy();
+        }.bind(this));
     }
-
-    this.itemList = this.element.querySelector(this._opts.collection.itemList);
-    if (!this.itemList) {
-        throw new Error(`Not found element "${this._opts.collection.itemList}"`);
-    }
-
-    this.createButton = this.element.querySelector(this._opts.collection.createButton);
-    if (!this.createButton) {
-        throw new Error(`Not found element "${this._opts.collection.createButton}"`);
-    }
-
-    this.uploadButton = this.element.querySelector(this._opts.collection.uploadButton);
-    if (!this.uploadButton) {
-        throw new Error(`Not found element "${this._opts.collection.uploadButton}"`);
-    }
-
-    this.deleteButton = this.element.querySelector(this._opts.collection.deleteButton);
-    if (!this.deleteButton) {
-        throw new Error(`Not found element "${this._opts.collection.deleteButton}"`);
-    }
-
-    this.init();
-}
-
-Collection.prototype = Object.create(EventEmitter.prototype);
-
-Object.defineProperty(Collection.prototype, 'collectionId', {
-    get: function() {
-        return parseInt(this.input.value);
-    },
-    set: function(value) {
-        const newValue = parseInt(value);
-        if (isNaN(newValue)) {
-            // удаление коллекции
-            this.input.value = '';
-            this.createButton.hidden = false;
-            this.uploadButton.hidden = true;
-            this.deleteButton.hidden = true;
-            this.element.classList.add(this._opts.collection.states.empty);
-
-            const uploadInput = this.uploadButton.querySelector('input[type="file"]');
-            uploadInput && (uploadInput.disabled = true);
-        } else {
-            // коллекция инициализирована
-            this.input.value = newValue;
-            this.createButton.hidden = true;
-            this.uploadButton.hidden = false;
-            this.deleteButton.hidden = false;
-            this.element.classList.remove(this._opts.collection.states.empty);
-
-            const uploadInput = this.uploadButton.querySelector('input[type="file"]');
-            uploadInput && (uploadInput.disabled = false);
-        }
-    }
-});
-
-Object.defineProperty(Collection.prototype, 'loading', {
-    get: function() {
-        return Boolean(this._loading);
-    },
-    set: function(value) {
-        const newValue = Boolean(value);
-        if (newValue === Boolean(this._loading)) {
-            return
-        }
-        if (newValue) {
-            this.element.classList.add('loading');
-            this.deleteButton.disabled = true;
-        } else {
-            this.element.classList.remove('loading');
-            this.deleteButton.disabled = false;
-        }
-        this._loading = newValue;
-    }
-});
-
-
-/**
- * Возвращает созданный DOM-элемент элемента коллекции из HTML-шаблона.
- * @param type
- * @returns {DocumentFragment}
- * @private
- */
-Collection.prototype._createItem = function(type) {
-    const selector = this._opts.templates.replace('{}', type);
-    const template = this.element.querySelector(selector);
-    return document.importNode(template.content, true);
-};
-
-/**
- * Добавление прелоадера нового элемента.
- * @param id
- * @returns {HTMLElement}
- * @private
- */
-Collection.prototype._createPreloader = function(id) {
-    const clone = this._createItem('preloader');
-    const preloader = clone.querySelector(this._opts.collection.item);
-    this.itemList.append(clone);
-
-    preloader.dataset.queueId = id;
-    preloader.classList.add(`preloader-${id}`);
-
-    const file = this.uploader.uploader.getFile(id);
-    const caption = preloader.querySelector(this._opts.item.caption);
-    if (caption) {
-        caption.title = file.name;
-        caption.textContent = file.name;
-    }
-
-    return preloader;
-};
-
-/**
- * Поиск DOM-элемента, представляющего прелоадер для указанного элемента коллекции.
- * @param id
- * @returns {HTMLElement}
- * @private
- */
-Collection.prototype._findPreloader = function(id) {
-    return this.itemList.querySelector(`.preloader-${id}`);
 }
 
 
 /**
- * Возвращает созданный DOM-элемент элемента коллекции из HTML-шаблона.
- * @param response
- * @returns {DocumentFragment}
- * @private
+ * Элемент-заглушка, связывающий загружаемый файл и его DOM-элемент.
+ *
+ * События:
+ *  1. upload
+ *      Format: function(file, xhr, formData) {}
+ *
+ *      Вызывается прямо перед отправкой файла на сервер.
+ *      Через аргументы xhr и formData можно модифицировать отправляемые данные.
+ *
+ *  2. progress
+ *      Format: function(file, progress, bytesSent) {}
+ *
+ *      Вызывается при обновлении прогресса отправки файла.
+ *      Аргумент progress - это состояние отправки в процентах (0-100).
+ *
+ *  3. cancel
+ *      Format: function(file) {}
+ *
+ *      Вызывается при отмене загрузки файла.
+ *
+ *  4. complete
+ *      Format: function(file, response) {}
+ *
+ *      Событие успешной загрузки файла.
+ *      Загрузка считается успешной, когда сервер ответил статусом 200
+ *      и JSON-ответ содержит "success: true".
+ *
+ *  5. error
+ *      Format: function(file, message) {}
+ *
+ *      Обработчик ошибок загрузки. Вызывается не только при JS-ошибках
+ *      во время отправки файла, но и при получении ошибок валидации
+ *      от сервера.
  */
-Collection.prototype._createUploadedItem = function(response) {
-    const itemType = response.item_type;
-    const clone = this._createItem(itemType);
+class PreloaderItem extends CollectionItemBase {
+    static Defaults = Object.assign({}, super.Defaults, {
+        processingState: "processing",
 
-    const item = clone.querySelector(this._opts.collection.item);
-    item.setAttribute('data-pk', response.id);
-    item.setAttribute('data-item-type', itemType);
+        progressBar: ".progress-bar",
 
-    const preview = clone.querySelector(this._opts.item.preview);
-    preview && (preview.innerHTML = response.preview);
+        cancelUploadButton: ".collection-item__cancel-button"
+    });
 
-    const viewButton = clone.querySelector(this._opts.item.view_button);
-    viewButton && (viewButton.href = response.url);
-
-    const caption = clone.querySelector(this._opts.item.caption);
-    if (caption) {
-        caption.title = response.caption;
-        caption.textContent = response.caption;
+    get file() {
+        return this.config.file;
     }
 
-    return clone;
-};
+    get uuid() {
+        return this.collection.uploader.getUUID(this.file);
+    }
 
+    get progressBar() {
+        return this.root.querySelector(this.config.progressBar);
+    }
 
-/**
- * Инициализация коллекции
- */
-Collection.prototype.init = function() {
-    this.uploader = this.initUploader();
-    this.sortable = this.initSortable();
-    this.collectionId = this.input.value;
-    this.loading = false;
-    this.addListeners();
-};
+    get processing() {
+        return this.root.classList.contains(this.config.processingState);
+    }
 
-/**
- * Инициализация загрузчика картинок.
- */
-Collection.prototype.initUploader = function() {
-    const _this = this;
-    return new Uploader(this.element, {
-        url: this._opts.urls.uploadItem,
-        multiple: true,
-        maxConnections: 4,
-        button: this.uploadButton,
-        dropzones: this.element.querySelectorAll(this._opts.collection.dropzone),
-        configuration: JSON.parse(this.element.dataset.configuration),
-        params: {
-            collectionId: function() {
-                return _this.collectionId;
-            },
-            order: function(id) {
-                const preloader = _this._findPreloader(id);
-                return Array.from(_this.itemList.children).indexOf(preloader);
+    set processing(value) {
+        this.root.classList.toggle(this.config.processingState, value);
+    }
+
+    init() {
+        super.init();
+
+        this.root.setAttribute("data-uuid", this.uuid);
+    }
+
+    _addListeners() {
+        super._addListeners();
+
+        this.on("progress", function(file, percentage) {
+            const progressBar = this.progressBar;
+            progressBar && (progressBar.style.height = percentage + "%");
+
+            if (percentage >= 100) {
+                this.processing = true;
+
+                // Добавление минимальной задержки для стадии processing,
+                // чтобы переход от стадии loading к finished был более плавным.
+                this.processingPromise = new Promise(function(resolve) {
+                    setTimeout(() => {resolve()}, 500);
+                });
             }
-        },
-    }).on('submit', function() {
-        if (isNaN(_this.collectionId)) {
-            throw new ValidationError();
-        }
-    }).on('submitted', function(id) {
-        const preloader = _this._createPreloader(id);
-        emitters.dom.trigger('mutate', [preloader]);
-        _this.trigger('collection:submit_item', [preloader, id]);
-    }).on('upload', function(id) {
-        _this.loading = true;
+        }.bind(this));
 
-        const preloader = _this._findPreloader(id);
-        _this.trigger('collection:upload_item', [preloader, id]);
-    }).on('progress', function(id, percentage) {
-        const preloader = _this._findPreloader(id);
-        const progressBar = preloader.querySelector('.progress-bar');
-        progressBar && (progressBar.style.height = percentage + '%');
+        this.on("error", function() {
+            this.removeDOM();
+        }.bind(this));
 
-        if (percentage >= 100) {
-            preloader.classList.add(_this._opts.item.states.processing);
-        }
-    }).on('complete', function(id, response) {
-        if (isNaN(_this.collectionId)) {
-            _this.collectionId = response.collectionId;
-            _this.trigger('collection:created');  // TODO: ?
-        }
+        this.on("complete", function(file, response) {
+            const onComplete = function(response) {
+                const itemType = response.itemType;
 
-        const preloader = _this._findPreloader(id);
-        _this.trigger('collection:complete_item', [preloader, id]);
+                // замена прелоадера перманентным элементом
+                const itemHTML = this.collection.createItem(itemType, response);
 
-        const clone = _this._createUploadedItem(response);
-        preloader.before(clone);
-        preloader.remove();
-    }).on('cancel', function(id) {
-        const preloader = _this._findPreloader(id);
-        _this.trigger('collection:cancel_item', [preloader, id]);
+                this.root.insertAdjacentHTML("afterend", itemHTML);
+                const item = this.root.nextElementSibling;
 
-        // анимация удаления
-        preloader.addEventListener('animationend', function() {
-            preloader.remove();
-        });
-        preloader.classList.add(_this._opts.item.states.removing);
-    }).on('error', function(id, messages) {
-        collectError(messages);
-        const preloader = _this._findPreloader(id);
+                this.collection.initItem(itemType, item, {
+                    file: file
+                });
+                this.destroy();
+            }.bind(this);
 
-        // анимация удаления
-        preloader.addEventListener('animationend', function() {
-            preloader.remove();
-        });
-        preloader.classList.add(_this._opts.item.states.removing);
-    }).on('all_complete', function() {
-        _this.loading = false;
-        showCollectedErrors();
-    });
-};
-
-/**
- * Инициализация плагина Drag-n-Drop сортировки.
- */
-Collection.prototype.initSortable = function() {
-    const _this = this;
-    return Sortable.create(this.itemList, {
-        animation: 0,
-        draggable: this._opts.collection.item,
-        filter: this._opts.preloaderItem,
-        handle: '.sortable-handler',
-        ghostClass: 'sortable-ghost',
-        onEnd: function() {
-            const items = Array.from(_this.itemList.querySelectorAll(_this._opts.collection.item));
-            const order = items.map(function(item) {
-                if (!item.matches(_this._opts.preloaderItem)) {
-                    return item.dataset.pk;
-                }
-            }).filter(Boolean);
-
-            const data = new FormData();
-            const params = getPaperParams(_this.element);
-            Object.keys(params).forEach(function(name) {
-                data.append(name, params[name]);
-            });
-            data.append('collectionId', _this.collectionId.toString());
-            data.append('order', order.join(','));
-
-            fetch(_this._opts.urls.sortItems, {
-                method: 'POST',
-                credentials: 'same-origin',
-                body: data
-            }).then(function(response) {
-                if (!response.ok) {
-                    const error = new Error(`${response.status} ${response.statusText}`);
-                    error.response = response;
-                    throw error;
-                }
-                return response.json();
-            }).then(function(response) {
-                if (response.errors && response.errors.length) {
-                    const error = new Error('Invalid request');
-                    error.response = response;
-                    throw error
-                }
-            }).catch(function(error) {
-                if ((typeof error === 'object') && error.response && error.response.errors) {
-                    showError(error.response.errors);
-                } else if (error instanceof Error) {
-                    showError(error.message);
-                } else {
-                    showError(error);
-                }
-            })
-        },
-    });
-};
-
-/**
- * Создание коллекции.
- * @private
- * @returns {Promise}
- */
-Collection.prototype._createCollection = function() {
-    if (!isNaN(this.collectionId)) {
-        return Promise.reject('collection already exists');
-    }
-
-    const data = new FormData();
-    const params = getPaperParams(this.element);
-    Object.keys(params).forEach(function(name) {
-        data.append(name, params[name]);
-    });
-
-    const _this = this;
-    return fetch(this._opts.urls.createCollection, {
-        method: 'POST',
-        credentials: 'same-origin',
-        body: data
-    }).then(function(response) {
-        if (!response.ok) {
-            const error = new Error(`${response.status} ${response.statusText}`);
-            error.response = response;
-            throw error;
-        }
-        return response.json();
-    }).then(function(response) {
-        if (response.errors && response.errors.length) {
-            const error = new Error('Invalid request');
-            error.response = response;
-            throw error
-        }
-
-        _this.collectionId = response.collection_id;
-        _this.trigger('collection:created');
-    });
-};
-
-/**
- * Удаление элемента коллекции.
- * @param item
- * @private
- * @returns {Promise}
- */
-Collection.prototype._deleteItem = function(item) {
-    if (isNaN(this.collectionId)) {
-        return Promise.reject('collection required');
-    }
-
-    const instance_id = parseInt(item && item.dataset.pk);
-    if (isNaN(instance_id)) {
-        return Promise.reject('invalid ID')
-    }
-
-    const data = new FormData();
-    const params = getPaperParams(this.element);
-    Object.keys(params).forEach(function(name) {
-        data.append(name, params[name]);
-    });
-    data.append('collectionId', this.collectionId.toString());
-    data.append('instance_id', instance_id.toString());
-    data.append('item_type', item.dataset.itemType);
-
-    const _this = this;
-    return fetch(this._opts.urls.deleteItem, {
-        method: 'POST',
-        credentials: 'same-origin',
-        body: data
-    }).then(function(response) {
-        if (!response.ok) {
-            const error = new Error(`${response.status} ${response.statusText}`);
-            error.response = response;
-            throw error;
-        }
-        return response.json();
-    }).then(function(response) {
-        if (response.errors && response.errors.length) {
-            const error = new Error('Invalid request');
-            error.response = response;
-            throw error
-        }
-
-        // анимация удаления
-        item.addEventListener('animationend', function() {
-            item.remove();
-        });
-        item.classList.add(_this._opts.item.states.removing);
-    });
-};
-
-/**
- * Отправка формы редактирования элемента.
- * @param item
- * @param modal
- * @private
- * @returns {Promise}
- */
-Collection.prototype._changeItem = function(item, modal) {
-    if (isNaN(this.collectionId)) {
-        return Promise.reject('collection required');
-    }
-
-    const instance_id = parseInt(item && item.dataset.pk);
-    if (isNaN(instance_id)) {
-        return Promise.reject('invalid ID')
-    }
-
-    const _this = this;
-    const $form = $(modal._element).find('form');
-    return fetch($form.prop('action'), {
-        method: 'POST',
-        credentials: 'same-origin',
-        body: new FormData($form.get(0))
-    }).then(function(response) {
-        if (!response.ok) {
-            const error = new Error(`${response.status} ${response.statusText}`);
-            error.response = response;
-            throw error;
-        }
-        return response.json();
-    }).then(function(response) {
-        if (response.errors && response.errors.length) {
-            const error = new Error('Invalid request');
-            error.response = response;
-            throw error
-        }
-
-        formUtils.cleanFormErrors($form.get(0));
-        if (response.form_errors) {
-            formUtils.addFormErrorsFromJSON($form.get(0), response.form_errors);
-        } else {
-            modal.destroy();
-
-            const preview = item.querySelector(_this._opts.item.preview);
-            preview && (preview.innerHTML = response.preview);
-
-            const viewButton = item.querySelector(_this._opts.item.view_button);
-            viewButton && (viewButton.href = response.url);
-
-            const caption = item.querySelector(_this._opts.item.caption);
-            if (caption) {
-                caption.title = response.caption;
-                caption.textContent = response.caption;
-            }
-        }
-    });
-};
-
-/**
- * Удаление DOM-содержимого коллекции.
- */
-Collection.prototype.cleanItems = function() {
-    while (this.itemList.firstChild) {
-        this.itemList.removeChild(this.itemList.firstChild);
-    }
-};
-
-/**
- * Удаление галереи.
- * @private
- * @returns {Promise}
- */
-Collection.prototype._deleteCollection = function() {
-    if (isNaN(this.collectionId)) {
-        return Promise.reject('collection required')
-    }
-
-    const data = new FormData();
-    const params = getPaperParams(this.element);
-    Object.keys(params).forEach(function(name) {
-        data.append(name, params[name]);
-    });
-    data.append('collectionId', this.collectionId.toString());
-
-    // отмена всех текущих загрузок. По идее, их и так быть не должно,
-    // т.к. кнопка блокируется.
-    this.uploader.uploader.cancelAll();
-
-    const _this = this;
-    return fetch(this._opts.urls.deleteCollection, {
-        method: 'POST',
-        credentials: 'same-origin',
-        body: data
-    }).then(function(response) {
-        if (!response.ok) {
-            const error = new Error(`${response.status} ${response.statusText}`);
-            error.response = response;
-            throw error;
-        }
-        return response.json();
-    }).then(function(response) {
-        if (response.errors && response.errors.length) {
-            const error = new Error('Invalid request');
-            error.response = response;
-            throw error
-        }
-
-        let lastItem = null;
-        Array.from(_this.itemList.children).forEach(function(item) {
-            item.classList.add(_this._opts.item.states.removing);
-            lastItem = item;
-        });
-
-        if (lastItem) {
-            lastItem.addEventListener('animationend', function() {
-                _this.cleanItems();
-                _this.collectionId = '';
-                _this.trigger('collection:deleted');
-            });
-        } else {
-            _this.cleanItems();
-            _this.collectionId = '';
-            _this.trigger('collection:deleted');
-        }
-    });
-};
-
-/**
- * Выделение элемента галереи.
- * @param {HTMLElement} item
- * @param {Boolean} state
- * @private
- */
-Collection.prototype._checkItem = function(item, state=true) {
-    item.classList.toggle(this._opts.item.states.checked, state);
-    const checkbox = item.querySelector(this._opts.item.checkbox);
-    checkbox.checked = state;
-};
-
-Collection.prototype.addListeners = function() {
-    const _this = this;
-
-    // создание галереи
-    this.element.addEventListener('click', function(event) {
-        if (!event.target.closest(_this._opts.collection.createButton)) {
-            return
-        }
-
-        event.preventDefault();
-
-        modals.softPreloaderPromise(
-            _this._createCollection()
-        ).catch(function(error) {
-            if ((typeof error === 'object') && error.response && error.response.errors) {
-                showError(error.response.errors);
-            } else if (error instanceof Error) {
-                showError(error.message);
+            if (this.processingPromise) {
+                this.processingPromise.then(function() {
+                    this.processingPromise = null;
+                    onComplete(response);
+                }.bind(this));
             } else {
-                showError(error);
+                // Сюда попадать не должны, но на всякий случай...
+                console.warn("processingPromise undefined");
+                onComplete(response);
             }
-        });
+        }.bind(this));
+
+        // отмена загрузки
+        if (this.config.cancelUploadButton) {
+            this.root.addEventListener("click", function(event) {
+                const cancelUploadButton = event.target.closest(this.config.cancelUploadButton);
+                if (cancelUploadButton) {
+                    event.preventDefault();
+                    this.cancel();
+                    this.removeDOM();
+                }
+            }.bind(this));
+        }
+    }
+
+    /**
+     * Отмена загрузки файла.
+     */
+    cancel() {
+        this.collection.uploader.cancel(this.file);
+    }
+}
+
+
+class PermanentCollectionItemBase extends CollectionItemBase {
+    static Defaults = Object.assign({}, super.Defaults, {
+        checkbox: ".collection-item__checkbox",
+
+        viewButton: ".collection-item__view-button",
+        changeButton: ".collection-item__change-button",
+        deleteButton: ".collection-item__delete-button"
     });
 
-    // удаление галереи
-    this.element.addEventListener('click', function(event) {
-        if (!event.target.closest(_this._opts.collection.deleteButton)) {
-            return
-        }
+    get id() {
+        return this.root.dataset.id;
+    }
 
-        event.preventDefault();
+    get itemType() {
+        return this.root.dataset.itemType;
+    }
 
-        modals.createModal({
-            title: gettext('Confirmation'),
-            message: gettext('Are you sure you want to <b>DELETE</b> this collection?'),
-            buttons: [{
-                label: gettext('Cancel'),
-                className: 'btn-outline-info'
-            }, {
-                autofocus: true,
-                label: gettext('Delete'),
-                className: 'btn-danger',
-                callback: function() {
-                    modals.softPreloaderPromise(
-                        _this._deleteCollection()
-                    ).catch(function(error) {
-                        if ((typeof error === 'object') && error.response && error.response.errors) {
-                            showError(error.response.errors);
-                        } else if (error instanceof Error) {
-                            showError(error.message);
-                        } else {
-                            showError(error);
+    get checkbox() {
+        return this.root.querySelector(this.config.checkbox);
+    }
+
+    get checked() {
+        return this.root.classList.contains("checked");
+    }
+
+    set checked(value) {
+        this.root.classList.toggle("checked", value);
+        this.checkbox.checked = Boolean(value);
+    }
+
+    _addListeners() {
+        const _this = this;
+
+        super._addListeners();
+
+        // удаление файла
+        if (this.config.deleteButton) {
+            this.root.addEventListener("click", function(event) {
+                const deleteButton = event.target.closest(this.config.deleteButton);
+                if (deleteButton) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    // Препятствуем открытию нескольких окон
+                    deleteButton.disabled = true;
+
+                    modals.createModal({
+                        modalClass: "paper-modal--warning fade",
+                        title: gettext("Confirm deletion"),
+                        body: gettext("Are you sure you want to <b>DELETE</b> this item?"),
+                        buttons: [{
+                            label: gettext("Cancel"),
+                            buttonClass: "btn-light",
+                            onClick: function(event, popup) {
+                                popup.destroy();
+                            }
+                        }, {
+                            autofocus: true,
+                            label: gettext("Delete"),
+                            buttonClass: "btn-danger",
+                            onClick: function(event, popup) {
+                                Promise.all([
+                                    popup.destroy(),
+                                    _this.delete()
+                                ]).catch(function(reason) {
+                                    if (reason instanceof Error) {
+                                        // JS-ошибки дублируем в консоль
+                                        console.error(reason);
+                                    }
+                                    modals.showErrors(reason);
+                                });
+                            }
+                        }],
+                        onInit: function() {
+                            this.show();
+                        },
+                        onDestroy: function() {
+                            deleteButton.disabled = false;
                         }
                     });
                 }
-            }]
-        }).show();
-    });
-
-    // редактирование элемента
-    this.element.addEventListener('click', function(event) {
-        if (!event.target.closest(_this._opts.item.edit_button)) {
-            return
+            }.bind(this));
         }
 
-        event.preventDefault();
+        // изменение файла
+        if (this.config.changeButton) {
+            this.root.addEventListener("click", function(event) {
+                const changeButton = event.target.closest(this.config.changeButton);
+                if (changeButton) {
+                    event.preventDefault();
+                    event.stopPropagation();
 
-        const item = event.target.closest(_this._opts.collection.item);
-        const instance_id = parseInt(item && item.dataset.pk);
-        if (isNaN(instance_id)) {
-            return
+                    // Препятствуем открытию нескольких окон
+                    changeButton.disabled = true;
+
+                    this.fetchChangeForm(
+                        //
+                    ).then(function(response) {
+                        if (response.errors && response.errors.length) {
+                            throw response.errors;
+                        }
+
+                        modals.createModal({
+                            title: gettext("Edit item"),
+                            body: response.form,
+                            buttons: [{
+                                label: gettext("Cancel"),
+                                buttonClass: "btn-light",
+                                onClick: function(event, popup) {
+                                    popup.destroy();
+                                }
+                            }, {
+                                label: gettext("Save"),
+                                buttonClass: "btn-success",
+                                onClick: function(event, popup) {
+                                    _this.sendChangeForm(popup);
+                                }
+                            }],
+                            onInit: function() {
+                                const form = this._body.querySelector("form");
+                                form && form.addEventListener("submit", function(event) {
+                                    event.preventDefault();
+                                    _this.sendChangeForm(this);
+                                }.bind(this));
+
+                                this.show();
+
+                                // autofocus first field
+                                const popup = this;
+                                $(this._element).on("autofocus.bs.modal", function() {
+                                    const firstWidget = popup._body.querySelector(".paper-widget");
+                                    const firstField = firstWidget && firstWidget.querySelector("input, select, textarea");
+                                    firstField && firstField.focus();
+                                });
+                            },
+                            onDestroy: function() {
+                                changeButton.disabled = false;
+                            }
+                        });
+                    }).catch(function(reason) {
+                        if (reason instanceof Error) {
+                            // JS-ошибки дублируем в консоль
+                            console.error(reason);
+                        }
+                        modals.showErrors(reason);
+                    });
+                }
+            }.bind(this));
         }
 
-        const data = new FormData();
-        const params = getPaperParams(_this.element);
+        // просмотр файла
+        if (this.config.viewButton) {
+            this.root.addEventListener("click", function(event) {
+                const viewButton = event.target.closest(this.config.viewButton);
+                if (viewButton) {
+                    // отключение выделения при клике с зажатым Ctrl или Shift
+                    event.stopPropagation();
+                }
+            }.bind(this));
+        }
+    }
+
+    /**
+     * Удаление элемента коллекции.
+     * @returns {Promise}
+     */
+    delete() {
+        if (!this.collection.instanceId) {
+            return Promise.reject("Collection doesn't exist");
+        }
+
+        const formData = new FormData();
+
+        const params = utils.getPaperParams(this.collection.root);
         Object.keys(params).forEach(function(name) {
-            data.append(name, params[name]);
+            formData.append(name, params[name]);
         });
-        data.append('collectionId', _this.collectionId.toString());
-        data.append('instance_id', instance_id.toString());
-        data.append('item_type', item.dataset.itemType);
-        const queryString = new URLSearchParams(data).toString();
+        formData.append("collectionId", this.collection.instanceId.toString());
+        formData.append("itemId", this.id.toString());
+        formData.append("itemType", this.itemType.toString());
 
-        modals.softPreloaderPromise(
-            fetch(`${_this._opts.urls.changeItem}?${queryString}`, {
-                credentials: 'same-origin',
+        const _this = this;
+        return modals.showSmartPreloader(
+            fetch(this.collection.root.dataset.deleteItemUrl, {
+                method: "POST",
+                credentials: "same-origin",
+                body: formData
             }).then(function(response) {
                 if (!response.ok) {
-                    const error = new Error(`${response.status} ${response.statusText}`);
-                    error.response = response;
-                    throw error;
+                    throw `${response.status} ${response.statusText}`;
                 }
                 return response.json();
             })
         ).then(function(response) {
             if (response.errors && response.errors.length) {
-                const error = new Error('Invalid request');
-                error.response = response;
-                throw error
+                throw response.errors;
             }
 
-            const modal = modals.createModal({
-                title: gettext('Edit file'),
-                message: response.form,
-                buttons: [{
-                    label: gettext('Cancel'),
-                    className: 'btn-outline-info'
-                }, {
-                    autofocus: true,
-                    label: gettext('Save'),
-                    className: 'btn-success',
-                    callback: function() {
-                        modals.softPreloaderPromise(
-                            _this._changeItem(item, modal)
-                        ).catch(function(error) {
-                            if ((typeof error === 'object') && error.response && error.response.errors) {
-                                showError(error.response.errors);
-                            } else if (error instanceof Error) {
-                                showError(error.message);
-                            } else {
-                                showError(error);
-                            }
-                        });
-                        return false;
-                    }
-                }]
-            }).show();
-
-            const $form = $(modal._element).find('form');
-            $form.on('submit', function() {
-                modals.softPreloaderPromise(
-                    _this._changeItem(item, modal)
-                ).catch(function(error) {
-                    if ((typeof error === 'object') && error.response && error.response.errors) {
-                        showError(error.response.errors);
-                    } else if (error instanceof Error) {
-                        showError(error.message);
-                    } else {
-                        showError(error);
-                    }
-                });
-                return false;
-            });
-        }).catch(function(error) {
-            if ((typeof error === 'object') && error.response && error.response.errors) {
-                showError(error.response.errors);
-            } else if (error instanceof Error) {
-                showError(error.message);
-            } else {
-                showError(error);
-            }
+            _this.removeDOM();
         });
-    });
-
-    // отмена загрузки
-    this.element.addEventListener('click', function(event) {
-        if (!event.target.closest(_this._opts.item.cancel_button)) {
-            return
-        }
-
-        event.preventDefault();
-        const item = event.target.closest(_this._opts.collection.item);
-        const queueId = parseInt(item.dataset.queueId);
-        _this.uploader.uploader.cancel(queueId);
-    });
-
-    // удаление элемента
-    this.element.addEventListener('click', function(event) {
-        if (!event.target.closest(_this._opts.item.delete_button)) {
-            return
-        }
-
-        event.preventDefault();
-
-        const item = event.target.closest(_this._opts.collection.item);
-
-        modals.softPreloaderPromise(
-            _this._deleteItem(item)
-        ).catch(function(error) {
-            if ((typeof error === 'object') && error.response && error.response.errors) {
-                showError(error.response.errors);
-            } else if (error instanceof Error) {
-                showError(error.message);
-            } else {
-                showError(error);
-            }
-        });
-    });
-
-    // выделение элемента галереи
-    let lastChecked = null;
-    this.element.addEventListener('click', function(event) {
-        const item = event.target.closest(_this._opts.collection.item);
-        if (!item) {
-            return
-        }
-
-        let target_state;
-        let checkbox = event.target.closest(_this._opts.item.checkbox);
-        if (!checkbox) {
-            // если клик на сам элемент, то выделение работает только в случае,
-            // когда была зажата клавиша Ctrl (или Shift для массового выделения)
-            if (!event.ctrlKey && !event.shiftKey) {
-                return
-            }
-
-            checkbox = item.querySelector(_this._opts.item.checkbox);
-            if (!checkbox) {
-                return
-            }
-            target_state = !checkbox.checked;
-        } else {
-            // при клике на чекбокс целевое состояние уже достигнуто
-            target_state = checkbox.checked;
-        }
-
-        if (lastChecked && event.shiftKey && (lastChecked !== item)) {
-            const items = Array.from(_this.itemList.querySelectorAll(_this._opts.collection.item));
-            const lastIndex = items.indexOf(lastChecked);
-            const targetIndex = items.indexOf(item);
-            const startIndex = Math.min(lastIndex, targetIndex);
-            const endIndex = Math.max(lastIndex, targetIndex);
-            const item_slice = items.slice(startIndex, endIndex + 1);
-            item_slice.forEach(function(item) {
-                _this._checkItem(item, target_state)
-            });
-        } else {
-            _this._checkItem(item, target_state);
-        }
-
-        lastChecked = item;
-    });
-
-    // удаление выделенных элементов при нажатии Delete
-    this.element.addEventListener('keyup', function(event) {
-        if (event.code === 'Delete') {
-            const items = Array.from(_this.itemList.querySelectorAll(_this._opts.collection.item));
-            const checkedItems = items.filter(function(item) {
-                const checkbox = item.querySelector(_this._opts.item.checkbox);
-                return checkbox.checked;
-            });
-
-            if (checkedItems.length) {
-                modals.createModal({
-                    title: gettext('Confirmation'),
-                    message: gettext(`Are you sure you want to <b>DELETE</b> the selected <b>${checkedItems.length}</b> file(s)?`),
-                    buttons: [{
-                        label: gettext('Cancel'),
-                        className: 'btn-outline-info'
-                    }, {
-                        autofocus: true,
-                        label: gettext('Delete'),
-                        className: 'btn-danger',
-                        callback: function() {
-                            const delete_promises = checkedItems.map(function(item) {
-                                return _this._deleteItem(item)
-                            });
-
-                            modals.softPreloaderPromise(
-                                allSettled(delete_promises)
-                            ).then(function(results) {
-                                for (let result of results) {
-                                    if (result.status === 'rejected') {
-                                        const error = result.reason;
-                                        if ((typeof error === 'object') && error.response && error.response.errors) {
-                                            collectError(error.response.errors);
-                                        } else if (error instanceof Error) {
-                                            collectError(error.message);
-                                        } else {
-                                            collectError(error);
-                                        }
-                                    }
-                                }
-                                showCollectedErrors();
-                            });
-                        }
-                    }]
-                }).show();
-            }
-        }
-    });
-
-    // просмотр при двойном клике
-    this.element.addEventListener('dblclick', function(event) {
-        const item = event.target.closest(_this._opts.collection.item);
-        if (!item) {
-            return
-        }
-
-        const viewButton = item.querySelector(_this._opts.item.view_button);
-        if (viewButton) {
-            viewButton.dispatchEvent(new MouseEvent('click', {
-                bubbles: true,
-                cancelable: true
-            }));
-        }
-    });
-};
-
-
-function initWidget(element) {
-    if (element.closest('.empty-form')) {
-        return
     }
 
-    new Collection(element, {
-        urls: {
-            createCollection: element.dataset.createCollectionUrl,
-            deleteCollection: element.dataset.deleteCollectionUrl,
-            uploadItem: element.dataset.uploadItemUrl,
-            changeItem: element.dataset.changeItemUrl,
-            deleteItem: element.dataset.deleteItemUrl,
-            sortItems: element.dataset.sortItemsUrl
+    /**
+     * Получение с сервера формы изменения файла.
+     * @returns {Promise}
+     */
+    fetchChangeForm() {
+        if (!this.collection.instanceId) {
+            return Promise.reject("Collection doesn't exist");
         }
-    });
+
+        const formData = new FormData();
+
+        const params = utils.getPaperParams(this.collection.root);
+        Object.keys(params).forEach(function(name) {
+            formData.append(name, params[name]);
+        });
+        formData.append("collectionId", this.collection.instanceId.toString());
+        formData.append("itemId", this.id.toString());
+        formData.append("itemType", this.itemType.toString());
+
+        const queryString = new URLSearchParams(formData).toString();
+
+        return modals.showSmartPreloader(
+            fetch(`${this.collection.root.dataset.changeItemUrl}?${queryString}`, {
+                credentials: "same-origin",
+            }).then(function(response) {
+                if (!response.ok) {
+                    throw `${response.status} ${response.statusText}`;
+                }
+                return response.json();
+            })
+        )
+    }
+
+    /**
+     * Отправка формы редактирования файла.
+     * @param {PaperModal} modal
+     * @returns {Promise}
+     */
+    sendChangeForm(modal) {
+        if (!this.collection.instanceId) {
+            return Promise.reject("Collection doesn't exist");
+        }
+
+        const form = modal._body.querySelector("form");
+        if (!form) {
+            return Promise.reject("Form not found");
+        }
+
+        const formData = new FormData(form);
+
+        const _this = this;
+        return modals.showSmartPreloader(
+            fetch(form.action, {
+                method: "POST",
+                credentials: "same-origin",
+                body: formData
+            }).then(function(response) {
+                if (!response.ok) {
+                    throw `${response.status} ${response.statusText}`;
+                }
+                return response.json();
+            })
+        ).then(function(response) {
+            if (response.errors && response.errors.length) {
+                throw response.errors;
+            }
+
+            formUtils.cleanAllErrors(modal._body);
+            if (response.form_errors) {
+                formUtils.setErrorsFromJSON(modal._body, response.form_errors);
+            } else {
+                modal.destroy();
+
+                const fileName = _this.root.querySelector(_this.config.fileName);
+                fileName && (fileName.textContent = response.name);
+
+                const fileInfo = _this.root.querySelector(_this.config.fileInfo);
+                fileInfo && (fileInfo.textContent = response.file_info);
+
+                const previewLink = _this.root.querySelector(_this.config.viewButton);
+                previewLink && (previewLink.href = response.url);
+            }
+        }).catch(function(reason) {
+            if (reason instanceof Error) {
+                // JS-ошибки дублируем в консоль
+                console.error(reason);
+            }
+            modals.showErrors(reason);
+        });
+    }
 }
 
 
-function initWidgets(root = document.body) {
-    let file_selector = '.collection';
-    root.matches(file_selector) && initWidget(root);
-    root.querySelectorAll(file_selector).forEach(initWidget);
+class FileItem extends PermanentCollectionItemBase {
+
 }
 
 
-whenDomReady(initWidgets);
-emitters.dom.on('mutate', initWidgets);
+class ImageItem extends PermanentCollectionItemBase {
+
+}
+
+
+class SVGItem extends PermanentCollectionItemBase {
+
+}
+
+
+class MediaItem extends PermanentCollectionItemBase {
+
+}
+
+
+class Collection extends EventEmitter {
+    static Defaults = {
+        emptyState: "empty",
+        loadingState: "loading",
+
+        input: ".collection__input",
+        dropzone: ".dropzone__overlay",
+        dropzoneActiveClassName: "dropzone__overlay--highlighted",
+
+        // контейнер, содержащий элементы коллекции
+        container: ".collection__items",
+
+        // селектор корневого DOM-элемента элемента коллекции
+        item: ".collection__item",
+
+        // селектор прелоадеров
+        preloader: ".collection-item--preloader",
+
+        // кнопки
+        uploadItemButton: ".collection__upload-item-button",
+        createCollectionButton: ".collection__create-collection-button",
+        deleteCollectionButton: ".collection__delete-collection-button",
+
+        // шаблон селектора для <template>-тэгов с шаблонами элементов коллекции
+        itemTemplatePattern: ".collection__{}-item-template",
+
+        // JSON с данными о элементах коллекции
+        dataJSON: ".collection--data",
+
+        // карта соответствий типа элемента и JS-класса
+        itemClasses: {
+            preloader: PreloaderItem,
+            file: FileItem,
+            image: ImageItem,
+            svg: SVGItem,
+            media: MediaItem,
+        }
+    }
+
+    constructor(root, options) {
+        super();
+
+        this.config = deepmerge(this.constructor.Defaults, options || {});
+
+        this.root = root;
+        if (!this.root) {
+            throw new Error("Root element required.");
+        }
+
+        this.init();
+    }
+
+    get uploader() {
+        return this.root.uploader;
+    }
+
+    get input() {
+        return this.root.querySelector(this.config.input);
+    }
+
+    get container() {
+        return this.root.querySelector(this.config.container);
+    }
+
+    get items() {
+        return this.container.querySelectorAll(this.config.item);
+    }
+
+    get maxOrderValue() {
+        let orderValues = Array.from(this.items).map(function(item) {
+            const instance = item.collectionItem;
+            return parseInt(instance.root.dataset.order);
+        }).filter(function(order) {
+            return !isNaN(order);
+        });
+
+        if (!orderValues.length) {
+            return 0;
+        }
+
+        return Math.max.apply(null, orderValues);
+    }
+
+    get instanceId() {
+        return this.input.value;
+    }
+
+    set instanceId(value) {
+        this.input.value = value;
+    }
+
+    get empty() {
+        return this.root.classList.contains(this.config.emptyState);
+    }
+
+    set empty(value) {
+        this.root.classList.toggle(this.config.emptyState, value);
+    }
+
+    get loading() {
+        return this.root.classList.contains(this.config.loadingState);
+    }
+
+    set loading(value) {
+        this.root.classList.toggle(this.config.loadingState, value);
+    }
+
+    init() {
+        this.empty = !Boolean(this.instanceId);
+
+        // store instance
+        this.root.collection = this;
+
+        this._initItems();
+        this._initUploader();
+        this._initSortable();
+        this._addListeners();
+    }
+
+    destroy() {
+        if (this.uploader) {
+            this.uploader.destroy();
+        }
+
+        this.root.collection = null;
+    }
+
+    /**
+     * Создание элементов коллекции из JSON.
+     * @private
+     */
+    _initItems() {
+        const dataElement = this.root.querySelector(this.config.dataJSON);
+        const data = JSON.parse(dataElement.textContent);
+        for (let itemData of data) {
+            const itemType = itemData.itemType;
+
+            const itemHTML = this.createItem(itemType, itemData);
+
+            this.container.insertAdjacentHTML("beforeend", itemHTML);
+            const items = this.items;
+            const item = items[items.length - 1];
+
+            this.initItem(itemType, item);
+        }
+    }
+
+    _initUploader() {
+        const options = Object.assign({
+            url: this.root.dataset.uploadItemUrl,
+            uploadMultiple: true,
+            params: function(file) {
+                const params = utils.getPaperParams(this.root);
+                params.collectionId = this.instanceId;
+
+                const preloader = this.getPreloaderByFile(file);
+                params.order = preloader.root.dataset.order;
+
+                return params
+            }.bind(this),
+
+            root: this.root,
+            button: this.root.querySelector(this.config.uploadItemButton),
+            dropzone: this.root.querySelector(this.config.dropzone),
+            dropzoneActiveClassName: this.config.dropzoneActiveClassName
+        }, utils.processConfiguration(this.root.dataset.configuration));
+
+        new Uploader(options);
+    }
+
+    _addListeners() {
+        const _this = this;
+
+        this.uploader.on("submitted", function(file) {
+            if (!this.loading) {
+                this.loading = true;
+            }
+
+            // создание прелоадера
+            const itemHTML = this.createItem("preloader", {
+                name: file.name,
+                order: this.maxOrderValue + 1
+            });
+
+            this.container.insertAdjacentHTML("beforeend", itemHTML);
+            const items = this.items;
+            const item = items[items.length - 1];
+
+            this.initItem("preloader", item, {
+                file: file
+            });
+        }.bind(this));
+
+        this.uploader.on("upload", function(file, xhr, formData) {
+            const preloader = this.getPreloaderByFile(file);
+            if (preloader) {
+                preloader.trigger("upload", [file, xhr, formData]);
+            }
+        }.bind(this));
+
+        this.uploader.on("progress", function(file, percentage) {
+            const preloader = this.getPreloaderByFile(file);
+            if (preloader) {
+                preloader.trigger("progress", [file, percentage]);
+            }
+        }.bind(this));
+
+        this.uploader.on("cancel", function(file) {
+            const preloader = this.getPreloaderByFile(file);
+            if (preloader) {
+                preloader.trigger("cancel", [file]);
+            }
+        }.bind(this));
+
+        this.uploader.on("complete", function(file, response) {
+            const preloader = this.getPreloaderByFile(file);
+            if (preloader) {
+                preloader.trigger("complete", [file, response]);
+            }
+        }.bind(this));
+
+        this.uploader.on("error", function(file, message) {
+            this.collectError(message);
+
+            const preloader = this.getPreloaderByFile(file);
+            if (preloader) {
+                preloader.trigger("error", [file, message]);
+            }
+        }.bind(this));
+
+        this.uploader.on("all_complete", function() {
+            this.loading = false;
+
+            this.showCollectedErrors();
+        }.bind(this));
+
+        // создание коллекции
+        if (this.config.createCollectionButton) {
+            this.root.addEventListener("click", function(event) {
+                const createCollectionButton = event.target.closest(this.config.createCollectionButton);
+                if (createCollectionButton) {
+                    event.preventDefault();
+
+                    // Предотвращаем повторные нажатия
+                    createCollectionButton.disabled = true;
+
+                    this.createCollection()
+                        .finally(function() {
+                            createCollectionButton.disabled = false;
+                        });
+                }
+            }.bind(this));
+        }
+
+        // удаление коллекции
+        if (this.config.deleteCollectionButton) {
+            this.root.addEventListener("click", function(event) {
+                const deleteCollectionButton = event.target.closest(this.config.deleteCollectionButton);
+                if (deleteCollectionButton) {
+                    event.preventDefault();
+
+                    // Препятствуем открытию нескольких окон
+                    deleteCollectionButton.disabled = true;
+
+                    modals.createModal({
+                        modalClass: "paper-modal--warning fade",
+                        title: gettext("Confirm deletion"),
+                        body: gettext("Are you sure you want to <b>DELETE</b> this collection?"),
+                        buttons: [{
+                            label: gettext("Cancel"),
+                            buttonClass: "btn-light",
+                            onClick: function(event, popup) {
+                                popup.destroy();
+                            }
+                        }, {
+                            autofocus: true,
+                            label: gettext("Delete"),
+                            buttonClass: "btn-danger",
+                            onClick: function(event, popup) {
+                                Promise.all([
+                                    popup.destroy(),
+                                    _this.deleteCollection()
+                                ]).catch(function(reason) {
+                                    if (reason instanceof Error) {
+                                        // JS-ошибки дублируем в консоль
+                                        console.error(reason);
+                                    }
+                                    modals.showErrors(reason);
+                                });
+                            }
+                        }],
+                        onInit: function() {
+                            this.show();
+                        },
+                        onDestroy: function() {
+                            deleteCollectionButton.disabled = false;
+                        }
+                    });
+                }
+            }.bind(this));
+        }
+
+        // выделение элементов галереи
+        let lastChangedItem = null;
+        let lastChangedItemChecked = true;
+        this.root.addEventListener("click", function(event) {
+            const item = event.target.closest(_this.config.item);
+            if (!item) {
+                return
+            }
+
+            const instance = item.collectionItem;
+            if (!(instance instanceof PermanentCollectionItemBase)) {
+                return
+            }
+
+            let isCheckboxClick;
+            if (instance.config.checkbox) {
+                if (event.target.htmlFor) {  // <label> tag
+                    const labelFor = document.getElementById(event.target.htmlFor);
+                    isCheckboxClick = Boolean(labelFor.closest(instance.config.checkbox));
+                } else {
+                    isCheckboxClick = Boolean(event.target.closest(instance.config.checkbox));
+                }
+            } else {
+                isCheckboxClick = false;
+            }
+
+            if (event.shiftKey) {
+                if (lastChangedItem) {
+                    // mass toggle state
+                    const items = Array.from(_this.items);
+                    const lastChangedItemIndex = items.indexOf(lastChangedItem);
+                    const currentItemIndex = items.indexOf(item);
+                    const startIndex = Math.min(lastChangedItemIndex, currentItemIndex);
+                    const endIndex = Math.max(lastChangedItemIndex, currentItemIndex);
+                    const item_slice = items.slice(startIndex, endIndex + 1);
+                    item_slice.forEach(function(item) {
+                        const instance = item.collectionItem;
+                        if (instance instanceof PermanentCollectionItemBase) {
+                            instance.checked = lastChangedItemChecked;
+                        }
+                    });
+                }
+            } else if (event.ctrlKey) {
+                // toggle checked
+                let targetState;
+                if (isCheckboxClick) {
+                    targetState = instance.checkbox.checked;
+                } else {
+                    targetState = !instance.checkbox.checked;
+                }
+
+                instance.checked = targetState;
+                lastChangedItem = item;
+                lastChangedItemChecked = targetState;
+            } else {
+                if (isCheckboxClick) {
+                    // toggle checked
+                    let targetState = instance.checkbox.checked;
+                    instance.checked = targetState;
+                    lastChangedItem = item;
+                    lastChangedItemChecked = targetState;
+                }
+            }
+
+            // Фокус на элементе, чтобы можно было удалить выбранные элементы
+            // нажав клавишу Delete.
+            item.focus();
+        });
+
+        // удаление выделенных элементов при нажатии Delete
+        this.root.addEventListener("keyup", function(event) {
+            if (event.code !== "Delete") {
+                return
+            }
+
+            const items = Array.from(_this.items);
+            const selectedItems = items.filter(function(item) {
+                const instance = item.collectionItem;
+                return instance.checked;
+            });
+
+            if (!selectedItems.length) {
+                return;
+            }
+
+            modals.createModal({
+                modalClass: "paper-modal--warning fade",
+                title: gettext("Confirmation"),
+                body: interpolate(
+                    ngettext(
+                        "Are you sure you want to <b>DELETE</b> the selected item?",
+                        "Are you sure you want to <b>DELETE</b> the <b>%(count)s</b> selected items?",
+                        selectedItems.length
+                    ),
+                    {
+                        count: selectedItems.length
+                    }
+                ),
+                buttons: [{
+                    label: gettext("Cancel"),
+                    buttonClass: "btn-light",
+                    onClick: function(event, popup) {
+                        popup.destroy();
+                    }
+                }, {
+                    autofocus: true,
+                    label: gettext("Delete"),
+                    buttonClass: "btn-danger",
+                    onClick: function(event, popup) {
+                        Promise.all([
+                            popup.destroy(),
+                            _this._deleteItems(selectedItems)
+                        ]);
+                    }
+                }],
+                onInit: function() {
+                    this.show();
+                }
+            });
+        });
+    }
+
+    _initSortable() {
+        const _this = this;
+        return Sortable.create(this.container, {
+            animation: 0,
+            draggable: this.config.item,
+            filter: function(event, target) {
+                // Отключение сортировки при нажатой Ctrl или Shift,
+                // чтобы сортировка не мешала выделять элементы.
+                if (event.ctrlKey || event.shiftKey) {
+                    return true
+                }
+
+                // Отключение сортировки при загрузки.
+                if (_this.loading) {
+                    return true;
+                }
+
+                if (!target) {
+                    return true
+                }
+
+                const item = target.closest(_this.config.item);
+                const instance = item.collectionItem;
+
+                // Фильтрация прелоадеров
+                if (instance instanceof PreloaderItem) {
+                    return true
+                }
+
+                // Фильтрация удаляемых элементов
+                if (instance.root.classList.contains(instance.config.removingState)) {
+                    return true
+                }
+            },
+            handle: ".sortable-handler",
+            ghostClass: "sortable-ghost",
+            onEnd: function() {
+                const orderList = Array.from(this.items).map(function(item) {
+                    const instance = item.collectionItem;
+                    if (instance instanceof PermanentCollectionItemBase) {
+                        return instance.id;
+                    }
+                }).filter(Boolean);
+
+                const data = new FormData();
+                const params = utils.getPaperParams(this.root);
+                Object.keys(params).forEach(function(name) {
+                    data.append(name, params[name]);
+                });
+                data.append("collectionId", this.instanceId.toString());
+                data.append("orderList", orderList.join(","));
+
+                fetch(this.root.dataset.sortItemsUrl, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    body: data
+                }).then(function(response) {
+                    if (!response.ok) {
+                        throw `${response.status} ${response.statusText}`;
+                    }
+                    return response.json();
+                }).then(function(response) {
+                    if (response.errors && response.errors.length) {
+                        throw response.errors;
+                    }
+
+                    response.orderMap = response.orderMap || {};
+
+                    // update order
+                    _this.items.forEach(function(item) {
+                        const id = parseInt(item.dataset.id);
+                        item.dataset.order = response.orderMap[id];
+                    });
+                }).catch(function(reason) {
+                    if (reason instanceof Error) {
+                        // JS-ошибки дублируем в консоль
+                        console.error(reason);
+                    }
+                    modals.showErrors(reason);
+                });
+            }.bind(this)
+        });
+    }
+
+    collectError(message) {
+        const errorKey = `collection_${this.input.name}`;
+        utils.collectError(errorKey, message);
+    }
+
+    showCollectedErrors() {
+        const errorKey = `collection_${this.input.name}`;
+        utils.showCollectedErrors(errorKey);
+    }
+
+    /**
+     * Создание коллекции.
+     * @returns {Promise}
+     */
+    createCollection() {
+        if (this.instanceId) {
+            return Promise.reject("Collection already exists");
+        }
+
+        const formData = new FormData();
+
+        const params = utils.getPaperParams(this.root);
+        Object.keys(params).forEach(function(name) {
+            formData.append(name, params[name]);
+        });
+
+        const _this = this;
+        return modals.showSmartPreloader(
+            fetch(this.root.dataset.createCollectionUrl, {
+                method: "POST",
+                credentials: "same-origin",
+                body: formData
+            }).then(function(response) {
+                if (!response.ok) {
+                    throw `${response.status} ${response.statusText}`;
+                }
+                return response.json();
+            })
+        ).then(function(response) {
+            if (response.errors && response.errors.length) {
+                throw response.errors;
+            }
+
+            _this._initCollection(response.collection_id);
+        }).catch(function(reason) {
+            if (reason instanceof Error) {
+                // JS-ошибки дублируем в консоль
+                console.error(reason);
+            }
+            modals.showErrors(reason);
+        });
+    }
+
+    /**
+     * Инициализация коллекции заданным ID.
+     * @param {Number} collectionId
+     * @private
+     */
+    _initCollection(collectionId) {
+        this.empty = false;
+        this.instanceId = collectionId;
+    }
+
+    /**
+     * Удаление коллекции.
+     * @returns {Promise}
+     */
+    deleteCollection() {
+        if (!this.instanceId) {
+            return Promise.reject("Collection doesn't exist");
+        }
+
+        const formData = new FormData();
+
+        const params = utils.getPaperParams(this.root);
+        Object.keys(params).forEach(function(name) {
+            formData.append(name, params[name]);
+        });
+        formData.append("pk", this.instanceId);
+
+        // отмена загрузки всех файлов из очереди.
+        this.uploader.cancelAll();
+
+        const _this = this;
+        return modals.showSmartPreloader(
+            fetch(this.root.dataset.deleteCollectionUrl, {
+                method: "POST",
+                credentials: "same-origin",
+                body: formData
+            }).then(function(response) {
+                if (!response.ok) {
+                    throw `${response.status} ${response.statusText}`;
+                }
+                return response.json();
+            })
+        ).then(function(response) {
+            if (response.errors && response.errors.length) {
+                throw response.errors;
+            }
+
+            _this._disposeCollection();
+            return _this._removeAllItems();
+        });
+    }
+
+    /**
+     * Отвязываение виджета от коллекции.
+     * @private
+     */
+    _disposeCollection() {
+        this.empty = true;
+        this.instanceId = "";
+    }
+
+    /**
+     * Анимированное удаление всех элементов коллекции.
+     * @returns {Promise}
+     * @private
+     */
+    _removeAllItems() {
+        return Promise.all(Array.from(this.items).map(function(item) {
+            const instance = item.collectionItem;
+            if (instance) {
+                return instance.removeDOM();
+            }
+        }));
+    }
+
+    /**
+     * Удаление выбранных элементов.
+     * @param {NodeList|HTMLElement[]} items
+     * @returns {Promise}
+     * @private
+     */
+    _deleteItems(items) {
+        return allSettled(
+            Array.from(items).map(function(item) {
+                const instance = item.collectionItem;
+                if (instance instanceof PermanentCollectionItemBase) {
+                    return instance.delete();
+                }
+            })
+        ).then(function(results) {
+            for (let result of results) {
+                if (result.status === "rejected") {
+                    const reason = result.reason;
+                    if (reason instanceof Error) {
+                        // JS-ошибки дублируем в консоль
+                        console.error(reason);
+                    }
+                    this.collectError(reason);
+                }
+            }
+            this.showCollectedErrors();
+        }.bind(this));
+    }
+
+    /**
+     * Рендеринг шаблона элемента галереи.
+     * @param {String} itemType
+     * @param {Object?} context
+     * @returns {String}
+     */
+    createItem(itemType, context) {
+        const selector = this.config.itemTemplatePattern.replace("{}", itemType);
+        const template = this.root.querySelector(selector);
+        return Mustache.render(template.innerHTML, context || {});
+    }
+
+    /**
+     * Создание экземпляра JS-класса элемента галереи.
+     * @param {String} itemType
+     * @param {HTMLElement} element
+     * @param {Object?} options
+     * @returns {CollectionItemBase}
+     */
+    initItem(itemType, element, options) {
+        const itemClass = this.config.itemClasses[itemType];
+        return new itemClass(element, this, options);
+    }
+
+    /**
+     * Получение DOM-элемента прелоадера для загружаемого файла.
+     * @param {File} file
+     * @returns {null|CollectionItemBase|*}
+     */
+    getPreloaderByFile(file) {
+        const uuid = this.uploader.getUUID(file);
+        const preloaders = this.container.querySelectorAll(this.config.preloader);
+        const preloaderElement = Array.from(preloaders).find(function(preloader) {
+            const instance = preloader.collectionItem;
+            return instance && (instance.uuid === uuid);
+        });
+        return preloaderElement && preloaderElement.collectionItem;
+    }
+}
+
+
+class CollectionWidget extends Widget {
+    _init(element) {
+        new Collection(element);
+    }
+
+    _destroy(element) {
+        if (element.collection) {
+            element.collection.destroy();
+            element.collection = null;
+        }
+    }
+}
+
+
+const widget = new CollectionWidget();
+widget.observe(".collection");
+widget.initAll(".collection");

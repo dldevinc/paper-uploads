@@ -1,4 +1,7 @@
-<div class="collection dropzone {% if not widget.value %}collection--empty{% endif %}"
+{% load json %}
+{% load i18n %}
+
+<div class="collection dropzone {% if not widget.value %}empty{% endif %}"
      data-create-collection-url="{{ create_collection_url }}"
      data-delete-collection-url="{{ delete_collection_url }}"
      data-upload-item-url="{{ upload_item_url }}"
@@ -7,7 +10,7 @@
      data-sort-items-url="{{ sort_items_url }}"
      data-paper-owner-app-label="{{ owner_app_label }}"
      data-paper-owner-model-name="{{ owner_model_name }}"
-     data-paper-owner-fieldname="{{ owner_fieldname }}"
+     data-paper-owner-field-name="{{ owner_fieldname }}"
      data-paper-collection-content-type="{{ content_type.pk }}"
      data-configuration='{{ configuration|safe }}'>
 
@@ -16,41 +19,28 @@
          value="{{ widget.value|default:'' }}"
          {% include "django/forms/widgets/attrs.html" %}/>
 
-  <div class="collection__items">
-    {% if widget.value %}
-      {% for item in instance.get_items %}
-        {% include item.template_name %}
-      {% endfor %}
-    {% endif %}
-  </div>
+  <div class="collection__items"></div>
 
-  <button type="button" class="collection__create-button btn btn-success" {% if widget.value %}hidden{% endif %}
+  <button type="button" class="collection__create-collection-button btn btn-success"
           data-toggle="tooltip" data-placement="top" data-trigger="hover"
           data-html="true" title="{{ _('Create collection') }}">
     <i class="fa fa-fw fa-plus"></i>
     {{ _('Create collection') }}
   </button>
 
-  <button type="button" class="collection__upload-button btn btn-success" {% if not widget.value %}hidden{% endif %}
+  <button type="button" class="collection__upload-item-button btn btn-success"
           data-toggle="tooltip" data-placement="top" data-trigger="hover"
           data-html="true" title="{{ _('Select files') }}">
     <i class="fa fa-fw fa-folder-open"></i>
     {{ _('Select files') }}
   </button>
 
-  <button type="button" class="collection__delete-button btn btn-danger" {% if not widget.value %}hidden{% endif %}
+  <button type="button" class="collection__delete-collection-button btn btn-danger"
           data-toggle="tooltip" data-placement="top" data-trigger="hover"
           data-html="true" title="{{ _('Delete collection') }}">
     <i class="fa fa-fw fa-trash"></i>
     {{ _('Delete collection') }}
   </button>
-
-  <div class="collection__help-text">
-    <small class="text-muted">
-      <kbd class="collection__kbd">Ctrl+Click</kbd> to select multiple items.
-      <kbd class="collection__kbd">Double-click</kbd> to open item
-    </small>
-  </div>
 
   {% if limitations %}
     <div class="image-uploader__limitations small text-muted mt-2">
@@ -63,15 +53,15 @@
     </div>
   {% endif %}
 
-  <div class="dropzone-overlay">
-    <div class="dropzone-hint">
+  <div class="dropzone__overlay">
+    <div class="dropzone__hint">
       <i class="fa fa-fw fa-upload"></i>
       {{ _('Drop files here to send') }}
     </div>
   </div>
 
   <template class="collection__preloader-item-template">
-    {% include 'paper_uploads/collection_item/preloader.html' %}
+    {% include 'paper_uploads/items/preloader.html' %}
   </template>
 
   {% for name, field in collection_cls.item_types.items %}
@@ -79,4 +69,8 @@
       {% include field.model.template_name %}
     </template>
   {% endfor %}
+
+  <script class="collection--data" type="application/json">
+    [{% if widget.value %}{% for item in instance.get_items %}{{ item.as_dict|json }}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}]
+  </script>
 </div>

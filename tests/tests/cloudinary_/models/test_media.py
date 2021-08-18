@@ -72,7 +72,7 @@ class TestCloudinaryMedia(CloudinaryFileResource):
             'name': self.resource_name,
             'extension': self.resource_extension,
             'size': self.resource_size,
-            'file_info': '(mp3, 2.0\xa0MB)',
+            'file_info': '(mp3, 2.1\xa0MB)',
             'url': storage.resource.get_file_url(),
             'created': storage.resource.created_at.isoformat(),
             'modified': storage.resource.modified_at.isoformat(),
@@ -82,6 +82,11 @@ class TestCloudinaryMedia(CloudinaryFileResource):
     def test_read(self, storage):
         with storage.resource.open() as fp:
             assert fp.read(4) == b'ID3\x03'
+
+    def test_build_url(self, storage):
+        url = storage.resource.build_url(audio_frequency="44100")
+        assert url.startswith('https://res.cloudinary.com/')
+        assert "/af_44100/" in url
 
 
 class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):

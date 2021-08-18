@@ -16,13 +16,13 @@ class FileWidgetBase(widgets.Widget):
         context = super().get_context(name, value, attrs)
         context.update(
             {
-                'content_type': ContentType.objects.get_for_model(
+                "content_type": ContentType.objects.get_for_model(
                     self.model, for_concrete_model=False
                 ),
-                'owner_app_label': self.owner_app_label,
-                'owner_model_name': self.owner_model_name,
-                'owner_fieldname': self.owner_fieldname,
-                'instance': self.get_instance(value) if value else None,
+                "owner_app_label": self.owner_app_label,
+                "owner_model_name": self.owner_model_name,
+                "owner_fieldname": self.owner_fieldname,
+                "instance": self.get_instance(value) if value else None,
             }
         )
         return context

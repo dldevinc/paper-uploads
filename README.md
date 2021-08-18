@@ -7,9 +7,9 @@
 ![](http://joxi.net/gmvnGZBtqKOOjm.png)
 
 ## Requirements
-* Python 3.6+
-* Django 2.1+
-* [paper-admin][paper-admin]
+* Python >= 3.6
+* Django >= 2.2
+* [paper-admin][paper-admin] >= 3.0
 * [variations][variations]
 
 ## Features
@@ -65,6 +65,13 @@ PAPER_UPLOADS = {
         )
     }
 }
+
+# Add JS translations
+PAPER_LOCALE_PACKAGES = [
+   "django.contrib.admin",
+   "paper_admin",
+   "paper_uploads",
+]
 ```
 
 ## FileField
@@ -108,7 +115,6 @@ class Page(models.Model):
 
 Для упрощения работы с файлами, некоторые методы и свойства
 стандартного класса `FieldFile` проксированы на уровень модели:
-`UploadedFile`:
 * `open`
 * `close`
 * `closed`
@@ -357,7 +363,7 @@ class PageGallery(ImageCollection):
 дополнительных полей.
 
 Чтобы экземпляры коллекций не смешивались при выполнении SQL-запросов,
-менеджер `objects` в классе `Collection` был переопределен для того,
+менеджер `objects` в классе `Collection` был переопределен, для того,
 чтобы принимать во внимание `ContentType` коллекции и выполнять операции
 только над теми коллекциями, класс которых соответствует текущему.
 
@@ -433,25 +439,23 @@ python3 manage.py clean_uploads --min-age=10
 
 #### recreate_variations
 Перенарезает вариации для указанных моделей.
+Модель указывается в формате `app_label.model_name`.
 
-Рекомендуется запускать в интерактивном режиме:
+Если модель является коллекцией, необходимо указать параметр `--item-type`:
 ```shell
-python3 manage.py recreate_variations --interactive
+python3 manage.py recreate_variations 'app.Photos' --item-type='image'
 ```
 
-Возможен вызов и в неинтерактивном режиме. Для этого
-необходимо указать модель в виде строки вида
-`AppLabel.ModelName` и имя поля, ссылающегося на изображение.
-
+Для обычных моделей необходимо указать параметр `--field`:
 ```shell
-python3 manage.py recreate_variations 'app.Page' 'image'
+python3 manage.py recreate_variations 'app.Page' --field='image'
 ```
 
-Если нужно перенарезать не все вариации, а только некоторые,
-то их можно перечислить в параметре `--variations`.
-
+По умолчанию перенарезаются все возможные вариации для каждого
+экземпляра указанной модели. Можно указать конкретные вариации,
+которые нужно перенарезать:
 ```shell
-python3 manage.py recreate_variations 'app.Page' 'image' --variations big small
+python3 manage.py recreate_variations 'app.Page' --field='image' --variations big small
 ```
 
 Также, изображения можно перенарезать через код, для конкретных
@@ -460,10 +464,19 @@ python3 manage.py recreate_variations 'app.Page' 'image' --variations big small
 # перенарезка `big` и `medium` вариаций поля ImageField
 page.image.recut(['big', 'medium'])
 
-# перенарезка всех вариаций для всех картинок галереи
+# перенарезка всех вариаций для всех картинок коллекции
 for image in page.gallery.get_items('image'):
     image.recut()
 ```
+
+#### remove_variations
+Удаление файлов вариаций.
+Параметры аналогичны параметрам `recreate_variations`.
+
+```shell
+python3 manage.py remove_variations 'app.Page' --field='image'
+```
+
 
 ## Validators
 Для добавления ограничений на загружаемые файлы применяются
@@ -775,12 +788,13 @@ in a virtualenv and set up for development:
 virtualenv .venv
 source .venv/bin/activate
 pip install -r ./requirements_dev.txt
+pip install django-jinja==2.7.0
 pre-commit install
 ```
 
 Install `npm` dependencies and build static files:
 ```shell script
-npm i
+npm ci
 npx webpack
 ```
 

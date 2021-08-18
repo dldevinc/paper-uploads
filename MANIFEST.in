@@ -3,6 +3,7 @@ include README.md
 include CHANGELOG.md
 
 recursive-include paper_uploads *.html
+recursive-include paper_uploads/locale/ *.mo *.po
 recursive-include paper_uploads/static/paper_uploads/dist *.svg *.css *.js *.map
 recursive-exclude tests *
 recursive-exclude * __pycache__

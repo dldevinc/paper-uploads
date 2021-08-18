@@ -61,7 +61,12 @@ class CloudinaryFileExampleAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             'fields': (
-                'file',
+                'name', 'file', 'file_required',
+            ),
+        }),
+        (_('Validators'), {
+            'fields': (
+                'file_extensions', 'file_mimetypes', 'file_size'
             ),
         }),
     )

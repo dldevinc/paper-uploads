@@ -8,23 +8,29 @@ from ...models.mixins import BacklinkModelMixin
 
 
 class Command(BaseCommand):
+    help = """
+    Проверка целостности экземпляров файловых моделей.
+    
+    Если указан параметр `--fix-missing`, недостающие файлы вариаций
+    создаются из исходного изображения.
+    """
     options = None
     verbosity = None
     database = DEFAULT_DB_ALIAS
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--database',
-            action='store',
-            dest='database',
+            "--database",
+            action="store",
+            dest="database",
             default=DEFAULT_DB_ALIAS,
-            help='Nominates the database to use. Defaults to the "default" database.',
+            help="Nominates the database to use. Defaults to the 'default' database.",
         )
         parser.add_argument(
-            '--fix-missing',
-            action='store_true',
+            "--fix-missing",
+            action="store_true",
             default=False,
-            help='Recreate all missing variation files from a source.',
+            help="Recreate all missing variation files from a source.",
         )
 
     def check_exists(self):
@@ -36,13 +42,10 @@ class Command(BaseCommand):
             if not total:
                 continue
 
-            for index, instance in enumerate(
-                model._base_manager.using(self.database).iterator(), start=1
-            ):
-                assert isinstance(instance, FileResource)
-
+            queryset = model._base_manager.using(self.database)
+            for index, instance in enumerate(queryset.iterator(), start=1):
                 if self.verbosity >= 2:
-                    self.stdout.write('\r' + (' ' * 80), ending='\r')
+                    self.stdout.write("\r" + (" " * 80), ending="\r")
 
                 invalid = False
                 message = "Errors were found in '{}.{}' #{instance.pk} ({instance}):".format(
@@ -66,11 +69,11 @@ class Command(BaseCommand):
                                 total,
                             )
                         ),
-                        ending='',
+                        ending="",
                     )
 
             if self.verbosity >= 2:
-                self.stdout.write('')
+                self.stdout.write("")
 
     def check_variations(self):
         for model in apps.get_models():
@@ -87,7 +90,7 @@ class Command(BaseCommand):
                 assert isinstance(instance, VersatileImageResourceMixin)
 
                 if self.verbosity >= 2:
-                    self.stdout.write('\r' + (' ' * 80), ending='\r')
+                    self.stdout.write("\r" + (" " * 80), ending="\r")
 
                 invalid = False
                 message = "Errors were found in '{}.{}' #{instance.pk} ({instance}):".format(
@@ -101,7 +104,7 @@ class Command(BaseCommand):
 
                 if missed_variations:
                     invalid = True
-                    recreatable = self.options['fix_missing'] and instance.file_exists()
+                    recreatable = self.options["fix_missing"] and instance.file_exists()
                     for vname in missed_variations:
                         message += "\n  Not found variation '{}'".format(vname)
                         if recreatable:
@@ -123,11 +126,11 @@ class Command(BaseCommand):
                                 total,
                             )
                         ),
-                        ending='',
+                        ending="",
                     )
 
             if self.verbosity >= 2:
-                self.stdout.write('')
+                self.stdout.write("")
 
     def check_owners(self):
         for model in apps.get_models():
@@ -147,7 +150,7 @@ class Command(BaseCommand):
                 assert isinstance(instance, BacklinkModelMixin)
 
                 if self.verbosity >= 2:
-                    self.stdout.write('\r' + (' ' * 80), ending='\r')
+                    self.stdout.write("\r" + (" " * 80), ending="\r")
 
                 real_model = model
                 if isinstance(instance, Collection):
@@ -199,11 +202,11 @@ class Command(BaseCommand):
                                 total,
                             )
                         ),
-                        ending='',
+                        ending="",
                     )
 
             if self.verbosity >= 2:
-                self.stdout.write('')
+                self.stdout.write("")
 
     def check_item_types(self):
         total = CollectionItemBase.objects.using(self.database).count()
@@ -213,7 +216,7 @@ class Command(BaseCommand):
             assert isinstance(item, CollectionItemBase)
 
             if self.verbosity >= 2:
-                self.stdout.write('\r' + (' ' * 80), ending='\r')
+                self.stdout.write("\r" + (" " * 80), ending="\r")
 
             invalid = False
             message = "Errors were found in '{}.{}' #{item.pk} ({item}):".format(
@@ -250,16 +253,16 @@ class Command(BaseCommand):
                             index, total
                         )
                     ),
-                    ending='',
+                    ending="",
                 )
 
         if self.verbosity >= 2:
-            self.stdout.write('')
+            self.stdout.write("")
 
     def handle(self, *args, **options):
         self.options = options
-        self.verbosity = options['verbosity']
-        self.database = options['database']
+        self.verbosity = options["verbosity"]
+        self.database = options["database"]
 
         self.check_item_types()
         self.check_owners()

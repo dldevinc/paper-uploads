@@ -5,4 +5,4 @@ from .base import UploadedFileBaseForm
 class UploadedFileDialog(UploadedFileBaseForm):
     class Meta:
         model = UploadedFile
-        fields = ('new_name', 'display_name')
+        fields = ("new_name", "display_name")

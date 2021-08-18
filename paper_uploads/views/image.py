@@ -13,12 +13,12 @@ from .base import ChangeFileViewBase, DeleteFileViewBase, UploadFileViewBase
 
 class UploadFileView(UploadFileViewBase):
     def handle(self, request, file: UploadedFile):
-        content_type_id = request.POST.get('paperContentType')
+        content_type_id = request.POST.get("paperContentType")
         model_class = helpers.get_model_class(content_type_id, FileResource)
         instance = model_class(
-            owner_app_label=request.POST.get('paperOwnerAppLabel'),
-            owner_model_name=request.POST.get('paperOwnerModelName'),
-            owner_fieldname=request.POST.get('paperOwnerFieldname'),
+            owner_app_label=request.POST.get("paperOwnerAppLabel"),
+            owner_model_name=request.POST.get("paperOwnerModelName"),
+            owner_fieldname=request.POST.get("paperOwnerFieldName"),
         )
 
         try:
@@ -41,21 +41,21 @@ class UploadFileView(UploadFileViewBase):
 
 class DeleteFileView(DeleteFileViewBase):
     def handle(self, request):
-        content_type_id = request.POST.get('paperContentType')
+        content_type_id = request.POST.get("paperContentType")
         model_class = helpers.get_model_class(content_type_id, FileResource)
-        instance_id = request.POST.get('instance_id')
+        pk = request.POST.get("pk")
 
         try:
-            instance = helpers.get_instance(model_class, instance_id)
+            instance = helpers.get_instance(model_class, pk)
         except exceptions.InvalidObjectId:
-            logger.exception('Error')
-            return self.error_response(_('Invalid ID'))
+            logger.exception("Error")
+            return self.error_response(_("Invalid ID"))
         except ObjectDoesNotExist:
-            logger.exception('Error')
-            return self.error_response(_('Object not found'))
+            logger.exception("Error")
+            return self.error_response(_("Object not found"))
         except MultipleObjectsReturned:
-            logger.exception('Error')
-            return self.error_response(_('Multiple objects returned'))
+            logger.exception("Error")
+            return self.error_response(_("Multiple objects returned"))
 
         instance.delete()
         return self.success_response()
@@ -63,18 +63,18 @@ class DeleteFileView(DeleteFileViewBase):
 
 class ChangeFileView(ChangeFileViewBase):
     form_class = UploadedImageDialog
-    template_name = 'paper_uploads/dialogs/image.html'
+    template_name = "paper_uploads/dialogs/image.html"
 
     def get_instance(self, request, *args, **kwargs):
-        content_type_id = self.request.GET.get('paperContentType')
+        content_type_id = self.request.GET.get("paperContentType")
         model_class = helpers.get_model_class(content_type_id, FileResource)
-        instance_id = self.request.GET.get('instance_id')
+        pk = self.request.GET.get("pk")
 
         try:
-            return helpers.get_instance(model_class, instance_id)
+            return helpers.get_instance(model_class, pk)
         except exceptions.InvalidObjectId:
-            raise exceptions.AjaxFormError(_('Invalid ID'))
+            raise exceptions.AjaxFormError(_("Invalid ID"))
         except ObjectDoesNotExist:
-            raise exceptions.AjaxFormError(_('Object not found'))
+            raise exceptions.AjaxFormError(_("Object not found"))
         except MultipleObjectsReturned:
-            raise exceptions.AjaxFormError(_('Multiple objects returned'))
+            raise exceptions.AjaxFormError(_("Multiple objects returned"))

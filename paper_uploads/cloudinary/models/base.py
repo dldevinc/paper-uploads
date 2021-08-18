@@ -36,7 +36,7 @@ class CloudinaryFieldFile(FileProxyMixin):
         self.file = None
 
     def __str__(self):
-        return self.name or ''
+        return self.name or ""
 
     def __repr__(self):
         return "<%s: %s>" % (self.__class__.__name__, self or "None")
@@ -59,8 +59,8 @@ class CloudinaryFieldFile(FileProxyMixin):
     @cached_property
     def public_id(self):
         public_id = self.resource.public_id
-        if (self.resource.resource_type == 'raw') and self.resource.format:
-            public_id += '.' + self.resource.format
+        if (self.resource.resource_type == "raw") and self.resource.format:
+            public_id += "." + self.resource.format
         return public_id
 
     @cached_property
@@ -80,11 +80,11 @@ class CloudinaryFieldFile(FileProxyMixin):
 
     @property
     def size(self) -> int:
-        return self.metadata['bytes']
+        return self.metadata["bytes"]
 
     @property
     def format(self) -> Optional[str]:
-        return self.metadata.get('format')
+        return self.metadata.get("format")
 
     def _get_tempfile_path(self):
         return os.path.join(
@@ -93,7 +93,7 @@ class CloudinaryFieldFile(FileProxyMixin):
             self.name
         )
 
-    def _download_file(self, mode='rb', chunk_size=None):
+    def _download_file(self, mode="rb", chunk_size=None):
         """
         Скачивание файла из Cloudinary во временную директорию.
         Загруженный файл остается там даже после закрытия, чтобы не
@@ -102,7 +102,7 @@ class CloudinaryFieldFile(FileProxyMixin):
         chunk_size = chunk_size or self.DEFAULT_CHUNK_SIZE
         tempfile_path = self._get_tempfile_path()
         if os.path.exists(tempfile_path):
-            with open(tempfile_path, 'rb') as fp:
+            with open(tempfile_path, "rb") as fp:
                 file_checksum = utils.checksum(fp)
             if file_checksum == self.checksum:
                 return File(open(tempfile_path, mode))
@@ -110,16 +110,16 @@ class CloudinaryFieldFile(FileProxyMixin):
         root, basename = os.path.split(tempfile_path)
         os.makedirs(root, mode=0o755, exist_ok=True)
 
-        lock = FileLock(tempfile_path + '.lock')
+        lock = FileLock(tempfile_path + ".lock")
         with lock.acquire(timeout=3600):
             response = requests.get(self.url, stream=True)
             response.raise_for_status()
-            with open(tempfile_path, 'wb+') as fp:
+            with open(tempfile_path, "wb+") as fp:
                 for chunk in response.iter_content(chunk_size=chunk_size):
                     fp.write(chunk)
             return File(open(tempfile_path, mode))
 
-    def open(self, mode='rb'):
+    def open(self, mode="rb"):
         if self.file is None:
             self.file = self._download_file(mode)
         elif self.file.closed:
@@ -203,7 +203,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
 
         # owner field`s options should override `CloudinaryField` options
         owner_field = self.get_owner_field()
-        if owner_field is not None and hasattr(owner_field, 'cloudinary'):
+        if owner_field is not None and hasattr(owner_field, "cloudinary"):
             options.update(owner_field.cloudinary or {})
 
         # filter keys
@@ -214,15 +214,15 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         }
 
         # format folder
-        folder = options.pop('folder', None)
+        folder = options.pop("folder", None)
         if folder is not None:
-            options['folder'] = datetime.datetime.now().strftime(folder)
+            options["folder"] = datetime.datetime.now().strftime(folder)
 
         return options
 
     def _attach_file(self, file: File, **options):
         cloudinary_options = self.get_cloudinary_options()
-        cloudinary_options.update(options.get('cloudinary', {}))
+        cloudinary_options.update(options.get("cloudinary", {}))
 
         if file.size >= 100 * 1024 * 1024:
             upload = uploader.upload_large
@@ -239,9 +239,9 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
                 **cloudinary_options,
             )
         except cloudinary.exceptions.Error as e:
-            if e.args and 'Unsupported file type' in e.args[0]:
+            if e.args and "Unsupported file type" in e.args[0]:
                 raise exceptions.UnsupportedFileError(
-                    _('File `%s` is not an image') % file.name
+                    _("File `%s` is not an image") % file.name
                 )
             else:
                 raise ValidationError(*e.args)
@@ -253,7 +253,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
             public_id = result["public_id"]
         else:
             public_id, file_format = posixpath.splitext(result["public_id"])
-            file_format = file_format.lstrip('.')
+            file_format = file_format.lstrip(".")
 
         resource = CloudinaryResource(
             public_id,
@@ -267,18 +267,18 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         self.set_file(resource)
 
         self.basename = helpers.get_filename(file.name)
-        self.extension = file_format or ''
+        self.extension = file_format or ""
         return result
 
     def _rename_file(self, new_name: str, **options):
         # TODO: Cloudinary can't copy files. We dont't want to do it manually
         cloudinary_options = self.get_cloudinary_options()
-        cloudinary_options.update(options.get('cloudinary', {}))
+        cloudinary_options.update(options.get("cloudinary", {}))
 
         old_name = self.name
         file_field = self.get_file_field()
         folder, basename = posixpath.split(old_name)
-        if file_field.resource_type != 'raw':
+        if file_field.resource_type != "raw":
             # video and image have no extension
             base, ext = posixpath.splitext(new_name)
             new_name = base
@@ -302,7 +302,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
             public_id = result["public_id"]
         else:
             public_id, file_format = posixpath.splitext(result["public_id"])
-            file_format = file_format.lstrip('.')
+            file_format = file_format.lstrip(".")
 
         resource = CloudinaryResource(
             public_id,
@@ -315,12 +315,12 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         self.set_file(resource)
 
         self.basename = helpers.get_filename(new_name)
-        self.extension = file_format or ''
+        self.extension = file_format or ""
         return result
 
     def _delete_file(self, **options):
         cloudinary_options = self.get_cloudinary_options()
-        cloudinary_options.update(options.get('cloudinary', {}))
+        cloudinary_options.update(options.get("cloudinary", {}))
 
         file = self.get_file()
         if not file:
@@ -341,8 +341,8 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
             )
             return
 
-        status = result.get('result')
-        if status == 'ok':
+        status = result.get("result")
+        if status == "ok":
             self.set_file(None)
         else:
             logger.warning(
@@ -351,3 +351,9 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
                 )
             )
         return result
+
+    def build_url(self, **options):
+        # proxy Cloudinary method
+        self._require_file()
+        file = self.get_file()
+        return file.resource.build_url(**options)

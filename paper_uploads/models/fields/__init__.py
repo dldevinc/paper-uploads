@@ -3,9 +3,9 @@ from .file import FileField
 from .image import ImageField, VariationalFileField
 
 __all__ = [
-    'VariationalFileField',
-    'FileField',
-    'ImageField',
-    'CollectionField',
-    'CollectionItem',
+    "VariationalFileField",
+    "FileField",
+    "ImageField",
+    "CollectionField",
+    "CollectionItem",
 ]

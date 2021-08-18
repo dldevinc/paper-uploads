@@ -1,17 +1,17 @@
 from django.apps import AppConfig, apps
-from django.contrib.admin.sites import site
 from django.db.models.signals import pre_migrate
 from django.utils.translation import gettext_lazy as _
 
 
 class Config(AppConfig):
-    name = 'paper_uploads'
-    verbose_name = _('Uploaded Files')
+    name = "paper_uploads"
+    verbose_name = _("Uploaded Files")
 
     def ready(self):
-        from .signals import handlers
-        from .models.collection import CollectionBase
+        from django.contrib.admin.sites import site
         from .admin import CollectionAdminBase
+        from .models.collection import CollectionBase
+        from .signals import handlers
 
         # Переименование поля файла или модели-владельца файла,
         # изменит также и соответствующие значения, хранящиеся в БД

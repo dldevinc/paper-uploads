@@ -1,9 +1,7 @@
 import os
 
 from django.utils.translation import ugettext_lazy as _
-
 from dotenv import load_dotenv
-
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -91,7 +89,7 @@ DATABASES = {
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-ru'
 
 TIME_ZONE = 'UTC'
 
@@ -101,6 +99,7 @@ USE_L10N = True
 
 USE_TZ = True
 
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
@@ -128,11 +127,6 @@ RQ_QUEUES = {
 # =============
 #  Paper Admin
 # =============
-PAPER_SUPPORT_PHONE = '+1 267 626 2554'
-PAPER_SUPPORT_EMAIL = 'office@directlinedev.com'
-PAPER_SUPPORT_COMPANY = 'Direct Line Development'
-PAPER_SUPPORT_WEBSITE = 'https://directlinedev.com/'
-
 PAPER_ENVIRONMENT_NAME = 'development'
 PAPER_ENVIRONMENT_COLOR = '#FFFF00'
 
@@ -181,5 +175,10 @@ PAPER_UPLOADS = {
     }
 }
 
-load_dotenv()
+PAPER_LOCALE_PACKAGES = [
+    "django.contrib.admin",
+    "paper_admin",
+    "paper_uploads",
+]
+
 load_dotenv()

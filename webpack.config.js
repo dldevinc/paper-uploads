@@ -1,37 +1,36 @@
-const path = require('path');
-const webpack = require('webpack');
-const pixrem = require('pixrem');
-const autoprefixer = require('autoprefixer');
-const TerserPlugin = require('terser-webpack-plugin');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+const path = require("path");
+const webpack = require("webpack");
+const pixrem = require("pixrem");
+const autoprefixer = require("autoprefixer");
+const TerserPlugin = require("terser-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 
-const SOURCE_DIR = 'paper_uploads/static/paper_uploads/src';
-const DIST_DIR = 'paper_uploads/static/paper_uploads/dist';
+const SOURCE_DIR = "paper_uploads/static/paper_uploads/src";
+const DIST_DIR = "paper_uploads/static/paper_uploads/dist";
 
 
-module.exports = {
-    devtool: 'source-map',
-    mode: 'production',
+let config = {
     entry: {
-        widget: path.resolve(`${SOURCE_DIR}/js/widget.js`),
+        widget: path.resolve(SOURCE_DIR, "js/widget.js"),
     },
     output: {
-        path: path.resolve(`${DIST_DIR}`),
-        publicPath: '/static/paper_uploads/dist/',
-        filename: '[name].min.js',
-        chunkFilename: '[name].chunk.min.js'
+        clean: true,
+        path: path.resolve(DIST_DIR),
+        publicPath: "/static/paper_uploads/dist/",
+        filename: "[name].js",
+        assetModuleFilename: "assets/[name][ext][query]"
     },
     module: {
         rules: [
             {
                 test: /\.(js|jsx)$/,
-                exclude: /(node_modules|bower_components)/,
+                exclude: /[\\/]node_modules[\\/]/,
                 use: [
                     {
-                        loader: 'babel-loader',
+                        loader: "babel-loader",
                         options: {
-                            cacheDirectory: 'cache'
+                            cacheDirectory: path.resolve(__dirname, "cache")
                         }
                     }
                 ]
@@ -42,22 +41,22 @@ module.exports = {
                 use: [{
                     loader: MiniCssExtractPlugin.loader,
                 }, {
-                    loader: 'fast-css-loader'
+                    loader: "fast-css-loader"
                 }]
             },
+
             {
                 test: /\.scss$/,
                 use: [{
                     loader: MiniCssExtractPlugin.loader,
-                },
-                {
-                    loader: 'fast-css-loader',
+                }, {
+                    loader: "fast-css-loader",
                     options: {
-                        importLoaders: 1
+                        importLoaders: 2
                     }
                 },
                 {
-                    loader: 'postcss-loader',
+                    loader: "postcss-loader",
                     options: {
                         postcssOptions: {
                             plugins: [
@@ -68,41 +67,73 @@ module.exports = {
                     }
                 },
                 {
-                    loader: 'sass-loader',
+                    loader: "sass-loader",
                     options: {
                         sassOptions: {
                             includePaths: [
-                                path.resolve(`${SOURCE_DIR}/css/`)
+                                path.resolve(SOURCE_DIR, "css"),
+                                path.resolve(__dirname, "node_modules"),
                             ]
                         }
                     }
                 }]
             },
+
             {
-                test: /\.(jpe?g|png|gif|svg)$/i,
-                loader: 'file-loader',
-                options: {
-                    esModule: false,
-                    name: 'image/[name].[ext]',
-                }
+                test: /\.(jpe?g|png|gif|woff2?|ttf|eot|svg)$/i,
+                type: "asset/resource",
             }
         ]
+    },
+    resolve: {
+        modules: [SOURCE_DIR, "node_modules"],
     },
     plugins: [
         new webpack.ProgressPlugin(),
         new MiniCssExtractPlugin({
-            filename: '[name].min.css',
-            chunkFilename: '[name].chunk.min.css',
+            filename: "[name].css"
         }),
     ],
     optimization: {
-        minimizer: [
-            new TerserPlugin({
-
-            }),
-            new CssMinimizerPlugin({
-
-            })
-        ]
+        moduleIds: "deterministic"
+    },
+    watchOptions: {
+        aggregateTimeout: 2000,
+        ignored: ["**/node_modules"]
+    },
+    stats: {
+        assets: false,
+        chunks: true
     }
+}
+
+module.exports = (env, argv) => {
+    config.mode = (argv.mode === "production") ? "production" : "development";
+
+    if (config.mode === "production") {
+        config.devtool = "source-map";
+    } else {
+        config.devtool = "eval";
+    }
+
+    if (config.mode === "development") {
+        config.cache = {
+            type: "filesystem",
+            cacheDirectory: path.resolve(__dirname, "cache"),
+            buildDependencies: {
+                config: [__filename]
+            }
+        }
+    }
+
+    if (config.mode === "production") {
+        config.optimization.minimizer = [
+            new TerserPlugin({
+                parallel: true,
+            }),
+            new CssMinimizerPlugin({})
+        ];
+    }
+
+    return config;
 };

@@ -213,19 +213,19 @@ class TestCollection:
 
     def test_get_preview_url(self):
         file_item = FileItem(extension='pdf')
-        assert file_item.get_preview_url() == '/static/paper_uploads/dist/image/pdf.svg'
+        assert file_item.get_preview_url() == '/static/paper_uploads/dist/assets/pdf.svg'
 
         file_item = FileItem(extension='mp4')
-        assert file_item.get_preview_url() == '/static/paper_uploads/dist/image/mp4.svg'
+        assert file_item.get_preview_url() == '/static/paper_uploads/dist/assets/mp4.svg'
 
         file_item = FileItem(extension='docx')
-        assert file_item.get_preview_url() == '/static/paper_uploads/dist/image/doc.svg'
+        assert file_item.get_preview_url() == '/static/paper_uploads/dist/assets/doc.svg'
 
         file_item = FileItem(extension='ogg')
-        assert file_item.get_preview_url() == '/static/paper_uploads/dist/image/audio.svg'
+        assert file_item.get_preview_url() == '/static/paper_uploads/dist/assets/audio.svg'
 
         file_item = FileItem(extension='py')
-        assert file_item.get_preview_url() == '/static/paper_uploads/dist/image/unknown.svg'
+        assert file_item.get_preview_url() == '/static/paper_uploads/dist/assets/unknown.svg'
 
     def test_detect_item_type(self, storage):
         with open(DOCUMENT_FILEPATH, 'rb') as fp:
@@ -340,19 +340,20 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
         assert storage.resource.item_type == 'file'
 
     def test_get_preview_url(self, storage):
-        assert storage.resource.get_preview_url() == '/static/paper_uploads/dist/image/jpg.svg'
+        assert storage.resource.get_preview_url() == '/static/paper_uploads/dist/assets/jpg.svg'
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             'id': 1,
             'collectionId': 1,
-            'item_type': 'file',
+            'itemType': 'file',
             'name': self.resource_name,
             'extension': self.resource_extension,
             'size': self.resource_size,
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
+            'order': 0,
             'preview': render_to_string(
-                'paper_uploads/collection_item/preview/file.html',
+                'paper_uploads/items/preview/file.html',
                 storage.resource.get_preview_context()
             ),
             'url': storage.resource.get_file_url(),
@@ -540,13 +541,14 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
         assert storage.resource.as_dict() == {
             'id': 1,
             'collectionId': 1,
-            'item_type': 'svg',
+            'itemType': 'svg',
             'name': self.resource_name,
             'extension': self.resource_extension,
             'size': self.resource_size,
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
+            'order': 0,
             'preview': render_to_string(
-                'paper_uploads/collection_item/preview/svg.html',
+                'paper_uploads/items/preview/svg.html',
                 storage.resource.get_preview_context()
             ),
             'url': storage.resource.get_file_url(),
@@ -738,7 +740,7 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
         assert storage.resource.as_dict() == {
             'id': 1,
             'collectionId': 1,
-            'item_type': 'image',
+            'itemType': 'image',
             'name': self.resource_name,
             'extension': self.resource_extension,
             'size': self.resource_size,
@@ -748,8 +750,9 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
             'title': '',
             'description': '',
             'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
+            'order': 0,
             'preview': render_to_string(
-                'paper_uploads/collection_item/preview/image.html',
+                'paper_uploads/items/preview/image.html',
                 storage.resource.get_preview_context()
             ),
             'url': storage.resource.get_file_url(),

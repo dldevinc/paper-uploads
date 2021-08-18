@@ -1,3 +1,5 @@
+<ul class="paper-messages mb-3"></ul>
+
 <form action="{{ action }}" method="post">
   {% csrf_token %}
   {% for field in form.hidden_fields %}
@@ -7,10 +9,19 @@
   {% for field in form.visible_fields %}
     <div class="field-{{ field.name }} {% if not forloop.last %}mb-3{% endif %}">
       <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-      {{ field }}
+
+      <div class="paper-widget">
+        {{ field }}
+      </div>
+
+      <ul class="paper-error-list invalid-feedback"></ul>
+
       {% if field.help_text %}
         <div class="small text-muted mt-1">{{ field.help_text }}</div>
       {% endif %}
     </div>
   {% endfor %}
+
+  {# make form submittable #}
+  <input type="submit" style="position: absolute; left: -9999px"/>
 </form>

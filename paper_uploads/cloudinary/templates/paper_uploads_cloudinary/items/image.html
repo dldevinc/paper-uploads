@@ -1,0 +1,51 @@
+<div class="collection__item collection-item collection-item--cloudinary-image"
+     style="width: {{ preview_width }}px"
+     tabindex="0"
+     data-id="{% verbatim %}{{ id }}{% endverbatim %}"
+     data-item-type="{% verbatim %}{{ itemType }}{% endverbatim %}"
+     data-order="{% verbatim %}{{ order }}{% endverbatim %}">
+
+  <div class="collection-item__header">
+    <div class="collection-item__name text-muted" title="{% verbatim %}{{ caption }}{% endverbatim %}">
+      {% verbatim %}{{ caption }}{% endverbatim %}
+    </div>
+    <div>
+      <button type="button" class="collection-item__delete-button"
+              data-toggle="tooltip" data-placement="top" data-trigger="hover"
+              data-html="true" title="{{ _('Delete item') }}">
+        <i class="fa fa-fw fa-trash text-danger"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="collection-item__preview sortable-handler" style="width: {{ preview_width }}px; height: {{ preview_height }}px">
+    {% verbatim %}{{{ preview }}}{% endverbatim %}
+  </div>
+
+  <div class="collection-item__footer">
+    <div class="btn-square-group d-flex align-items-center">
+      <div class="collection-item__checkbox-holder btn btn-square btn-sm">
+        <div class="custom-control custom-checkbox user-select-none" data-hook-unload="prevent">
+          <input type="checkbox" name="{{ widget.name }}-check" id="item-{% verbatim %}{{ id }}{% endverbatim %}"
+                 class="collection-item__checkbox custom-control-input">
+          <label class="custom-control-label" for="item-{% verbatim %}{{ id }}{% endverbatim %}"></label>
+        </div>
+      </div>
+
+      <a href="{% verbatim %}{{ url }}{% endverbatim %}"
+         class="collection-item__view-button btn btn-square btn-sm btn-square--info"
+         target="_blank" tabindex="0"
+         data-toggle="tooltip" data-placement="top" data-trigger="hover"
+         data-html="true" title="{{ _('Open file') }}">
+        <i class="fa fa-fw fa-eye"></i>
+      </a>
+
+      <button type="button"
+              class="collection-item__change-button btn btn-square btn-sm btn-square--info"
+              data-toggle="tooltip" data-placement="top" data-trigger="hover"
+              data-html="true" title="{{ _('Edit file') }}">
+        <i class="fa fa-fw fa-pencil"></i>
+      </button>
+    </div>
+  </div>
+</div>

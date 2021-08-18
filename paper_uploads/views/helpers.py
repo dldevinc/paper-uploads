@@ -1,11 +1,11 @@
-from typing import Type, TypeVar
+from typing import Any, Type, TypeVar
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 from .. import exceptions
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def get_model_class(content_type_id: int, base_class: Type[T]) -> Type[T]:
@@ -24,13 +24,13 @@ def get_model_class(content_type_id: int, base_class: Type[T]) -> Type[T]:
     raise exceptions.InvalidContentType(content_type_id)
 
 
-def get_instance(model_class: Type[models.Model], instance_id: int) -> models.Model:
+def get_instance(model_class: Type[models.Model], pk: Any) -> models.Model:
     """
     Получение экземпляра модели загружаемого файла.
     """
     try:
-        instance_id = int(instance_id)
+        instance_id = int(pk)
     except (ValueError, TypeError):
-        raise exceptions.InvalidObjectId(instance_id)
-    else:
-        return model_class._default_manager.get(pk=instance_id)  # noqa
+        raise exceptions.InvalidObjectId(pk)
+
+    return model_class._default_manager.get(pk=instance_id)

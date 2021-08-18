@@ -67,7 +67,7 @@ class FileProxyMixin:
         self.close()
 
     def _get_file(self):
-        return getattr(self, '_FileProxyMixin__file', None)
+        return getattr(self, "_FileProxyMixin__file", None)
 
     def _open_file(self, mode):
         self.__file = self.get_file().open(mode)  # noqa: F821
@@ -85,7 +85,7 @@ class FileProxyMixin:
             file = self.get_file()  # noqa: F821
         return not file or file.closed
 
-    def open(self, mode='rb'):
+    def open(self, mode="rb"):
         self._require_file()  # noqa: F821
 
         file = self._get_file()
@@ -116,7 +116,7 @@ class FileProxyMixin:
         file = self._get_file()
         if file is None:
             file = self.get_file()  # noqa: F821
-        if hasattr(file, 'readable'):
+        if hasattr(file, "readable"):
             return file.readable()
         return True
 
@@ -124,15 +124,15 @@ class FileProxyMixin:
         file = self._get_file()
         if file is None:
             file = self.get_file()  # noqa: F821
-        if hasattr(file, 'writable'):
+        if hasattr(file, "writable"):
             return file.writable()
-        return 'w' in getattr(file, 'mode', '')
+        return "w" in getattr(file, "mode", "")
 
     def seekable(self):
         file = self._get_file()
         if file is None:
             file = self.get_file()  # noqa: F821
-        if hasattr(file, 'seekable'):
+        if hasattr(file, "seekable"):
             return file.seekable()
         return True
 

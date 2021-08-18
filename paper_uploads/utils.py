@@ -2,10 +2,14 @@ import hashlib
 import re
 from typing import Any, Dict, Iterable, Set, Tuple
 
+from django.utils import formats
+from django.utils.html import avoid_wrapping
+from django.utils.translation import gettext, ngettext
+
 from .typing import FileLike
 
-filesize_regex = re.compile(r'^([.\d]+)\s*([KMGT])?B?$')
-filesize_units = {"K": 2 ** 10, "M": 2 ** 20, "G": 2 ** 30, "T": 2 ** 40}
+filesize_regex = re.compile(r"^([.\d]+)\s*([KMGT])?B?$")
+filesize_units = {"K": 10 ** 3, "M": 10 ** 6, "G": 10 ** 9, "T": 10 ** 12}
 
 
 def checksum(file: FileLike) -> str:
@@ -14,7 +18,7 @@ def checksum(file: FileLike) -> str:
     https://www.dropbox.com/developers/reference/content-hash
     """
     if file.closed:
-        file.open('rb')
+        file.open("rb")
     elif file.seekable():
         file.seek(0)
 
@@ -24,7 +28,7 @@ def checksum(file: FileLike) -> str:
         if not data:
             break
         blocks.append(hashlib.sha256(data).digest())
-    return hashlib.sha256(b''.join(blocks)).hexdigest()
+    return hashlib.sha256(b"".join(blocks)).hexdigest()
 
 
 def remove_dulpicates(seq: Iterable) -> Tuple:
@@ -51,3 +55,46 @@ def parse_filesize(value: str) -> int:
     match = filesize_regex.match(value.upper().strip())
     number, unit = match.groups()
     return int(float(number) * filesize_units.get(unit, 1))
+
+
+def filesizeformat(bytes_: int) -> str:
+    """
+    Форматирование размера файла.
+    В отличие от одноименной встроенной функции, выводит настоящие килобайты/мегабайты,
+    вместо кибибайтов/мибибайтов.
+    """
+    try:
+        bytes_ = float(bytes_)
+    except (TypeError, ValueError, UnicodeDecodeError):
+        value = ngettext("%(size)d byte", "%(size)d bytes", 0) % {'size': 0}
+        return avoid_wrapping(value)
+
+    def filesize_number_format(value):
+        return formats.number_format(round(value, 1), 1)
+
+    KB = 10 ** 3
+    MB = 10 ** 6
+    GB = 10 ** 9
+    TB = 10 ** 12
+    PB = 10 ** 15
+
+    negative = bytes_ < 0
+    if negative:
+        bytes_ = -bytes_  # Allow formatting of negative numbers.
+
+    if bytes_ < KB:
+        value = ngettext("%(size)d byte", "%(size)d bytes", bytes_) % {'size': bytes_}
+    elif bytes_ < MB:
+        value = gettext("%s KB") % filesize_number_format(bytes_ / KB)
+    elif bytes_ < GB:
+        value = gettext("%s MB") % filesize_number_format(bytes_ / MB)
+    elif bytes_ < TB:
+        value = gettext("%s GB") % filesize_number_format(bytes_ / GB)
+    elif bytes_ < PB:
+        value = gettext("%s TB") % filesize_number_format(bytes_ / TB)
+    else:
+        value = gettext("%s PB") % filesize_number_format(bytes_ / PB)
+
+    if negative:
+        value = "-%s" % value
+    return avoid_wrapping(value)

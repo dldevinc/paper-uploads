@@ -75,12 +75,17 @@ class TestCloudinaryImage(CloudinaryFileResource):
             'cropregion': '',
             'title': 'Calliphora',
             'description': 'Calliphora is a genus of blow flies, also known as bottle flies',
-            'file_info': '(jpg, 1534x2301, 657.0\xa0KB)',
+            'file_info': '(jpg, 1534x2301, 672.8\xa0KB)',
             'url': storage.resource.get_file_url(),
             'created': storage.resource.created_at.isoformat(),
             'modified': storage.resource.modified_at.isoformat(),
             'uploaded': storage.resource.uploaded_at.isoformat(),
         }
+
+    def test_build_url(self, storage):
+        url = storage.resource.build_url(width=100)
+        assert url.startswith('https://res.cloudinary.com/')
+        assert "/w_100/" in url
 
 
 class TestCloudinaryImageAttach(TestImageFieldResourceAttach):

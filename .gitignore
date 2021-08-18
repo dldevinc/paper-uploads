@@ -11,7 +11,7 @@ __pycache__/
 env/
 build/
 develop-eggs/
-/dist/
+dist/
 downloads/
 eggs/
 .eggs/
@@ -48,7 +48,6 @@ coverage.xml
 .pytest_cache/
 
 # Translations
-*.mo
 *.pot
 
 # Django stuff:
@@ -103,10 +102,8 @@ ENV/
 .mypy_cache/
 
 # IDE settings
-.idea/
 .vscode/
 
 # node
 /node_modules
 /cache
-/package-lock.json
