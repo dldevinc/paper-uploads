@@ -8,7 +8,7 @@
 - Removed default permissions from all Django models.
 - Collection previews has been reduced from `192x148` to `180x135`.
 ### Features
-- Added Python 3.9 support
+- Added Python 3.9 support.
 - Added `remove_variations` management command.
 - The `recreate_variations` management command has been completely rewritten.
 
