@@ -240,7 +240,7 @@ class Uploader extends EventEmitter {
                         return done(gettext("File validation failed."));
                     } else if (typeof result === "string") {
                         return done(result);
-                    } else if (typeof result.then === 'function') {
+                    } else if (typeof result.then === "function") {
                         // Promise
                         promises.push(result);
                     }

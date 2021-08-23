@@ -127,8 +127,8 @@ RQ_QUEUES = {
 # =============
 #  Paper Admin
 # =============
-PAPER_ENVIRONMENT_NAME = 'development'
-PAPER_ENVIRONMENT_COLOR = '#FFFF00'
+PAPER_ENVIRONMENT_NAME = "development"
+PAPER_ENVIRONMENT_COLOR = "#FFFF00"
 
 PAPER_MENU = [
     dict(

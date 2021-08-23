@@ -16,13 +16,13 @@ from .models import (
 class FileFieldObjectAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
-            'fields': (
-                'name', 'file', 'file_required',
+            "fields": (
+                "name", "file", "file_required",
             ),
         }),
-        (_('Validators'), {
-            'fields': (
-                'file_extensions', 'file_mimetypes', 'file_size'
+        (_("Validators"), {
+            "fields": (
+                "file_extensions", "file_mimetypes", "file_size"
             ),
         }),
     )
@@ -32,14 +32,14 @@ class FileFieldObjectAdmin(admin.ModelAdmin):
 class ImageFieldObjectAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
-            'fields': (
-                'name', 'image', 'image_required',
+            "fields": (
+                "name", "image", "image_required",
             ),
         }),
-        (_('Validators'), {
-            'fields': (
-                'image_extensions', 'image_mimetypes', 'image_size',
-                'image_min_size', 'image_max_size'
+        (_("Validators"), {
+            "fields": (
+                "image_extensions", "image_mimetypes", "image_size",
+                "image_min_size", "image_max_size"
             ),
         }),
     )
@@ -49,8 +49,8 @@ class ImageFieldObjectAdmin(admin.ModelAdmin):
 class CollectionFieldObjectAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
-            'fields': (
-                'file_collection', 'image_collection', 'full_collection'
+            "fields": (
+                "file_collection", "image_collection", "full_collection"
             ),
         }),
     )
@@ -60,13 +60,13 @@ class CollectionFieldObjectAdmin(admin.ModelAdmin):
 class CloudinaryFileExampleAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
-            'fields': (
-                'name', 'file', 'file_required',
+            "fields": (
+                "name", "file", "file_required",
             ),
         }),
-        (_('Validators'), {
-            'fields': (
-                'file_extensions', 'file_mimetypes', 'file_size'
+        (_("Validators"), {
+            "fields": (
+                "file_extensions", "file_mimetypes", "file_size"
             ),
         }),
     )
@@ -76,8 +76,8 @@ class CloudinaryFileExampleAdmin(admin.ModelAdmin):
 class CloudinaryImageExampleAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
-            'fields': (
-                'image',
+            "fields": (
+                "image",
             ),
         }),
     )
@@ -87,8 +87,8 @@ class CloudinaryImageExampleAdmin(admin.ModelAdmin):
 class CloudinaryMediaExampleAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
-            'fields': (
-                'media',
+            "fields": (
+                "media",
             ),
         }),
     )
@@ -98,8 +98,8 @@ class CloudinaryMediaExampleAdmin(admin.ModelAdmin):
 class CloudinaryCollectionFieldObjectAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
-            'fields': (
-                'file_collection', 'image_collection', 'media_collection', 'full_collection'
+            "fields": (
+                "file_collection", "image_collection", "media_collection", "full_collection"
             ),
         }),
     )
