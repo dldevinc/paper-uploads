@@ -56,3 +56,9 @@ def storage(request, class_scoped_db):
     storage.now = now()
 
     yield storage
+
+    # release resources
+    try:
+        next(gen)
+    except StopIteration:
+        pass
