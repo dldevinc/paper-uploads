@@ -77,7 +77,7 @@ class CloudinaryImageExampleAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             "fields": (
-                "image",
+                "image", "image_public"
             ),
         }),
     )

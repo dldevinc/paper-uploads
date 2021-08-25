@@ -355,6 +355,14 @@ class CloudinaryFileExample(models.Model):
 
 class CloudinaryImageExample(models.Model):
     image = CloudinaryImageField(_("image"))
+    image_public = CloudinaryImageField(
+        _("Public image"),
+        blank=True,
+        cloudinary={
+            "type": "upload",
+            "folder": "page/images/%Y-%m-%d",
+        }
+    )
 
     class Meta:
         verbose_name = _("Cloudinary Image")
