@@ -89,7 +89,7 @@ DATABASES = {
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
-LANGUAGE_CODE = 'ru-ru'
+LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
 
@@ -127,8 +127,8 @@ RQ_QUEUES = {
 # =============
 #  Paper Admin
 # =============
-PAPER_ENVIRONMENT_NAME = 'development'
-PAPER_ENVIRONMENT_COLOR = '#FFFF00'
+PAPER_ENVIRONMENT_NAME = "development"
+PAPER_ENVIRONMENT_COLOR = "#FFFF00"
 
 PAPER_MENU = [
     dict(

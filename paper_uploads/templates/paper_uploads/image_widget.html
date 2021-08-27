@@ -11,14 +11,14 @@
      data-configuration='{{ configuration|safe }}'>
   <input type="hidden" class="image-uploader__input"
          name="{{ widget.name }}"
-         value="{{ widget.value|default:'' }}"
+         value="{{ widget.value|default:"" }}"
          {% include "django/forms/widgets/attrs.html" %}/>
 
   <div class="paper-input-group input-group input-group-lg">
     <div class="input-group-prepend">
       <button type="button" class="image-uploader__upload-button input-group-text"
          data-toggle="tooltip" data-placement="top" data-trigger="hover"
-         data-html="true" title="{{ _('Select file') }}">
+         data-html="true" title="{{ _("Select file") }}">
         <i class="fa fa-fw fa-folder-open"></i>
       </button>
     </div>
@@ -45,21 +45,21 @@
            target="_blank" tabindex="0"
            class="image-uploader__view-button input-group-text"
            data-toggle="tooltip" data-placement="top" data-trigger="hover"
-           data-html="true" title="{{ _('Open file') }}">
+           data-html="true" title="{{ _("Open file") }}">
           <i class="fa fa-fw fa-eye"></i>
         </a>
 
         <button type="button" tabindex="0"
                 class="image-uploader__change-button input-group-text"
                 data-toggle="tooltip" data-placement="top" data-trigger="hover"
-                data-html="true" title="{{ _('Edit file') }}">
+                data-html="true" title="{{ _("Edit file") }}">
           <i class="fa fa-fw fa-pencil"></i>
         </button>
 
         <button type="button" tabindex="0"
                 class="image-uploader__delete-button input-group-text input-group-text--danger"
                 data-toggle="tooltip" data-placement="top" data-trigger="hover"
-                data-html="true" title="{{ _('Delete file') }}">
+                data-html="true" title="{{ _("Delete file") }}">
           <i class="fa fa-fw fa-trash"></i>
         </button>
       </div>
@@ -67,7 +67,7 @@
         <button type="button" tabindex="0"
                 class="image-uploader__cancel-button input-group-text input-group-text--danger"
                 data-toggle="tooltip" data-placement="top" data-trigger="hover"
-                data-html="true" title="{{ _('Cancel upload') }}">
+                data-html="true" title="{{ _("Cancel upload") }}">
           <i class="fa fa-fw fa-times"></i>
         </button>
       </div>
@@ -76,7 +76,7 @@
 
   {% if limitations %}
     <div class="image-uploader__limitations small text-muted mt-2">
-      <span>{{ _('Please consider the following limitations') }}:</span>
+      <span>{{ _("Please consider the following limitations") }}:</span>
       <ul class="pl-3 mb-0">
         {% for label, limits in limitations %}
           <li>{{ label }}: <em>{{ limits }}</em></li>
@@ -88,7 +88,7 @@
   <div class="dropzone__overlay">
     <div class="dropzone__hint">
       <i class="fa fa-fw fa-upload"></i>
-      {{ _('Drop files here to send') }}
+      {{ _("Drop files here to send") }}
     </div>
   </div>
 </div>

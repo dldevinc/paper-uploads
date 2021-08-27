@@ -393,25 +393,38 @@ class TestFileResourceSignals:
 
     def test_rename_to_same_name(self):
         resource = DummyFileResource()
-        signal_fired = False
+        pre_signal_fired = False
+        post_signal_fired = False
 
-        def signal_handler(sender, **kwargs):
-            nonlocal signal_fired
-            signal_fired = True
+        def pre_signal_handler(sender, **kwargs):
+            nonlocal pre_signal_fired
+            pre_signal_fired = True
 
-        signals.pre_rename_file.connect(signal_handler)
-        signals.post_rename_file.connect(signal_handler)
+        def post_signal_handler(sender, **kwargs):
+            nonlocal post_signal_fired
+            post_signal_fired = True
+
+        signals.pre_rename_file.connect(pre_signal_handler)
+        signals.post_rename_file.connect(post_signal_handler)
 
         with open(NASA_FILEPATH, 'rb') as fp:
             resource.attach_file(fp)
 
-        assert signal_fired is False
+        orig_name = resource.name
+        orig_basename = resource.basename
+
+        assert pre_signal_fired is False
+        assert post_signal_fired is False
         resource.rename_file(os.path.basename(NASA_FILEPATH))
-        assert signal_fired is False
+        assert pre_signal_fired is True
+        assert post_signal_fired is True
+
+        assert orig_name == resource.name
+        assert orig_basename == resource.basename
 
         resource.delete_file()
-        signals.pre_rename_file.disconnect(signal_handler)
-        signals.post_rename_file.disconnect(signal_handler)
+        signals.pre_rename_file.disconnect(pre_signal_handler)
+        signals.post_rename_file.disconnect(post_signal_handler)
 
     def test_pre_rename_file_signal(self):
         resource = DummyFileResource()

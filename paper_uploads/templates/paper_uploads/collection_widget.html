@@ -16,35 +16,35 @@
 
   <input type="hidden" class="collection__input"
          name="{{ widget.name }}"
-         value="{{ widget.value|default:'' }}"
+         value="{{ widget.value|default:"" }}"
          {% include "django/forms/widgets/attrs.html" %}/>
 
   <div class="collection__items"></div>
 
   <button type="button" class="collection__create-collection-button btn btn-success"
           data-toggle="tooltip" data-placement="top" data-trigger="hover"
-          data-html="true" title="{{ _('Create collection') }}">
+          data-html="true" title="{{ _("Create collection") }}">
     <i class="fa fa-fw fa-plus"></i>
-    {{ _('Create collection') }}
+    {{ _("Create collection") }}
   </button>
 
   <button type="button" class="collection__upload-item-button btn btn-success"
           data-toggle="tooltip" data-placement="top" data-trigger="hover"
-          data-html="true" title="{{ _('Select files') }}">
+          data-html="true" title="{{ _("Select files") }}">
     <i class="fa fa-fw fa-folder-open"></i>
-    {{ _('Select files') }}
+    {{ _("Select files") }}
   </button>
 
   <button type="button" class="collection__delete-collection-button btn btn-danger"
           data-toggle="tooltip" data-placement="top" data-trigger="hover"
-          data-html="true" title="{{ _('Delete collection') }}">
+          data-html="true" title="{{ _("Delete collection") }}">
     <i class="fa fa-fw fa-trash"></i>
-    {{ _('Delete collection') }}
+    {{ _("Delete collection") }}
   </button>
 
   {% if limitations %}
     <div class="image-uploader__limitations small text-muted mt-2">
-      <span>{{ _('Please consider the following limitations') }}:</span>
+      <span>{{ _("Please consider the following limitations") }}:</span>
       <ul class="pl-3 mb-0">
         {% for label, limits in limitations %}
           <li>{{ label }}: <em>{{ limits }}</em></li>
@@ -56,12 +56,12 @@
   <div class="dropzone__overlay">
     <div class="dropzone__hint">
       <i class="fa fa-fw fa-upload"></i>
-      {{ _('Drop files here to send') }}
+      {{ _("Drop files here to send") }}
     </div>
   </div>
 
   <template class="collection__preloader-item-template">
-    {% include 'paper_uploads/items/preloader.html' %}
+    {% include "paper_uploads/items/preloader.html" %}
   </template>
 
   {% for name, field in collection_cls.item_types.items %}

@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.5.1](https://github.com/dldevinc/paper-uploads/tree/v0.5.1) - 2021-08-25
+### Features
+- Make it possible to rename files with the same name.
+- Add an ability to override `type` and `resource_type` options for Cloudinary fields.
+- Switch from Travis CI to GitHub Actions.
+- Update npm dependencies.
+
 ## [0.5.0](https://github.com/dldevinc/paper-uploads/tree/v0.5.0) - 2021-07-10
 ### ⚠ BREAKING CHANGES
 - Drop support for Django versions before 2.2.

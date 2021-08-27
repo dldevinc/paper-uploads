@@ -290,12 +290,6 @@ class FileResource(FileProxyMixin, Resource):
             raise exceptions.FileNotFoundError(self)
 
         old_name = self.name
-        basename = helpers.get_filename(new_name)
-        extension = helpers.get_extension(new_name)
-
-        # если новое имя идентично прежнему - ничего не делаем
-        if basename == self.basename and extension == self.extension:
-            return
 
         signals.pre_rename_file.send(
             sender=type(self),

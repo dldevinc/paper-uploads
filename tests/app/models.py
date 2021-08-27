@@ -73,34 +73,34 @@ class DummyFileResource(FileResource):
 
 
 class DummyFileFieldResource(FileFieldResource):
-    file = models.FileField(_('file'), upload_to='file_field')
+    file = models.FileField(_("file"), upload_to="file_field")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__name = 'File_ABCD.jpg'
+        self.__name = "File_ABCD.jpg"
 
     def get_file(self) -> FieldFile:
         return self.file
 
     def get_file_field(self) -> models.FileField:
-        return self._meta.get_field('file')
+        return self._meta.get_field("file")
 
 
 class DummyImageFieldResource(ImageFileResourceMixin, FileFieldResource):
-    image = models.FileField(_('file'), upload_to='image_field')
+    image = models.FileField(_("file"), upload_to="image_field")
 
     def get_file(self) -> FieldFile:
         return self.image
 
     def get_file_field(self) -> models.FileField:
-        return self._meta.get_field('image')
+        return self._meta.get_field("image")
 
     def get_variations(self) -> Dict[str, PaperVariation]:
-        variations = getattr(self, '_variations', None)
+        variations = getattr(self, "_variations", None)
         if variations is None:
             variations = self._variations = {
-                'desktop': PaperVariation(
-                    name='desktop',
+                "desktop": PaperVariation(
+                    name="desktop",
                     size=(800, 0),
                     clip=False
                 ),
@@ -109,23 +109,23 @@ class DummyImageFieldResource(ImageFileResourceMixin, FileFieldResource):
 
 
 class DummyVersatileImageResource(VersatileImageResourceMixin, FileFieldResource):
-    file = models.FileField(_('file'), upload_to='versatile_image')
+    file = models.FileField(_("file"), upload_to="versatile_image")
 
     def get_file(self) -> FieldFile:
         return self.file
 
     def get_file_field(self) -> models.FileField:
-        return self._meta.get_field('file')
+        return self._meta.get_field("file")
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         return {
-            'desktop': PaperVariation(
-                name='desktop',
+            "desktop": PaperVariation(
+                name="desktop",
                 size=(800, 0),
                 clip=False
             ),
-            'mobile': PaperVariation(
-                name='mobile',
+            "mobile": PaperVariation(
+                name="mobile",
                 size=(0, 600),
                 clip=False
             ),
@@ -133,11 +133,11 @@ class DummyVersatileImageResource(VersatileImageResourceMixin, FileFieldResource
 
 
 class FileExample(models.Model):
-    file = FileField(_('file'))
+    file = FileField(_("file"))
 
 
 class ImageExample(models.Model):
-    image = ImageField(_('image'), variations=dict(
+    image = ImageField(_("image"), variations=dict(
         desktop=dict(
             size=(800, 0),
             clip=False
@@ -191,58 +191,58 @@ class CompleteCollection(Collection):
 
 
 class FileFieldObject(models.Model):
-    name = models.CharField(_('name'), max_length=128)
+    name = models.CharField(_("name"), max_length=128)
 
-    file = FileField(_('file'), blank=True)
-    file_required = FileField(_('required file'))
+    file = FileField(_("file"), blank=True)
+    file_required = FileField(_("required file"))
 
     file_extensions = FileField(
-        _('Extension'),
+        _("Extension"),
         blank=True,
         validators=[
-            ExtensionValidator(['.pdf', '.txt', '.doc'])
+            ExtensionValidator([".pdf", ".txt", ".doc"])
         ],
-        help_text=_('Only `pdf`, `txt` and `doc` allowed')
+        help_text=_("Only `pdf`, `txt` and `doc` allowed")
     )
     file_mimetypes = FileField(
-        _('MimeType'),
+        _("MimeType"),
         blank=True,
         validators=[
-            MimeTypeValidator(['image/svg+xml', 'image/gif'])
+            MimeTypeValidator(["image/svg+xml", "image/gif"])
         ],
-        help_text=_('Only `image/svg+xml` and `image/gif` allowed')
+        help_text=_("Only `image/svg+xml` and `image/gif` allowed")
     )
     file_size = FileField(
-        _('Size'),
+        _("Size"),
         blank=True,
         validators=[
-            SizeValidator('16kb')
+            SizeValidator("16kb")
         ],
-        help_text=_('Maximum file size is 16Kb')
+        help_text=_("Maximum file size is 16Kb")
     )
 
     class Meta:
-        verbose_name = _('File')
-        verbose_name_plural = _('Files')
+        verbose_name = _("File")
+        verbose_name_plural = _("Files")
 
     def __str__(self):
         return self.name
 
 
 class ImageFieldObject(models.Model):
-    name = models.CharField(_('name'), max_length=128)
+    name = models.CharField(_("name"), max_length=128)
 
-    image = ImageField(_('image'), blank=True)
+    image = ImageField(_("image"), blank=True)
     image_required = ImageField(
-        _('required image'),
+        _("required image"),
         variations=dict(
             desktop=dict(
-                name='desktop',
+                name="desktop",
                 size=(800, 0),
                 clip=False
             ),
             mobile=dict(
-                name='mobile',
+                name="mobile",
                 size=(0, 600),
                 clip=False
             ),
@@ -250,49 +250,49 @@ class ImageFieldObject(models.Model):
     )
 
     image_extensions = ImageField(
-        _('Extension'),
+        _("Extension"),
         blank=True,
         validators=[
-            ExtensionValidator(['.png', '.gif'])
+            ExtensionValidator([".png", ".gif"])
         ],
-        help_text=_('Only `png` and `gif` allowed')
+        help_text=_("Only `png` and `gif` allowed")
     )
     image_mimetypes = ImageField(
-        _('MimeType'),
+        _("MimeType"),
         blank=True,
         validators=[
-            MimeTypeValidator(['image/png', 'image/jpeg'])
+            MimeTypeValidator(["image/png", "image/jpeg"])
         ],
-        help_text=_('Only `image/png` and `image/jpeg` allowed')
+        help_text=_("Only `image/png` and `image/jpeg` allowed")
     )
     image_size = ImageField(
-        _('Size'),
+        _("Size"),
         blank=True,
         validators=[
-            SizeValidator('64kb')
+            SizeValidator("64kb")
         ],
-        help_text=_('Maximum file size is 64Kb')
+        help_text=_("Maximum file size is 64Kb")
     )
     image_min_size = ImageField(
-        _('Min size'),
+        _("Min size"),
         blank=True,
         validators=[
             ImageMinSizeValidator(640, 480)
         ],
-        help_text=_('Image should be at least 640x480 pixels')
+        help_text=_("Image should be at least 640x480 pixels")
     )
     image_max_size = ImageField(
-        _('Max size'),
+        _("Max size"),
         blank=True,
         validators=[
             ImageMaxSizeValidator(1024, 768)
         ],
-        help_text=_('Image should be at most 1024x768 pixels')
+        help_text=_("Image should be at most 1024x768 pixels")
     )
 
     class Meta:
-        verbose_name = _('Image')
-        verbose_name_plural = _('Images')
+        verbose_name = _("Image")
+        verbose_name_plural = _("Images")
 
     def __str__(self):
         return self.name
@@ -304,81 +304,89 @@ class CollectionFieldObject(models.Model):
     full_collection = CollectionField(CompleteCollection)
 
     class Meta:
-        verbose_name = _('Collection')
-        verbose_name_plural = _('Collections')
+        verbose_name = _("Collection")
+        verbose_name_plural = _("Collections")
 
     def __str__(self):
-        return 'CollectionObject'
+        return "CollectionObject"
 
 
 # ======================================================================================
 
 
 class CloudinaryFileExample(models.Model):
-    name = models.CharField(_('name'), max_length=128)
+    name = models.CharField(_("name"), max_length=128)
 
-    file = CloudinaryFileField(_('file'), blank=True)
-    file_required = CloudinaryFileField(_('required file'))
+    file = CloudinaryFileField(_("file"), blank=True)
+    file_required = CloudinaryFileField(_("required file"))
 
     file_extensions = CloudinaryFileField(
-        _('Extension'),
+        _("Extension"),
         blank=True,
         validators=[
-            ExtensionValidator(['.pdf', '.txt', '.doc'])
+            ExtensionValidator([".pdf", ".txt", ".doc"])
         ],
-        help_text=_('Only `pdf`, `txt` and `doc` allowed')
+        help_text=_("Only `pdf`, `txt` and `doc` allowed")
     )
     file_mimetypes = CloudinaryFileField(
-        _('MimeType'),
+        _("MimeType"),
         blank=True,
         validators=[
-            MimeTypeValidator(['image/svg+xml', 'image/gif'])
+            MimeTypeValidator(["image/svg+xml", "image/gif"])
         ],
-        help_text=_('Only `image/svg+xml` and `image/gif` allowed')
+        help_text=_("Only `image/svg+xml` and `image/gif` allowed")
     )
     file_size = CloudinaryFileField(
-        _('Size'),
+        _("Size"),
         blank=True,
         validators=[
-            SizeValidator('16kb')
+            SizeValidator("16kb")
         ],
-        help_text=_('Maximum file size is 16Kb')
+        help_text=_("Maximum file size is 16Kb")
     )
 
     class Meta:
-        verbose_name = _('Cloudinary File')
-        verbose_name_plural = _('Cloudinary Files')
+        verbose_name = _("Cloudinary File")
+        verbose_name_plural = _("Cloudinary Files")
 
     def __str__(self):
         return self.name
 
 
 class CloudinaryImageExample(models.Model):
-    image = CloudinaryImageField(_('image'))
+    image = CloudinaryImageField(_("image"))
+    image_public = CloudinaryImageField(
+        _("Public image"),
+        blank=True,
+        cloudinary={
+            "type": "upload",
+            "folder": "page/images/%Y-%m-%d",
+        }
+    )
 
     class Meta:
-        verbose_name = _('Cloudinary Image')
-        verbose_name_plural = _('Cloudinary Images')
+        verbose_name = _("Cloudinary Image")
+        verbose_name_plural = _("Cloudinary Images")
 
     def __str__(self):
         if self.image:
             return self.image.name
         else:
-            return 'ImageObject'
+            return "ImageObject"
 
 
 class CloudinaryMediaExample(models.Model):
-    media = CloudinaryMediaField(_('media'))
+    media = CloudinaryMediaField(_("media"))
 
     class Meta:
-        verbose_name = _('Cloudinary Media')
-        verbose_name_plural = _('Cloudinary Media')
+        verbose_name = _("Cloudinary Media")
+        verbose_name_plural = _("Cloudinary Media")
 
     def __str__(self):
         if self.media:
             return self.media.name
         else:
-            return 'MediaObject'
+            return "MediaObject"
 
 
 class CloudinaryFileCollection(Collection):
@@ -404,8 +412,8 @@ class CloudinaryCollectionFieldObject(models.Model):
     full_collection = CollectionField(CloudinaryCompleteCollection)
 
     class Meta:
-        verbose_name = _('Cloudinary Collection')
-        verbose_name_plural = _('Cloudinary Collections')
+        verbose_name = _("Cloudinary Collection")
+        verbose_name_plural = _("Cloudinary Collections")
 
     def __str__(self):
-        return 'CloudinaryCollectionObject'
+        return "CloudinaryCollectionObject"

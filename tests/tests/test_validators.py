@@ -161,7 +161,7 @@ class TestImageMinSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "File `something.jpg` is not wide enough. The minimum width is 40 pixels."
+            == "Image `something.jpg` is not wide enough. The minimum width is 40 pixels."
         )
 
         with pytest.raises(ValidationError) as exc:
@@ -169,7 +169,7 @@ class TestImageMinSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "File `something.jpg` is not tall enough. The minimum height is 60 pixels."
+            == "Image `something.jpg` is not tall enough. The minimum height is 60 pixels."
         )
 
         with pytest.raises(ValidationError) as exc:
@@ -177,7 +177,7 @@ class TestImageMinSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "File `something.jpg` is too small. Image should be at least 40x60 pixels."
+            == "Image `something.jpg` is too small. Image should be at least 40x60 pixels."
         )
 
     def test_help_text(self):
@@ -228,7 +228,7 @@ class TestImageMaxSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "File `something.jpg` is too tall. The maximum height is 60 pixels."
+            == "Image `something.jpg` is too tall. The maximum height is 60 pixels."
         )
 
         with pytest.raises(ValidationError) as exc:
@@ -236,7 +236,7 @@ class TestImageMaxSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "File `something.jpg` is too wide. The maximum width is 40 pixels."
+            == "Image `something.jpg` is too wide. The maximum width is 40 pixels."
         )
 
         with pytest.raises(ValidationError) as exc:
@@ -244,7 +244,7 @@ class TestImageMaxSizeValidator:
                 validator(fp)
         assert (
             exc.value.messages[0]
-            == "File `something.jpg` is too big. Image should be at most 40x60 pixels."
+            == "Image `something.jpg` is too big. Image should be at most 40x60 pixels."
         )
 
     def test_help_text(self):

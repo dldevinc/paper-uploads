@@ -230,12 +230,12 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
             upload = uploader.upload
 
         file_field = self.get_file_field()
+        cloudinary_options.setdefault("type", file_field.type)
+        cloudinary_options.setdefault("resource_type", file_field.resource_type)
 
         try:
             result = upload(
                 file,
-                type=file_field.type,
-                resource_type=file_field.resource_type,
                 **cloudinary_options,
             )
         except cloudinary.exceptions.Error as e:
@@ -275,10 +275,13 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         cloudinary_options = self.get_cloudinary_options()
         cloudinary_options.update(options.get("cloudinary", {}))
 
-        old_name = self.name
         file_field = self.get_file_field()
+        cloudinary_options.setdefault("type", file_field.type)
+        cloudinary_options.setdefault("resource_type", file_field.resource_type)
+
+        old_name = self.name
         folder, basename = posixpath.split(old_name)
-        if file_field.resource_type != "raw":
+        if cloudinary_options["resource_type"] != "raw":
             # video and image have no extension
             base, ext = posixpath.splitext(new_name)
             new_name = base
@@ -288,8 +291,6 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
             result = uploader.rename(
                 old_name,
                 new_name,
-                type=file_field.type,
-                resource_type=file_field.resource_type,
                 **cloudinary_options
             )
         except cloudinary.exceptions.Error as e:
@@ -327,12 +328,12 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
             return
 
         file_field = self.get_file_field()
+        cloudinary_options.setdefault("type", file_field.type)
+        cloudinary_options.setdefault("resource_type", file_field.resource_type)
 
         try:
             result = uploader.destroy(
                 self.name,
-                type=file_field.type,
-                resource_type=file_field.resource_type,
                 **cloudinary_options
             )
         except cloudinary.exceptions.Error:

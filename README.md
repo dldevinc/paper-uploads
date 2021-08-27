@@ -36,10 +36,32 @@
 * Возможность создавать коллекции файлов. В частности, галерей
 изображений с возможностью сортировки элементов.
 
+## Table of Contents
+
+- [Installation](#Installation)
+- [FileField](#FileField)
+  - [UploadedFile](#UploadedFile)
+- [ImageField](#ImageField)
+  - [UploadedImage](#UploadedImage)
+  - [Variations](#Variations)
+  - [Using Redis Queue for variation update](#Using-Redis-Queue-for-variation-update)
+  - [Variation versions](#Variation-versions)
+- [Collections](#Collections)
+  - [ImageCollection](#ImageCollection)
+- [Programmatically upload files](#Programmatically-upload-files)
+- [Management Commands](#Management-Commands)
+- [Validators](#Validators)
+- [Cloudinary](#Cloudinary)
+  - [Installation](#Installation-1)
+  - [Model fields](#Model-fields)
+  - [Collections](#Collections)
+  - [Usage](#Usage)
+- [Settings](#Settings)
+
 ## Installation
 
 Install `paper-uploads`:
-```shell script
+```shell
 pip install paper-uploads[full]
 ```
 
@@ -98,22 +120,27 @@ class Page(models.Model):
 
 Модель, представляющая загруженный файл.
 
-Поля и свойства модели:
-* `file` - ссылка на файл, хранящийся в Django-хранилище.
-* `basename` - имя файла без пути, суффикса и расширения. 
-Пример: `my_document`.
-* `extension` - расширение файла в нижнем регистре. Пример: `doc`.
-* `name` - полное имя файла. Пример: `files/my_document_19sc2Kj.pdf`.
-* `display_name`- удобочитаемое название файла для вывода на сайте.
-Пример: `Отчёт за 2019 год`.
-* `size` - размер файла в байтах.
-* `checksum` - контрольная сумма файла. Используется для отслеживания
-изменения файла.
-* `created_at` - дата создания экземпляра модели.
-* `modified_at` - дата изменения модели.
-* `uploaded_at` - дата загрузки файла.
+Поля модели:
 
-Для упрощения работы с файлами, некоторые методы и свойства
+| Поле | Тип         | Описание |
+|------|-------------|----------|
+| file | `FileField` | Ссылка на файл, хранящийся в Django-хранилище. |
+| display_name | `CharField` | Удобочитаемое название файла для вывода на сайте.<br>Пример: `Отчёт за 2019 год`. |
+| basename | `CharField` | Имя файла без пути, суффикса и расширения.<br>Пример: `my_document`. |
+| extension | `CharField` | Расширение файла в нижнем регистре, без точки в начале.<br>Пример: `doc`. |
+| size | `PositiveIntegerField` | Размер файла в байтах. |
+| checksum | `CharField` | Контрольная сумма файла. Используется для отслеживания изменений файла. |
+| created_at | `DateTimeField` | Дата создания экземпляра модели. |
+| modified_at | `DateTimeField` | Дата изменения модели. |
+| uploaded_at | `DateTimeField` | Дата загрузки файла. |
+
+Свойства модели:
+
+| Поле | Тип         | Описание |
+|------|-------------|----------|
+| name | `str` | Полное имя файла, передающееся в Django storage.<br>Пример: `files/my_document_19sc2Kj.pdf`. |
+
+Для упрощения работы с загруженными файлами, некоторые методы и свойства
 стандартного класса `FieldFile` проксированы на уровень модели:
 * `open`
 * `close`
@@ -128,8 +155,15 @@ class Page(models.Model):
 * `path`
 * `chunks`
 
-Таким образом, вместо `Page.report.file.url` можно использовать
-`Page.report.url`.
+Таким образом, вместо `page.report.file.url` можно использовать
+`page.report.url`.
+
+Поддерживается протокол контекстного менеджера:
+```python
+page = Page.objects.first()
+with page.report.open() as fp:
+    print(fp.read(10))
+```
 
 ## ImageField
 Поле для загрузки изображений.
@@ -147,7 +181,55 @@ from paper_uploads.models import *
 
 class Page(models.Model):
     image = ImageField(_('single image'), blank=True)
-    image_set = ImageField(_('image with variations'),
+```
+
+При загрузке изображения создается экземпляр модели `UploadedImage`.
+
+### UploadedImage
+
+Модель, представляющая загруженное изображение.
+
+Поля модели:
+
+| Поле | Тип         | Описание |
+|------|-------------|----------|
+| file | `FileField` | Ссылка на файл, хранящийся в Django-хранилище. |
+| title | `CharField` | Название изображения, которое можно вставить в атрибут `title` тэга `<img>`. |
+| description | `CharField` | Описание изображения, которое можно вставить в атрибут `alt` тэга `<img>`. |
+| width | `PositiveSmallIntegerField` | Ширина загруженного изображения. |
+| height | `PositiveSmallIntegerField` | Высота загруженного изображения. |
+| basename | `CharField` | Имя файла без пути, суффикса и расширения.<br>Пример: `my_image`. |
+| extension | `CharField` | Расширение файла в нижнем регистре, без точки в начале.<br>Пример: `jpg`. |
+| size | `PositiveIntegerField` | Размер файла в байтах. |
+| checksum | `CharField` | Контрольная сумма файла. Используется для отслеживания изменений файла. |
+| created_at | `DateTimeField` | Дата создания экземпляра модели. |
+| modified_at | `DateTimeField` | Дата изменения модели. |
+| uploaded_at | `DateTimeField` | Дата загрузки файла. |
+
+Свойства модели:
+
+| Поле | Тип         | Описание |
+|------|-------------|----------|
+| name | `str` | Полное имя файла, передающееся в Django storage.<br>Пример: `images/my_image_19sc2Kj.jpg`. |
+
+По аналогии с `FileField`, модель `UploadedImage` проксирует
+методы и свойства стандартного класса `FieldFile`.
+
+### Variations
+
+Вариация - это дополнительное изображение, которое получается 
+из оригинального путём определенных трансформаций. 
+
+Вариации описываются словарем `variations` поля `ImageField`:
+
+```python
+from django.db import models
+from django.utils.translation import ugettext_lazy as _
+from paper_uploads.models import *
+
+
+class Page(models.Model):
+    image = ImageField(_('image with variations'),
         blank=True,
         variations=dict(
             desktop=dict(
@@ -173,49 +255,131 @@ class Page(models.Model):
     )
 ```
 
-При загрузке изображения создается экземпляр модели `UploadedImage`.
+Со списком допустимых опций для вариаций можно ознакомиться 
+в библитеке [variations](https://github.com/dldevinc/variations#usage).
 
-### UploadedImage
+Нарезка изображения на вариации происходит при его загрузке.
+Добавление новых вариаций (равно как изменение существующих) для поля, 
+в которое уже загружен файл, не даст результата. Заново создать вариации
+можно несколькими способами.
 
-Модель, представляющая загруженное изображение.
+1. Вызвать метод `recut()` из экземпляра `UploadedImage`:
+   ```python
+   page = Page.objects.first()
+   page.image.recut()
+   ```
+   
+   При вызове этого метода все файлы вариаций для указанного экземпляра 
+   создаются заново.
 
-Поля и свойства модели:
-* `file` - ссылка на файл, хранящийся в Django-хранилище.
-* `basename` - имя файла без пути, суффикса и расширения. 
-Пример: `my_image`.
-* `extension` - расширение файла в нижнем регистре. Пример: `jpg`.
-* `name` - полное имя файла. Пример: `images/my_image_19sc2Kj.jpg`.
-* `size` - размер файла в байтах.
-* `title` - текст атрибута `title` для тэга `<img>`.
-* `description` - текст атрибута `alt` для тэга `<img>`.
-* `width` - ширина исходного изображения в пикселях.
-* `height` - высота исходного изображения в пикселях.
-* `checksum` - контрольная сумма файла. Используется для отслеживания
-изменения файла.
-* `created_at` - дата создания экземпляра модели.
-* `modified_at` - дата изменения модели.
-* `uploaded_at` - дата загрузки файла.
+   Если используется библиотека `django-rq`, то можно вызвать метод
+   `recut_async()`. Он добавит задачу обновления вариаций в очередь.
+   
+2. Выполнить management-команду `recreate_variations`:
+   ```shell
+   python3 manage.py recreate_variations app.page --field=report
+   ```
 
-По аналогии с `FileField`, модель `UploadedImage` проксирует
-методы и свойства стандартного класса `FieldFile`.
+   Эта команда создаёт вариации для всех экземпляров указанной модели.
 
 К вариациям можно обращаться прямо из экземпляра `UploadedImage`:
 ```python
-page.image_set.desktop.url
+page = Page.objects.first()
+print(page.image.desktop.url)
 ```
 
-По умолчанию, нарезка изображения на вариации происходит
-при его загрузке. Можно перенести процесс нарезки в отложенную
-задачу `django-rq`, установив значение `RQ_ENABLED` в `True`
-в настройках модуля.
+### Using Redis Queue for variation update 
+
+Если загрузка изображений происходит достаточно часто и количество вариаций
+для каждого изображения велико, то процесс создания вариаций может занимать 
+значительное время. Это может оказать негативное влияние на производительность 
+веб-сервера и даже послужить зоной для DoS-атаки.
+
+Для того, чтобы стабилизировать процесс загрузки изображений, рекомендуется
+создавать вариации асинхронно, в отдельном процессе. Эту задачу можно решить 
+с помощью [django-rq](https://github.com/rq/django-rq).
+
+```shell
+pip install django-rq
+```
 
 ```python
 # settings.py
 PAPER_UPLOADS = {
     # ...
-    'RQ_ENABLED': True,
-    'RQ_QUEUE_NAME': 'default'
+    "RQ_ENABLED": True,
+    "RQ_QUEUE_NAME": "default"
 }
+```
+
+### Variation versions
+
+Допустим, у нас есть изображение, которое нужно отобразить в трех
+вариантах: `desktop`, `tablet` и `mobile`. Если мы хотим поддерживать
+дисплеи Retina, нам нужно добавить ещё три вариации для размера `2x`. 
+Если мы также хотим использовать формат `WebP` (сохранив исходный формат 
+для обратной совместимости), то общее количество вариаций достигает **12**.
+
+Поскольку Retina-вариации отличаются от обычных только увеличенным
+на постоянный коэффициент размером, а `WebP`-вариации — принудительной
+конвертацией в формат `WebP`, мы можем создавать эти вариации
+автоматически.
+
+Для этого нужно объявить перечень версий, которые нужно
+сгенерировать, в новом параметре вариации `versions`. Поддерживаются
+следующие значения: `webp`, `2x`, `3x`, `4x`.
+
+```python
+from django.db import models
+from django.utils.translation import ugettext_lazy as _
+from paper_uploads.models import *
+
+
+class Page(models.Model):
+    image = ImageField(_('image'), blank=True,
+        variations=dict(
+            desktop=dict(
+                # ...
+                versions={'webp', '2x', '3x'}
+            )
+        )
+    )
+```
+
+Приведенный выше код создаст следующие вариации:
+* `desktop` - оригинальная вариация
+* `desktop_webp` - `WebP`-версия оригинальной вариации
+* `desktop_2x` - Retina 2x
+* `desktop_webp_2x` - `WebP`-версия Retina 2x
+* `desktop_3x` - Retina 3x
+* `desktop_webp_3x` - `WebP`-версия Retina 3x
+
+**NOTE**: Retina-суффикс всегда следует после суффикса `webp`.
+
+Если необходимо переопределить какие-то параметры дополнительной
+вариации, то придётся объявлять вариацию явно:
+
+```python
+from django.db import models
+from django.utils.translation import ugettext_lazy as _
+from paper_uploads.models import *
+
+
+class Page(models.Model):
+    image = ImageField(_('image'), blank=True,
+        variations=dict(
+            desktop=dict(
+                size=(800, 600),
+                versions={'webp', '2x', '3x'}
+            ),
+            desktop_2x=dict(
+                size=(1600, 1200),
+                jpeg=dict(
+                    quality=72
+                )
+            )
+        )
+    )
 ```
 
 ## Collections
@@ -251,7 +415,7 @@ class PageFiles(Collection):
 
 Порядок подключения классов элементов к коллекции имеет значение:
 первый класс, чей метод `file_supported()` вернет `True`,
-определит модель загружаемого файла. Поэтому `FileItem` должен
+определит модель загружаемого файла. По этой причине `FileItem` должен
 указываться последним, т.к. он принимает любые файлы.
 
 Вместе с моделью элемента, в поле `CollectionItem` можно указать
@@ -259,8 +423,7 @@ class PageFiles(Collection):
 (в словаре `options`), которые могут быть использованы для
 более детальной настройки элемента коллекции.
 
-Полученную коллекцию можно подключать к моделям с помощью
-`CollectionField`:
+Полученную коллекцию можно подключать к моделям с помощью `CollectionField`:
 
 ```python
 from django.db import models
@@ -288,7 +451,7 @@ class Page(models.Model):
 на вариации.
 
 Вариации для изображений коллекции можно указать двумя способами:
-1) в члене класса коллекции `VARIATIONS`:
+1) в атрибуте класса коллекции `VARIATIONS`:
 
     ```python
     from paper_uploads.models import *
@@ -322,13 +485,13 @@ class Page(models.Model):
 Вариации, указанные первым способом (через `VARIATIONS` коллекции),
 используются всеми классами элементов-изображений по умолчанию.
 Но, если конкретный элемент коллекции объявляет свои собственные
-вариации (вторым методом), то использовать он будет именно их.
+вариации (вторым методом), использоваться будут только они.
 
 ### ImageCollection
 
 Для коллекций, предназначенных исключительно для изображений,
-"из коробки" доступна модель для наследования `ImageCollection`.
-К ней уже подключен класс элементов-изображений.
+доступна модель для наследования `ImageCollection`. К ней уже подключен 
+класс элементов-изображений.
 
 ```python
 from paper_uploads.models import *
@@ -358,9 +521,8 @@ class PageGallery(ImageCollection):
 
 Наследование от `Collection` на самом деле создает
 [proxy-модель](https://docs.djangoproject.com/en/2.2/topics/db/models/#proxy-models).
-Это позволяет не создавать для каждой коллекции отдельную
-таблицу в БД, но делает невозможным добавление к модели коллекции
-дополнительных полей.
+Это позволяет не создавать для каждой коллекции отдельную таблицу в БД, 
+но делает невозможным добавление к модели коллекции дополнительных полей.
 
 Чтобы экземпляры коллекций не смешивались при выполнении SQL-запросов,
 менеджер `objects` в классе `Collection` был переопределен, для того,
@@ -371,7 +533,7 @@ class PageGallery(ImageCollection):
 # Вернет только экземпляры класса MyCollection
 MyCollection.objects.all()
 
-# Вернет абсолютно все экземпляры коллекций, всех классов
+# Вернет абсолютно все экземпляры коллекций, всех подклассов Collection
 MyCollection._base_manager.all()
 ```
 
@@ -426,15 +588,15 @@ python3 manage.py check_uploads --fix-missing
 Находит мусорные записи в БД (например те, у которых
 нет владельца) и предлагает их удалить.
 
-Ссылка на загруженный файл создается в момент отправки формы
-в админке. Из-за этого, в течение некоторого времени файл
-будет являться "сиротой". Для того, чтобы такие файлы не удалялись,
-по-умолчанию установлен фильтр, отсеивающий все файлы, загруженные
-за последние 30 минут. Указать свой интервал фильтрации
+Владелец загруженного файла устанавливается в момент сохранения страницы
+в админке. А это происходит позже фактической загрузки файла на сервер. 
+Как следствие, в течение некоторого времени файл будет являться "сиротой". 
+Для того, чтобы такие файлы не удалялись, команда `clean_uploads` отсеивает
+файлы, загруженные за последние 30 минут. Указать свой интервал фильтрации
 (в минутах) можно через ключ `--min-age`.
 
 ```shell
-python3 manage.py clean_uploads --min-age=10
+python3 manage.py clean_uploads --min-age=60
 ```
 
 #### recreate_variations
@@ -477,7 +639,6 @@ for image in page.gallery.get_items('image'):
 python3 manage.py remove_variations 'app.Page' --field='image'
 ```
 
-
 ## Validators
 Для добавления ограничений на загружаемые файлы применяются
 специальные валидаторы:
@@ -507,67 +668,6 @@ class PageGallery(Collection):
     file = CollectionItem(FileItem, validators=[
         SizeValidator(10 * 1024 * 1024),
     ])
-```
-
-## Variation versions
-Допустим, у нас есть изображение, которое нужно отобразить в трех
-вариантах: `desktop`, `tablet` и `mobile`. Если мы хотим поддерживать
-дисплеи Retina, нам нужно добавить ещё три вариации
-для размера `2x`. Если мы также хотим использовать формат `WebP`
-(сохранив исходные изображения для обратной совместимости),
-то общее количество вариаций достигает **12**.
-
-Поскольку Retina-вариации отличаются от обычных только увеличенным
-на постоянный коэффициент размером, а `WebP`-вариации — принудительной
-конвертацией в формат `WebP`, мы можем создавать эти вариации
-автоматически.
-
-Для этого нужно объявить перечень версий, которые нужно
-сгенерировать, в параметре вариации `versions`. Поддерживаются
-следующие значения: `webp`, `2x`, `3x`, `4x`.
-
-```python
-class Page(models.Model):
-    image = ImageField(_('image'), blank=True,
-        variations=dict(
-            desktop=dict(
-                # ...
-                versions={'webp', '2x', '3x'}
-            )
-        )
-    )
-```
-
-Приведенный выше код создаст следующие вариации:
-* `desktop` - оригинальная вариация
-* `desktop_webp` - `WebP`-версия оригинальной вариации
-* `desktop_2x` - Retina 2x
-* `desktop_webp_2x` - `WebP`-версия Retina 2x
-* `desktop_3x` - Retina 3x
-* `desktop_webp_3x` - `WebP`-версия Retina 3x
-
-**NOTE**: Суффикс для Retina всегда следует после суффикса `WebP`.
-
-Если необходимо переопределить какие-то параметры дополнительной
-вариации, то придётся объявлять вариацию явно — она переопределит
-одноименную сгенерированную вариацию.
-
-```python
-class Page(models.Model):
-    image = ImageField(_('image'), blank=True,
-        variations=dict(
-            desktop=dict(
-                size=(800, 600),
-                versions={'webp', '2x', '3x'}
-            ),
-            desktop_2x=dict(
-                size=(1600, 1200),
-                jpeg=dict(
-                    quality=72
-                )
-            )
-        )
-    )
 ```
 
 ## Cloudinary
@@ -600,6 +700,7 @@ class Page(models.Model):
 
 ### Model fields
 ```python
+from django.db import models
 from paper_uploads.cloudinary.models import *
 
 class Page(models.Model):
@@ -607,6 +708,26 @@ class Page(models.Model):
     media = CloudinaryMediaField(_('media'), blank=True)
     image = CloudinaryImageField(_('image'), blank=True)
 ```
+
+Дополнительные [параметры загрузки Cloudinary](https://cloudinary.com/documentation/image_upload_api_reference#upload_optional_parameters) 
+можно задать с помощью параметра `cloudinary`:
+```python
+from django.db import models
+from paper_uploads.cloudinary.models import *
+
+
+class Page(models.Model):
+    file = CloudinaryFileField(_('file'), blank=True, cloudinary={
+        "folder": "page/files/%Y-%m-%d"
+    })
+```
+
+**Внимание!** Следует быть осторожным, явно указывая опции `type` и `resource_type`.
+Изменение этих опций может привести к невозможности удалить уже загруженные в это поле 
+файлы.
+
+Чтобы предотвратить генерацию трасформаций конечными пользователями, рекомендуется 
+включить в вашем аккаунте Cloudinary [Strict transformations](https://cloudinary.com/documentation/control_access_to_media#strict_transformations).
 
 ### Collections
 В модуле объявлено три класса элементов коллекции:
@@ -666,12 +787,12 @@ class Page(models.Model):
 <img src={% paper_cloudinary_url page.image width=1024 crop=fill %}>
 ```
 
-#### Jinja2
+Для `jinja2`:
 ```jinja2
 <img src={% paper_cloudinary_url page.image, width=1024, crop=fill %}>
 ```
 
-Также доступна одноименная глобальная функция:
+Также, для `jinja2` доступна одноименная глобальная функция:
 ```jinja2
 <img src={{ paper_cloudinary_url(page.image, width=1024, crop='fill') }}>
 ```
@@ -773,11 +894,13 @@ PAPER_UPLOADS = {
 
 Значение по умолчанию:
 ```python
-{
-    'use_filename': True,
-    'unique_filename': True,
-    'overwrite': True,
-    'invalidate': True
+PAPER_UPLOADS = {
+    "CLOUDINARY_UPLOADER_OPTIONS": {
+        "use_filename": True,
+        "unique_filename": True,
+        "overwrite": True,
+        "invalidate": True
+    }
 }
 ```
 
