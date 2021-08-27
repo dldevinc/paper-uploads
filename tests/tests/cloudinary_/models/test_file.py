@@ -4,6 +4,7 @@ from contextlib import contextmanager
 import cloudinary.exceptions
 import pytest
 from cloudinary import uploader
+from django.utils.crypto import get_random_string
 
 from app.models import CloudinaryFileExample
 from paper_uploads.cloudinary.models import CloudinaryFile
@@ -106,19 +107,20 @@ class TestCloudinaryFileRename(TestFileFieldResourceRename):
 
     @classmethod
     def init_class(cls, storage):
+        storage.uid = get_random_string(5)
         storage.resource = cls.resource_class(
             owner_app_label=cls.owner_app_label,
             owner_model_name=cls.owner_model_name,
             owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_file_name.jpg')
+            storage.resource.attach_file(fp, name='old_file_name_{}.jpg'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
 
-        storage.resource.rename_file('new_file_name.png')
+        storage.resource.rename_file('new_file_name_{}.png'.format(storage.uid))
 
         yield
 
@@ -144,20 +146,20 @@ class TestCloudinaryFileRename(TestFileFieldResourceRename):
 
     def test_old_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_file_name{suffix}.jpg'),
+            posixpath.join(self.resource_location, 'old_file_name_{}{{suffix}}.jpg'.format(storage.uid)),
             storage.old_source_name
         )
 
     def test_new_file_name(self, storage):
         file = storage.resource.get_file()
         assert file.name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'new_file_name{suffix}.png'),
+            posixpath.join(self.resource_location, 'new_file_name_{}{{suffix}}.png'.format(storage.uid)),
             file.name
         )
 
     def test_basename(self, storage):
         assert storage.resource.basename == utils.get_target_filepath(
-            'new_file_name{suffix}',
+            'new_file_name_{}{{suffix}}'.format(storage.uid),
             storage.resource.basename
         )
 

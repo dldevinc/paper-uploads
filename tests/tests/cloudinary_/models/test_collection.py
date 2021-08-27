@@ -6,6 +6,7 @@ import pytest
 from cloudinary import uploader
 from django.core.files import File
 from django.template.loader import render_to_string
+from django.utils.crypto import get_random_string
 
 from app.models import (
     CloudinaryCompleteCollection,
@@ -145,15 +146,16 @@ class TestFileItemRename(TestFileFieldResourceRename):
     @classmethod
     def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
+        storage.uid = get_random_string(5)
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_cfile_name.jpg')
+            storage.resource.attach_file(fp, name='old_cfile_name_{}.jpg'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
-        storage.resource.rename_file('new_cfile_name.png')
+        storage.resource.rename_file('new_cfile_name_{}.png'.format(storage.uid))
 
         yield
 
@@ -179,20 +181,20 @@ class TestFileItemRename(TestFileFieldResourceRename):
 
     def test_old_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_cfile_name{suffix}.jpg'),
+            posixpath.join(self.resource_location, 'old_cfile_name_{}{{suffix}}.jpg'.format(storage.uid)),
             storage.old_source_name
         )
 
     def test_new_file_name(self, storage):
         file = storage.resource.get_file()
         assert file.name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'new_cfile_name{suffix}.png'),
+            posixpath.join(self.resource_location, 'new_cfile_name_{}{{suffix}}.png'.format(storage.uid)),
             file.name
         )
 
     def test_basename(self, storage):
         assert storage.resource.basename == utils.get_target_filepath(
-            'new_cfile_name{suffix}',
+            'new_cfile_name_{}{{suffix}}'.format(storage.uid),
             storage.resource.basename
         )
 
@@ -419,15 +421,16 @@ class TestMediaItemRename(TestFileFieldResourceRename):
     @classmethod
     def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
+        storage.uid = get_random_string(5)
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_cmedia_name.mp3')
+            storage.resource.attach_file(fp, name='old_cmedia_name_{}.mp3'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
-        storage.resource.rename_file('new_cmedia_name.ogg')
+        storage.resource.rename_file('new_cmedia_name_{}.ogg'.format(storage.uid))
 
         yield
 
@@ -453,20 +456,20 @@ class TestMediaItemRename(TestFileFieldResourceRename):
 
     def test_old_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_cmedia_name{suffix}'),
+            posixpath.join(self.resource_location, 'old_cmedia_name_{}{{suffix}}'.format(storage.uid)),
             storage.old_source_name
         )
 
     def test_new_file_name(self, storage):
         file = storage.resource.get_file()
         assert file.name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'new_cmedia_name{suffix}'),
+            posixpath.join(self.resource_location, 'new_cmedia_name_{}{{suffix}}'.format(storage.uid)),
             file.name
         )
 
     def test_basename(self, storage):
         assert storage.resource.basename == utils.get_target_filepath(
-            'new_cmedia_name{suffix}',
+            'new_cmedia_name_{}{{suffix}}'.format(storage.uid),
             storage.resource.basename
         )
 
@@ -652,15 +655,16 @@ class TestImageItemRename(TestImageFieldResourceRename):
     @classmethod
     def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
+        storage.uid = get_random_string(5)
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_cimage_name.jpg')
+            storage.resource.attach_file(fp, name='old_cimage_name_{}.jpg'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
-        storage.resource.rename_file('new_cimage_name.png')
+        storage.resource.rename_file('new_cimage_name_{}.png'.format(storage.uid))
 
         yield
 
@@ -686,20 +690,20 @@ class TestImageItemRename(TestImageFieldResourceRename):
 
     def test_old_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_cimage_name{suffix}'),
+            posixpath.join(self.resource_location, 'old_cimage_name_{}{{suffix}}'.format(storage.uid)),
             storage.old_source_name
         )
 
     def test_new_file_name(self, storage):
         file = storage.resource.get_file()
         assert file.name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'new_cimage_name{suffix}'),
+            posixpath.join(self.resource_location, 'new_cimage_name_{}{{suffix}}'.format(storage.uid)),
             file.name
         )
 
     def test_basename(self, storage):
         assert storage.resource.basename == utils.get_target_filepath(
-            'new_cimage_name{suffix}',
+            'new_cimage_name_{}{{suffix}}'.format(storage.uid),
             storage.resource.basename
         )
 
