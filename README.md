@@ -540,11 +540,16 @@ MyCollection._base_manager.all()
 ## Programmatically upload files
 ```python
 from paper_uploads.models import *
+from . models import Page
 
 
 # file / image
 with open('file.doc', 'rb') as fp:
-    file = UploadedFile()
+    file = UploadedFile(
+        owner_app_label=Page._meta.app_label,
+        owner_model_name=Page._meta.model_name,
+        owner_fieldname="file",  # имя поля модели Page, в которое будет помещен файл
+    )
     file.attach_file(fp)
     file.save()
 
