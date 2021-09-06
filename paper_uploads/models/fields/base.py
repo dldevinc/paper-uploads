@@ -88,8 +88,7 @@ class ResourceFieldBase(models.OneToOneField):
 
 class FileResourceFieldBase(ResourceFieldBase):
     """
-    Базовый класс для полей, которые загружают файлы с помощью FineUploader.
-    См. https://fineuploader.com/
+    Базовый класс для полей, которые загружают файлы.
     """
 
     def formfield(self, **kwargs):

@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.5.2](https://github.com/dldevinc/paper-uploads/tree/v0.5.2) - 2021-09-03
+### Bug Fixes
+- Scale `max_width` and `max_height` for Retina versions.
+
 ## [0.5.1](https://github.com/dldevinc/paper-uploads/tree/v0.5.1) - 2021-08-25
 ### Features
 - Make it possible to rename files with the same name.

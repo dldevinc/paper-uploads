@@ -42,13 +42,21 @@ def generate_scaled_versions(
     """
     Геренирует Retina-версию вариации с опциональной WebP-версией того же размера.
     """
-    variation_size = tuple(x * scale_factor for x in config.get("size", (0, 0)))
+    scaled_size = tuple(x * scale_factor for x in config.get("size", (0, 0)))
 
     if scale_factor == 1:
         variation_name = name
     else:
         variation_name = "{}_{}x".format(name, scale_factor)
-    variation_config = dict(config, name=variation_name, size=variation_size)
+
+    variation_config = dict(
+        config,
+        name=variation_name,
+        size=scaled_size,
+        max_width=scale_factor * config.get("max_width", 0),
+        max_height=scale_factor * config.get("max_height", 0),
+    )
+
     yield PaperVariation(**variation_config)
 
     if webp:
@@ -56,9 +64,16 @@ def generate_scaled_versions(
             variation_name = "{}_webp".format(name)
         else:
             variation_name = "{}_webp_{}x".format(name, scale_factor)
+
         variation_config = dict(
-            config, name=variation_name, size=variation_size, format="webp"
+            config,
+            name=variation_name,
+            size=scaled_size,
+            max_width=scale_factor * config.get("max_width", 0),
+            max_height=scale_factor * config.get("max_height", 0),
+            format="webp"
         )
+
         yield PaperVariation(**variation_config)
 
 
