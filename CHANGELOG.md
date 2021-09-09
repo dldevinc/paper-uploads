@@ -5,6 +5,8 @@
 - Removed `CloudinaryCollection` class.
 - Add a method `get_file_folder` returning storage directory.
   Override this method to customize the upload folder.
+### Bug Fixes
+- Fix `RecursionError` when deleting ImageCollection.
 
 ## [0.5.2](https://github.com/dldevinc/paper-uploads/tree/v0.5.2) - 2021-09-03
 ### Bug Fixes

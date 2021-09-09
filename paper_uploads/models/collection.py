@@ -9,7 +9,7 @@ from django.contrib.staticfiles.finders import find
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core import checks
 from django.core.files import File
-from django.db import models
+from django.db import models, transaction
 from django.db.models import functions
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
@@ -135,6 +135,11 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         default_permissions = ()
         verbose_name = _("collection")
         verbose_name_plural = _("collections")
+
+    def delete(self, using=None, keep_parents=False):
+        # удаляем элементы вручную из-за рекурсии (см. clean_uploads.py, строка 145)
+        self.items.all().delete()
+        super().delete(using=using, keep_parents=keep_parents)
 
     @classmethod
     def _check_fields(cls, **kwargs):
