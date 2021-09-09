@@ -156,12 +156,6 @@ class CloudinaryImageItem(ImageFileResourceMixin, CollectionCloudinaryFileItemBa
 # ==============================================================================
 
 
-class CloudinaryCollection(Collection):
-    image = CollectionItem(CloudinaryImageItem)
-    media = CollectionItem(CloudinaryMediaItem)
-    file = CollectionItem(CloudinaryFileItem)
-
-
 class CloudinaryImageCollection(Collection):
     image = CollectionItem(CloudinaryImageItem)
 

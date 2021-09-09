@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.6.0](https://github.com/dldevinc/paper-uploads/tree/v0.6.0) - 2021-09-07
+### Features
+- Removed `CloudinaryCollection` class.
+
 ## [0.5.2](https://github.com/dldevinc/paper-uploads/tree/v0.5.2) - 2021-09-03
 ### Bug Fixes
 - Scale `max_width` and `max_height` for Retina versions.

@@ -401,8 +401,10 @@ class CloudinaryMediaCollection(Collection):
     media = CollectionItem(CloudinaryMediaItem)
 
 
-class CloudinaryCompleteCollection(CloudinaryCollection):
-    pass
+class CloudinaryCompleteCollection(Collection):
+    image = CollectionItem(CloudinaryImageItem)
+    media = CollectionItem(CloudinaryMediaItem)
+    file = CollectionItem(CloudinaryFileItem)
 
 
 class CloudinaryCollectionFieldObject(models.Model):

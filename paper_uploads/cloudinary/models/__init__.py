@@ -1,5 +1,4 @@
 from .collection import (
-    CloudinaryCollection,
     CloudinaryFileItem,
     CloudinaryImageCollection,
     CloudinaryImageItem,
@@ -17,7 +16,6 @@ __all__ = [
     "CloudinaryFileField",
     "CloudinaryImageField",
     "CloudinaryMediaField",
-    "CloudinaryCollection",
     "CloudinaryImageCollection",
     "CloudinaryFileItem",
     "CloudinaryImageItem",
