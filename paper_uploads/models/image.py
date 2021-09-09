@@ -9,19 +9,23 @@ from ..utils import filesizeformat
 from ..variations import PaperVariation
 from .base import FileFieldResource, VersatileImageResourceMixin
 from .fields import VariationalFileField
+from .utils import generate_filename
 
 
 class UploadedImage(VersatileImageResourceMixin, FileFieldResource):
     file = VariationalFileField(
         _("file"),
         max_length=255,
-        upload_to=settings.IMAGES_UPLOAD_TO,
         storage=upload_storage,
+        upload_to=generate_filename,
     )
 
     class Meta(FileFieldResource.Meta):
         verbose_name = _("image")
         verbose_name_plural = _("images")
+
+    def get_file_folder(self) -> str:
+        return settings.IMAGES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
         return self.file

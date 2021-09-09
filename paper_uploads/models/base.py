@@ -342,6 +342,13 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
         self._require_file()
         return self.get_file().name
 
+    def get_file_folder(self) -> str:
+        """
+        Возвращает путь к папке, в которую будет сохранен файл.
+        Результат вызова используется в параметре `upload_to` в случае Django storage.
+        """
+        return ""
+
     def get_file(self) -> FieldFile:
         raise NotImplementedError
 

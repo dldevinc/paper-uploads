@@ -8,6 +8,7 @@ from ..conf import settings
 from ..storage import upload_storage
 from ..utils import filesizeformat
 from .base import FileFieldResource
+from .utils import generate_filename
 
 
 class UploadedFile(FileFieldResource):
@@ -15,7 +16,7 @@ class UploadedFile(FileFieldResource):
         _("file"),
         max_length=255,
         storage=upload_storage,
-        upload_to=settings.FILES_UPLOAD_TO,
+        upload_to=generate_filename,
     )
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
@@ -27,6 +28,9 @@ class UploadedFile(FileFieldResource):
         if not self.pk and not self.display_name:
             self.display_name = self.basename
         super().save(*args, **kwargs)
+
+    def get_file_folder(self) -> str:
+        return settings.FILES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
         return self.file

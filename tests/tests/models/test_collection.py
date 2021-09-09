@@ -333,6 +333,9 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
         storage.resource.delete()
         storage.collection.delete()
 
+    def test_get_file_folder(self, storage):
+        assert storage.resource.get_file_folder() == self.resource_location
+
     def test_display_name(self, storage):
         assert storage.resource.display_name == self.resource_name
 
@@ -513,6 +516,9 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
         storage.resource.delete_file()
         storage.resource.delete()
         storage.collection.delete()
+
+    def test_get_file_folder(self, storage):
+        assert storage.resource.get_file_folder() == self.resource_location
 
     def test_item_type(self, storage):
         assert storage.resource.item_type == 'svg'
@@ -712,6 +718,9 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
         storage.resource.delete_file()
         storage.resource.delete()
         storage.collection.delete()
+
+    def test_get_file_folder(self, storage):
+        assert storage.resource.get_file_folder() == self.resource_location
 
     def test_item_type(self, storage):
         assert storage.resource.item_type == 'image'

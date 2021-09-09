@@ -581,6 +581,9 @@ class TestFileFieldResource(TestFileResource):
         pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}.Jpeg')
         assert file_name == utils.get_target_filepath(pattern, file_name)
 
+    def test_get_file_folder(self, storage):
+        assert storage.resource.get_file_folder() == ""
+
     def test_get_file_field(self, storage):
         assert (
             storage.resource.get_file_field()

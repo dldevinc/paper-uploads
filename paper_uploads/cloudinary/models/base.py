@@ -167,6 +167,13 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         self._require_file()
         return self.get_file().name
 
+    def get_file_folder(self) -> str:
+        """
+        Возвращает путь к папке, в которую будет сохранен файл.
+        Результат вызова используется в параметре `folder` для Cloudinary.
+        """
+        return ""
+
     def get_file(self) -> CloudinaryFieldFile:
         raise NotImplementedError
 
@@ -215,7 +222,9 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
 
         # format folder
         folder = options.pop("folder", None)
-        if folder is not None:
+        if folder is None:
+            folder = self.get_file_folder()
+        if isinstance(folder, str):
             options["folder"] = datetime.datetime.now().strftime(folder)
 
         return options

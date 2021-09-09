@@ -24,11 +24,17 @@ from ..conf import FILE_ICON_DEFAULT, FILE_ICON_OVERRIDES, settings
 from ..helpers import _get_item_types, _set_item_types, build_variations
 from ..storage import upload_storage
 from ..variations import PaperVariation
-from .base import NoPermissionsMetaBase, ResourceBaseMeta, FileFieldResource, VersatileImageResourceMixin
+from .base import (
+    FileFieldResource,
+    NoPermissionsMetaBase,
+    ResourceBaseMeta,
+    VersatileImageResourceMixin,
+)
 from .fields import CollectionItem
 from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
 from .mixins import BacklinkModelMixin
+from .utils import generate_filename
 
 __all__ = [
     "CollectionItemBase",
@@ -400,7 +406,7 @@ class FileItem(FilePreviewMixin, CollectionFileItemBase):
         _("file"),
         max_length=255,
         storage=upload_storage,
-        upload_to=settings.COLLECTION_FILES_UPLOAD_TO,
+        upload_to=generate_filename,
     )
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
@@ -412,6 +418,9 @@ class FileItem(FilePreviewMixin, CollectionFileItemBase):
         if not self.pk and not self.display_name:
             self.display_name = self.basename
         super().save(*args, **kwargs)
+
+    def get_file_folder(self) -> str:
+        return settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
         return self.file
@@ -436,7 +445,7 @@ class SVGItem(CollectionFileItemBase):
         _("file"),
         max_length=255,
         storage=upload_storage,
-        upload_to=settings.COLLECTION_FILES_UPLOAD_TO,
+        upload_to=generate_filename,
     )
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
@@ -448,6 +457,9 @@ class SVGItem(CollectionFileItemBase):
         if not self.pk and not self.display_name:
             self.display_name = self.basename
         super().save(*args, **kwargs)
+
+    def get_file_folder(self) -> str:
+        return settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
         return self.file
@@ -474,12 +486,15 @@ class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
         _("file"),
         max_length=255,
         storage=upload_storage,
-        upload_to=settings.COLLECTION_IMAGES_UPLOAD_TO,
+        upload_to=generate_filename,
     )
 
     class Meta(CollectionItemBase.Meta):
         verbose_name = _("Image item")
         verbose_name_plural = _("Image items")
+
+    def get_file_folder(self) -> str:
+        return settings.COLLECTION_IMAGES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
         return self.file

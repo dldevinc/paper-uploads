@@ -14,12 +14,14 @@ class CloudinaryImage(ImageFileResourceMixin, CloudinaryFileResource):
         _("file"),
         type=settings.CLOUDINARY_TYPE,
         resource_type="image",
-        folder=settings.IMAGES_UPLOAD_TO
     )
 
     class Meta(CloudinaryFileResource.Meta):
         verbose_name = _("image")
         verbose_name_plural = _("images")
+
+    def get_file_folder(self) -> str:
+        return settings.IMAGES_UPLOAD_TO
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:

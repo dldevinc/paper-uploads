@@ -199,6 +199,9 @@ class CloudinaryFileResource(TestFileResource):
     def test_name(self, storage):
         raise NotImplementedError
 
+    def test_get_file_folder(self, storage):
+        assert storage.resource.get_file_folder() == ""
+
     def test_get_file_field(self, storage):
         assert (
             storage.resource.get_file_field()
