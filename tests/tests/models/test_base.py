@@ -13,9 +13,9 @@ from app.models import (
     DummyImageFieldResource,
     DummyResource,
     DummyVersatileImageResource,
-    VariationFile,
 )
 from paper_uploads import signals
+from paper_uploads.files import VariationFile
 from paper_uploads.variations import PaperVariation
 
 from .. import utils

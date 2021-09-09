@@ -331,7 +331,7 @@ class FileResource(FileProxyMixin, Resource):
 
 class FileFieldResource(FileFieldProxyMixin, FileResource):
     """
-    Подкласс файлового ресурса, доступ к которому осуществляется через Storage.
+    Подкласс файлового ресурса, доступ к которому осуществляется через Django Storage.
     """
 
     class Meta(FileResource.Meta):
