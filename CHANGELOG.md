@@ -1,8 +1,9 @@
 # Change Log
 
-## [0.6.0](https://github.com/dldevinc/paper-uploads/tree/v0.6.0) - 2021-09-07
-### Features
+## [0.6.0](https://github.com/dldevinc/paper-uploads/tree/v0.6.0) - 2021-09-10
+### ⚠ BREAKING CHANGES
 - Removed `CloudinaryCollection` class.
+### Features
 - Add a method `get_file_folder` returning storage directory.
   Override this method to customize the upload folder.
 ### Bug Fixes
