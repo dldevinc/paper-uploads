@@ -331,7 +331,7 @@ class FileResource(FileProxyMixin, Resource):
 
 class FileFieldResource(FileFieldProxyMixin, FileResource):
     """
-    Подкласс файлового ресурса, доступ к которому осуществляется через Storage.
+    Подкласс файлового ресурса, доступ к которому осуществляется через Django Storage.
     """
 
     class Meta(FileResource.Meta):
@@ -341,6 +341,13 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
     def name(self) -> str:
         self._require_file()
         return self.get_file().name
+
+    def get_file_folder(self) -> str:
+        """
+        Возвращает путь к папке, в которую будет сохранен файл.
+        Результат вызова используется в параметре `upload_to` в случае Django storage.
+        """
+        return ""
 
     def get_file(self) -> FieldFile:
         raise NotImplementedError

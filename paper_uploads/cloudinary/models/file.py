@@ -14,13 +14,15 @@ class CloudinaryFile(CloudinaryFileResource):
         _("file"),
         type=settings.CLOUDINARY_TYPE,
         resource_type="raw",
-        folder=settings.FILES_UPLOAD_TO
     )
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
     class Meta(CloudinaryFileResource.Meta):
         verbose_name = _("file")
         verbose_name_plural = _("files")
+
+    def get_file_folder(self) -> str:
+        return settings.FILES_UPLOAD_TO
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:

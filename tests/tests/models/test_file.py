@@ -42,6 +42,9 @@ class TestUploadedFile(TestFileFieldResource):
         storage.resource.delete_file()
         storage.resource.delete()
 
+    def test_get_file_folder(self, storage):
+        assert storage.resource.get_file_folder() == self.resource_location
+
     def test_display_name(self, storage):
         assert storage.resource.display_name == self.resource_name
 

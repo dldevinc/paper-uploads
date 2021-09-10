@@ -17,7 +17,7 @@ class FileFieldObjectAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             "fields": (
-                "name", "file", "file_required",
+                "name", "file_required", "file", "file_custom"
             ),
         }),
         (_("Validators"), {
@@ -33,7 +33,7 @@ class ImageFieldObjectAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             "fields": (
-                "name", "image", "image_required",
+                "name", "image_required", "image", "image_custom"
             ),
         }),
         (_("Validators"), {
@@ -50,7 +50,15 @@ class CollectionFieldObjectAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             "fields": (
-                "file_collection", "image_collection", "full_collection"
+                "name",
+            ),
+        }),
+        (None, {
+            "fields": (
+                "file_collection",
+                "image_collection",
+                "full_collection",
+                "custom_collection"
             ),
         }),
     )

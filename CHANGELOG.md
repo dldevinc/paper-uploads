@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.6.0](https://github.com/dldevinc/paper-uploads/tree/v0.6.0) - 2021-09-10
+### ⚠ BREAKING CHANGES
+- Removed `CloudinaryCollection` class.
+### Features
+- Add a method `get_file_folder` returning storage directory.
+  Override this method to customize the upload folder.
+### Bug Fixes
+- Fix `RecursionError` when deleting ImageCollection.
+
 ## [0.5.2](https://github.com/dldevinc/paper-uploads/tree/v0.5.2) - 2021-09-03
 ### Bug Fixes
 - Scale `max_width` and `max_height` for Retina versions.

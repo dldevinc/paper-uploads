@@ -97,8 +97,10 @@ class Command(BaseCommand):
         """
         related_model = queryset.model
         used_ids = self.get_used_ids(related_model, exclude_models)
+
         unused_qs = queryset.exclude(pk__in=used_ids)
         unused_count = unused_qs.count()
+
         if not unused_count:
             if self.verbosity >= 2:
                 self.stderr.write(
@@ -113,15 +115,20 @@ class Command(BaseCommand):
         if self.interactive:
             while True:
                 answer = input(
-                    "Found \033[92m%d unused %s\033[0m objects. "
+                    "Found \033[92m%d unused %s\033[0m objects. \n"
+                    "IDs: %s\n"
                     "What would you like to do with them?\n"
                     "(p)rint / (k)eep / (d)elete [default=keep]? "
-                    % (unused_count, related_model.__name__)
+                    % (
+                        unused_count,
+                        related_model.__name__,
+                        ", ".join(map(str, unused_qs.values_list("pk", flat=True))),
+                    )
                 )
                 answer = answer.lower() or "k"
                 if answer in {"p", "print"}:
                     self.stdout.write("\n")
-                    qs = unused_qs.order_by("pk").only("file")
+                    qs = unused_qs.order_by("pk")
                     for index, item in enumerate(qs, start=1):
                         self.stdout.write(
                             "  {}) {} #{} (File: {})".format(
@@ -135,7 +142,15 @@ class Command(BaseCommand):
                 elif answer in {"k", "keep"}:
                     return
                 elif answer in {"d", "delete"}:
-                    unused_qs.delete()
+                    # `unused_qs.delete()` не используется по причине зацикленной рекурсии.
+                    # Полиморфная модель ImageItem при инициализации добавляет в себя
+                    # ссылки на файлы вариаций. Для этого требуется обращение к полю `file`.
+                    # Но при удалении *коллекции* этого поля в модели нет, т.к. для SQL
+                    # DELETE оно не нужно. Из-за этого вызывается метод
+                    # `refresh_from_db`, который снова инициализирует модель ImageItem.
+                    with transaction.atomic():
+                        for obj in unused_qs:
+                            obj.delete()
                     return
 
     def clean_source_missing(self, queryset):
@@ -148,7 +163,10 @@ class Command(BaseCommand):
             if not instance.file_exists():
                 sourceless_items.add(instance.pk)
 
-        if not sourceless_items:
+        sourceless_qs = queryset.filter(pk__in=sourceless_items)
+        sourceless_count = sourceless_qs.count()
+
+        if not sourceless_count:
             if self.verbosity >= 2:
                 self.stderr.write(
                     self.style.NOTICE(
@@ -163,18 +181,19 @@ class Command(BaseCommand):
             while True:
                 answer = input(
                     "Found \033[92m%d %s\033[0m objects which are linked to a non-existent files.\n"
+                    "IDs: %s\n"
                     "What would you like to do with them?\n"
                     "(p)rint / (k)eep / (d)elete [default=keep]? "
-                    % (len(sourceless_items), related_model.__name__)
+                    % (
+                        sourceless_count,
+                        related_model.__name__,
+                        ", ".join(map(str, sourceless_qs.values_list("pk", flat=True))),
+                    )
                 )
                 answer = answer.lower() or "k"
                 if answer in {"p", "print"}:
                     self.stdout.write("\n")
-                    qs = (
-                        queryset.filter(pk__in=sourceless_items)
-                        .order_by("pk")
-                        .only("file")
-                    )
+                    qs = sourceless_qs.order_by("pk")
                     for index, item in enumerate(qs, start=1):
                         self.stdout.write(
                             "  {}) {} #{} (File: {})".format(
@@ -188,7 +207,7 @@ class Command(BaseCommand):
                 elif answer in {"k", "keep"}:
                     return
                 elif answer in {"d", "delete"}:
-                    queryset.filter(pk__in=sourceless_items).delete()
+                    sourceless_qs.delete()
                     return
 
     def handle(self, *args, **options):
@@ -205,7 +224,7 @@ class Command(BaseCommand):
             if issubclass(model, PolymorphicModel):
                 continue
 
-            if model._meta.abstract:
+            if model._meta.abstract or model._meta.proxy:
                 continue
 
             self.clean_source_missing(model._base_manager.using(self.database).all())

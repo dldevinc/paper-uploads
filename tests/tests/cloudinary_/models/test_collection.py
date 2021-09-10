@@ -8,7 +8,7 @@ from django.core.files import File
 from django.template.loader import render_to_string
 from django.utils.crypto import get_random_string
 
-from app.models import (
+from app.models.site import (
     CloudinaryCompleteCollection,
     CloudinaryFileCollection,
     CloudinaryMediaCollection,
@@ -61,6 +61,9 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
         storage.resource.delete_file()
         storage.resource.delete()
         storage.collection.delete()
+
+    def test_get_file_folder(self, storage):
+        assert storage.resource.get_file_folder() == self.resource_location
 
     def test_display_name(self, storage):
         assert storage.resource.display_name == self.resource_name
@@ -276,6 +279,9 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
         storage.resource.delete_file()
         storage.resource.delete()
         storage.collection.delete()
+
+    def test_get_file_folder(self, storage):
+        assert storage.resource.get_file_folder() == self.resource_location
 
     def test_display_name(self, storage):
         assert storage.resource.display_name == self.resource_name
@@ -560,6 +566,9 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
         storage.resource.delete_file()
         storage.resource.delete()
         storage.collection.delete()
+
+    def test_get_file_folder(self, storage):
+        assert storage.resource.get_file_folder() == self.resource_location
 
     def test_item_type(self, storage):
         assert storage.resource.item_type == 'image'

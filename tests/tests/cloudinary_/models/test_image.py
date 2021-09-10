@@ -65,6 +65,9 @@ class TestCloudinaryImage(CloudinaryFileResource):
         pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}')
         assert file_name == utils.get_target_filepath(pattern, file_name)
 
+    def test_get_file_folder(self, storage):
+        assert storage.resource.get_file_folder() == self.resource_location
+
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             'id': 1,

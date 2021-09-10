@@ -47,7 +47,6 @@ class CloudinaryFileItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
         _("file"),
         type=settings.CLOUDINARY_TYPE,
         resource_type="raw",
-        folder=settings.COLLECTION_FILES_UPLOAD_TO
     )
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
@@ -59,6 +58,9 @@ class CloudinaryFileItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
         if not self.pk and not self.display_name:
             self.display_name = self.basename
         super().save(*args, **kwargs)
+
+    def get_file_folder(self) -> str:
+        return settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:
@@ -85,7 +87,6 @@ class CloudinaryMediaItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
         _("file"),
         type=settings.CLOUDINARY_TYPE,
         resource_type="video",
-        folder=settings.COLLECTION_FILES_UPLOAD_TO
     )
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
@@ -97,6 +98,9 @@ class CloudinaryMediaItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
         if not self.pk and not self.display_name:
             self.display_name = self.basename
         super().save(*args, **kwargs)
+
+    def get_file_folder(self) -> str:
+        return settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:
@@ -127,12 +131,14 @@ class CloudinaryImageItem(ImageFileResourceMixin, CollectionCloudinaryFileItemBa
         _("file"),
         type=settings.CLOUDINARY_TYPE,
         resource_type="image",
-        folder=settings.COLLECTION_IMAGES_UPLOAD_TO
     )
 
     class Meta(CollectionCloudinaryFileItemBase.Meta):
         verbose_name = _("Image item")
         verbose_name_plural = _("Image items")
+
+    def get_file_folder(self) -> str:
+        return settings.COLLECTION_IMAGES_UPLOAD_TO
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:
@@ -154,12 +160,6 @@ class CloudinaryImageItem(ImageFileResourceMixin, CollectionCloudinaryFileItemBa
 
 
 # ==============================================================================
-
-
-class CloudinaryCollection(Collection):
-    image = CollectionItem(CloudinaryImageItem)
-    media = CollectionItem(CloudinaryMediaItem)
-    file = CollectionItem(CloudinaryFileItem)
 
 
 class CloudinaryImageCollection(Collection):
