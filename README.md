@@ -842,6 +842,40 @@ class Page(models.Model):
 <img src={{ paper_cloudinary_url(page.image, width=1024, crop='fill') }}>
 ```
 
+## Customize upload folder 
+
+По умолчанию, папки для загружаемых файлов задаются глобально, в настройках:
+```python
+PAPER_UPLOADS = {
+    # ...
+    "FILES_UPLOAD_TO": "files/%Y-%m-%d",
+    "IMAGES_UPLOAD_TO": "images/%Y-%m-%d",
+    "COLLECTION_FILES_UPLOAD_TO": "collections/files/%Y-%m-%d",
+    "COLLECTION_IMAGES_UPLOAD_TO": "collections/images/%Y-%m-%d",
+}
+```
+
+Для того, чтобы загружаемые файлы помещались в отдельную папку для конкретного 
+поля, необходимо переопределить метод `get_file_folder`:
+
+```python
+from django.db import models
+from paper_uploads.models import *
+
+
+class CustomUploadedFile(UploadedFile):
+    class Meta:
+        proxy = True
+
+    def get_file_folder(self) -> str:
+        return "custom-files/%Y-%m-%d"
+
+
+class Page(models.Model):
+    file = FileField(_("file"), to=CustomUploadedFile)
+
+```
+
 ## Settings
 Все настройки указываются в словаре `PAPER_UPLOADS`.
 
