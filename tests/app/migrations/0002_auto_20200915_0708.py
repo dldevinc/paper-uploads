@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=('paper_uploads_cloudinary.cloudinarycollection',),
+            bases=('paper_uploads.collection',),
             managers=[
                 ('default_mgr', django.db.models.manager.Manager()),
             ],
@@ -235,7 +235,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='cloudinarycollectionfieldobject',
             name='full_collection',
-            field=paper_uploads.models.fields.collection.CollectionField(on_delete=django.db.models.deletion.SET_NULL, to='app.CloudinaryCompleteCollection'),
+            field=paper_uploads.models.fields.collection.CollectionField(on_delete=django.db.models.deletion.SET_NULL, to='app.cloudinarycompletecollection'),
         ),
         migrations.AddField(
             model_name='cloudinarycollectionfieldobject',

@@ -38,6 +38,9 @@ class CustomUploadedImage(UploadedImage):
 
 
 class CustomImageItem(ImageItem):
+    class Meta:
+        proxy = True
+
     def get_file_folder(self) -> str:
         return "collections/custom-images/%Y"
 
@@ -60,6 +63,14 @@ class CustomGallery(Collection):
                 "image/*",
             ],
         }
+
+
+class CustomCloudinaryFile(CloudinaryFile):
+    class Meta:
+        proxy = True
+
+    def get_file_folder(self) -> str:
+        return "custom-files/%Y"
 
 
 # ======================================================================================
@@ -207,6 +218,11 @@ class CloudinaryFileExample(models.Model):
 
     file = CloudinaryFileField(_("file"), blank=True)
     file_required = CloudinaryFileField(_("required file"))
+    file_custom = CloudinaryFileField(
+        _("custom file"),
+        to=CustomCloudinaryFile,
+        blank=True,
+    )
 
     file_extensions = CloudinaryFileField(
         _("Extension"),

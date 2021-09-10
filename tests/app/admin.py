@@ -69,7 +69,7 @@ class CloudinaryFileExampleAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             "fields": (
-                "name", "file", "file_required",
+                "name", "file_required", "file", "file_custom"
             ),
         }),
         (_("Validators"), {
