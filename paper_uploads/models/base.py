@@ -512,8 +512,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
 
     def delete_variations(self):
         for vname, vfile in self.variation_files():
-            if vfile is not None:
-                vfile.delete()
+            vfile.delete()
         self._reset_variation_files()
 
     def variation_files(self) -> Iterable[Tuple[str, VariationFile]]:

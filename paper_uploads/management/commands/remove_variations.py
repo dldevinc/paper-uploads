@@ -152,8 +152,8 @@ class Command(BaseCommand):
                 )
 
             for item in collection.get_items(item_type).using(self.database).iterator():
-                for variation_name in variations:
-                    if variation_name in item.get_variations():
+                for variation_name in item.get_variations():
+                    if variation_name in variations:
                         variation_file = item.get_variation_file(variation_name)
                         variation_file.delete()
 
