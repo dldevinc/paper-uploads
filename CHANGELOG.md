@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.6.1](https://github.com/dldevinc/paper-uploads/tree/v0.6.1) - 2021-10-20
+### Features
+- Add an ability to override admin model's views.
+
 ## [0.6.0](https://github.com/dldevinc/paper-uploads/tree/v0.6.0) - 2021-09-10
 ### ⚠ BREAKING CHANGES
 - Removed `CloudinaryCollection` class.
