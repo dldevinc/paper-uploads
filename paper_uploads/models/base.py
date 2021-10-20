@@ -499,11 +499,8 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         self._setup_variation_files()
 
     def _delete_file(self):
-        for vname, vfile in self.variation_files():
-            if vfile is not None:
-                vfile.delete()
+        self.delete_variations()
         super()._delete_file()  # noqa: F821
-        self._reset_variation_files()
 
     def _rename_file(self, new_name: str, **options):
         super()._rename_file(new_name)  # noqa: F821
@@ -512,6 +509,11 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         raise NotImplementedError
+
+    def delete_variations(self):
+        for vname, vfile in self.variation_files():
+            vfile.delete()
+        self._reset_variation_files()
 
     def variation_files(self) -> Iterable[Tuple[str, VariationFile]]:
         if not self._variation_files_cache:

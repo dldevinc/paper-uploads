@@ -6,10 +6,10 @@ from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS, models
 from django.db.models.fields import Field
 
-from paper_uploads.models import CollectionItem
-
+from ... import exceptions
 from ...models.base import VersatileImageResourceMixin
 from ...models.collection import Collection
+from ...models.fields.collection import CollectionItem
 
 
 def is_image(field: Field) -> bool:
@@ -152,7 +152,14 @@ class Command(BaseCommand):
                 )
 
             for item in collection.get_items(item_type).using(self.database).iterator():
-                item.recut(names=variations)
+                try:
+                    item.recut(names=variations)
+                except exceptions.FileNotFoundError:
+                    self.stderr.write(
+                        "Not found source file for `{}` #{}".format(
+                            item.__class__.__name__, item.pk
+                        )
+                    )
 
     def process_field(self, model, fieldname, variations):
         instances = model._base_manager.using(self.database).exclude(
@@ -170,7 +177,16 @@ class Command(BaseCommand):
                     ending="\r",
                 )
             field = getattr(instance, fieldname)
-            field.recut(names=variations)
+
+            try:
+                field.recut(names=variations)
+            except exceptions.FileNotFoundError:
+                self.stderr.write(
+                    "Not found source file for `{}` #{}".format(
+                        model.__name__, instance.pk
+                    )
+                )
+
         self.stdout.write("")
 
     def select_variations_dialog(self, model, field):
