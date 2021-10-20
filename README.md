@@ -403,18 +403,27 @@ class Page(models.Model):
 (элементов коллекции). В частности, с помощью коллекции можно
 создать фото-галерею или список файлов.
 
-Для создания коллекции необходимо создать класс, унаследованный
-от `Collection` и объявить модели элементов, которые могут входить
-в коллекцию.
+Для создания коллекции необходимо объявить класс, унаследованный
+от `Collection` и указать модели элементов, которые могут входить
+в коллекцию. Созданную коллекцию можно подключить к модели с 
+помощью `CollectionField`:
 
 ```python
+from django.db import models
 from paper_uploads.models import *
 
 
+# Collection model
 class PageFiles(Collection):
     svg = CollectionItem(SVGItem)
     image = CollectionItem(ImageItem)
     file = CollectionItem(FileItem)
+
+
+# Target model
+class Page(models.Model):
+    files = CollectionField(PageFiles)
+
 ```
 
 Класс `Collection` обладает особенным свойством: *любой дочерний
@@ -465,25 +474,8 @@ class PageFiles(Collection):
 В приведённом примере, коллекция `PageFiles` может содержать элементы 
 трех классов: `SVGItem`, `ImageItem` и `FileItem`. Порядок подключения 
 элементов коллекции имеет значение: первый класс, чей метод `file_supported()`
-вернет `True`, определит модель загружаемого файла. По этой причине 
+вернет `True`, определит модель загруженного файла. По этой причине 
 `FileItem` должен указываться последним, т.к. он принимает любые файлы.
-
-Созданная коллекция приединяется к моделям с помощью `CollectionField`:
-
-```python
-from django.db import models
-from paper_uploads.models import *
-
-
-class PageFiles(Collection):
-    svg = CollectionItem(SVGItem)
-    image = CollectionItem(ImageItem)
-    file = CollectionItem(FileItem)
-
-
-class Page(models.Model):
-    files = CollectionField(PageFiles)
-```
 
 Вместе с моделью элемента, в поле `CollectionItem` можно указать
 [валидаторы](#Validators):
@@ -505,8 +497,7 @@ class FileCollection(Collection):
 * `ImageItem`. Для хранения изображения с возможностью нарезки
 на вариации.
 * `SVGItem`. Для хранения SVG иконок.
-* `FileItem`. Может хранить любой файл. Из-за этого при
-подключении к коллекции этот тип должен быть подключен последним.
+* `FileItem`. Может хранить любой файл.
 
 Вариации для изображений коллекции можно указать двумя способами:
 1) в атрибуте класса коллекции `VARIATIONS`:
