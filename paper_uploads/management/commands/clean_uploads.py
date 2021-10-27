@@ -21,7 +21,7 @@ class Command(BaseCommand):
     Для того, чтобы сохранить экземпляры, в которые ещё не загрузились файлы,
     эта команда пропускает те экземпляры, которые созданы раньше, чем
     `--min-age` минут назад. Значение параметра `--min-age` по умолчанию 
-    установлено в 30 минут.
+    установлено в 60 минут.
     """
     verbosity = None
     database = DEFAULT_DB_ALIAS
@@ -31,7 +31,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--min-age",
             type=int,
-            default=30,
+            default=60,
             help="Minimum instance age in minutes to look for",
         )
         parser.add_argument(
@@ -52,7 +52,7 @@ class Command(BaseCommand):
     @staticmethod
     def search_fields(related_model):
         """
-        Поиск моделей и полей, ссылающихся на заданную.
+        Поиск полей, ссылающихся на заданную модель related_model.
 
         :type related_model: type
         :rtype: list of (models.Model, list)
@@ -76,6 +76,10 @@ class Command(BaseCommand):
                 yield model, fields
 
     def get_used_ids(self, related_model, exclude_models=None):
+        """
+        Возвращает множество ID экземпляров модели related_model, на которые
+        существуют ссылки.
+        """
         used_ids = set()
         for model, fields in self.search_fields(related_model):
             if exclude_models and issubclass(model, exclude_models):
@@ -83,12 +87,11 @@ class Command(BaseCommand):
 
             with transaction.atomic(self.database):
                 for field in fields:
-                    used_values = (
+                    used_ids.update(
                         model._base_manager.using(self.database)
-                        .exclude(models.Q((field.name, None)))
-                        .values_list(field.name, flat=True)
+                            .exclude(models.Q((field.name, None)))
+                            .values_list(field.name, flat=True)
                     )
-                    used_ids.update(used_values)
         return used_ids
 
     def clean_model(self, queryset, exclude_models=None):
