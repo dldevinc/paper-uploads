@@ -299,17 +299,17 @@ class FileUploader extends EventEmitter {
                                 }
                             }],
                             onInit: function() {
-                                const form = this._body.querySelector("form");
+                                const popup = this;
+                                const form = popup._body.querySelector("form");
                                 form && form.addEventListener("submit", function(event) {
                                     event.preventDefault();
-                                    _this.sendChangeForm(this);
-                                }.bind(this));
+                                    _this.sendChangeForm(popup);
+                                });
 
-                                this.show();
+                                popup.show();
 
                                 // autofocus first field
-                                const popup = this;
-                                $(this._element).on("autofocus.bs.modal", function() {
+                                $(popup._element).on("autofocus.bs.modal", function() {
                                     const firstWidget = popup._body.querySelector(".paper-widget");
                                     const firstField = firstWidget && firstWidget.querySelector("input, select, textarea");
                                     firstField && firstField.focus();
