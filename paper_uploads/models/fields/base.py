@@ -81,9 +81,13 @@ class ResourceFieldBase(models.OneToOneField):
         При удалении модели-владельца поля, удаляем и связанный
         в ним экземпляр ресурса.
         """
-        resource = getattr(kwargs["instance"], self.name)
-        if resource:
-            resource.delete()
+        owner_instance = kwargs["instance"]
+        resource_id = getattr(owner_instance, self.attname)
+        if resource_id:
+            # Удаление через `owner_instance.file.delete()` приведёт к зацикленности
+            # в случае использования `on_delete=CASCADE`. Поэтому используем фильтрацию
+            # по pk.
+            self.related_model.objects.filter(pk=resource_id).delete()
 
 
 class FileResourceFieldBase(ResourceFieldBase):
