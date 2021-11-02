@@ -34,6 +34,10 @@ class Command(BaseCommand):
         )
 
     def check_exists(self):
+        """
+        Проверяет, что экземпляры загруженных файлов (UploadedFile, UploadedImage и т.п.)
+        и элементов коллекций ссылаются на существующие файлы.
+        """
         for model in apps.get_models():
             if not issubclass(model, FileResource):
                 continue
@@ -48,8 +52,10 @@ class Command(BaseCommand):
                     self.stdout.write("\r" + (" " * 80), ending="\r")
 
                 invalid = False
-                message = "Errors were found in '{}.{}' #{instance.pk} ({instance}):".format(
-                    model._meta.app_label, model._meta.model_name, instance=instance
+                message = "Errors were found in '{}.{}' #{instance.pk}:".format(
+                    model._meta.app_label,
+                    model.__name__,
+                    instance=instance
                 )
 
                 if not instance.file_exists():
@@ -64,7 +70,7 @@ class Command(BaseCommand):
                         self.style.SUCCESS(
                             "Check file existence of '{}.{}' ({}/{}) ...\r".format(
                                 model._meta.app_label,
-                                model._meta.model_name,
+                                model.__name__,
                                 index,
                                 total,
                             )
@@ -76,6 +82,10 @@ class Command(BaseCommand):
                 self.stdout.write("")
 
     def check_variations(self):
+        """
+        Проверяет, что для всех вариаций всех экземпляров загруженных изображений
+        существуют соответсвующие файлы.
+        """
         for model in apps.get_models():
             if not issubclass(model, VersatileImageResourceMixin):
                 continue
@@ -87,14 +97,14 @@ class Command(BaseCommand):
             for index, instance in enumerate(
                 model._base_manager.using(self.database).iterator(), start=1
             ):
-                assert isinstance(instance, VersatileImageResourceMixin)
-
                 if self.verbosity >= 2:
                     self.stdout.write("\r" + (" " * 80), ending="\r")
 
                 invalid = False
-                message = "Errors were found in '{}.{}' #{instance.pk} ({instance}):".format(
-                    model._meta.app_label, model._meta.model_name, instance=instance
+                message = "Errors were found in '{}.{}' #{instance.pk}:".format(
+                    model._meta.app_label,
+                    model.__name__,
+                    instance=instance
                 )
 
                 missed_variations = []
@@ -121,7 +131,7 @@ class Command(BaseCommand):
                         self.style.SUCCESS(
                             "Check variation existence of '{}.{}' ({}/{}) ...\r".format(
                                 model._meta.app_label,
-                                model._meta.model_name,
+                                model.__name__,
                                 index,
                                 total,
                             )
@@ -133,6 +143,13 @@ class Command(BaseCommand):
                 self.stdout.write("")
 
     def check_owners(self):
+        """
+        Проверяет, что загруженные объекты (UploadedFile, UploadedImage и т.п.) и коллекции
+        *) имеют значения owner_app_label и owner_model_name, ссылающиеся на существующую модель
+        *) имеют в поле owner_fieldname название поля, объявленного в модели-владельце
+        *) имеют существующий экземпляр модели-владельца, ссылающийся на данный файл / коллекцию,
+           и этот экземпляр единственный
+        """
         for model in apps.get_models():
             if not issubclass(model, BacklinkModelMixin):
                 continue
@@ -147,8 +164,6 @@ class Command(BaseCommand):
             for index, instance in enumerate(
                 model._base_manager.using(self.database).iterator(), start=1
             ):
-                assert isinstance(instance, BacklinkModelMixin)
-
                 if self.verbosity >= 2:
                     self.stdout.write("\r" + (" " * 80), ending="\r")
 
@@ -157,9 +172,9 @@ class Command(BaseCommand):
                     real_model = instance.collection_content_type.model_class()
 
                 invalid = False
-                message = "Errors were found in '{}.{}' #{instance.pk} ({instance}):".format(
+                message = "Errors were found in '{}.{}' #{instance.pk}:".format(
                     real_model._meta.app_label,
-                    real_model._meta.model_name,
+                    real_model.__name__,
                     instance=instance,
                 )
 
@@ -167,7 +182,8 @@ class Command(BaseCommand):
                 if owner_model is None:
                     invalid = True
                     message += "\n  Owner model '{}.{}' doesn't exists".format(
-                        instance.owner_app_label, instance.owner_model_name,
+                        instance.owner_app_label,
+                        instance.owner_model_name,
                     )
                 else:
                     owner_field = instance.get_owner_field()
@@ -186,8 +202,12 @@ class Command(BaseCommand):
                         except owner_model.DoesNotExist:
                             invalid = True
                             message += "\n  Owner instance '{}.{}' not found".format(
-                                instance.owner_app_label, instance.owner_model_name,
+                                instance.owner_app_label,
+                                instance.owner_model_name,
                             )
+                        except owner_model.MultipleObjectsReturned:
+                            invalid = True
+                            message += "\n  Multiple owners"
 
                 if invalid:
                     self.stdout.write(self.style.ERROR(message))
@@ -197,7 +217,7 @@ class Command(BaseCommand):
                         self.style.SUCCESS(
                             "Check owner of '{}.{}' ({}/{}) ...\r".format(
                                 model._meta.app_label,
-                                model._meta.model_name,
+                                model.__name__,
                                 index,
                                 total,
                             )
@@ -209,18 +229,24 @@ class Command(BaseCommand):
                 self.stdout.write("")
 
     def check_item_types(self):
+        """
+        Проверяет, что элементы коллекций
+        *) имеют значение item_type, которое присутствует в коллекции
+        *) имеют класс, соответствующий модели, указанной для данного item_type
+        """
         total = CollectionItemBase.objects.using(self.database).count()
         for index, item in enumerate(
-            CollectionItemBase.objects.using(self.database).iterator(), start=1
+            CollectionItemBase.objects.using(self.database).iterator(),
+            start=1
         ):
-            assert isinstance(item, CollectionItemBase)
-
             if self.verbosity >= 2:
                 self.stdout.write("\r" + (" " * 80), ending="\r")
 
             invalid = False
-            message = "Errors were found in '{}.{}' #{item.pk} ({item}):".format(
-                item._meta.app_label, item._meta.model_name, item=item
+            message = "Errors were found in '{}.{}' #{item.pk}:".format(
+                item._meta.app_label,
+                item.__name__,
+                item=item
             )
 
             collection_cls = item.get_collection_class()
@@ -229,18 +255,19 @@ class Command(BaseCommand):
                 message += "\n  Item type '{}' is not defined in collection '{}.{}' #{}".format(
                     item.item_type,
                     collection_cls._meta.app_label,
-                    collection_cls._meta.model_name,
+                    collection_cls.__name__,
                     item.collection_id,
                 )
             else:
                 item_model = collection_cls.item_types[item.item_type].model
                 if item_model is not type(item):
                     invalid = True
-                    message += "\n  Item class '{}.{}' is different from the '{}.{}'".format(
+                    message += "\n  Item class '{}.{}' differs from '{}.{}' defined for '{}' item type".format(
                         item._meta.app_label,
-                        item._meta.model_name,
-                        collection_cls._meta.app_label,
-                        collection_cls._meta.model_name,
+                        item.__name__,
+                        item_model._meta.app_label,
+                        item_model.__name__,
+                        item.item_type
                     )
 
             if invalid:
