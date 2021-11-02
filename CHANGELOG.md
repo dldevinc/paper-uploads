@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.6.2](https://github.com/dldevinc/paper-uploads/tree/v0.6.2) - 2021-11-01
+## [0.6.2](https://github.com/dldevinc/paper-uploads/tree/v0.6.2) - 2021-11-02
 ### Features
 - New `remove_empty_collections` management command.
 ### Bug Fixes
