@@ -158,20 +158,6 @@ PAPER_UPLOADS = {
         'webp': dict(
             quality=75,
         )
-    },
-    'POSTPROCESS': {
-        'jpeg': {
-            'command': 'jpeg-recompress',
-            'arguments': '--strip --quality medium "{file}" "{file}"',
-        },
-        'png': {
-            'command': 'pngquant',
-            'arguments': '--force --skip-if-larger --output "{file}" "{file}"'
-        },
-        'svg': {
-            'command': 'svgo',
-            'arguments': '--precision=4 --disable=convertPathData "{file}"',
-        },
     }
 }
 
