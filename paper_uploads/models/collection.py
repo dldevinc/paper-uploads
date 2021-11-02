@@ -9,10 +9,10 @@ from django.contrib.staticfiles.finders import find
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core import checks
 from django.core.files import File
-from django.db import models, transaction
-from django.db.models import functions
+from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
+from django.db.models.functions import Coalesce
 from django.template import loader
 from django.utils.module_loading import import_string
 from django.utils.timezone import now
@@ -295,16 +295,24 @@ class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
             )
         return errors
 
+    def get_order(self):
+        max_order = CollectionItemBase.objects.filter(
+            collection_content_type_id=self.collection_content_type_id,
+            collection_id=self.collection_id,
+        ).aggregate(
+            max_order=models.Max(Coalesce("order", 0))
+        )["max_order"]
+
+        return 0 if max_order is None else max_order + 1
+
     def save(self, *args, **kwargs):
         if not self.pk:
-            # попытка решить проблему того, что при создании коллекции,
+            # Попытка решить проблему того, что при создании коллекции,
             # элементы отсортированы в порядке загрузки, а не в порядке
-            # добавления. Код ниже не решает проблему, но уменьшает её влияние.
-            if self.collection.items.filter(order=self.order).exists():
-                max_order = self.collection.items.aggregate(
-                    order=functions.Coalesce(models.Max("order"), 0)
-                )["order"]
-                self.order = max_order + 1
+            # добавления. Код ниже не решает проблему полностью,
+            # но уменьшает её влияние.
+            if self.order is None or self.collection.items.filter(order=self.order).exists():
+                self.order = self.get_order()
         super().save(*args, **kwargs)
 
     def as_dict(self) -> Dict[str, Any]:
