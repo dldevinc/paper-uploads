@@ -515,10 +515,10 @@ class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
         Превью для админки режутся сразу, а остальное — потом.
         """
         preview_variations = tuple(self.PREVIEW_VARIATIONS.keys())
-        self._recut_sync(names=preview_variations)
+        self.recut(names=preview_variations)
 
-        names = tuple(set(names).difference(preview_variations))
-        super().recut_async(names)
+        other_variations = tuple(set(names).difference(preview_variations))
+        super().recut_async(other_variations)
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         """
