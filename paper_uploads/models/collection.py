@@ -137,8 +137,15 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         verbose_name_plural = _("collections")
 
     def delete(self, using=None, keep_parents=False):
-        # удаляем элементы вручную из-за рекурсии (см. clean_uploads.py, строка 145)
-        self.items.all().delete()
+        # Удаляем элементы вручную из-за рекурсии (см. clean_uploads.py, строка 145)
+        # Удалить элементы с помощью `.all().delete()` нельзя из-за того, что в
+        # файле (django/db/models/deletion.py:248) указано следующее:
+        #   model = new_objs[0].__class__
+        # Это приводит к тому, что все полиморфные модели удаляются через модель
+        # первой модели в спсике.
+        for item_type in self.item_types:
+            self.get_items(item_type).delete()
+
         super().delete(using=using, keep_parents=keep_parents)
 
     @classmethod
