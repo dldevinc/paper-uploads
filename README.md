@@ -50,6 +50,7 @@
 - [Collections](#Collections)
   - [Collection items](#Collection-items)
   - [ImageCollection](#ImageCollection)
+  - [Custom collection item classes](#Custom-collection-item-classes)
 - [Programmatically upload files](#Programmatically-upload-files)
 - [Management Commands](#Management-Commands)
 - [Validators](#Validators)
@@ -560,6 +561,30 @@ class PageGallery(ImageCollection):
             size=(640, 0),
         )
     )
+```
+
+### Custom collection item classes
+
+При создании пользовательских классов элементов коллекций не рекомендуется
+использовать прямое наследование от существующих моделей `FileItem`, `ImageItem` и т.п.
+Это содзаёт сложные One2One-связи между коллекциями и элементами коллекций и может 
+привести к `RecursionError` при удалении коллекций или их элементов.
+
+Для того, чтобы избежать потенциальных проблем, в качестве базовых классов следует 
+использовать абстрактные классы. Такие как `FileItemBase`, `ImageItemBase` или 
+более общие `CollectionItemBase` и `CollectionFileItemBase`.
+
+```python
+from django.db import models
+from paper_uploads.models import *
+
+
+class CustomImageItem(ImageItemBase):
+    caption = models.TextField(_("caption"), blank=True)
+
+
+class CustomCollection(Collection):
+    image = CollectionItem(CustomImageItem)
 ```
 
 ## Programmatically upload files

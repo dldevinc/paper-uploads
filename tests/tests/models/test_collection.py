@@ -10,6 +10,8 @@ from django.template.loader import render_to_string
 from app.models import (
     ChildFileCollection,
     CompleteCollection,
+    CustomGallery,
+    CustomImageItem,
     FileCollection,
     IsolatedFileCollection,
     PhotoCollection,
@@ -256,30 +258,26 @@ class TestCollection:
             assert next(storage.image_collection.detect_item_type(file)) == 'image'
 
 
+@pytest.mark.django_db
 class TestDeleteCollection:
-    """
-    Тестирование удаления галереи, включающей элементы с вариациями.
-    """
-    @staticmethod
-    def init_class(storage):
-        storage.collection = CompleteCollection.objects.create()
+    def _create_collection(self):
+        collection = CustomGallery.objects.create()
 
-        file_item = FileItem()
-        file_item.attach_to(storage.collection)
-        with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            file_item.attach_file(fp, name='file_c3.jpg')
-        file_item.save()
-
-        image_item = ImageItem()
-        image_item.attach_to(storage.collection)
+        image_item = CustomImageItem()
+        image_item.attach_to(collection)
         with open(NASA_FILEPATH, 'rb') as fp:
-            image_item.attach_file(fp, name='image_c3.jpg')
+            image_item.attach_file(fp, name='image_del.jpg')
         image_item.save()
 
-        yield
+        return collection
 
-    def test_deletion(self, storage):
-        storage.collection.delete()
+    def test_explicit_deletion(self):
+        collection = self._create_collection()
+        collection.delete()
+
+    def test_sql_deletion(self):
+        collection = self._create_collection()
+        CustomGallery.objects.filter(pk=collection.pk).delete()
 
 
 class CollectionItemMixin:

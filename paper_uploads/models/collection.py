@@ -40,6 +40,9 @@ __all__ = [
     "CollectionItemBase",
     "CollectionBase",
     "FilePreviewMixin",
+    "FileItemBase",
+    "SVGItemBase",
+    "ImageItemBase",
     "FileItem",
     "SVGItem",
     "ImageItem",
@@ -417,7 +420,7 @@ class FilePreviewMixin(models.Model):
 # ======================================================================================
 
 
-class FileItem(FilePreviewMixin, CollectionFileItemBase):
+class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
     change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
     template_name = "paper_uploads/items/file.html"
     preview_template_name = "paper_uploads/items/preview/file.html"
@@ -431,6 +434,7 @@ class FileItem(FilePreviewMixin, CollectionFileItemBase):
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
     class Meta(CollectionItemBase.Meta):
+        abstract = True
         verbose_name = _("File item")
         verbose_name_plural = _("File items")
 
@@ -456,7 +460,7 @@ class FileItem(FilePreviewMixin, CollectionFileItemBase):
         return True
 
 
-class SVGItem(CollectionFileItemBase):
+class SVGItemBase(CollectionFileItemBase):
     change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
     template_name = "paper_uploads/items/svg.html"
     preview_template_name = "paper_uploads/items/preview/svg.html"
@@ -470,6 +474,7 @@ class SVGItem(CollectionFileItemBase):
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
     class Meta(CollectionItemBase.Meta):
+        abstract = True
         verbose_name = _("SVG item")
         verbose_name_plural = _("SVG items")
 
@@ -496,7 +501,7 @@ class SVGItem(CollectionFileItemBase):
         return ext.lower() == ".svg"
 
 
-class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
+class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
     change_form_class = "paper_uploads.forms.dialogs.collection.ImageItemDialog"
     template_name = "paper_uploads/items/image.html"
@@ -510,6 +515,7 @@ class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
     )
 
     class Meta(CollectionItemBase.Meta):
+        abstract = True
         verbose_name = _("Image item")
         verbose_name_plural = _("Image items")
 
@@ -568,6 +574,18 @@ class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
         variations = (variations or {}).copy()
         variations.update(cls.PREVIEW_VARIATIONS)
         return variations
+
+
+class FileItem(FileItemBase):
+    pass
+
+
+class SVGItem(SVGItemBase):
+    pass
+
+
+class ImageItem(ImageItemBase):
+    pass
 
 
 # ==============================================================================

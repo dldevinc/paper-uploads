@@ -1,8 +1,11 @@
 from .collection import (
+    CloudinaryFileItemBase,
+    CloudinaryImageItemBase,
+    CloudinaryMediaItemBase,
     CloudinaryFileItem,
-    CloudinaryImageCollection,
     CloudinaryImageItem,
     CloudinaryMediaItem,
+    CloudinaryImageCollection,
 )
 from .fields import CloudinaryFileField, CloudinaryImageField, CloudinaryMediaField
 from .file import CloudinaryFile
@@ -16,8 +19,11 @@ __all__ = [
     "CloudinaryFileField",
     "CloudinaryImageField",
     "CloudinaryMediaField",
-    "CloudinaryImageCollection",
+    "CloudinaryFileItemBase",
+    "CloudinaryMediaItemBase",
+    "CloudinaryImageItemBase",
     "CloudinaryFileItem",
     "CloudinaryImageItem",
     "CloudinaryMediaItem",
+    "CloudinaryImageCollection",
 ]

@@ -29,17 +29,17 @@ Class hierarchy:
  │    └────►  CollectionFileItemBase  │
  │         └┬─────────────────────────┘
  │          │
- │          │   ┌────────────┐
- │          ├───►  FileItem  │
- │          │   └────────────┘
+ │          │   ┌────────────────┐    ┌────────────┐
+ │          ├───►  FileItemBase  ├───►  FileItem   │
+ │          │   └────────────────┘    └────────────┘
  │          │
- │          │   ┌───────────┐
- │          ├───►  SVGItem  │
- │          │   └───────────┘
+ │          │   ┌───────────────┐    ┌───────────┐
+ │          ├───►  SVGItemBase  ├───►  SVGItem   │
+ │          │   └───────────────┘    └───────────┘
  │          │
- │          │   ┌─────────────┐
- │          └───►  ImageItem  │
- │              └─────────────┘
+ │          │   ┌─────────────────┐    ┌─────────────┐
+ │          └───►  ImageItemBase  ├───►  ImageItem   │
+ │             └──────────────────┘    └─────────────┘
  │
  │   ┌──────────────────────────┐
  └───►  CloudinaryFileResource  │
@@ -61,24 +61,27 @@ Class hierarchy:
       └────►  CollectionCloudinaryFileItemBase  │
            └┬───────────────────────────────────┘
             │
-            │   ┌──────────────────────┐
-            ├───►  CloudinaryFileItem  │
-            │   └──────────────────────┘
+            │   ┌──────────────────────────┐   ┌──────────────────────┐
+            ├───►  CloudinaryFileItemBase  ├───►  CloudinaryFileItem  │
+            │   └──────────────────────────┘   └──────────────────────┘
             │
-            │   ┌───────────────────────┐
-            ├───►  CloudinaryImageItem  │
-            │   └───────────────────────┘
+            │   ┌───────────────────────────┐   ┌───────────────────────┐
+            ├───►  CloudinaryImageItemBase  ├───►  CloudinaryImageItem  │
+            │   └───────────────────────────┘   └───────────────────────┘
             │
-            │   ┌───────────────────────┐
-            └───►  CloudinaryMediaItem  │
-                └───────────────────────┘
+            │   ┌───────────────────────────┐   ┌───────────────────────┐
+            └───►  CloudinaryMediaItemBase  ├───►  CloudinaryMediaItem  │
+                └───────────────────────────┘   └───────────────────────┘
 """
 
 from .collection import (
     Collection,
     CollectionItemBase,
-    FileItem,
     ImageCollection,
+    FileItemBase,
+    ImageItemBase,
+    SVGItemBase,
+    FileItem,
     ImageItem,
     SVGItem,
 )
@@ -96,6 +99,9 @@ __all__ = [
     "CollectionItem",
     "Collection",
     "ImageCollection",
+    "FileItemBase",
+    "SVGItemBase",
+    "ImageItemBase",
     "FileItem",
     "SVGItem",
     "ImageItem",

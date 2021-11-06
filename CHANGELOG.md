@@ -1,6 +1,8 @@
 # Change Log
 
-## [0.6.3](https://github.com/dldevinc/paper-uploads/tree/v0.6.3) - 2021-11-03
+## [0.6.3](https://github.com/dldevinc/paper-uploads/tree/v0.6.3) - 2021-11-06
+### Features
+- Add abstract base classes for collection items. 
 ### Bug Fixes
 - Fixed image recut with `python-rq`.
 - Fixed `RecursionError` when deleting a collection.
