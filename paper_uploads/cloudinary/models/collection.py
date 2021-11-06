@@ -16,7 +16,6 @@ __all__ = [
     "CloudinaryFileItem",
     "CloudinaryMediaItem",
     "CloudinaryImageItem",
-    "CloudinaryCollection",
     "CloudinaryImageCollection",
 ]
 
