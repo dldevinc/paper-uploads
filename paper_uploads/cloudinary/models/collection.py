@@ -13,10 +13,12 @@ from ...models.fields import CollectionItem
 from .base import CloudinaryFieldFile, CloudinaryFileResource
 
 __all__ = [
+    "CloudinaryFileItemBase",
+    "CloudinaryMediaItemBase",
+    "CloudinaryImageItemBase",
     "CloudinaryFileItem",
     "CloudinaryMediaItem",
     "CloudinaryImageItem",
-    "CloudinaryCollection",
     "CloudinaryImageCollection",
 ]
 
@@ -38,7 +40,7 @@ class CollectionCloudinaryFileItemBase(CollectionItemBase, CloudinaryFileResourc
         raise NotImplementedError
 
 
-class CloudinaryFileItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
+class CloudinaryFileItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase):
     change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
     template_name = "paper_uploads/items/file.html"
     preview_template_name = "paper_uploads/items/preview/file.html"
@@ -51,6 +53,7 @@ class CloudinaryFileItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
     class Meta(CollectionCloudinaryFileItemBase.Meta):
+        abstract = True
         verbose_name = _("File item")
         verbose_name_plural = _("File items")
 
@@ -78,7 +81,7 @@ class CloudinaryFileItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
         return True
 
 
-class CloudinaryMediaItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
+class CloudinaryMediaItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase):
     change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
     template_name = "paper_uploads/items/file.html"
     preview_template_name = "paper_uploads/items/preview/file.html"
@@ -91,6 +94,7 @@ class CloudinaryMediaItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
     class Meta(CollectionCloudinaryFileItemBase.Meta):
+        abstract = True
         verbose_name = _("Media item")
         verbose_name_plural = _("Media items")
 
@@ -121,7 +125,7 @@ class CloudinaryMediaItem(FilePreviewMixin, CollectionCloudinaryFileItemBase):
         return basetype in {"video", "audio"}
 
 
-class CloudinaryImageItem(ImageFileResourceMixin, CollectionCloudinaryFileItemBase):
+class CloudinaryImageItemBase(ImageFileResourceMixin, CollectionCloudinaryFileItemBase):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
     change_form_class = "paper_uploads.forms.dialogs.collection.ImageItemDialog"
     template_name = "paper_uploads_cloudinary/items/image.html"
@@ -134,6 +138,7 @@ class CloudinaryImageItem(ImageFileResourceMixin, CollectionCloudinaryFileItemBa
     )
 
     class Meta(CollectionCloudinaryFileItemBase.Meta):
+        abstract = True
         verbose_name = _("Image item")
         verbose_name_plural = _("Image items")
 
@@ -157,6 +162,18 @@ class CloudinaryImageItem(ImageFileResourceMixin, CollectionCloudinaryFileItemBa
         file.seek(0)  # correct file position after mimetype detection
         basetype, subtype = mimetype.split("/", 1)
         return basetype == "image"
+
+
+class CloudinaryFileItem(CloudinaryFileItemBase):
+    pass
+
+
+class CloudinaryMediaItem(CloudinaryMediaItemBase):
+    pass
+
+
+class CloudinaryImageItem(CloudinaryImageItemBase):
+    pass
 
 
 # ==============================================================================

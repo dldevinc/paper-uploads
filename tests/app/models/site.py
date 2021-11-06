@@ -10,6 +10,9 @@ from paper_uploads.validators import *
 from .base import CompleteCollection, FileCollection, PhotoCollection
 
 __all__ = [
+    "CustomImageItem",
+    "CustomGallery",
+
     "FileFieldObject",
     "ImageFieldObject",
     "CollectionFieldObject",
@@ -37,12 +40,16 @@ class CustomUploadedImage(UploadedImage):
         return "custom-images/%Y"
 
 
-class CustomImageItem(ImageItem):
+class CustomProxyImageItem(ImageItem):
     class Meta:
         proxy = True
 
     def get_file_folder(self) -> str:
         return "collections/custom-images/%Y"
+
+
+class CustomImageItem(ImageItemBase):
+    caption = models.TextField(_("caption"), blank=True)
 
 
 class CustomGallery(Collection):
@@ -53,7 +60,8 @@ class CustomGallery(Collection):
         )
     )
 
-    image = CollectionItem(CustomImageItem)
+    image = CollectionItem(CustomProxyImageItem)
+    custom_image = CollectionItem(CustomImageItem)
 
     @classmethod
     def get_configuration(cls) -> Dict[str, Any]:

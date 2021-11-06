@@ -9,10 +9,10 @@ from django.contrib.staticfiles.finders import find
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core import checks
 from django.core.files import File
-from django.db import models, transaction
-from django.db.models import functions
+from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
+from django.db.models.functions import Coalesce
 from django.template import loader
 from django.utils.module_loading import import_string
 from django.utils.timezone import now
@@ -40,6 +40,9 @@ __all__ = [
     "CollectionItemBase",
     "CollectionBase",
     "FilePreviewMixin",
+    "FileItemBase",
+    "SVGItemBase",
+    "ImageItemBase",
     "FileItem",
     "SVGItem",
     "ImageItem",
@@ -137,8 +140,15 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         verbose_name_plural = _("collections")
 
     def delete(self, using=None, keep_parents=False):
-        # удаляем элементы вручную из-за рекурсии (см. clean_uploads.py, строка 145)
-        self.items.all().delete()
+        # Удаляем элементы вручную из-за рекурсии (см. clean_uploads.py, строка 145)
+        # Удалить элементы с помощью `.all().delete()` нельзя из-за того, что в
+        # файле (django/db/models/deletion.py:248) указано следующее:
+        #   model = new_objs[0].__class__
+        # Это приводит к тому, что все полиморфные модели удаляются через модель
+        # первой модели в спсике.
+        for item_type in self.item_types:
+            self.get_items(item_type).delete()
+
         super().delete(using=using, keep_parents=keep_parents)
 
     @classmethod
@@ -295,16 +305,24 @@ class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
             )
         return errors
 
+    def get_order(self):
+        max_order = CollectionItemBase.objects.filter(
+            collection_content_type_id=self.collection_content_type_id,
+            collection_id=self.collection_id,
+        ).aggregate(
+            max_order=models.Max(Coalesce("order", 0))
+        )["max_order"]
+
+        return 0 if max_order is None else max_order + 1
+
     def save(self, *args, **kwargs):
         if not self.pk:
-            # попытка решить проблему того, что при создании коллекции,
+            # Попытка решить проблему того, что при создании коллекции,
             # элементы отсортированы в порядке загрузки, а не в порядке
-            # добавления. Код ниже не решает проблему, но уменьшает её влияние.
-            if self.collection.items.filter(order=self.order).exists():
-                max_order = self.collection.items.aggregate(
-                    order=functions.Coalesce(models.Max("order"), 0)
-                )["order"]
-                self.order = max_order + 1
+            # добавления. Код ниже не решает проблему полностью,
+            # но уменьшает её влияние.
+            if self.order is None or self.collection.items.filter(order=self.order).exists():
+                self.order = self.get_order()
         super().save(*args, **kwargs)
 
     def as_dict(self) -> Dict[str, Any]:
@@ -402,7 +420,7 @@ class FilePreviewMixin(models.Model):
 # ======================================================================================
 
 
-class FileItem(FilePreviewMixin, CollectionFileItemBase):
+class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
     change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
     template_name = "paper_uploads/items/file.html"
     preview_template_name = "paper_uploads/items/preview/file.html"
@@ -416,6 +434,7 @@ class FileItem(FilePreviewMixin, CollectionFileItemBase):
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
     class Meta(CollectionItemBase.Meta):
+        abstract = True
         verbose_name = _("File item")
         verbose_name_plural = _("File items")
 
@@ -441,7 +460,7 @@ class FileItem(FilePreviewMixin, CollectionFileItemBase):
         return True
 
 
-class SVGItem(CollectionFileItemBase):
+class SVGItemBase(CollectionFileItemBase):
     change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
     template_name = "paper_uploads/items/svg.html"
     preview_template_name = "paper_uploads/items/preview/svg.html"
@@ -455,6 +474,7 @@ class SVGItem(CollectionFileItemBase):
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
     class Meta(CollectionItemBase.Meta):
+        abstract = True
         verbose_name = _("SVG item")
         verbose_name_plural = _("SVG items")
 
@@ -481,7 +501,7 @@ class SVGItem(CollectionFileItemBase):
         return ext.lower() == ".svg"
 
 
-class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
+class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
     change_form_class = "paper_uploads.forms.dialogs.collection.ImageItemDialog"
     template_name = "paper_uploads/items/image.html"
@@ -495,6 +515,7 @@ class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
     )
 
     class Meta(CollectionItemBase.Meta):
+        abstract = True
         verbose_name = _("Image item")
         verbose_name_plural = _("Image items")
 
@@ -515,10 +536,10 @@ class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
         Превью для админки режутся сразу, а остальное — потом.
         """
         preview_variations = tuple(self.PREVIEW_VARIATIONS.keys())
-        self._recut_sync(names=preview_variations)
+        self.recut(names=preview_variations)
 
-        names = tuple(set(names).difference(preview_variations))
-        super().recut_async(names)
+        other_variations = tuple(set(names).difference(preview_variations))
+        super().recut_async(other_variations)
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         """
@@ -553,6 +574,18 @@ class ImageItem(VersatileImageResourceMixin, CollectionFileItemBase):
         variations = (variations or {}).copy()
         variations.update(cls.PREVIEW_VARIATIONS)
         return variations
+
+
+class FileItem(FileItemBase):
+    pass
+
+
+class SVGItem(SVGItemBase):
+    pass
+
+
+class ImageItem(ImageItemBase):
+    pass
 
 
 # ==============================================================================

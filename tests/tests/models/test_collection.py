@@ -10,6 +10,8 @@ from django.template.loader import render_to_string
 from app.models import (
     ChildFileCollection,
     CompleteCollection,
+    CustomGallery,
+    CustomImageItem,
     FileCollection,
     IsolatedFileCollection,
     PhotoCollection,
@@ -143,6 +145,10 @@ class TestCollection:
         order_values = storage.global_collection.items.values_list('order', flat=True)
         assert sorted(order_values) == [0, 1, 2]
 
+    def test_get_order(self, storage):
+        image_item = storage.global_collection.get_items('image').first()
+        assert image_item.get_order() == 3
+
     def test_get_items(self, storage):
         assert storage.file_collection.get_items('file').count() == 1
         assert storage.global_collection.get_items('file').count() == 1
@@ -252,6 +258,28 @@ class TestCollection:
             assert next(storage.image_collection.detect_item_type(file)) == 'image'
 
 
+@pytest.mark.django_db
+class TestDeleteCollection:
+    def _create_collection(self):
+        collection = CustomGallery.objects.create()
+
+        image_item = CustomImageItem()
+        image_item.attach_to(collection)
+        with open(NASA_FILEPATH, 'rb') as fp:
+            image_item.attach_file(fp, name='image_del.jpg')
+        image_item.save()
+
+        return collection
+
+    def test_explicit_deletion(self):
+        collection = self._create_collection()
+        collection.delete()
+
+    def test_sql_deletion(self):
+        collection = self._create_collection()
+        CustomGallery.objects.filter(pk=collection.pk).delete()
+
+
 class CollectionItemMixin:
     owner_app_label = ''
     owner_model_name = ''
@@ -281,6 +309,9 @@ class CollectionItemMixin:
 
     def test_collection_id(self, storage):
         assert storage.resource.collection_id == storage.collection.pk
+
+    def test_get_order(self, storage):
+        assert storage.resource.get_order() == 1
 
     def test_order(self, storage):
         assert storage.resource.order == 0
