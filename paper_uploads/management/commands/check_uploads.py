@@ -52,7 +52,7 @@ class Command(BaseCommand):
                     self.stdout.write("\r" + (" " * 80), ending="\r")
 
                 invalid = False
-                message = "Errors were found in '{}.{}' #{instance.pk}:".format(
+                message = "The following errors were found in '{}.{}' #{instance.pk}:".format(
                     model._meta.app_label,
                     model.__name__,
                     instance=instance
@@ -101,7 +101,7 @@ class Command(BaseCommand):
                     self.stdout.write("\r" + (" " * 80), ending="\r")
 
                 invalid = False
-                message = "Errors were found in '{}.{}' #{instance.pk}:".format(
+                message = "The following errors were found in '{}.{}' #{instance.pk}:".format(
                     model._meta.app_label,
                     model.__name__,
                     instance=instance
@@ -172,7 +172,7 @@ class Command(BaseCommand):
                     real_model = instance.collection_content_type.model_class()
 
                 invalid = False
-                message = "Errors were found in '{}.{}' #{instance.pk}:".format(
+                message = "The following errors were found in '{}.{}' #{instance.pk}:".format(
                     real_model._meta.app_label,
                     real_model.__name__,
                     instance=instance,
@@ -243,9 +243,9 @@ class Command(BaseCommand):
                 self.stdout.write("\r" + (" " * 80), ending="\r")
 
             invalid = False
-            message = "Errors were found in '{}.{}' #{item.pk}:".format(
+            message = "The following errors were found in '{}.{}' #{item.pk}:".format(
                 item._meta.app_label,
-                item.__name__,
+                type(item).__name__,
                 item=item
             )
 
