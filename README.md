@@ -565,22 +565,38 @@ class PageGallery(ImageCollection):
 
 ### Custom collection item classes
 
-При создании пользовательских классов элементов коллекций не рекомендуется
-использовать прямое наследование от существующих моделей `FileItem`, `ImageItem` и т.п.
-Это содзаёт сложные One2One-связи между коллекциями и элементами коллекций и может 
-привести к `RecursionError` при удалении коллекций или их элементов.
+В простейших случаях можно использовать прокси-модели на основе существующих моделей. 
+Например, для того, чтобы хранить файлы определенной галереи в отдельной папке, 
+можно создать проски модель к `ImageItem`:
 
-Для того, чтобы избежать потенциальных проблем, в качестве базовых классов следует 
-использовать абстрактные классы. Такие как `FileItemBase`, `ImageItemBase` или 
-более общие `CollectionItemBase` и `CollectionFileItemBase`.
+```python
+from paper_uploads.models import *
+
+
+class ProxyImageItem(ImageItem):
+    class Meta:
+        proxy = True
+        
+    def get_file_folder(self) -> str:
+        return "custom-images/%Y"
+
+
+class CustomCollection(Collection):
+    image = CollectionItem(ProxyImageItem)
+```
+
+Для более сложных случаев (когда требуется отдельная таблица в БД) необходимо 
+использовать прямое наследование. Но уже не от конкретных моделей (`FileItem`, 
+`ImageItem` и т.п.), а от абстрактных. Таких как `FileItemBase`, `ImageItemBase` 
+или более общих `CollectionItemBase` и `CollectionFileItemBase`.
 
 ```python
 from django.db import models
 from paper_uploads.models import *
 
 
-class CustomImageItem(ImageItemBase):
-    caption = models.TextField(_("caption"), blank=True)
+class CustomImageItem(ImageItemBase):  # не ImageItem!
+    caption = models.TextField("caption", blank=True)
 
 
 class CustomCollection(Collection):

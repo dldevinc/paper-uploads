@@ -13,6 +13,7 @@ from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
 from django.db.models.functions import Coalesce
+from django.db.models.utils import make_model_tuple
 from django.template import loader
 from django.utils.module_loading import import_string
 from django.utils.timezone import now
@@ -215,7 +216,42 @@ class Collection(CollectionBase):
 
 
 class CollectionItemMetaBase(PolymorphicModelBase, ResourceBaseMeta):
-    pass
+    """
+    Приём, позволяющий переопределить OneToOne-связь между моделями при наследовании
+    от абстрактной модели.
+
+    По умолчанию, при наследовании от абстрактой модели, унаследованной от конкретной
+    (concrete), попытка переопределния OneToOne-связи не замещает поле по умолчанию,
+    а добавляет второе.
+
+    Ссылка:
+    https://docs.djangoproject.com/en/3.2/topics/db/models/#specifying-the-parent-link-field
+    """
+    def __new__(cls, name, bases, attrs, **kwargs):
+        parents = [b for b in bases if isinstance(b, ModelBase)]
+
+        parent_links = {}
+        for base in reversed(parents):
+            # Conceptually equivalent to `if base is Model`.
+            if not hasattr(base, '_meta'):
+                continue
+
+            # Locate OneToOneField instances.
+            for field in base._meta.local_fields:
+                if isinstance(field, models.OneToOneField) and field.remote_field.parent_link:
+                    key = make_model_tuple(field.remote_field.model)
+                    parent_links.setdefault(key, []).append(field)
+
+        for fieldname, field in list(attrs.items()):
+            if isinstance(field, models.OneToOneField) and field.remote_field.parent_link:
+                key = make_model_tuple(field.remote_field.model)
+                if key in parent_links:
+                    inherited_field = parent_links[key].pop()
+                    if fieldname != inherited_field.name:
+                        # force delete inherited field
+                        attrs[inherited_field.name] = None
+
+        return super().__new__(cls, name, bases, attrs)
 
 
 class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
