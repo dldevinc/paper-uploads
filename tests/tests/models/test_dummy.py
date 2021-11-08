@@ -8,6 +8,7 @@ from django.core.files import File
 from django.db.models.fields import Field
 
 from app.models.dummy import *
+from app.models.base import FileExample
 from paper_uploads import signals
 from paper_uploads.files import VariationFile
 from paper_uploads.variations import PaperVariation
@@ -84,6 +85,16 @@ class TestInvalidBacklinkModelMixin:
         )
         assert obj.get_owner_model() is DummyFileFieldResource
         assert obj.get_owner_field() is None
+
+    def test_set_owner_from(self):
+        obj = DummyResource()
+        owner_field = FileExample._meta.get_field("file")
+        obj.set_owner_from(owner_field)
+        assert obj.owner_app_label == "app"
+        assert obj.owner_model_name == "fileexample"
+        assert obj.owner_fieldname == "file"
+        assert obj.get_owner_model() is FileExample
+        assert obj.get_owner_field() is owner_field
 
 
 class TestResource(BacklinkModelMixin):

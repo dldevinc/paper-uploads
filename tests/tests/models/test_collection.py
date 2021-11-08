@@ -9,6 +9,7 @@ from django.template.loader import render_to_string
 
 from app.models import (
     ChildFileCollection,
+    CollectionFieldObject,
     CompleteCollection,
     FileCollection,
     IsolatedFileCollection,
@@ -255,6 +256,15 @@ class TestCollection:
         with open(MEDITATION_FILEPATH, 'rb') as fp:
             file = File(fp)
             assert next(storage.image_collection.detect_item_type(file)) == 'image'
+
+    def test_set_owner_from(self, storage):
+        owner_field = CollectionFieldObject._meta.get_field("file_collection")
+        storage.file_collection.set_owner_from(owner_field)
+        assert storage.file_collection.owner_app_label == "app"
+        assert storage.file_collection.owner_model_name == "collectionfieldobject"
+        assert storage.file_collection.owner_fieldname == "file_collection"
+        assert storage.file_collection.get_owner_model() is CollectionFieldObject
+        assert storage.file_collection.get_owner_field() is owner_field
 
 
 @pytest.mark.django_db

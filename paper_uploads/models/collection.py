@@ -159,6 +159,10 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
             errors.extend(field.check(**kwargs))
         return errors
 
+    def set_owner_from(self, field: models.Field):
+        self.owner_app_label, self.owner_model_name = make_model_tuple(field.model)
+        self.owner_fieldname = field.name
+
     def get_items(self, item_type: str = None) -> 'models.QuerySet[CollectionItemBase]':
         # TODO: что если класс элемента был удален из коллекции, но элементы остались?
         if item_type is None:

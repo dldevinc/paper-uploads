@@ -605,53 +605,80 @@ class CustomCollection(Collection):
 
 ## Programmatically upload files
 
-Для `FileField` и `ImageField`:
+В полях `FileField` и `ImageField` по умолчанию используются экземпляры 
+моделей `UploadedFile` и `UploadedImage` соответственно. Обе модели, 
+помимо файлового поля, содержат ещё три поля, которые необходимо 
+заполнить. Эти поля формируют слабую ссылку (weak reference) на поле 
+модели, с которым связан файл:
+* `owner_app_label`
+* `owner_model_name`
+* `owner_fieldname`
+
+С помощью этих полей можно определить, где используется данный файл.
+А management-команда `check_uploads` использует данные этих полей, 
+чтобы обнаружить потенциально неиспользуемые файлы.
+
+Заполнить поля можно вручную, в конструкторе, либо воспользоваться 
+методом `set_owner_from()`.
+
 ```python
 from django.db import models
 from paper_uploads.models import *
 
 
 class Page(models.Model):
+    photo = ImageField(_("photo"))
     report = FileField(_("report"))
-    
 
-# Поля `owner_*` формируют ссылку на поле модели, 
-# с которым будет связан файл. Эти поля позволяют
-# находить и удалять неиспользуемые файлы.
-file = UploadedFile(
-    owner_app_label=Page._meta.app_label,
-    owner_model_name=Page._meta.model_name,
-    owner_fieldname="report"
-)
 
+photo = UploadedImage()
+photo.set_owner_from(Page._meta.get_field("photo"))
+with open("picture.jpg", "rb") as fp:
+    photo.attach_file(fp)
+photo.save()
+
+report = UploadedFile()
+report.set_owner_from(Page._meta.get_field("report"))
 with open("file.doc", "rb") as fp:
-    file.attach_file(fp)
+    report.attach_file(fp)
+report.save()
 
-file.save()
 
 page = Page.objects.create(
-    report=file
+    photo=photo,
+    report=report
 )
 ```
 
-Для коллекций:
+Такие же поля есть в коллекциях:
+
 ```python
+from django.db import models
 from paper_uploads.models import *
 
 
-class PageImages(ImageCollection):
+class PageGallery(ImageCollection):
     pass
 
 
-gallery = PageImages.objects.create()
+class Page(models.Model):
+    gallery = CollectionField(PageGallery)
+
+
+gallery = PageGallery()
+gallery.set_owner_from(Page._meta.get_field("gallery"))
+gallery.save()
 
 item = ImageItem()
 item.attach_to(gallery)
-
 with open("image.jpg", "rb") as fp:
     item.attach_file(fp)
-
 item.save()
+
+
+page = Page.objects.create(
+    gallery=gallery
+)
 ```
 
 ## Management Commands
