@@ -1,5 +1,3 @@
-from typing import Any, Dict
-
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -8,11 +6,16 @@ from paper_uploads.models import *
 from paper_uploads.validators import *
 
 from .base import CompleteCollection, FileCollection, PhotoCollection
+from .custom import (
+    CustomCloudinaryFile,
+    CustomCloudinaryGallery,
+    CustomGallery,
+    CustomProxyGallery,
+    CustomUploadedFile,
+    CustomUploadedImage,
+)
 
 __all__ = [
-    "CustomImageItem",
-    "CustomGallery",
-
     "FileFieldObject",
     "ImageFieldObject",
     "CollectionFieldObject",
@@ -22,63 +25,6 @@ __all__ = [
     "CloudinaryMediaExample",
     "CloudinaryCollectionFieldObject",
 ]
-
-
-class CustomUploadedFile(UploadedFile):
-    class Meta:
-        proxy = True
-
-    def get_file_folder(self) -> str:
-        return "custom-files/%Y"
-
-
-class CustomUploadedImage(UploadedImage):
-    class Meta:
-        proxy = True
-
-    def get_file_folder(self) -> str:
-        return "custom-images/%Y"
-
-
-class CustomProxyImageItem(ImageItem):
-    class Meta:
-        proxy = True
-
-    def get_file_folder(self) -> str:
-        return "collections/custom-images/%Y"
-
-
-class CustomImageItem(ImageItemBase):
-    caption = models.TextField(_("caption"), blank=True)
-
-
-class CustomGallery(Collection):
-    VARIATIONS = dict(
-        desktop=dict(
-            size=(1200, 0),
-            clip=False,
-        )
-    )
-
-    image = CollectionItem(CustomProxyImageItem)
-    custom_image = CollectionItem(CustomImageItem)
-
-    @classmethod
-    def get_configuration(cls) -> Dict[str, Any]:
-        return {
-            "strictImageValidation": True,
-            "acceptFiles": [
-                "image/*",
-            ],
-        }
-
-
-class CustomCloudinaryFile(CloudinaryFile):
-    class Meta:
-        proxy = True
-
-    def get_file_folder(self) -> str:
-        return "custom-files/%Y"
 
 
 # ======================================================================================
@@ -208,6 +154,7 @@ class CollectionFieldObject(models.Model):
     file_collection = CollectionField(FileCollection)
     image_collection = CollectionField(PhotoCollection)
     full_collection = CollectionField(CompleteCollection)
+    custom_proxy_collection = CollectionField(CustomProxyGallery)
     custom_collection = CollectionField(CustomGallery)
 
     class Meta:
@@ -324,6 +271,7 @@ class CloudinaryCollectionFieldObject(models.Model):
     image_collection = CollectionField(CloudinaryPhotoCollection)
     media_collection = CollectionField(CloudinaryMediaCollection)
     full_collection = CollectionField(CloudinaryCompleteCollection)
+    custom_collection = CollectionField(CustomCloudinaryGallery)
 
     class Meta:
         verbose_name = _("Cloudinary Collection")

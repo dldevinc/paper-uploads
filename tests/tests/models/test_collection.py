@@ -10,18 +10,17 @@ from django.template.loader import render_to_string
 from app.models import (
     ChildFileCollection,
     CompleteCollection,
-    CustomGallery,
-    CustomImageItem,
     FileCollection,
     IsolatedFileCollection,
     PhotoCollection,
 )
+from app.models.custom import CustomGallery, CustomImageItem
 from paper_uploads.helpers import _get_item_types
 from paper_uploads.models import Collection, FileItem, ImageCollection, ImageItem, SVGItem
 
 from .. import utils
 from ..dummy import *
-from .test_base import (
+from .test_dummy import (
     TestFileFieldResource,
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
@@ -259,7 +258,7 @@ class TestCollection:
 
 
 @pytest.mark.django_db
-class TestDeleteCollection:
+class TestDeleteCustomCollection:
     def _create_collection(self):
         collection = CustomGallery.objects.create()
 

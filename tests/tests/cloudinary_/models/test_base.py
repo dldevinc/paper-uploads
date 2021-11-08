@@ -6,7 +6,7 @@ from paper_uploads.cloudinary.models.base import CloudinaryFieldFile
 
 from ... import utils
 from ...dummy import *
-from ...models.test_base import TestFileResource
+from ...models.test_dummy import TestFileResource
 
 
 class TestCloudinaryFieldFile:

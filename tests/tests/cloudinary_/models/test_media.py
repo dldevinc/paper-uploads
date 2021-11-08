@@ -13,7 +13,7 @@ from paper_uploads.exceptions import UnsupportedFileError
 
 from ... import utils
 from ...dummy import *
-from ...models.test_base import (
+from ...models.test_dummy import (
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
     TestFileFieldResourceEmpty,

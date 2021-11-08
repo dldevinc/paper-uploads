@@ -7,13 +7,8 @@ import pytest
 from django.core.files import File
 from django.db.models.fields import Field
 
-from app.models import (
-    DummyFileFieldResource,
-    DummyFileResource,
-    DummyImageFieldResource,
-    DummyResource,
-    DummyVersatileImageResource,
-)
+from app.models.dummy import *
+from app.models.base import FileExample
 from paper_uploads import signals
 from paper_uploads.files import VariationFile
 from paper_uploads.variations import PaperVariation
@@ -90,6 +85,12 @@ class TestInvalidBacklinkModelMixin:
         )
         assert obj.get_owner_model() is DummyFileFieldResource
         assert obj.get_owner_field() is None
+
+    def test_set_owner_from_field(self):
+        obj = DummyResource()
+        obj.set_owner_from_field(FileExample.file)
+        assert obj.get_owner_model() is FileExample
+        assert obj.get_owner_field() is FileExample.file
 
 
 class TestResource(BacklinkModelMixin):
