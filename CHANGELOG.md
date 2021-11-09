@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.7.0](https://github.com/dldevinc/paper-uploads/tree/v0.7.0) - 2021-11-09
+### Features
+- Add an ability to override parent link field for collection item models inherited 
+  from an abstract class (e.g., `FileItemBase`, `ImageItemBase`).
+- Added new method `set_owner_from()`.
+- Added new method `Collection.get_item_model()`.
+
 ## [0.6.3](https://github.com/dldevinc/paper-uploads/tree/v0.6.3) - 2021-11-06
 ### Features
 - Add abstract base classes for collection items. 

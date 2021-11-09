@@ -3,6 +3,7 @@ from typing import Optional, Type
 from django.apps import apps
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models
+from django.db.models.utils import make_model_tuple
 
 from ..logging import logger
 
@@ -19,6 +20,10 @@ class BacklinkModelMixin(models.Model):
 
     class Meta:
         abstract = True
+
+    def set_owner_from(self, field: models.Field):
+        self.owner_app_label, self.owner_model_name = make_model_tuple(field.model)
+        self.owner_fieldname = field.name
 
     def get_owner_model(self) -> Optional[Type[models.Model]]:
         if not self.owner_app_label or not self.owner_model_name:

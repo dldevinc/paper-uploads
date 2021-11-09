@@ -4,7 +4,7 @@ from app.models import ImageExample
 from paper_uploads.models import UploadedImage
 
 from ..dummy import *
-from .test_base import (
+from .test_dummy import (
     TestImageAttach,
     TestImageDelete,
     TestImageEmpty,

@@ -11,7 +11,7 @@ from paper_uploads.cloudinary.models import CloudinaryFile
 
 from ... import utils
 from ...dummy import *
-from ...models.test_base import (
+from ...models.test_dummy import (
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
     TestFileFieldResourceEmpty,

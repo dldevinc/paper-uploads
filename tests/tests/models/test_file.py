@@ -4,7 +4,7 @@ from app.models import FileExample
 from paper_uploads.models import UploadedFile
 
 from ..dummy import *
-from .test_base import (
+from .test_dummy import (
     TestFileFieldResource,
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,

@@ -565,22 +565,38 @@ class PageGallery(ImageCollection):
 
 ### Custom collection item classes
 
-При создании пользовательских классов элементов коллекций не рекомендуется
-использовать прямое наследование от существующих моделей `FileItem`, `ImageItem` и т.п.
-Это содзаёт сложные One2One-связи между коллекциями и элементами коллекций и может 
-привести к `RecursionError` при удалении коллекций или их элементов.
+В простейших случаях можно использовать прокси-модели на основе существующих моделей. 
+Например, для того, чтобы хранить файлы определенной галереи в отдельной папке, 
+можно создать проски модель к `ImageItem`:
 
-Для того, чтобы избежать потенциальных проблем, в качестве базовых классов следует 
-использовать абстрактные классы. Такие как `FileItemBase`, `ImageItemBase` или 
-более общие `CollectionItemBase` и `CollectionFileItemBase`.
+```python
+from paper_uploads.models import *
+
+
+class ProxyImageItem(ImageItem):
+    class Meta:
+        proxy = True
+        
+    def get_file_folder(self) -> str:
+        return "custom-images/%Y"
+
+
+class CustomCollection(Collection):
+    image = CollectionItem(ProxyImageItem)
+```
+
+Для более сложных случаев (когда требуется отдельная таблица в БД) необходимо 
+использовать прямое наследование. Но уже не от конкретных моделей (`FileItem`, 
+`ImageItem` и т.п.), а от абстрактных. Таких как `FileItemBase`, `ImageItemBase` 
+или более общих `CollectionItemBase` и `CollectionFileItemBase`.
 
 ```python
 from django.db import models
 from paper_uploads.models import *
 
 
-class CustomImageItem(ImageItemBase):
-    caption = models.TextField(_("caption"), blank=True)
+class CustomImageItem(ImageItemBase):  # не ImageItem!
+    caption = models.TextField("caption", blank=True)
 
 
 class CustomCollection(Collection):
@@ -589,53 +605,80 @@ class CustomCollection(Collection):
 
 ## Programmatically upload files
 
-Для `FileField` и `ImageField`:
+В полях `FileField` и `ImageField` по умолчанию используются экземпляры 
+моделей `UploadedFile` и `UploadedImage` соответственно. Обе модели, 
+помимо файлового поля, содержат ещё три поля, которые необходимо 
+заполнить. Эти поля формируют слабую ссылку (weak reference) на поле 
+модели, с которым связан файл:
+* `owner_app_label`
+* `owner_model_name`
+* `owner_fieldname`
+
+С помощью этих полей можно определить, где используется данный файл.
+А management-команда `check_uploads` использует данные этих полей, 
+чтобы обнаружить потенциально неиспользуемые файлы.
+
+Заполнить поля можно вручную, в конструкторе, либо воспользоваться 
+методом `set_owner_from()`.
+
 ```python
 from django.db import models
 from paper_uploads.models import *
 
 
 class Page(models.Model):
+    photo = ImageField(_("photo"))
     report = FileField(_("report"))
-    
 
-# Поля `owner_*` формируют ссылку на поле модели, 
-# с которым будет связан файл. Эти поля позволяют
-# находить и удалять неиспользуемые файлы.
-file = UploadedFile(
-    owner_app_label=Page._meta.app_label,
-    owner_model_name=Page._meta.model_name,
-    owner_fieldname="report"
-)
 
+photo = UploadedImage()
+photo.set_owner_from(Page._meta.get_field("photo"))
+with open("picture.jpg", "rb") as fp:
+    photo.attach_file(fp)
+photo.save()
+
+report = UploadedFile()
+report.set_owner_from(Page._meta.get_field("report"))
 with open("file.doc", "rb") as fp:
-    file.attach_file(fp)
+    report.attach_file(fp)
+report.save()
 
-file.save()
 
 page = Page.objects.create(
-    report=file
+    photo=photo,
+    report=report
 )
 ```
 
-Для коллекций:
+Такие же поля есть в коллекциях:
+
 ```python
+from django.db import models
 from paper_uploads.models import *
 
 
-class PageImages(ImageCollection):
+class PageGallery(ImageCollection):
     pass
 
 
-gallery = PageImages.objects.create()
+class Page(models.Model):
+    gallery = CollectionField(PageGallery)
+
+
+gallery = PageGallery()
+gallery.set_owner_from(Page._meta.get_field("gallery"))
+gallery.save()
 
 item = ImageItem()
 item.attach_to(gallery)
-
 with open("image.jpg", "rb") as fp:
     item.attach_file(fp)
-
 item.save()
+
+
+page = Page.objects.create(
+    gallery=gallery
+)
 ```
 
 ## Management Commands

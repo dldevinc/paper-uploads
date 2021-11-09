@@ -9,19 +9,19 @@ from django.template.loader import render_to_string
 
 from app.models import (
     ChildFileCollection,
+    CollectionFieldObject,
     CompleteCollection,
-    CustomGallery,
-    CustomImageItem,
     FileCollection,
     IsolatedFileCollection,
     PhotoCollection,
 )
+from app.models.custom import CustomGallery, CustomImageItem
 from paper_uploads.helpers import _get_item_types
 from paper_uploads.models import Collection, FileItem, ImageCollection, ImageItem, SVGItem
 
 from .. import utils
 from ..dummy import *
-from .test_base import (
+from .test_dummy import (
     TestFileFieldResource,
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
@@ -257,9 +257,25 @@ class TestCollection:
             file = File(fp)
             assert next(storage.image_collection.detect_item_type(file)) == 'image'
 
+    def test_set_owner_from(self, storage):
+        owner_field = CollectionFieldObject._meta.get_field("file_collection")
+        storage.file_collection.set_owner_from(owner_field)
+        assert storage.file_collection.owner_app_label == "app"
+        assert storage.file_collection.owner_model_name == "collectionfieldobject"
+        assert storage.file_collection.owner_fieldname == "file_collection"
+        assert storage.file_collection.get_owner_model() is CollectionFieldObject
+        assert storage.file_collection.get_owner_field() is owner_field
+
+    def test_get_item_model(self, storage):
+        assert storage.global_collection.get_item_model("svg") is SVGItem
+        assert storage.global_collection.get_item_model("image") is ImageItem
+        assert storage.global_collection.get_item_model("file") is FileItem
+        with pytest.raises(ValueError):
+            storage.global_collection.get_item_model("video")
+
 
 @pytest.mark.django_db
-class TestDeleteCollection:
+class TestDeleteCustomCollection:
     def _create_collection(self):
         collection = CustomGallery.objects.create()
 
