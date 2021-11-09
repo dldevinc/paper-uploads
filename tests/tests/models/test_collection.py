@@ -266,6 +266,13 @@ class TestCollection:
         assert storage.file_collection.get_owner_model() is CollectionFieldObject
         assert storage.file_collection.get_owner_field() is owner_field
 
+    def test_get_item_model(self, storage):
+        assert storage.global_collection.get_item_model("svg") is SVGItem
+        assert storage.global_collection.get_item_model("image") is ImageItem
+        assert storage.global_collection.get_item_model("file") is FileItem
+        with pytest.raises(ValueError):
+            storage.global_collection.get_item_model("video")
+
 
 @pytest.mark.django_db
 class TestDeleteCustomCollection:

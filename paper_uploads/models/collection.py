@@ -159,6 +159,12 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
             errors.extend(field.check(**kwargs))
         return errors
 
+    @classmethod
+    def get_item_model(cls, item_type: str) -> 'Type[CollectionItemBase]':
+        if item_type not in cls.item_types:
+            raise ValueError(_("Unknown item type: %s") % item_type)
+        return cls.item_types[item_type].model
+
     def set_owner_from(self, field: models.Field):
         self.owner_app_label, self.owner_model_name = make_model_tuple(field.model)
         self.owner_fieldname = field.name
@@ -168,7 +174,7 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         if item_type is None:
             return self.items.order_by("order")
         if item_type not in self.item_types:
-            raise ValueError(_("Unsupported collection item type: %s") % item_type)
+            raise ValueError(_("Unknown item type: %s") % item_type)
         return self.items.filter(item_type=item_type).order_by("order")
 
     def detect_item_type(self, *args, **kwargs) -> Optional[str]:
