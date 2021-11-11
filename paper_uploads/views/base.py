@@ -25,7 +25,6 @@ class AjaxView(View):
     @staticmethod
     def success_response(data: Optional[Dict[str, Any]] = None) -> JsonResponse:
         data = data or {}
-        data["success"] = True
         return JsonResponse(data)
 
     @staticmethod
@@ -53,7 +52,6 @@ class AjaxView(View):
             errors = [errors]
 
         data = {
-            "success": False,
             "errors": errors,
         }
         data.update(extra_data)

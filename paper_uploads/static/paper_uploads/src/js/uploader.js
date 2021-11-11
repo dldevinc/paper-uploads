@@ -299,11 +299,10 @@ class Uploader extends EventEmitter {
 
             // When the complete upload is finished and successful
             success(file, response) {
-                if (response.success) {
-                    _this.trigger("complete", [file, response]);
+                if (response.errors && response.errors.length) {
+                    _this.trigger("error", [file, response.errors]);
                 } else {
-                    let messages = response.errors || response.error;
-                    _this.trigger("error", [file, messages]);
+                    _this.trigger("complete", [file, response]);
                 }
             },
 
