@@ -10,6 +10,7 @@ from django.core.files.uploadedfile import UploadedFile
 from django.http import JsonResponse
 from django.template import loader
 from django.utils.decorators import method_decorator
+from django.utils.functional import Promise
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -50,6 +51,8 @@ class AjaxView(View):
             errors = []
         elif isinstance(errors, str):
             errors = [errors]
+        elif isinstance(errors, Promise):
+            errors = [str(errors)]
 
         data = {
             "errors": errors,
