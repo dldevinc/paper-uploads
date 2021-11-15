@@ -52,6 +52,10 @@ class TestUploadedImage(TestVersatileImageResource):
             'id': 1,
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
             'width': 1534,
             'height': 2301,

@@ -73,6 +73,10 @@ class TestCloudinaryFile(CloudinaryFileResource):
             'id': 1,
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
             'file_info': '(Jpeg, 672.8\xa0KB)',
             'url': storage.resource.get_file_url(),

@@ -97,8 +97,11 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
             'itemType': 'file',
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
-            'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
             'order': 0,
             'preview': render_to_string(
                 'paper_uploads/items/preview/file.html',
@@ -315,8 +318,11 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
             'itemType': 'media',
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
-            'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
             'order': 0,
             'preview': render_to_string(
                 'paper_uploads/items/preview/file.html',
@@ -595,13 +601,16 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
             'itemType': 'image',
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
             'width': 1534,
             'height': 2301,
             'cropregion': '',
             'title': '',
             'description': '',
-            'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
             'order': 0,
             'preview': render_to_string(
                 'paper_uploads_cloudinary/items/preview/image.html',

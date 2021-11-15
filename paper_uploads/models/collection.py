@@ -378,7 +378,6 @@ class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
             **super().as_dict(),
             "collectionId": self.collection_id,
             "itemType": self.item_type,
-            "caption": self.get_caption(),
             "order": self.order,
             "preview": self.render_preview(),
         }
@@ -407,10 +406,6 @@ class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
                 break
         else:
             raise TypeError(_("Unsupported collection item: %s") % type(self).__name__)
-
-    def get_caption(self):
-        """ Заголовок для виджета в админке """
-        return self.get_basename()
 
     def render_preview(self):
         """ Отображение элемента коллекции в админке """
@@ -491,12 +486,6 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
             self.display_name = self.basename
         super().save(*args, **kwargs)
 
-    def get_caption(self):
-        name = self.display_name or self.basename
-        if self.extension:
-            return "{}.{}".format(name, self.extension)
-        return name
-
     def get_file_folder(self) -> str:
         return settings.COLLECTION_FILES_UPLOAD_TO
 
@@ -508,6 +497,12 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
 
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field("file")
+
+    def get_caption(self):
+        name = self.display_name or self.basename
+        if self.extension:
+            return "{}.{}".format(name, self.extension)
+        return name
 
     @classmethod
     def file_supported(cls, file: File) -> bool:
@@ -537,12 +532,6 @@ class SVGItemBase(CollectionFileItemBase):
             self.display_name = self.basename
         super().save(*args, **kwargs)
 
-    def get_caption(self):
-        name = self.display_name or self.basename
-        if self.extension:
-            return "{}.{}".format(name, self.extension)
-        return name
-
     def get_file_folder(self) -> str:
         return settings.COLLECTION_FILES_UPLOAD_TO
 
@@ -554,6 +543,12 @@ class SVGItemBase(CollectionFileItemBase):
 
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field("file")
+
+    def get_caption(self):
+        name = self.display_name or self.basename
+        if self.extension:
+            return "{}.{}".format(name, self.extension)
+        return name
 
     @classmethod
     def file_supported(cls, file: File) -> bool:

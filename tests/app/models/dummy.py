@@ -49,7 +49,7 @@ class DummyFileResource(FileResource):
         return 28
 
     def get_file_url(self):
-        return 'http://example.com/{}'.format(quote(self.get_basename()))
+        return 'http://example.com/{}'.format(quote(self.get_caption()))
 
     def file_exists(self) -> bool:
         return True

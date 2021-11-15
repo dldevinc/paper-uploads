@@ -187,12 +187,12 @@ class TestFileResource(TestResource):
         assert self._equal_dates(storage.resource.uploaded_at, storage.resource.modified_at)
 
     def test_str(self, storage):
-        assert str(storage.resource) == storage.resource.get_basename()
+        assert str(storage.resource) == storage.resource.get_caption()
 
     def test_repr(self, storage):
         assert repr(storage.resource) == "{}('{}')".format(
             type(storage.resource).__name__,
-            storage.resource.get_basename()
+            storage.resource.get_caption()
         )
 
     def test_as_dict(self, storage):
@@ -200,6 +200,10 @@ class TestFileResource(TestResource):
             'id': 1,
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
             'url': 'http://example.com/Nature%20Tree.Jpeg',
             'created': storage.resource.created_at.isoformat(),
@@ -216,8 +220,8 @@ class TestFileResource(TestResource):
         assert storage.resource.update_checksum() is False  # not updated
         assert storage.resource.checksum == self.resource_checksum
 
-    def test_get_basename(self, storage):
-        assert storage.resource.get_basename() == '{}.{}'.format(
+    def test_get_caption(self, storage):
+        assert storage.resource.get_caption() == '{}.{}'.format(
             self.resource_name,
             self.resource_extension
         )
@@ -674,6 +678,10 @@ class TestFileFieldResource(TestFileResource):
             'id': 1,
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
             'url': storage.resource.get_file_url(),
             'created': storage.resource.created_at.isoformat(),
@@ -952,6 +960,10 @@ class TestImageFieldResource(TestFileFieldResource):
             'id': 1,
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
             'width': 1534,
             'height': 2301,
@@ -1041,6 +1053,10 @@ class TestVersatileImageResource(TestImageFieldResource):
             'id': 1,
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
             'width': 1534,
             'height': 2301,

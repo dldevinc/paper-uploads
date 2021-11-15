@@ -41,6 +41,12 @@ class UploadedFile(FileFieldResource):
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field("file")
 
+    def get_caption(self) -> str:
+        name = self.display_name or self.basename
+        if self.extension:
+            return "{}.{}".format(name, self.extension)
+        return name
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),

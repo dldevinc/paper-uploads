@@ -126,10 +126,10 @@ class FileResource(FileProxyMixin, Resource):
         abstract = True
 
     def __str__(self):
-        return self.get_basename()
+        return self.get_caption()
 
     def __repr__(self):
-        return "{}('{}')".format(type(self).__name__, self.get_basename())
+        return "{}('{}')".format(type(self).__name__, self.get_caption())
 
     @property
     def name(self) -> str:
@@ -140,7 +140,7 @@ class FileResource(FileProxyMixin, Resource):
         """
         raise NotImplementedError
 
-    def get_basename(self) -> str:
+    def get_caption(self) -> str:
         """
         Человекопонятное имя файла.
         Не содержит суффикса, которое может быть добавлено файловым хранилищем.
@@ -165,6 +165,7 @@ class FileResource(FileProxyMixin, Resource):
             **super().as_dict(),
             "name": self.basename,
             "extension": self.extension,
+            "caption": self.get_caption(),
             "size": self.size,
             "url": self.get_file_url(),
             "uploaded": self.uploaded_at.isoformat()

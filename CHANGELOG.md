@@ -2,6 +2,7 @@
 
 ## [0.8.0](https://github.com/dldevinc/paper-uploads/tree/v0.8.0) - 2021-11-15
 ### ⚠ BREAKING CHANGES
+- `FileResource`'s method `get_basename()` has been renamed to `get_caption()`. 
 - Added new `InvalidItemType` exception.
 ### Features
 - Updated view classes for easier customization.
