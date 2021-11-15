@@ -297,6 +297,10 @@ class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
     order = models.IntegerField(_("order"), default=0, editable=False)
 
     class Meta:
+        # Испольуется обратный порядок полей в составном индексе,
+        # т.к. слективность поля collection_id выше, а для поля
+        # `collection_content_type` уже есть отдельный индекс.
+        index_together = [("collection_id", "collection_content_type")]
         verbose_name = _("item")
         verbose_name_plural = _("items")
 
