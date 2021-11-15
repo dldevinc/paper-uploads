@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-08-17 15:06+0000\n"
+"POT-Creation-Date: 2021-11-15 18:59+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,63 +22,63 @@ msgstr ""
 msgid "Uploaded Files"
 msgstr "Загруженные файлы"
 
-#: cloudinary/models/base.py:244 models/base.py:430
+#: cloudinary/models/base.py:253 models/base.py:432
 #, python-format
 msgid "File `%s` is not an image"
 msgstr "Файл `%s` не является изображением"
 
-#: cloudinary/models/collection.py:47 cloudinary/models/collection.py:85
-#: cloudinary/models/collection.py:127 cloudinary/models/file.py:14
-#: cloudinary/models/file.py:22 cloudinary/models/image.py:14
-#: cloudinary/models/media.py:14 models/collection.py:400
-#: models/collection.py:436 models/collection.py:474 models/file.py:15
-#: models/file.py:23 models/image.py:16
+#: cloudinary/models/collection.py:49 cloudinary/models/collection.py:90
+#: cloudinary/models/collection.py:135 cloudinary/models/file.py:14
+#: cloudinary/models/file.py:21 cloudinary/models/image.py:14
+#: cloudinary/models/media.py:14 models/collection.py:472
+#: models/collection.py:518 models/collection.py:566 models/file.py:16
+#: models/file.py:24 models/image.py:17
 msgid "file"
 msgstr "файл"
 
-#: cloudinary/models/collection.py:52 cloudinary/models/collection.py:90
-#: cloudinary/models/file.py:19 cloudinary/models/media.py:19
-#: models/collection.py:405 models/collection.py:441 models/file.py:20
+#: cloudinary/models/collection.py:53 cloudinary/models/collection.py:94
+#: cloudinary/models/file.py:18 cloudinary/models/media.py:18
+#: models/collection.py:477 models/collection.py:523 models/file.py:21
 msgid "display name"
 msgstr "отображаемое название"
 
-#: cloudinary/models/collection.py:55 models/collection.py:408
+#: cloudinary/models/collection.py:57 models/collection.py:481
 msgid "File item"
 msgstr "Файл"
 
-#: cloudinary/models/collection.py:56 models/collection.py:409
+#: cloudinary/models/collection.py:58 models/collection.py:482
 msgid "File items"
 msgstr "Файлы"
 
-#: cloudinary/models/collection.py:93
+#: cloudinary/models/collection.py:98
 msgid "Media item"
 msgstr "Мультимедиа"
 
-#: cloudinary/models/collection.py:94
+#: cloudinary/models/collection.py:99
 msgid "Media items"
 msgstr "Мультимедиа"
 
-#: cloudinary/models/collection.py:134 models/collection.py:481
+#: cloudinary/models/collection.py:142 models/collection.py:574
 msgid "Image item"
 msgstr "Изображение"
 
-#: cloudinary/models/collection.py:135 models/collection.py:482
+#: cloudinary/models/collection.py:143 models/collection.py:575
 msgid "Image items"
 msgstr "Изображения"
 
-#: cloudinary/models/file.py:23 models/file.py:24
+#: cloudinary/models/file.py:22 models/file.py:25
 msgid "files"
 msgstr "файлы"
 
-#: cloudinary/models/image.py:21 models/image.py:23
+#: cloudinary/models/image.py:20 models/image.py:24
 msgid "image"
 msgstr "изображение"
 
-#: cloudinary/models/image.py:22 models/image.py:24
+#: cloudinary/models/image.py:21 models/image.py:25
 msgid "images"
 msgstr "изображения"
 
-#: cloudinary/models/media.py:22 cloudinary/models/media.py:23
+#: cloudinary/models/media.py:21 cloudinary/models/media.py:22
 msgid "media"
 msgstr "мультимедиа"
 
@@ -132,40 +132,44 @@ msgstr "Максимальный размер файла"
 msgid "Minimum dimensions"
 msgstr "Минимальный размер"
 
-#: forms/widgets/mixins.py:72 forms/widgets/mixins.py:87 validators.py:155
-#: validators.py:217
+#: forms/widgets/mixins.py:72 validators.py:155
 #, python-format
-msgid "%sx%s pixels"
-msgstr "%sx%s пикселей"
+msgid "%(min_width)sx%(min_height)s pixels"
+msgstr "%(min_width)sx%(min_height)s пикселей"
 
-#: forms/widgets/mixins.py:76 validators.py:158
+#: forms/widgets/mixins.py:79 validators.py:161
 msgid "Minimum image width"
 msgstr "Минимальная ширина"
 
-#: forms/widgets/mixins.py:76 forms/widgets/mixins.py:78
-#: forms/widgets/mixins.py:91 forms/widgets/mixins.py:93 validators.py:158
-#: validators.py:160 validators.py:220 validators.py:222
+#: forms/widgets/mixins.py:79 forms/widgets/mixins.py:81
+#: forms/widgets/mixins.py:97 forms/widgets/mixins.py:99 validators.py:161
+#: validators.py:163 validators.py:226 validators.py:228
 #, python-format
 msgid "%s pixels"
 msgstr "%s пикселей"
 
-#: forms/widgets/mixins.py:78 validators.py:160
+#: forms/widgets/mixins.py:81 validators.py:163
 msgid "Minimum image height"
 msgstr "Минимальная высота"
 
-#: forms/widgets/mixins.py:86 validators.py:216
+#: forms/widgets/mixins.py:89 validators.py:219
 msgid "Maximum dimensions"
 msgstr "Максимальный размер"
 
-#: forms/widgets/mixins.py:91 validators.py:220
+#: forms/widgets/mixins.py:90 validators.py:220
+#, python-format
+msgid "%(max_width)sx%(max_height)s pixels"
+msgstr "%(max_width)sx%(max_height)s пикселей"
+
+#: forms/widgets/mixins.py:97 validators.py:226
 msgid "Maximum image width"
 msgstr "Максимальная ширина"
 
-#: forms/widgets/mixins.py:93 validators.py:222
+#: forms/widgets/mixins.py:99 validators.py:228
 msgid "Maximum image height"
 msgstr "Максимальная высота"
 
-#: models/base.py:68 models/collection.py:124
+#: models/base.py:68 models/collection.py:136
 msgid "created at"
 msgstr "дата создания"
 
@@ -206,22 +210,22 @@ msgstr "дата загрузки файла"
 msgid "The '%s' attribute has no file associated with it."
 msgstr "Не найден файл, связанный с атибутом '%s'."
 
-#: models/base.py:392
+#: models/base.py:394
 msgid "title"
 msgstr "название"
 
-#: models/base.py:396
+#: models/base.py:398
 msgid ""
 "The title is being used as a tooltip when the user hovers the mouse over the "
 "image"
 msgstr ""
 "Используется в качестве всплывающей подсказки при наведении на картинку"
 
-#: models/base.py:400
+#: models/base.py:402
 msgid "description"
 msgstr "описание"
 
-#: models/base.py:403
+#: models/base.py:405
 msgid ""
 "This text will be used by screen readers, search engines, or when the image "
 "cannot be loaded"
@@ -229,57 +233,52 @@ msgstr ""
 "Этот текст будет использоваться программами чтения с экрана, поисковыми "
 "системами или в случае, когда изображение не может быть загружено."
 
-#: models/base.py:406
+#: models/base.py:408
 msgid "width"
 msgstr "ширина"
 
-#: models/base.py:407
+#: models/base.py:409
 msgid "height"
 msgstr "высота"
 
-#: models/base.py:409
+#: models/base.py:411
 msgid "crop region"
 msgstr ""
 
-#: models/collection.py:130
+#: models/collection.py:142
 msgid "collection"
 msgstr "коллекция"
 
-#: models/collection.py:131
+#: models/collection.py:143
 msgid "collections"
 msgstr "коллекции"
 
-#: models/collection.py:145
-#, python-format
-msgid "Unsupported collection item type: %s"
-msgstr "Тип элемента не поддерживается: %s"
-
-#: models/collection.py:226
+#: models/collection.py:295
 msgid "type"
 msgstr "тип"
 
-#: models/collection.py:228
+#: models/collection.py:297
 msgid "order"
 msgstr "порядок"
 
-#: models/collection.py:231
+#: models/collection.py:300
 msgid "item"
 msgstr "элемент коллекции"
 
-#: models/collection.py:232
+#: models/collection.py:301
 msgid "items"
 msgstr "элементы коллекции"
 
-#: models/collection.py:332
+#: models/collection.py:408
 #, python-format
 msgid "Unsupported collection item: %s"
 msgstr "Неподдерживаемый элемент коллекции: %s"
 
-#: models/collection.py:444
+#: models/collection.py:527
 msgid "SVG item"
 msgstr "SVG-элемент"
 
-#: models/collection.py:445
+#: models/collection.py:528
 msgid "SVG items"
 msgstr "SVG-элементы"
 
@@ -336,27 +335,27 @@ msgstr[1] "%(size)d байта"
 #: utils.py:88
 #, python-format
 msgid "%s KB"
-msgstr ""
+msgstr "%s KB"
 
 #: utils.py:90
 #, python-format
 msgid "%s MB"
-msgstr ""
+msgstr "%s MB"
 
 #: utils.py:92
 #, python-format
 msgid "%s GB"
-msgstr ""
+msgstr "%s GB"
 
 #: utils.py:94
 #, python-format
 msgid "%s TB"
-msgstr ""
+msgstr "%s TB"
 
 #: utils.py:96
 #, python-format
 msgid "%s PB"
-msgstr ""
+msgstr "%s PB"
 
 #: validators.py:24
 #, python-format
@@ -405,7 +404,7 @@ msgstr ""
 "Изображение `%(name)s` слишком мало. Минимальный размер - %(width_limit)sx"
 "%(height_limit)s пикселей."
 
-#: validators.py:167
+#: validators.py:170
 #, python-format
 msgid ""
 "Image `%(name)s` is too wide. The maximum width is %(width_limit)s pixels."
@@ -413,7 +412,7 @@ msgstr ""
 "Ширина изображения `%(name)s` превышает лимит. Максимальная ширина - "
 "%(width_limit)s пикселей."
 
-#: validators.py:170
+#: validators.py:173
 #, python-format
 msgid ""
 "Image `%(name)s` is too tall. The maximum height is %(height_limit)s pixels."
@@ -421,7 +420,7 @@ msgstr ""
 "Высота изображения `%(name)s` превышает лимит. Максимальная высота - "
 "%(height_limit)s пикселей."
 
-#: validators.py:173
+#: validators.py:176
 #, python-format
 msgid ""
 "Image `%(name)s` is too big. Image should be at most %(width_limit)sx"
@@ -430,63 +429,62 @@ msgstr ""
 "Изображение `%(name)s` слишком большое. Максимальный размер - "
 "%(width_limit)sx%(height_limit)s пикселей."
 
-#: views/base.py:69
+#: views/base.py:71
 msgid "Invalid ContentType"
 msgstr "Неверное значение ContentType"
 
-#: views/base.py:95 views/base.py:178 views/base.py:188 views/base.py:203
-#: views/collection.py:26 views/collection.py:51 views/collection.py:202
+#: views/base.py:97 views/base.py:180 views/base.py:190 views/base.py:205
+#: views/collection.py:31 views/collection.py:63 views/collection.py:253
 msgid "Access denied"
 msgstr "Доступ запрещён"
 
-#: views/base.py:105
+#: views/base.py:107
 #, python-format
 msgid "Invalid UUID: %s"
 msgstr "Неверный UUID: %s"
 
-#: views/base.py:108
+#: views/base.py:110
 msgid "Invalid chunking"
 msgstr "Ошибка разбиения файла"
 
-#: views/base.py:222
+#: views/base.py:224
 #, python-format
 msgid "File not found: %s"
 msgstr "Файл не найден: %s"
 
-#: views/collection.py:63 views/collection.py:151 views/collection.py:186
-#: views/collection.py:215 views/file.py:52 views/file.py:76 views/image.py:52
-#: views/image.py:76
-msgid "Invalid ID"
-msgstr "Неверный ID"
-
-#: views/collection.py:66 views/collection.py:188 views/collection.py:218
-#: views/file.py:55 views/file.py:78 views/image.py:55 views/image.py:78
-msgid "Object not found"
-msgstr "Объект не найден"
-
-#: views/collection.py:69 views/collection.py:91 views/collection.py:157
-#: views/collection.py:190 views/collection.py:221 views/file.py:58
-#: views/file.py:80 views/image.py:58 views/image.py:80
-msgid "Multiple objects returned"
-msgstr ""
-
-#: views/collection.py:85
+#: views/collection.py:81 views/collection.py:113
 msgid "Invalid collection ID"
 msgstr "Неверный ID коллекции"
 
-#: views/collection.py:88
+#: views/collection.py:84 views/collection.py:116
 msgid "Collection not found"
 msgstr "Коллекция не найдена"
 
-#: views/collection.py:124
+#: views/collection.py:87 views/collection.py:119 views/collection.py:194
+#: views/collection.py:241 views/collection.py:272 views/file.py:75
+#: views/file.py:107 views/image.py:75 views/image.py:107
+msgid "Multiple objects returned"
+msgstr ""
+
+#: views/collection.py:152
 #, python-format
 msgid "Unsupported file: %s"
 msgstr "Файл не поддерживается: %s"
 
-#: views/collection.py:143 views/collection.py:179
+#: views/collection.py:182 views/collection.py:229
 msgid "Invalid itemType"
 msgstr "Неверное значение itemType"
 
-#: views/collection.py:228
+#: views/collection.py:188 views/collection.py:235 views/collection.py:266
+#: views/file.py:69 views/file.py:103 views/image.py:69 views/image.py:103
+msgid "Invalid ID"
+msgstr "Неверный ID"
+
+#: views/collection.py:238 views/collection.py:269 views/file.py:72
+#: views/file.py:105 views/image.py:72 views/image.py:105
+msgid "Object not found"
+msgstr "Объект не найден"
+
+#: views/collection.py:279
 msgid "Invalid order value"
 msgstr "Неверное значение order"

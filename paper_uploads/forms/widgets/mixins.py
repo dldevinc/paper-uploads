@@ -69,7 +69,10 @@ class FileUploaderWidgetMixin:
                 limits.append(
                     (
                         _("Minimum dimensions"),
-                        _("%sx%s pixels") % (min_width, min_height),
+                        _("%(min_width)sx%(min_height)s pixels") % {
+                            "min_width": min_width,
+                            "min_height": min_height
+                        },
                     )
                 )
             else:
@@ -84,7 +87,10 @@ class FileUploaderWidgetMixin:
                 limits.append(
                     (
                         _("Maximum dimensions"),
-                        _("%sx%s pixels") % (max_width, max_height),
+                        _("%(max_width)sx%(max_height)s pixels") % {
+                            "max_width": max_width,
+                            "max_height": max_height
+                        },
                     )
                 )
             else:

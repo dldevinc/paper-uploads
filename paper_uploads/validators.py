@@ -152,7 +152,10 @@ class ImageMinSizeValidator:
             if self.height_limit:
                 return "{}: {}".format(
                     _("Minimum dimensions"),
-                    _("%sx%s pixels") % (self.width_limit, self.height_limit)
+                    _("%(min_width)sx%(min_height)s pixels") % {
+                        "min_width": self.width_limit,
+                        "min_height": self.height_limit
+                    }
                 )
             else:
                 return "{}: {}".format(_("Minimum image width"), _("%s pixels") % self.width_limit)
@@ -214,7 +217,10 @@ class ImageMaxSizeValidator:
             if self.height_limit:
                 return "{}: {}".format(
                     _("Maximum dimensions"),
-                    _("%sx%s pixels") % (self.width_limit, self.height_limit),
+                    _("%(max_width)sx%(max_height)s pixels") % {
+                        "max_width": self.width_limit,
+                        "max_height": self.height_limit
+                    },
                 )
             else:
                 return "{}: {}".format(_("Maximum image width"), _("%s pixels") % self.width_limit)
