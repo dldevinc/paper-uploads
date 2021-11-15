@@ -1129,7 +1129,7 @@ class Collection extends EventEmitter {
         Object.keys(params).forEach(function(name) {
             formData.append(name, params[name]);
         });
-        formData.append("pk", this.instanceId);
+        formData.append("collectionId", this.instanceId);
 
         // отмена загрузки всех файлов из очереди.
         this.uploader.cancelAll();

@@ -56,7 +56,7 @@ class DeleteCollectionView(ActionView):
     def handle(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         content_type_id = request.POST.get("paperCollectionContentType")
         collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
-        collection_id = request.POST.get("pk")
+        collection_id = request.POST.get("collectionId")
 
         try:
             instance = helpers.get_instance(collection_cls, collection_id)
