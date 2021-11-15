@@ -234,6 +234,7 @@ class PermanentCollectionItemBase extends CollectionItemBase {
     static Defaults = Object.assign({}, super.Defaults, {
         checkbox: ".collection-item__checkbox",
 
+        caption: ".collection-item__caption",
         viewButton: ".collection-item__view-button",
         changeButton: ".collection-item__change-button",
         deleteButton: ".collection-item__delete-button"
@@ -505,11 +506,8 @@ class PermanentCollectionItemBase extends CollectionItemBase {
             } else {
                 modal.destroy();
 
-                const fileName = _this.root.querySelector(_this.config.fileName);
-                fileName && (fileName.textContent = response.name);
-
-                const fileInfo = _this.root.querySelector(_this.config.fileInfo);
-                fileInfo && (fileInfo.textContent = response.file_info);
+                const caption = _this.root.querySelector(_this.config.caption);
+                caption && (caption.textContent = response.caption);
 
                 const previewLink = _this.root.querySelector(_this.config.viewButton);
                 previewLink && (previewLink.href = response.url);

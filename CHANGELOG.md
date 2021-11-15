@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.8.0](https://github.com/dldevinc/paper-uploads/tree/v0.8.0) - 2021-11-15
+
+### Bug Fixes
+- Fixed caption update for collection items.
+
 ## [0.7.0](https://github.com/dldevinc/paper-uploads/tree/v0.7.0) - 2021-11-09
 ### Features
 - Add an ability to override parent link field for collection item models inherited 

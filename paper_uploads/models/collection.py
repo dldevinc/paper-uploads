@@ -489,6 +489,12 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
             self.display_name = self.basename
         super().save(*args, **kwargs)
 
+    def get_caption(self):
+        name = self.display_name or self.basename
+        if self.extension:
+            return "{}.{}".format(name, self.extension)
+        return name
+
     def get_file_folder(self) -> str:
         return settings.COLLECTION_FILES_UPLOAD_TO
 
@@ -528,6 +534,12 @@ class SVGItemBase(CollectionFileItemBase):
         if not self.pk and not self.display_name:
             self.display_name = self.basename
         super().save(*args, **kwargs)
+
+    def get_caption(self):
+        name = self.display_name or self.basename
+        if self.extension:
+            return "{}.{}".format(name, self.extension)
+        return name
 
     def get_file_folder(self) -> str:
         return settings.COLLECTION_FILES_UPLOAD_TO
