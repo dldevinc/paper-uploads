@@ -7,6 +7,7 @@ from uuid import UUID
 from django.conf import settings
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.core.files.uploadedfile import UploadedFile
+from django.core.handlers.wsgi import WSGIRequest
 from django.http import JsonResponse
 from django.template import loader
 from django.utils.decorators import method_decorator
@@ -62,7 +63,7 @@ class AjaxView(View):
 
 
 class ActionView(AjaxView):
-    def perform_action(self, request, *args, **kwargs):
+    def perform_action(self, request: WSGIRequest, *args, **kwargs):
         try:
             return self.handle(request, *args, **kwargs)
         except exceptions.InvalidContentType:
@@ -91,7 +92,7 @@ class UploadFileViewBase(ActionView):
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: WSGIRequest, *args, **kwargs):
         if not request.user.has_perm("paper_uploads.upload"):
             return self.error_response(_("Access denied"))
 
@@ -113,7 +114,7 @@ class UploadFileViewBase(ActionView):
         finally:
             file.close()
 
-    def upload_chunk(self, request) -> UploadedFile:
+    def upload_chunk(self, request: WSGIRequest) -> UploadedFile:
         try:
             chunk_index = int(request.POST["paperChunkIndex"])
             total_chunks = int(request.POST["paperTotalChunkCount"])
@@ -174,7 +175,7 @@ class DeleteFileViewBase(ActionView):
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: WSGIRequest, *args, **kwargs):
         if not request.user.has_perm("paper_uploads.delete"):
             return self.error_response(_("Access denied"))
         return self.perform_action(request, *args, **kwargs)
@@ -184,7 +185,7 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
     http_method_names = ["get", "post"]
     instance = None
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: WSGIRequest, *args, **kwargs):
         if not request.user.has_perm("paper_uploads.change"):
             return self.error_response(_("Access denied"))
 
@@ -199,7 +200,7 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
             "form": loader.render_to_string(self.template_name, context, request=request)
         })
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: WSGIRequest, *args, **kwargs):
         if not request.user.has_perm("paper_uploads.change"):
             return self.error_response(_("Access denied"))
 
@@ -240,7 +241,7 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
         kwargs["instance"] = self.instance
         return kwargs
 
-    def get_instance(self, request, *args, **kwargs):
+    def get_instance(self, request: WSGIRequest, *args, **kwargs):
         raise NotImplementedError
 
     def form_valid(self, form):

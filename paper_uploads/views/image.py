@@ -1,5 +1,6 @@
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.core.files.uploadedfile import UploadedFile
+from django.core.handlers.wsgi import WSGIRequest
 from django.utils.translation import gettext_lazy as _
 
 from .. import exceptions
@@ -12,7 +13,7 @@ from .base import ChangeFileViewBase, DeleteFileViewBase, UploadFileViewBase
 
 
 class UploadFileView(UploadFileViewBase):
-    def handle(self, request, file: UploadedFile):
+    def handle(self, request: WSGIRequest, file: UploadedFile):
         content_type_id = request.POST.get("paperContentType")
         model_class = helpers.get_model_class(content_type_id, FileResource)
         instance = model_class(
@@ -40,7 +41,7 @@ class UploadFileView(UploadFileViewBase):
 
 
 class DeleteFileView(DeleteFileViewBase):
-    def handle(self, request):
+    def handle(self, request: WSGIRequest):
         content_type_id = request.POST.get("paperContentType")
         model_class = helpers.get_model_class(content_type_id, FileResource)
         pk = request.POST.get("pk")
@@ -65,7 +66,7 @@ class ChangeFileView(ChangeFileViewBase):
     form_class = UploadedImageDialog
     template_name = "paper_uploads/dialogs/image.html"
 
-    def get_instance(self, request, *args, **kwargs):
+    def get_instance(self, request: WSGIRequest, *args, **kwargs):
         content_type_id = self.request.GET.get("paperContentType")
         model_class = helpers.get_model_class(content_type_id, FileResource)
         pk = self.request.GET.get("pk")

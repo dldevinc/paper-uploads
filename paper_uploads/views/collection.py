@@ -1,5 +1,6 @@
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.core.files.uploadedfile import UploadedFile
+from django.core.handlers.wsgi import WSGIRequest
 from django.db import transaction
 from django.utils.decorators import method_decorator
 from django.utils.module_loading import import_string
@@ -21,12 +22,12 @@ class CreateCollectionView(ActionView):
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: WSGIRequest, *args, **kwargs):
         if not request.user.has_perm("paper_uploads.upload"):
             return self.error_response(_("Access denied"))
         return self.perform_action(request, *args, **kwargs)
 
-    def handle(self, request, *args, **kwargs):
+    def handle(self, request: WSGIRequest, *args, **kwargs):
         content_type_id = request.POST.get("paperCollectionContentType")
         collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
         collection = collection_cls.objects.create(
@@ -46,12 +47,12 @@ class DeleteCollectionView(ActionView):
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: WSGIRequest, *args, **kwargs):
         if not request.user.has_perm("paper_uploads.delete"):
             return self.error_response(_("Access denied"))
         return self.perform_action(request, *args, **kwargs)
 
-    def handle(self, request, *args, **kwargs):
+    def handle(self, request: WSGIRequest, *args, **kwargs):
         content_type_id = request.POST.get("paperCollectionContentType")
         collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
         collection_id = request.POST.get("pk")
@@ -73,7 +74,7 @@ class DeleteCollectionView(ActionView):
 
 
 class UploadFileView(UploadFileViewBase):
-    def handle(self, request, file: UploadedFile):
+    def handle(self, request: WSGIRequest, file: UploadedFile):
         content_type_id = request.POST.get("paperCollectionContentType")
         collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
         collection_id = request.POST.get("collectionId")
@@ -129,7 +130,7 @@ class UploadFileView(UploadFileViewBase):
 
 
 class DeleteFileView(DeleteFileViewBase):
-    def handle(self, request):
+    def handle(self, request: WSGIRequest):
         content_type_id = request.POST.get("paperCollectionContentType")
         collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
 
@@ -165,7 +166,7 @@ class ChangeFileView(ChangeFileViewBase):
     def get_form_class(self):
         return import_string(self.instance.change_form_class)
 
-    def get_instance(self, request, *args, **kwargs):
+    def get_instance(self, request: WSGIRequest, *args, **kwargs):
         content_type_id = self.request.GET.get("paperCollectionContentType")
         collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
 
@@ -196,13 +197,13 @@ class SortItemsView(ActionView):
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: WSGIRequest, *args, **kwargs):
         if not request.user.has_perm("paper_uploads.change"):
             return self.error_response(_("Access denied"))
 
         return self.perform_action(request, *args, **kwargs)
 
-    def handle(self, request, *args, **kwargs):
+    def handle(self, request: WSGIRequest, *args, **kwargs):
         content_type_id = request.POST.get("paperCollectionContentType")
         collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
         collection_id = request.POST.get("collectionId")
