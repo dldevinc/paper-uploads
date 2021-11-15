@@ -29,8 +29,6 @@ def get_instance(model_class: Type[models.Model], pk: Any) -> models.Model:
     Получение экземпляра модели загружаемого файла.
     """
     try:
-        instance_id = int(pk)
+        return model_class._default_manager.get(pk=pk)
     except (ValueError, TypeError):
         raise exceptions.InvalidObjectId(pk)
-
-    return model_class._default_manager.get(pk=instance_id)

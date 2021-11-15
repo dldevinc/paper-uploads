@@ -39,6 +39,7 @@ from .utils import generate_filename
 
 __all__ = [
     "CollectionItemBase",
+    "CollectionFileItemBase",
     "CollectionBase",
     "FilePreviewMixin",
     "FileItemBase",

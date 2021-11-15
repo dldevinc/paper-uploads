@@ -100,8 +100,7 @@ class UploadFileView(UploadFileViewBase):
         for item_type in collection.detect_item_type(file):  # noqa: F821
             item_type_field = collection_cls.item_types[item_type]
             instance = item_type_field.model(
-                collection_content_type_id=content_type_id,
-                collection_id=collection.pk,
+                collection=collection,
                 item_type=item_type,
                 size=file.size,
                 order=order
