@@ -6,6 +6,10 @@ class InvalidContentType(InvalidRequest):
     pass
 
 
+class InvalidItemType(InvalidRequest):
+    pass
+
+
 class InvalidObjectId(InvalidRequest):
     pass
 

@@ -21,6 +21,7 @@ from django.utils.translation import gettext_lazy as _
 from polymorphic.base import PolymorphicModelBase
 from polymorphic.models import PolymorphicModel
 
+from .. import exceptions
 from ..conf import FILE_ICON_DEFAULT, FILE_ICON_OVERRIDES, settings
 from ..helpers import _get_item_types, _set_item_types, build_variations
 from ..storage import upload_storage
@@ -163,7 +164,7 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
     @classmethod
     def get_item_model(cls, item_type: str) -> 'Type[CollectionItemBase]':
         if item_type not in cls.item_types:
-            raise ValueError(_("Unknown item type: %s") % item_type)
+            raise exceptions.InvalidItemType(item_type)
         return cls.item_types[item_type].model
 
     def set_owner_from(self, field: models.Field):
@@ -175,7 +176,7 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         if item_type is None:
             return self.items.order_by("order")
         if item_type not in self.item_types:
-            raise ValueError(_("Unknown item type: %s") % item_type)
+            raise exceptions.InvalidItemType(item_type)
         return self.items.filter(item_type=item_type).order_by("order")
 
     def detect_item_type(self, *args, **kwargs) -> Optional[str]:

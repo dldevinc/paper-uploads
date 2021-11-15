@@ -16,6 +16,7 @@ from app.models import (
     PhotoCollection,
 )
 from app.models.custom import CustomGallery, CustomImageItem
+from paper_uploads import exceptions
 from paper_uploads.helpers import _get_item_types
 from paper_uploads.models import Collection, FileItem, ImageCollection, ImageItem, SVGItem
 
@@ -159,13 +160,13 @@ class TestCollection:
         assert storage.global_collection.get_items('svg').count() == 1
 
     def test_get_unsupported_items(self, storage):
-        with pytest.raises(ValueError):
+        with pytest.raises(exceptions.InvalidItemType):
             storage.file_collection.get_items('image')
 
-        with pytest.raises(ValueError):
+        with pytest.raises(exceptions.InvalidItemType):
             storage.image_collection.get_items('file')
 
-        with pytest.raises(ValueError):
+        with pytest.raises(exceptions.InvalidItemType):
             storage.global_collection.get_items('nothing')
 
     def test_collection_id(self, storage):
@@ -270,7 +271,7 @@ class TestCollection:
         assert storage.global_collection.get_item_model("svg") is SVGItem
         assert storage.global_collection.get_item_model("image") is ImageItem
         assert storage.global_collection.get_item_model("file") is FileItem
-        with pytest.raises(ValueError):
+        with pytest.raises(exceptions.InvalidItemType):
             storage.global_collection.get_item_model("video")
 
 

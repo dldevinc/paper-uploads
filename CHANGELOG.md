@@ -1,7 +1,8 @@
 # Change Log
 
 ## [0.8.0](https://github.com/dldevinc/paper-uploads/tree/v0.8.0) - 2021-11-15
-
+### ⚠ BREAKING CHANGES
+- Added new `InvalidItemType` exception.
 ### Bug Fixes
 - Fixed caption update for collection items.
 
