@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.core.handlers.wsgi import WSGIRequest
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.template import loader
 from django.utils.decorators import method_decorator
 from django.utils.functional import Promise
@@ -63,7 +63,7 @@ class AjaxView(View):
 
 
 class ActionView(AjaxView):
-    def perform_action(self, request: WSGIRequest, *args, **kwargs):
+    def perform_action(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         try:
             return self.handle(request, *args, **kwargs)
         except exceptions.InvalidContentType:
@@ -81,7 +81,7 @@ class ActionView(AjaxView):
                 message = type(e).__name__
             return self.error_response(message)
 
-    def handle(self, *args, **kwargs):
+    def handle(self, *args, **kwargs) -> HttpResponse:
         raise NotImplementedError
 
 
@@ -92,7 +92,7 @@ class UploadFileViewBase(ActionView):
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def post(self, request: WSGIRequest, *args, **kwargs):
+    def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         if not request.user.has_perm("paper_uploads.upload"):
             return self.error_response(_("Access denied"))
 
@@ -175,7 +175,7 @@ class DeleteFileViewBase(ActionView):
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def post(self, request: WSGIRequest, *args, **kwargs):
+    def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         if not request.user.has_perm("paper_uploads.delete"):
             return self.error_response(_("Access denied"))
         return self.perform_action(request, *args, **kwargs)
@@ -200,7 +200,7 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
             "form": loader.render_to_string(self.template_name, context, request=request)
         })
 
-    def post(self, request: WSGIRequest, *args, **kwargs):
+    def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         if not request.user.has_perm("paper_uploads.change"):
             return self.error_response(_("Access denied"))
 

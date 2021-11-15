@@ -1,6 +1,7 @@
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.core.files.uploadedfile import UploadedFile
 from django.core.handlers.wsgi import WSGIRequest
+from django.http import HttpResponse
 from django.utils.translation import gettext_lazy as _
 
 from .. import exceptions
@@ -13,7 +14,7 @@ from .base import ChangeFileViewBase, DeleteFileViewBase, UploadFileViewBase
 
 
 class UploadFileView(UploadFileViewBase):
-    def handle(self, request: WSGIRequest, file: UploadedFile):
+    def handle(self, request: WSGIRequest, file: UploadedFile) -> HttpResponse:
         content_type_id = request.POST.get("paperContentType")
         model_class = helpers.get_model_class(content_type_id, FileResource)
         instance = model_class(
@@ -41,7 +42,7 @@ class UploadFileView(UploadFileViewBase):
 
 
 class DeleteFileView(DeleteFileViewBase):
-    def handle(self, request: WSGIRequest):
+    def handle(self, request: WSGIRequest) -> HttpResponse:
         content_type_id = request.POST.get("paperContentType")
         model_class = helpers.get_model_class(content_type_id, FileResource)
         pk = request.POST.get("pk")
