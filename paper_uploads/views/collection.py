@@ -94,7 +94,7 @@ class UploadFileView(UploadFileViewBase):
         try:
             order = max(0, int(request.POST.get("order")))
         except (TypeError, ValueError):
-            order = 0
+            order = None
 
         # перебираем все подходящие классы элементов пока
         # не найдем тот, который будет успешно создан
