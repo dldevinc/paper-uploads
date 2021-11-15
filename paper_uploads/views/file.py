@@ -1,3 +1,5 @@
+from typing import Any, Type
+
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.core.files.uploadedfile import UploadedFile
 from django.core.handlers.wsgi import WSGIRequest
@@ -14,14 +16,18 @@ from .base import ChangeFileViewBase, DeleteFileViewBase, UploadFileViewBase
 
 
 class UploadFileView(UploadFileViewBase):
-    def handle(self, request: WSGIRequest, file: UploadedFile) -> HttpResponse:
-        content_type_id = request.POST.get("paperContentType")
+    def get_instance(self) -> FileResource:
+        content_type_id = self.request.POST.get("paperContentType")
         model_class = helpers.get_model_class(content_type_id, FileResource)
-        instance = model_class(
-            owner_app_label=request.POST.get("paperOwnerAppLabel"),
-            owner_model_name=request.POST.get("paperOwnerModelName"),
-            owner_fieldname=request.POST.get("paperOwnerFieldName"),
+        return model_class(
+            owner_app_label=self.request.POST.get("paperOwnerAppLabel"),
+            owner_model_name=self.request.POST.get("paperOwnerModelName"),
+            owner_fieldname=self.request.POST.get("paperOwnerFieldName"),
         )
+
+    def handle(self, request: WSGIRequest, file: UploadedFile) -> HttpResponse:
+        instance = self.get_instance()
+        owner_field = instance.get_owner_field()
 
         try:
             instance.attach_file(file)
@@ -30,7 +36,6 @@ class UploadFileView(UploadFileViewBase):
 
         try:
             instance.full_clean()
-            owner_field = instance.get_owner_field()
             if owner_field is not None:
                 run_validators(file, owner_field.validators)
         except Exception:
@@ -38,17 +43,27 @@ class UploadFileView(UploadFileViewBase):
             raise
 
         instance.save()
+
+        return self.success(instance)
+
+    def success(self, instance: FileResource) -> HttpResponse:
         return self.success_response(instance.as_dict())
 
 
 class DeleteFileView(DeleteFileViewBase):
+    def get_file_model(self) -> Type[FileResource]:
+        content_type_id = self.request.POST.get("paperContentType")
+        return helpers.get_model_class(content_type_id, FileResource)
+
+    def get_file_id(self) -> Any:
+        return self.request.POST.get("pk")
+
     def handle(self, request: WSGIRequest) -> HttpResponse:
-        content_type_id = request.POST.get("paperContentType")
-        model_class = helpers.get_model_class(content_type_id, FileResource)
-        pk = request.POST.get("pk")
+        model = self.get_file_model()
+        pk = self.get_file_id()
 
         try:
-            instance = helpers.get_instance(model_class, pk)
+            instance = helpers.get_instance(model, pk)
         except exceptions.InvalidObjectId:
             logger.exception("Error")
             return self.error_response(_("Invalid ID"))
@@ -58,8 +73,12 @@ class DeleteFileView(DeleteFileViewBase):
         except MultipleObjectsReturned:
             logger.exception("Error")
             return self.error_response(_("Multiple objects returned"))
+        else:
+            instance.delete()
 
-        instance.delete()
+        return self.success()
+
+    def success(self) -> HttpResponse:
         return self.success_response()
 
 
@@ -67,13 +86,19 @@ class ChangeFileView(ChangeFileViewBase):
     form_class = UploadedFileDialog
     template_name = "paper_uploads/dialogs/file.html"
 
-    def get_instance(self, request: WSGIRequest, *args, **kwargs):
+    def get_file_model(self) -> Type[FileResource]:
         content_type_id = self.request.GET.get("paperContentType")
-        model_class = helpers.get_model_class(content_type_id, FileResource)
-        pk = self.request.GET.get("pk")
+        return helpers.get_model_class(content_type_id, FileResource)
+
+    def get_file_id(self) -> Any:
+        return self.request.GET.get("pk")
+
+    def get_instance(self, request: WSGIRequest, *args, **kwargs):
+        model = self.get_file_model()
+        pk = self.get_file_id()
 
         try:
-            return helpers.get_instance(model_class, pk)
+            return helpers.get_instance(model, pk)
         except exceptions.InvalidObjectId:
             raise exceptions.AjaxFormError(_("Invalid ID"))
         except ObjectDoesNotExist:

@@ -1,3 +1,7 @@
+import os
+from typing import Any, Type
+
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.core.files.uploadedfile import UploadedFile
 from django.core.handlers.wsgi import WSGIRequest
@@ -11,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .. import exceptions, signals
 from ..helpers import run_validators
 from ..logging import logger
-from ..models.collection import CollectionBase, CollectionItemBase
+from ..models.collection import CollectionBase, CollectionFileItemBase, CollectionItemBase
 from . import helpers
 from .base import ActionView, ChangeFileViewBase, DeleteFileViewBase, UploadFileViewBase
 
@@ -28,16 +32,23 @@ class CreateCollectionView(ActionView):
             return self.error_response(_("Access denied"))
         return self.perform_action(request, *args, **kwargs)
 
-    def handle(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
-        content_type_id = request.POST.get("paperCollectionContentType")
-        collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
-        collection = collection_cls.objects.create(
-            owner_app_label=request.POST.get("paperOwnerAppLabel"),
-            owner_model_name=request.POST.get("paperOwnerModelName"),
-            owner_fieldname=request.POST.get("paperOwnerFieldName"),
+    def get_instance(self) -> CollectionBase:
+        content_type_id = self.request.POST.get("paperCollectionContentType")
+        model_class = helpers.get_model_class(content_type_id, CollectionBase)
+        return model_class(
+            owner_app_label=self.request.POST.get("paperOwnerAppLabel"),
+            owner_model_name=self.request.POST.get("paperOwnerModelName"),
+            owner_fieldname=self.request.POST.get("paperOwnerFieldName"),
         )
+
+    def handle(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
+        instance = self.get_instance()
+        instance.save()
+        return self.success(instance)
+
+    def success(self, instance: CollectionBase) -> HttpResponse:
         return self.success_response({
-            "collection_id": collection.pk
+            "collection_id": instance.pk
         })
 
 
@@ -53,32 +64,48 @@ class DeleteCollectionView(ActionView):
             return self.error_response(_("Access denied"))
         return self.perform_action(request, *args, **kwargs)
 
+    def get_collection_model(self) -> Type[CollectionBase]:
+        content_type_id = self.request.POST.get("paperCollectionContentType")
+        return helpers.get_model_class(content_type_id, CollectionBase)
+
+    def get_collection_id(self) -> Any:
+        return self.request.POST.get("collectionId")
+
     def handle(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
-        content_type_id = request.POST.get("paperCollectionContentType")
-        collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
-        collection_id = request.POST.get("collectionId")
+        collection_cls = self.get_collection_model()
+        collection_id = self.get_collection_id()
 
         try:
-            instance = helpers.get_instance(collection_cls, collection_id)
+            collection = helpers.get_instance(collection_cls, collection_id)
         except exceptions.InvalidObjectId:
             logger.exception("Error")
-            return self.error_response(_("Invalid ID"))
+            return self.error_response(_("Invalid collection ID"))
         except ObjectDoesNotExist:
             logger.exception("Error")
-            return self.error_response(_("Object not found"))
+            return self.error_response(_("Collection not found"))
         except MultipleObjectsReturned:
             logger.exception("Error")
             return self.error_response(_("Multiple objects returned"))
+        else:
+            collection.delete()
 
-        instance.delete()
+        return self.success()
+
+    def success(self) -> HttpResponse:
         return self.success_response()
 
 
 class UploadFileView(UploadFileViewBase):
+    def get_collection_model(self) -> Type[CollectionBase]:
+        content_type_id = self.request.POST.get("paperCollectionContentType")
+        return helpers.get_model_class(content_type_id, CollectionBase)
+
+    def get_collection_id(self) -> Any:
+        return self.request.POST.get("collectionId")
+
     def handle(self, request: WSGIRequest, file: UploadedFile) -> HttpResponse:
-        content_type_id = request.POST.get("paperCollectionContentType")
-        collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
-        collection_id = request.POST.get("collectionId")
+        collection_cls = self.get_collection_model()
+        collection_id = self.get_collection_id()
 
         try:
             collection = helpers.get_instance(collection_cls, collection_id)
@@ -101,7 +128,7 @@ class UploadFileView(UploadFileViewBase):
         # не найдем тот, который будет успешно создан
         for item_type in collection.detect_item_type(file):  # noqa: F821
             item_type_field = collection_cls.item_types[item_type]
-            instance = item_type_field.model(
+            item = item_type_field.model(
                 collection=collection,
                 item_type=item_type,
                 size=file.size,
@@ -109,55 +136,69 @@ class UploadFileView(UploadFileViewBase):
             )
 
             try:
-                instance.attach_file(file)
+                item.attach_file(file)
             except exceptions.UnsupportedFileError:
                 continue
 
             try:
-                instance.full_clean()
+                item.full_clean()
                 run_validators(file, item_type_field.validators)
             except Exception:
-                instance.delete_file()
+                item.delete_file()
                 raise
 
             break
         else:
-            return self.error_response(_("Unsupported file: %s") % file.name)
+            filename = os.path.basename(file.name)
+            return self.error_response(_("Unsupported file: %s") % filename)
 
-        instance.save()
-        return self.success_response({
-            **instance.as_dict(),
-        })
+        item.save()
+
+        return self.success(item)
+
+    def success(self, instance: CollectionFileItemBase) -> HttpResponse:
+        return self.success_response(instance.as_dict())
 
 
 class DeleteFileView(DeleteFileViewBase):
+    def get_collection_model(self) -> Type[CollectionBase]:
+        content_type_id = self.request.POST.get("paperCollectionContentType")
+        return helpers.get_model_class(content_type_id, CollectionBase)
+
+    def get_item_type(self) -> str:
+        return self.request.POST.get("itemType")
+
+    def get_item_id(self) -> Any:
+        return self.request.POST.get("itemId")
+
     def handle(self, request: WSGIRequest) -> HttpResponse:
-        content_type_id = request.POST.get("paperCollectionContentType")
-        collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
-
-        item_type = request.POST.get("itemType")
-        for name, field in collection_cls.item_types.items():
-            if item_type == name:
-                model_class = field.model
-                break
-        else:
-            return self.error_response(_("Invalid itemType"))
-
-        item_id = request.POST.get("itemId")
+        collection_cls = self.get_collection_model()
+        item_type = self.get_item_type()
+        item_id = self.get_item_id()
 
         try:
-            item = helpers.get_instance(model_class, item_id)
+            item_model = collection_cls.get_item_model(item_type)
+        except exceptions.InvalidItemType:
+            logger.exception("Error")
+            return self.error_response(_("Invalid itemType"))
+
+        try:
+            item = helpers.get_instance(item_model, item_id)
         except exceptions.InvalidObjectId:
             logger.exception("Error")
             return self.error_response(_("Invalid ID"))
         except ObjectDoesNotExist:
             # silently skip
-            return self.success_response()
+            pass
         except MultipleObjectsReturned:
             logger.exception("Error")
             return self.error_response(_("Multiple objects returned"))
+        else:
+            item.delete()
 
-        item.delete()
+        return self.success()
+
+    def success(self) -> HttpResponse:
         return self.success_response()
 
 
@@ -167,27 +208,37 @@ class ChangeFileView(ChangeFileViewBase):
     def get_form_class(self):
         return import_string(self.instance.change_form_class)
 
-    def get_instance(self, request: WSGIRequest, *args, **kwargs):
+    def get_collection_model(self) -> Type[CollectionBase]:
         content_type_id = self.request.GET.get("paperCollectionContentType")
-        collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
+        return helpers.get_model_class(content_type_id, CollectionBase)
 
-        item_type = self.request.GET.get("itemType")
-        for name, field in collection_cls.item_types.items():
-            if item_type == name:
-                model_class = field.model
-                break
-        else:
-            raise exceptions.AjaxFormError(_("Invalid itemType"))
+    def get_item_type(self) -> str:
+        return self.request.GET.get("itemType")
 
-        item_id = self.request.GET.get("itemId")
+    def get_item_id(self) -> Any:
+        return self.request.GET.get("itemId")
+
+    def get_instance(self, request: WSGIRequest, *args, **kwargs):
+        collection_cls = self.get_collection_model()
+        item_type = self.get_item_type()
+        item_id = self.get_item_id()
 
         try:
-            return helpers.get_instance(model_class, item_id)
+            item_model = collection_cls.get_item_model(item_type)
+        except exceptions.InvalidItemType:
+            logger.exception("Error")
+            return self.error_response(_("Invalid itemType"))
+
+        try:
+            return helpers.get_instance(item_model, item_id)
         except exceptions.InvalidObjectId:
+            logger.exception("Error")
             raise exceptions.AjaxFormError(_("Invalid ID"))
         except ObjectDoesNotExist:
+            logger.exception("Error")
             raise exceptions.AjaxFormError(_("Object not found"))
         except MultipleObjectsReturned:
+            logger.exception("Error")
             raise exceptions.AjaxFormError(_("Multiple objects returned"))
 
 
@@ -204,43 +255,67 @@ class SortItemsView(ActionView):
 
         return self.perform_action(request, *args, **kwargs)
 
+    def get_collection_model(self) -> Type[CollectionBase]:
+        content_type_id = self.request.POST.get("paperCollectionContentType")
+        return helpers.get_model_class(content_type_id, CollectionBase)
+
+    def get_collection_id(self) -> Any:
+        return self.request.POST.get("collectionId")
+
     def handle(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
-        content_type_id = request.POST.get("paperCollectionContentType")
-        collection_cls = helpers.get_model_class(content_type_id, CollectionBase)
-        collection_id = request.POST.get("collectionId")
+        collection_cls = self.get_collection_model()
+        collection_id = self.get_collection_id()
+        collection_content_type = ContentType.objects.get_for_model(collection_cls, for_concrete_model=False)
 
         try:
-            instance = helpers.get_instance(collection_cls, collection_id)
+            collection = helpers.get_instance(collection_cls, collection_id)
         except exceptions.InvalidObjectId:
             logger.exception("Error")
-            return self.error_response(_("Invalid ID"))
+            return self.error_response(_("Invalid collection ID"))
         except ObjectDoesNotExist:
             logger.exception("Error")
-            return self.error_response(_("Object not found"))
+            return self.error_response(_("Collection not found"))
         except MultipleObjectsReturned:
             logger.exception("Error")
             return self.error_response(_("Multiple objects returned"))
 
+        # Получение списка ID элементов в том порядке, в котором они должны быть расположены
         order_string = request.POST.get("orderList", "")
-        try:
-            item_ids = (int(pk) for pk in order_string.split(","))
-        except ValueError:
-            logger.exception("Error")
-            return self.error_response(_("Invalid order value"))
+        ordered_item_ids = (item.strip() for item in order_string.split(","))
+        ordered_item_ids = tuple(pk for pk in ordered_item_ids if pk)
+
+        # Список ID и сортировки для существующих элементов коллекции
+        existing_item_ids = {
+            str(pk): order
+            for pk, order in CollectionItemBase._base_manager.filter(
+                collection_content_type=collection_content_type,
+                collection_id=collection_id
+            ).values_list("pk", "order")
+        }
 
         with transaction.atomic():
-            for index, item_id in enumerate(item_ids):
-                if item_id in set(instance.items.values_list("pk", flat=True)):  # noqa: F821
-                    CollectionItemBase.objects.filter(pk=item_id).update(order=index)
+            for index, item_id in enumerate(ordered_item_ids):
+                if item_id in existing_item_ids:
+                    # обновляем только те значения сортировки, которые изменились
+                    if existing_item_ids[item_id] != index:
+                        CollectionItemBase._base_manager.filter(
+                            pk=item_id
+                        ).update(
+                            order=index
+                        )
                 else:
-                    CollectionItemBase.objects.filter(pk=item_id).update(
-                        order=2 ** 32 - 1
+                    logger.warning(
+                        "Item #{} not found in collection #{}".format(item_id, collection_id)
                     )
 
         signals.collection_reordered.send(
             sender=collection_cls,
-            instance=instance
+            instance=collection
         )
+
         return self.success_response({
-            "orderMap": dict(instance.items.values_list("pk", "order"))  # noqa: F821
+            "orderMap": dict(CollectionItemBase._base_manager.filter(
+                collection_content_type=collection_content_type,
+                collection_id=collection_id
+            ).values_list("pk", "order"))
         })
