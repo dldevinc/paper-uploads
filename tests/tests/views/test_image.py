@@ -8,7 +8,7 @@ from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.test import RequestFactory
 
-from app.models.custom import CustomUploadedImage
+from app.models.custom import CustomProxyUploadedImage
 from app.models.site import ImageFieldObject
 from paper_uploads.exceptions import InvalidContentType
 from paper_uploads.views.image import DeleteFileView, UploadFileView
@@ -19,7 +19,7 @@ from ..dummy import *
 class TestUploadFileView:
     @staticmethod
     def init_class(storage):
-        storage.content_type = ContentType.objects.get_for_model(CustomUploadedImage, for_concrete_model=False)
+        storage.content_type = ContentType.objects.get_for_model(CustomProxyUploadedImage, for_concrete_model=False)
 
         storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
         permission = Permission.objects.get(name="Can upload files")
@@ -39,7 +39,7 @@ class TestUploadFileView:
         storage.view.setup(request)
         instance = storage.view.get_instance()
 
-        assert isinstance(instance, CustomUploadedImage)
+        assert isinstance(instance, CustomProxyUploadedImage)
         assert instance.pk is None
         assert instance.get_owner_field() is ImageFieldObject._meta.get_field("image_custom")
 
@@ -93,7 +93,7 @@ class TestUploadFileView:
 class TestDeleteFileView:
     @staticmethod
     def init_class(storage):
-        storage.content_type = ContentType.objects.get_for_model(CustomUploadedImage, for_concrete_model=False)
+        storage.content_type = ContentType.objects.get_for_model(CustomProxyUploadedImage, for_concrete_model=False)
 
         storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
         permission = Permission.objects.get(name="Can upload files")
@@ -110,7 +110,7 @@ class TestDeleteFileView:
         storage.view.setup(request)
         file_model = storage.view.get_file_model()
 
-        assert file_model is CustomUploadedImage
+        assert file_model is CustomProxyUploadedImage
 
     def test_invalid_content_type(self, storage):
         content_type = ContentType.objects.get_for_model(ImageFieldObject, for_concrete_model=False)
@@ -158,7 +158,7 @@ class TestDeleteFileView:
         assert json.loads(response.content)["errors"][0] == "Object not found"
 
     def test_success(self, storage):
-        file = CustomUploadedImage(
+        file = CustomProxyUploadedImage(
             pk=5472
         )
         file.set_owner_from(ImageFieldObject._meta.get_field("image_custom"))

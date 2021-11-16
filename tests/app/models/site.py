@@ -11,8 +11,8 @@ from .custom import (
     CustomCloudinaryGallery,
     CustomGallery,
     CustomProxyGallery,
-    CustomUploadedFile,
-    CustomUploadedImage,
+    CustomProxyUploadedFile,
+    CustomProxyUploadedImage,
 )
 
 __all__ = [
@@ -37,7 +37,7 @@ class FileFieldObject(models.Model):
     file_required = FileField(_("required file"))
     file_custom = FileField(
         _("custom file"),
-        to=CustomUploadedFile,
+        to=CustomProxyUploadedFile,
         blank=True,
     )
 
@@ -95,7 +95,7 @@ class ImageFieldObject(models.Model):
     )
     image_custom = ImageField(
         _("custom image"),
-        to=CustomUploadedImage,
+        to=CustomProxyUploadedImage,
         blank=True,
     )
 

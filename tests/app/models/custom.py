@@ -1,24 +1,24 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from paper_uploads.models import *
 from paper_uploads.cloudinary.models import *
+from paper_uploads.models import *
 
 __all__ = [
-    "CustomUploadedFile",
-    "CustomUploadedImage",
-    "CustomCloudinaryFile",
+    "CustomProxyUploadedFile",
+    "CustomProxyUploadedImage",
     "CustomProxyGallery",
     "CustomGallery",
+    "CustomImageItem",
+    "CustomCloudinaryFile",
     "CustomCloudinaryGallery",
-    "CustomImageItem"
 ]
 
 
 # =========== Proxy models ==================
 
 
-class CustomUploadedFile(UploadedFile):
+class CustomProxyUploadedFile(UploadedFile):
     class Meta:
         proxy = True
 
@@ -26,7 +26,7 @@ class CustomUploadedFile(UploadedFile):
         return "custom-files/%Y"
 
 
-class CustomUploadedImage(UploadedImage):
+class CustomProxyUploadedImage(UploadedImage):
     class Meta:
         proxy = True
 
