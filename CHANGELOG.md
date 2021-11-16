@@ -5,6 +5,7 @@
 - Added composite index for `CollectionItemBase`.
 - `FileResource`'s method `get_basename()` has been renamed to `get_caption()`.
 - Added new `InvalidItemType` exception.
+- Changed some admin URLs for collections.
 ### Features
 - Updated view classes for easier customization.
 ### Bug Fixes
