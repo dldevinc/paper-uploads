@@ -14,7 +14,7 @@ from .mixins import BacklinkModelMixin
 from .utils import generate_filename
 
 
-class UploadedImage(VersatileImageResourceMixin, BacklinkModelMixin, FileFieldResource):
+class UploadedImageBase(VersatileImageResourceMixin, BacklinkModelMixin, FileFieldResource):
     change_form_class: Optional[Union[str, forms.Form]] = "paper_uploads.forms.dialogs.image.UploadedImageDialog"
 
     file = VariationalFileField(
@@ -25,6 +25,7 @@ class UploadedImage(VersatileImageResourceMixin, BacklinkModelMixin, FileFieldRe
     )
 
     class Meta(FileFieldResource.Meta):
+        abstract = True
         verbose_name = _("image")
         verbose_name_plural = _("images")
 
@@ -74,3 +75,8 @@ class UploadedImage(VersatileImageResourceMixin, BacklinkModelMixin, FileFieldRe
                 "image/webp",
             ],
         }
+
+
+class UploadedImage(UploadedImageBase):
+    class Meta(UploadedImageBase.Meta):
+        pass

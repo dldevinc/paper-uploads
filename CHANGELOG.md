@@ -13,6 +13,7 @@
 - Added new `InvalidItemType` exception.
 - Changed some admin URLs for collections.
 ### Features
+- Add abstract base classes for uploaded files.
 - Updated view classes for easier customization.
 ### Bug Fixes
 - Fixed caption update for collection items.

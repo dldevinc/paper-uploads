@@ -13,7 +13,7 @@ from .mixins import BacklinkModelMixin
 from .utils import generate_filename
 
 
-class UploadedFile(BacklinkModelMixin, FileFieldResource):
+class UploadedFileBase(BacklinkModelMixin, FileFieldResource):
     change_form_class: Optional[Union[str, forms.Form]] = "paper_uploads.forms.dialogs.file.UploadedFileDialog"
 
     file = models.FileField(
@@ -25,6 +25,7 @@ class UploadedFile(BacklinkModelMixin, FileFieldResource):
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
     class Meta(FileFieldResource.Meta):
+        abstract = True
         verbose_name = _("file")
         verbose_name_plural = _("files")
 
@@ -59,3 +60,8 @@ class UploadedFile(BacklinkModelMixin, FileFieldResource):
                 ext=self.extension, size=filesizeformat(self.size)
             ),
         }
+
+
+class UploadedFile(UploadedFileBase):
+    class Meta(UploadedFileBase.Meta):
+        pass
