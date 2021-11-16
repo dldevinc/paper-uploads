@@ -16,7 +16,7 @@ class UploadedFileBaseForm(forms.ModelForm):
             self.fields["new_name"].initial = self.instance.basename
 
     def save(self, commit=True):
-        old_name = self.instance.name
+        old_name = self.instance.basename
         new_name = self.cleaned_data["new_name"]
         if old_name != new_name:
             if self.instance.extension:
