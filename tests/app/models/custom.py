@@ -8,6 +8,8 @@ __all__ = [
     "CustomProxyUploadedFile",
     "CustomProxyUploadedImage",
     "CustomProxyGallery",
+    "CustomUploadedFile",
+    "CustomUploadedImage",
     "CustomGallery",
     "CustomImageItem",
     "CustomCloudinaryFile",
@@ -53,6 +55,24 @@ class CustomCloudinaryFile(CloudinaryFile):
 # =========== Concrete models ==================
 
 
+class CustomUploadedFile(UploadedFileBase):
+    change_form_class = "app.forms.dialogs.custom.CustomUploadedFileDialog"
+
+    author = models.CharField(_("author"), max_length=64, blank=True)
+
+    def get_file_folder(self) -> str:
+        return "custom-files/%Y"
+
+
+class CustomUploadedImage(UploadedImageBase):
+    change_form_class = "app.forms.dialogs.custom.CustomUploadedImageDialog"
+
+    author = models.CharField(_("author"), max_length=64, blank=True)
+
+    def get_file_folder(self) -> str:
+        return "custom-images/%Y"
+
+
 class CustomImageItem(ImageItemBase):
     change_form_class = "app.forms.dialogs.custom.CustomImageItemDialog"
 
@@ -67,6 +87,9 @@ class CustomCloudinaryImageItem(CloudinaryImageItemBase):
 
     def get_file_folder(self) -> str:
         return "collections/custom-images/%Y"
+
+
+# =========== Collections ==================
 
 
 class CustomProxyGallery(ImageCollection):

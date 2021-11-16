@@ -31,7 +31,7 @@ class TestUploadFileView:
             "paperContentType": storage.content_type.pk,
             "paperOwnerAppLabel": "app",
             "paperOwnerModelName": "filefieldobject",
-            "paperOwnerFieldName": "file_custom"
+            "paperOwnerFieldName": "file_custom_proxy"
         })
         request.user = storage.user
         storage.view.setup(request)
@@ -39,7 +39,7 @@ class TestUploadFileView:
 
         assert isinstance(instance, CustomProxyUploadedFile)
         assert instance.pk is None
-        assert instance.get_owner_field() is FileFieldObject._meta.get_field("file_custom")
+        assert instance.get_owner_field() is FileFieldObject._meta.get_field("file_custom_proxy")
 
     def test_invalid_content_type(self, storage):
         content_type = ContentType.objects.get_for_model(FileFieldObject, for_concrete_model=False)
@@ -48,7 +48,7 @@ class TestUploadFileView:
             "paperContentType": content_type.pk,
             "paperOwnerAppLabel": "app",
             "paperOwnerModelName": "filefieldobject",
-            "paperOwnerFieldName": "file_custom"
+            "paperOwnerFieldName": "file_custom_proxy"
         })
         request.user = storage.user
         storage.view.setup(request)
@@ -155,7 +155,7 @@ class TestDeleteFileView:
         file = CustomProxyUploadedFile(
             pk=5472
         )
-        file.set_owner_from(FileFieldObject._meta.get_field("file_custom"))
+        file.set_owner_from(FileFieldObject._meta.get_field("file_custom_proxy"))
         file.save()
 
         request = RequestFactory().post("/", data={

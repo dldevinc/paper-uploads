@@ -13,6 +13,8 @@ from .custom import (
     CustomProxyGallery,
     CustomProxyUploadedFile,
     CustomProxyUploadedImage,
+    CustomUploadedFile,
+    CustomUploadedImage,
 )
 
 __all__ = [
@@ -35,9 +37,14 @@ class FileFieldObject(models.Model):
 
     file = FileField(_("file"), blank=True)
     file_required = FileField(_("required file"))
+    file_custom_proxy = FileField(
+        _("custom proxy file"),
+        to=CustomProxyUploadedFile,
+        blank=True,
+    )
     file_custom = FileField(
         _("custom file"),
-        to=CustomProxyUploadedFile,
+        to=CustomUploadedFile,
         blank=True,
     )
 
@@ -93,9 +100,14 @@ class ImageFieldObject(models.Model):
             ),
         )
     )
+    image_custom_proxy = ImageField(
+        _("custom proxy image"),
+        to=CustomProxyUploadedImage,
+        blank=True,
+    )
     image_custom = ImageField(
         _("custom image"),
-        to=CustomProxyUploadedImage,
+        to=CustomUploadedImage,
         blank=True,
     )
 

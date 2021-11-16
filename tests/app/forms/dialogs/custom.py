@@ -1,10 +1,27 @@
 from django import forms
 
-from app.models.custom import CustomImageItem
-from paper_uploads.forms.dialogs.collection import ImageItemDialog
+from app.models.custom import CustomImageItem, CustomUploadedFile, CustomUploadedImage
+from paper_uploads.forms.dialogs.base import UploadedFileBaseForm
 
 
-class CustomImageItemDialog(ImageItemDialog):
+class CustomUploadedFileDialog(UploadedFileBaseForm):
+    class Meta:
+        model = CustomUploadedFile
+        fields = ("new_name", "display_name", "author")
+
+
+class CustomUploadedImageDialog(UploadedFileBaseForm):
+    class Meta:
+        model = CustomUploadedImage
+        fields = ("new_name", "title", "description", "author")
+        widgets = {
+            "description": forms.Textarea(attrs={
+                "rows": 3
+            })
+        }
+
+
+class CustomImageItemDialog(UploadedFileBaseForm):
     class Meta:
         model = CustomImageItem
         fields = ("new_name", "caption", "title", "description")
