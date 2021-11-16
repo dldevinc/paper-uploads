@@ -620,7 +620,7 @@ class Collection extends EventEmitter {
         });
 
         if (!orderValues.length) {
-            return 0;
+            return -1;
         }
 
         return Math.max.apply(null, orderValues);
