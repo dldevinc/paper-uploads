@@ -11,6 +11,7 @@ __all__ = [
     "CustomProxyGallery",
     "CustomGallery",
     "CustomCloudinaryGallery",
+    "CustomImageItem"
 ]
 
 
@@ -53,6 +54,8 @@ class CustomCloudinaryFile(CloudinaryFile):
 
 
 class CustomImageItem(ImageItemBase):
+    change_form_class = "app.forms.dialogs.custom.CustomImageItemDialog"
+
     caption = models.TextField(_("caption"), blank=True)
 
     def get_file_folder(self) -> str:

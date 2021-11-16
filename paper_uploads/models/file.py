@@ -1,5 +1,6 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Union
 
+from django import forms
 from django.db import models
 from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
@@ -13,6 +14,8 @@ from .utils import generate_filename
 
 
 class UploadedFile(BacklinkModelMixin, FileFieldResource):
+    change_form_class: Optional[Union[str, forms.Form]] = "paper_uploads.forms.dialogs.file.UploadedFileDialog"
+
     file = models.FileField(
         _("file"),
         max_length=255,

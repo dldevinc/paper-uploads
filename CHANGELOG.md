@@ -6,6 +6,8 @@
   `UploadedFile`, `UploadedImage` and `CollectionBase`. 
   This update will remove `owner_XXX` fields from collection items.
   Run `makemigrations` and `migrate` commands to apply the change to your data.
+- Added `change_form_class` property to `UploadedFile` and `UploadedImage`.
+  This field can be used to specify a custom dialog form for a given model. 
 - Added composite index for `CollectionItemBase`.
 - `FileResource`'s method `get_basename()` has been renamed to `get_caption()`.
 - Added new `InvalidItemType` exception.

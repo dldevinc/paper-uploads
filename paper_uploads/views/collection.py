@@ -206,7 +206,10 @@ class ChangeFileView(ChangeFileViewBase):
     template_name = "paper_uploads/dialogs/collection.html"
 
     def get_form_class(self):
-        return import_string(self.instance.change_form_class)
+        if isinstance(self.instance.change_form_class, str):
+            return import_string(self.instance.change_form_class)
+        else:
+            return self.instance.change_form_class
 
     def get_collection_model(self) -> Type[CollectionBase]:
         content_type_id = self.request.GET.get("paperCollectionContentType")

@@ -4,6 +4,7 @@ from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.core.files.uploadedfile import UploadedFile
 from django.core.handlers.wsgi import WSGIRequest
 from django.http import HttpResponse
+from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 
 from .. import exceptions
@@ -83,8 +84,17 @@ class DeleteFileView(DeleteFileViewBase):
 
 
 class ChangeFileView(ChangeFileViewBase):
-    form_class = UploadedImageDialog
     template_name = "paper_uploads/dialogs/image.html"
+
+    def get_form_class(self):
+        # compat
+        if not hasattr(self.instance, "change_form_class"):
+            return UploadedImageDialog
+
+        if isinstance(self.instance.change_form_class, str):
+            return import_string(self.instance.change_form_class)
+        else:
+            return self.instance.change_form_class
 
     def get_file_model(self) -> Type[FileResource]:
         content_type_id = self.request.GET.get("paperContentType")

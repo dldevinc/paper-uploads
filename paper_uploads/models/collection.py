@@ -1,8 +1,9 @@
 import posixpath
 from collections import OrderedDict
-from typing import Any, Dict, Iterable, Optional, Type
+from typing import Any, Dict, Iterable, Optional, Type, Union
 
 import magic
+from django import forms
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.finders import find
@@ -275,7 +276,7 @@ class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
     # См. метод _check_form_class()
     __BaseCollectionItem = True
 
-    change_form_class: Optional[str] = None
+    change_form_class: Optional[Union[str, forms.Form]] = None
 
     # путь к шаблону, представляющему элемент коллекции в админке
     template_name: Optional[str] = None
