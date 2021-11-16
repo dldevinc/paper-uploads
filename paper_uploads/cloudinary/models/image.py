@@ -5,11 +5,12 @@ from django.utils.translation import gettext_lazy as _
 
 from ...conf import settings
 from ...models.base import ImageFileResourceMixin
+from ...models.mixins import BacklinkModelMixin
 from ...utils import filesizeformat
 from .base import CloudinaryFieldFile, CloudinaryFileResource
 
 
-class CloudinaryImage(ImageFileResourceMixin, CloudinaryFileResource):
+class CloudinaryImage(ImageFileResourceMixin, BacklinkModelMixin, CloudinaryFileResource):
     file = CloudinaryField(
         _("file"),
         type=settings.CLOUDINARY_TYPE,

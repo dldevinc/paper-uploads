@@ -263,7 +263,7 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
     owner_app_label = ''
     owner_model_name = ''
     owner_fieldname = ''
-    owner_class = None
+    owner_model = None
     file_field_name = 'file'
     collection_class = CloudinaryCompleteCollection
 
@@ -553,7 +553,7 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
     owner_app_label = ''
     owner_model_name = ''
     owner_fieldname = ''
-    owner_class = None
+    owner_model = None
     file_field_name = 'file'
     collection_class = CloudinaryCompleteCollection
 

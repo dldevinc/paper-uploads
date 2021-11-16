@@ -15,7 +15,7 @@ from ..conf import settings
 from ..files import VariationFile
 from ..typing import FileLike
 from ..variations import PaperVariation
-from .mixins import BacklinkModelMixin, FileFieldProxyMixin, FileProxyMixin
+from .mixins import FileFieldProxyMixin, FileProxyMixin
 
 __all__ = [
     "NoPermissionsMetaBase",
@@ -86,11 +86,11 @@ class ResourceBase(models.Model, metaclass=ResourceBaseMeta):
         }
 
 
-class Resource(BacklinkModelMixin, ResourceBase):
+class Resource(ResourceBase):
     """
     Ресурс.
-    Включает поля, позволяющие обратиться к модели и полю,
-    через которые был создан ресурс.
+
+    TODO: после переноса миксины BacklinkModelMixin класс остался пустым.
     """
 
     class Meta(ResourceBase.Meta):

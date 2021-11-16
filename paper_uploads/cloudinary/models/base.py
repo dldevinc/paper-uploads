@@ -20,6 +20,7 @@ from ... import exceptions, helpers, utils
 from ...conf import settings
 from ...logging import logger
 from ...models.base import FileResource
+from ...models.mixins import BacklinkModelMixin
 from .mixins import ReadonlyCloudinaryFileProxyMixin
 
 
@@ -209,9 +210,10 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         options.update(file_field.options)
 
         # owner field`s options should override `CloudinaryField` options
-        owner_field = self.get_owner_field()
-        if owner_field is not None and hasattr(owner_field, "cloudinary"):
-            options.update(owner_field.cloudinary or {})
+        if isinstance(self, BacklinkModelMixin):
+            owner_field = self.get_owner_field()
+            if owner_field is not None and hasattr(owner_field, "cloudinary"):
+                options.update(owner_field.cloudinary or {})
 
         # filter keys
         options = {

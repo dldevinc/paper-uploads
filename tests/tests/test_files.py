@@ -15,11 +15,7 @@ from .dummy import *
 class TestVariationFile:
     @staticmethod
     def init_class(storage):
-        storage.resource = DummyVersatileImageResource(
-            owner_app_label='app',
-            owner_model_name='dummyversatileimageresource',
-            owner_fieldname='file'
-        )
+        storage.resource = DummyVersatileImageResource()
         with open(NASA_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp)
         storage.resource.save()

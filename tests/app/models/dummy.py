@@ -9,10 +9,12 @@ from django.utils.translation import gettext_lazy as _
 
 from paper_uploads import helpers
 from paper_uploads.models.base import *
+from paper_uploads.models.mixins import BacklinkModelMixin
 from paper_uploads.variations import PaperVariation
 
 __all__ = [
     "DummyResource",
+    "DummyBacklinkResource",
     "DummyFileResource",
     "DummyFileFieldResource",
     "DummyImageFieldResource",
@@ -21,6 +23,10 @@ __all__ = [
 
 
 class DummyResource(Resource):
+    pass
+
+
+class DummyBacklinkResource(BacklinkModelMixin, Resource):
     pass
 
 

@@ -12,6 +12,9 @@ class BacklinkModelMixin(models.Model):
     """
     Миксина, позволяющая обратиться к полю модели, которое ссылается
     на текущий объект.
+
+    Этот миксин должен использоваться в каждой модели, которая используется
+    в полях FileField, ImageField или CollectionField.
     """
 
     owner_app_label = models.CharField(max_length=100, editable=False)

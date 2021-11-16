@@ -9,10 +9,11 @@ from ..utils import filesizeformat
 from ..variations import PaperVariation
 from .base import FileFieldResource, VersatileImageResourceMixin
 from .fields import VariationalFileField
+from .mixins import BacklinkModelMixin
 from .utils import generate_filename
 
 
-class UploadedImage(VersatileImageResourceMixin, FileFieldResource):
+class UploadedImage(VersatileImageResourceMixin, BacklinkModelMixin, FileFieldResource):
     file = VariationalFileField(
         _("file"),
         max_length=255,

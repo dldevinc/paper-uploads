@@ -298,22 +298,10 @@ class TestDeleteCustomCollection:
 
 
 class CollectionItemMixin:
-    owner_app_label = ''
-    owner_model_name = ''
-    owner_fieldname = ''
-    owner_class = None
     collection_class = None
 
     def test_item_type(self, storage):
         raise NotImplementedError
-
-    def test_get_owner_model(self, storage):
-        # Collection items does not have owner
-        assert storage.resource.get_owner_model() is None
-
-    def test_get_owner_field(self, storage):
-        # Collection items does not have owner
-        assert storage.resource.get_owner_field() is None
 
     def test_collection_content_type(self, storage):
         assert storage.resource.collection_content_type == ContentType.objects.get_for_model(
@@ -545,10 +533,6 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
     resource_extension = 'svg'
     resource_size = 47193
     resource_checksum = '7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d'
-    owner_app_label = ''
-    owner_model_name = ''
-    owner_fieldname = ''
-    owner_class = None
     file_field_name = 'file'
     collection_class = CompleteCollection
 
@@ -750,10 +734,6 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
     resource_extension = 'jpg'
     resource_size = 672759
     resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
-    owner_app_label = ''
-    owner_model_name = ''
-    owner_fieldname = ''
-    owner_class = None
     file_field_name = 'file'
     collection_class = CompleteCollection
 

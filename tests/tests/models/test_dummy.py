@@ -21,7 +21,7 @@ class BacklinkModelMixin:
     owner_app_label = 'app'
     owner_model_name = 'model'
     owner_fieldname = 'field'
-    owner_class = None
+    owner_model = None
 
     @classmethod
     def init_class(cls, storage):
@@ -37,7 +37,7 @@ class BacklinkModelMixin:
         assert storage.resource.owner_fieldname == self.owner_fieldname
 
     def test_get_owner_model(self, storage):
-        assert storage.resource.get_owner_model() is self.owner_class
+        assert storage.resource.get_owner_model() is self.owner_model
 
     def test_get_owner_field(self, storage):
         assert isinstance(storage.resource.get_owner_field(), Field)
@@ -45,7 +45,7 @@ class BacklinkModelMixin:
 
 class TestInvalidBacklinkModelMixin:
     def test_empty_app(self):
-        obj = DummyResource(
+        obj = DummyBacklinkResource(
             owner_model_name='dummyfilefieldresource',
             owner_fieldname='file'
         )
@@ -53,7 +53,7 @@ class TestInvalidBacklinkModelMixin:
         assert obj.get_owner_field() is None
 
     def test_empty_model(self):
-        obj = DummyResource(
+        obj = DummyBacklinkResource(
             owner_app_label='app',
             owner_fieldname='file'
         )
@@ -61,7 +61,7 @@ class TestInvalidBacklinkModelMixin:
         assert obj.get_owner_field() is None
 
     def test_empty_field(self):
-        obj = DummyResource(
+        obj = DummyBacklinkResource(
             owner_app_label='app',
             owner_model_name='dummyfilefieldresource',
         )
@@ -69,7 +69,7 @@ class TestInvalidBacklinkModelMixin:
         assert obj.get_owner_field() is None
 
     def test_invalid_model(self):
-        obj = DummyResource(
+        obj = DummyBacklinkResource(
             owner_app_label='app',
             owner_model_name='nooooo',
             owner_fieldname='file'
@@ -78,7 +78,7 @@ class TestInvalidBacklinkModelMixin:
         assert obj.get_owner_field() is None
 
     def test_invalid_field(self):
-        obj = DummyResource(
+        obj = DummyBacklinkResource(
             owner_app_label='app',
             owner_model_name='dummyfilefieldresource',
             owner_fieldname='nooooo'
@@ -87,7 +87,7 @@ class TestInvalidBacklinkModelMixin:
         assert obj.get_owner_field() is None
 
     def test_set_owner_from(self):
-        obj = DummyResource()
+        obj = DummyBacklinkResource()
         owner_field = FileExample._meta.get_field("file")
         obj.set_owner_from(owner_field)
         assert obj.owner_app_label == "app"
@@ -97,19 +97,10 @@ class TestInvalidBacklinkModelMixin:
         assert obj.get_owner_field() is owner_field
 
 
-class TestResource(BacklinkModelMixin):
-    owner_app_label = 'app'
-    owner_model_name = 'dummyfilefieldresource'
-    owner_fieldname = 'file'
-    owner_class = DummyFileFieldResource
-
+class TestResource:
     @classmethod
     def init_class(cls, storage):
-        storage.resource = DummyResource.objects.create(
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
-        )
+        storage.resource = DummyResource.objects.create()
         yield
         storage.resource.delete()
 
@@ -145,10 +136,6 @@ class TestFileResource(TestResource):
     resource_extension = 'Jpeg'
     resource_size = 28
     resource_checksum = '5d8ec227d0d8794d4d99dfbbdb9ad3b479c16952ad4ef69252644d9c404543a5'
-    owner_app_label = 'app'
-    owner_model_name = 'dummyfilefieldresource'
-    owner_fieldname = 'file'
-    owner_class = DummyFileFieldResource
 
     @classmethod
     def init_class(cls, storage):
@@ -156,9 +143,6 @@ class TestFileResource(TestResource):
             basename=cls.resource_name,
             extension=cls.resource_extension,
             size=cls.resource_size,
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
         )
         storage.resource.update_checksum()
         yield
@@ -565,19 +549,11 @@ class TestFileFieldResource(TestFileResource):
     resource_extension = 'Jpeg'
     resource_size = 672759
     resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
-    owner_app_label = 'app'
-    owner_model_name = 'dummyfilefieldresource'
-    owner_fieldname = 'file'
-    owner_class = DummyFileFieldResource
     file_field_name = 'file'
 
     @classmethod
     def init_class(cls, storage):
-        storage.resource = DummyFileFieldResource(
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
-        )
+        storage.resource = DummyFileFieldResource()
         with open(NATURE_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp)
         storage.resource.save()
@@ -907,10 +883,6 @@ class TestImageFieldResource(TestFileFieldResource):
     resource_extension = 'jpg'
     resource_size = 672759
     resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
-    owner_app_label = 'app'
-    owner_model_name = 'dummyversatileimageresource'
-    owner_fieldname = 'file'
-    owner_class = DummyVersatileImageResource
     file_field_name = 'image'
 
     @classmethod
@@ -918,9 +890,6 @@ class TestImageFieldResource(TestFileFieldResource):
         storage.resource = DummyImageFieldResource(
             title='Calliphora',
             description='Calliphora is a genus of blow flies, also known as bottle flies',
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp)
@@ -1025,10 +994,6 @@ class TestVersatileImageResource(TestImageFieldResource):
     resource_extension = 'jpg'
     resource_size = 672759
     resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
-    owner_app_label = 'app'
-    owner_model_name = 'dummyversatileimageresource'
-    owner_fieldname = 'file'
-    owner_class = DummyVersatileImageResource
     file_field_name = 'file'
 
     @classmethod
@@ -1036,9 +1001,6 @@ class TestVersatileImageResource(TestImageFieldResource):
         storage.resource = DummyVersatileImageResource(
             title='Calliphora',
             description='Calliphora is a genus of blow flies, also known as bottle flies',
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp)

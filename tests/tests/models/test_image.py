@@ -5,6 +5,7 @@ from paper_uploads.models import UploadedImage
 
 from ..dummy import *
 from .test_dummy import (
+    BacklinkModelMixin,
     TestImageAttach,
     TestImageDelete,
     TestImageEmpty,
@@ -13,7 +14,7 @@ from .test_dummy import (
 )
 
 
-class TestUploadedImage(TestVersatileImageResource):
+class TestUploadedImage(BacklinkModelMixin, TestVersatileImageResource):
     resource_url = '/media/images/%Y-%m-%d'
     resource_location = 'images/%Y-%m-%d'
     resource_name = 'Nature Tree'
@@ -23,7 +24,7 @@ class TestUploadedImage(TestVersatileImageResource):
     owner_app_label = 'app'
     owner_model_name = 'imageexample'
     owner_fieldname = 'image'
-    owner_class = ImageExample
+    owner_model = ImageExample
     file_field_name = 'file'
 
     @classmethod
@@ -74,12 +75,13 @@ class TestUploadedImageAttach(TestImageAttach):
     resource_class = UploadedImage
 
 
-class TestUploadedImageRename(TestImageRename):
+class TestUploadedImageRename(BacklinkModelMixin, TestImageRename):
     resource_class = UploadedImage
     resource_location = 'images/%Y-%m-%d'
     owner_app_label = 'app'
     owner_model_name = 'imageexample'
     owner_fieldname = 'image'
+    owner_model = ImageExample
 
     @classmethod
     def init_class(cls, storage):
@@ -112,12 +114,13 @@ class TestUploadedImageRename(TestImageRename):
         storage.resource.delete()
 
 
-class TestUploadedImageDelete(TestImageDelete):
+class TestUploadedImageDelete(BacklinkModelMixin, TestImageDelete):
     resource_class = UploadedImage
     resource_location = 'images/%Y-%m-%d'
     owner_app_label = 'app'
     owner_model_name = 'imageexample'
     owner_fieldname = 'image'
+    owner_model = ImageExample
 
     @classmethod
     def init_class(cls, storage):
@@ -150,13 +153,18 @@ class TestUploadedImageEmpty(TestImageEmpty):
     recource_class = UploadedImage
 
 
-class TestUploadedImageExists:
-    @staticmethod
-    def init_class(storage):
+class TestUploadedImageExists(BacklinkModelMixin):
+    owner_app_label = 'app'
+    owner_model_name = 'imageexample'
+    owner_fieldname = 'image'
+    owner_model = ImageExample
+
+    @classmethod
+    def init_class(cls, storage):
         storage.resource = UploadedImage(
-            owner_app_label='app',
-            owner_model_name='imageexample',
-            owner_fieldname='image'
+            owner_app_label=cls.owner_app_label,
+            owner_model_name=cls.owner_model_name,
+            owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp)

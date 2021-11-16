@@ -8,10 +8,11 @@ from ..conf import settings
 from ..storage import upload_storage
 from ..utils import filesizeformat
 from .base import FileFieldResource
+from .mixins import BacklinkModelMixin
 from .utils import generate_filename
 
 
-class UploadedFile(FileFieldResource):
+class UploadedFile(BacklinkModelMixin, FileFieldResource):
     file = models.FileField(
         _("file"),
         max_length=255,

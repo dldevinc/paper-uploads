@@ -14,6 +14,7 @@ from paper_uploads.exceptions import UnsupportedFileError
 from ... import utils
 from ...dummy import *
 from ...models.test_dummy import (
+    BacklinkModelMixin,
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
     TestFileFieldResourceEmpty,
@@ -22,7 +23,7 @@ from ...models.test_dummy import (
 from .test_base import CloudinaryFileResource
 
 
-class TestCloudinaryMedia(CloudinaryFileResource):
+class TestCloudinaryMedia(BacklinkModelMixin, CloudinaryFileResource):
     resource_url = '/media/files/%Y-%m-%d'
     resource_location = 'files/%Y-%m-%d'
     resource_name = 'audio'
@@ -32,7 +33,7 @@ class TestCloudinaryMedia(CloudinaryFileResource):
     owner_app_label = 'app'
     owner_model_name = 'cloudinarymediaexample'
     owner_fieldname = 'media'
-    owner_class = CloudinaryMediaExample
+    owner_model = CloudinaryMediaExample
     file_field_name = 'file'
 
     @classmethod
@@ -101,17 +102,10 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
     resource_class = CloudinaryMedia
     resource_size = 2113939
     resource_checksum = '4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d'
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinarymediaexample'
-    owner_fieldname = 'media'
 
     @contextmanager
     def get_resource(self):
-        resource = self.resource_class(
-            owner_app_label=self.owner_app_label,
-            owner_model_name=self.owner_model_name,
-            owner_fieldname=self.owner_fieldname
-        )
+        resource = self.resource_class()
         try:
             yield resource
         finally:
@@ -176,12 +170,13 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
                     resource.attach_file(fp)
 
 
-class TestCloudinaryMediaRename(TestFileFieldResourceRename):
+class TestCloudinaryMediaRename(BacklinkModelMixin, TestFileFieldResourceRename):
     resource_class = CloudinaryMedia
     resource_location = 'files/%Y-%m-%d'
     owner_app_label = 'app'
     owner_model_name = 'cloudinarymediaexample'
     owner_fieldname = 'media'
+    owner_model = CloudinaryMediaExample
 
     @classmethod
     def init_class(cls, storage):
@@ -245,12 +240,13 @@ class TestCloudinaryMediaRename(TestFileFieldResourceRename):
         assert storage.resource.extension == 'mp3'
 
 
-class TestCloudinaryMediaDelete(TestFileFieldResourceDelete):
+class TestCloudinaryMediaDelete(BacklinkModelMixin, TestFileFieldResourceDelete):
     resource_class = CloudinaryMedia
     resource_location = 'files/%Y-%m-%d'
     owner_app_label = 'app'
     owner_model_name = 'cloudinarymediaexample'
     owner_fieldname = 'media'
+    owner_model = CloudinaryMediaExample
 
     @classmethod
     def init_class(cls, storage):

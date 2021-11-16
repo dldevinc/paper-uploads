@@ -2,6 +2,10 @@
 
 ## [0.8.0](https://github.com/dldevinc/paper-uploads/tree/v0.8.0) - 2021-11-15
 ### ⚠ BREAKING CHANGES
+- Mixin `BacklinkModelMixin` has been moved from `Resource` class to 
+  `UploadedFile`, `UploadedImage` and `CollectionBase`. 
+  This update will remove `owner_XXX` fields from collection items.
+  Run `makemigrations` and `migrate` commands to apply the change to your data.
 - Added composite index for `CollectionItemBase`.
 - `FileResource`'s method `get_basename()` has been renamed to `get_caption()`.
 - Added new `InvalidItemType` exception.

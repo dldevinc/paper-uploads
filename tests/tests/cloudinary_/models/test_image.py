@@ -31,7 +31,7 @@ class TestCloudinaryImage(CloudinaryFileResource):
     owner_app_label = 'app'
     owner_model_name = 'cloudinaryimageexample'
     owner_fieldname = 'image'
-    owner_class = CloudinaryImageExample
+    owner_model = CloudinaryImageExample
     file_field_name = 'file'
 
     @classmethod

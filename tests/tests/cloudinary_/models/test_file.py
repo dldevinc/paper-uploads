@@ -12,6 +12,7 @@ from paper_uploads.cloudinary.models import CloudinaryFile
 from ... import utils
 from ...dummy import *
 from ...models.test_dummy import (
+    BacklinkModelMixin,
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
     TestFileFieldResourceEmpty,
@@ -20,7 +21,7 @@ from ...models.test_dummy import (
 from .test_base import CloudinaryFileResource
 
 
-class TestCloudinaryFile(CloudinaryFileResource):
+class TestCloudinaryFile(BacklinkModelMixin, CloudinaryFileResource):
     resource_url = '/media/files/%Y-%m-%d'
     resource_location = 'files/%Y-%m-%d'
     resource_name = 'Nature Tree'
@@ -30,7 +31,7 @@ class TestCloudinaryFile(CloudinaryFileResource):
     owner_app_label = 'app'
     owner_model_name = 'cloudinaryfileexample'
     owner_fieldname = 'file'
-    owner_class = CloudinaryFileExample
+    owner_model = CloudinaryFileExample
     file_field_name = 'file'
 
     @classmethod
@@ -88,29 +89,23 @@ class TestCloudinaryFile(CloudinaryFileResource):
 
 class TestCloudinaryFileAttach(TestFileFieldResourceAttach):
     resource_class = CloudinaryFile
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinaryfileexample'
-    owner_fieldname = 'file'
 
     @contextmanager
     def get_resource(self):
-        resource = self.resource_class(
-            owner_app_label=self.owner_app_label,
-            owner_model_name=self.owner_model_name,
-            owner_fieldname=self.owner_fieldname
-        )
+        resource = self.resource_class()
         try:
             yield resource
         finally:
             resource.delete_file()
 
 
-class TestCloudinaryFileRename(TestFileFieldResourceRename):
+class TestCloudinaryFileRename(BacklinkModelMixin, TestFileFieldResourceRename):
     resource_class = CloudinaryFile
     resource_location = 'files/%Y-%m-%d'
     owner_app_label = 'app'
-    owner_model_name = 'fileexample'
+    owner_model_name = 'cloudinaryfileexample'
     owner_fieldname = 'file'
+    owner_model = CloudinaryFileExample
 
     @classmethod
     def init_class(cls, storage):
@@ -171,12 +166,13 @@ class TestCloudinaryFileRename(TestFileFieldResourceRename):
         )
 
 
-class TestCloudinaryFileDelete(TestFileFieldResourceDelete):
+class TestCloudinaryFileDelete(BacklinkModelMixin, TestFileFieldResourceDelete):
     resource_class = CloudinaryFile
     resource_location = 'files/%Y-%m-%d'
     owner_app_label = 'app'
-    owner_model_name = 'fileexample'
+    owner_model_name = 'cloudinaryfileexample'
     owner_fieldname = 'file'
+    owner_model = CloudinaryFileExample
 
     @classmethod
     def init_class(cls, storage):
