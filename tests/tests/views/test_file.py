@@ -3,14 +3,14 @@ import json
 import pytest
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.test import RequestFactory
 
 from app.models.custom import CustomProxyUploadedFile
 from app.models.site import FileFieldObject
-from paper_uploads.exceptions import InvalidContentType
+from paper_uploads.exceptions import InvalidContentType, InvalidObjectId
 from paper_uploads.views.file import DeleteFileView, UploadFileView
 
 
@@ -134,10 +134,9 @@ class TestDeleteFileView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        response = storage.view.handle(request)
 
-        assert isinstance(response, JsonResponse)
-        assert json.loads(response.content)["errors"][0] == "Invalid ID"
+        with pytest.raises(InvalidObjectId):
+            storage.view.handle(request)
 
     def test_object_not_found(self, storage):
         request = RequestFactory().post("/", data={
@@ -146,10 +145,9 @@ class TestDeleteFileView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        response = storage.view.handle(request)
 
-        assert isinstance(response, JsonResponse)
-        assert json.loads(response.content)["errors"][0] == "Object not found"
+        with pytest.raises(ObjectDoesNotExist):
+            storage.view.handle(request)
 
     def test_success(self, storage):
         file = CustomProxyUploadedFile(

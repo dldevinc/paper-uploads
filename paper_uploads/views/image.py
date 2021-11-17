@@ -1,16 +1,12 @@
 from typing import Any, Type
 
-from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.core.files.uploadedfile import UploadedFile
 from django.core.handlers.wsgi import WSGIRequest
 from django.http import HttpResponse
 from django.utils.module_loading import import_string
-from django.utils.translation import gettext_lazy as _
 
-from .. import exceptions
 from ..forms.dialogs.image import UploadedImageDialog
 from ..helpers import run_validators
-from ..logging import logger
 from ..models.base import FileResource
 from ..models.mixins import BacklinkModelMixin
 from . import helpers
@@ -34,10 +30,7 @@ class UploadFileView(UploadFileViewBase):
         if isinstance(instance, BacklinkModelMixin):
             owner_field = instance.get_owner_field()
 
-        try:
-            instance.attach_file(file)
-        except exceptions.UnsupportedFileError as e:
-            return self.error_response(e.message)
+        instance.attach_file(file)
 
         try:
             instance.full_clean()
@@ -66,21 +59,8 @@ class DeleteFileView(DeleteFileViewBase):
     def handle(self, request: WSGIRequest) -> HttpResponse:
         model = self.get_file_model()
         pk = self.get_file_id()
-
-        try:
-            instance = helpers.get_instance(model, pk)
-        except exceptions.InvalidObjectId:
-            logger.exception("Error")
-            return self.error_response(_("Invalid ID"))
-        except ObjectDoesNotExist:
-            logger.exception("Error")
-            return self.error_response(_("Object not found"))
-        except MultipleObjectsReturned:
-            logger.exception("Error")
-            return self.error_response(_("Multiple objects returned"))
-        else:
-            instance.delete()
-
+        instance = helpers.get_instance(model, pk)
+        instance.delete()
         return self.success()
 
     def success(self) -> HttpResponse:
@@ -110,12 +90,4 @@ class ChangeFileView(ChangeFileViewBase):
     def get_instance(self, request: WSGIRequest, *args, **kwargs):
         model = self.get_file_model()
         pk = self.get_file_id()
-
-        try:
-            return helpers.get_instance(model, pk)
-        except exceptions.InvalidObjectId:
-            raise exceptions.AjaxFormError(_("Invalid ID"))
-        except ObjectDoesNotExist:
-            raise exceptions.AjaxFormError(_("Object not found"))
-        except MultipleObjectsReturned:
-            raise exceptions.AjaxFormError(_("Multiple objects returned"))
+        return helpers.get_instance(model, pk)

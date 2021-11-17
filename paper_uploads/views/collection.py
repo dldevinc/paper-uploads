@@ -2,7 +2,7 @@ import os
 from typing import Any, Type
 
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.uploadedfile import UploadedFile
 from django.core.handlers.wsgi import WSGIRequest
 from django.db import transaction
@@ -74,21 +74,8 @@ class DeleteCollectionView(ActionView):
     def handle(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         collection_cls = self.get_collection_model()
         collection_id = self.get_collection_id()
-
-        try:
-            collection = helpers.get_instance(collection_cls, collection_id)
-        except exceptions.InvalidObjectId:
-            logger.exception("Error")
-            return self.error_response(_("Invalid collection ID"))
-        except ObjectDoesNotExist:
-            logger.exception("Error")
-            return self.error_response(_("Collection not found"))
-        except MultipleObjectsReturned:
-            logger.exception("Error")
-            return self.error_response(_("Multiple objects returned"))
-        else:
-            collection.delete()
-
+        collection = helpers.get_instance(collection_cls, collection_id)
+        collection.delete()
         return self.success()
 
     def success(self) -> HttpResponse:
@@ -106,18 +93,7 @@ class UploadFileView(UploadFileViewBase):
     def handle(self, request: WSGIRequest, file: UploadedFile) -> HttpResponse:
         collection_cls = self.get_collection_model()
         collection_id = self.get_collection_id()
-
-        try:
-            collection = helpers.get_instance(collection_cls, collection_id)
-        except exceptions.InvalidObjectId:
-            logger.exception("Error")
-            return self.error_response(_("Invalid collection ID"))
-        except ObjectDoesNotExist:
-            logger.exception("Error")
-            return self.error_response(_("Collection not found"))
-        except MultipleObjectsReturned:
-            logger.exception("Error")
-            return self.error_response(_("Multiple objects returned"))
+        collection = helpers.get_instance(collection_cls, collection_id)
 
         try:
             order = max(0, int(request.POST.get("order")))
@@ -174,25 +150,14 @@ class DeleteFileView(DeleteFileViewBase):
     def handle(self, request: WSGIRequest) -> HttpResponse:
         collection_cls = self.get_collection_model()
         item_type = self.get_item_type()
+        item_model = collection_cls.get_item_model(item_type)
         item_id = self.get_item_id()
 
         try:
-            item_model = collection_cls.get_item_model(item_type)
-        except exceptions.InvalidItemType:
-            logger.exception("Error")
-            return self.error_response(_("Invalid itemType"))
-
-        try:
             item = helpers.get_instance(item_model, item_id)
-        except exceptions.InvalidObjectId:
-            logger.exception("Error")
-            return self.error_response(_("Invalid ID"))
         except ObjectDoesNotExist:
             # silently skip
             pass
-        except MultipleObjectsReturned:
-            logger.exception("Error")
-            return self.error_response(_("Multiple objects returned"))
         else:
             item.delete()
 
@@ -224,21 +189,9 @@ class ChangeFileView(ChangeFileViewBase):
     def get_instance(self, request: WSGIRequest, *args, **kwargs):
         collection_cls = self.get_collection_model()
         item_type = self.get_item_type()
+        item_model = collection_cls.get_item_model(item_type)
         item_id = self.get_item_id()
-
-        try:
-            item_model = collection_cls.get_item_model(item_type)
-        except exceptions.InvalidItemType:
-            raise exceptions.AjaxFormError(_("Invalid itemType"))
-
-        try:
-            return helpers.get_instance(item_model, item_id)
-        except exceptions.InvalidObjectId:
-            raise exceptions.AjaxFormError(_("Invalid ID"))
-        except ObjectDoesNotExist:
-            raise exceptions.AjaxFormError(_("Object not found"))
-        except MultipleObjectsReturned:
-            raise exceptions.AjaxFormError(_("Multiple objects returned"))
+        return helpers.get_instance(item_model, item_id)
 
 
 class SortItemsView(ActionView):
@@ -251,7 +204,6 @@ class SortItemsView(ActionView):
     def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         if not request.user.has_perm("paper_uploads.change"):
             return self.error_response(_("Access denied"))
-
         return self.perform_action(request, *args, **kwargs)
 
     def get_collection_model(self) -> Type[CollectionBase]:
@@ -265,18 +217,7 @@ class SortItemsView(ActionView):
         collection_cls = self.get_collection_model()
         collection_id = self.get_collection_id()
         collection_content_type = ContentType.objects.get_for_model(collection_cls, for_concrete_model=False)
-
-        try:
-            collection = helpers.get_instance(collection_cls, collection_id)
-        except exceptions.InvalidObjectId:
-            logger.exception("Error")
-            return self.error_response(_("Invalid collection ID"))
-        except ObjectDoesNotExist:
-            logger.exception("Error")
-            return self.error_response(_("Collection not found"))
-        except MultipleObjectsReturned:
-            logger.exception("Error")
-            return self.error_response(_("Multiple objects returned"))
+        collection = helpers.get_instance(collection_cls, collection_id)
 
         # Получение списка ID элементов в том порядке, в котором они должны быть расположены
         order_string = request.POST.get("orderList", "")

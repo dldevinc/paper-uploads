@@ -1,31 +1,19 @@
-class InvalidRequest(Exception):
-    pass
-
-
-class InvalidContentType(InvalidRequest):
-    pass
-
-
-class InvalidItemType(InvalidRequest):
-    pass
-
-
-class InvalidObjectId(InvalidRequest):
-    pass
-
-
-class InstanceNotFound(InvalidRequest):
-    pass
-
-
-class InvalidChunking(InvalidRequest):
-    pass
-
-
-class InvalidUUID(InvalidRequest):
+class InvalidParameter(Exception):
     def __init__(self, value):
         self.value = value
         super().__init__()
+
+
+class InvalidContentType(InvalidParameter):
+    pass
+
+
+class InvalidItemType(InvalidParameter):
+    pass
+
+
+class InvalidObjectId(InvalidParameter):
+    pass
 
 
 class ContinueUpload(Exception):
@@ -33,6 +21,16 @@ class ContinueUpload(Exception):
 
 
 class UncompleteUpload(Exception):
+    pass
+
+
+class InvalidUUID(Exception):
+    def __init__(self, value):
+        self.value = value
+        super().__init__()
+
+
+class InvalidChunking(Exception):
     pass
 
 

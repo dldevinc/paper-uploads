@@ -3,13 +3,14 @@ import json
 import pytest
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.test import RequestFactory
 
 from app.models.custom import CustomGallery, CustomImageItem
 from app.models.site import CollectionFieldObject
-from paper_uploads.exceptions import InvalidContentType
+from paper_uploads.exceptions import InvalidContentType, InvalidItemType, InvalidObjectId
 from paper_uploads.views.collection import (
     CreateCollectionView,
     DeleteCollectionView,
@@ -129,10 +130,9 @@ class TestDeleteCollectionView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        response = storage.view.handle(request)
 
-        assert isinstance(response, JsonResponse)
-        assert json.loads(response.content)["errors"][0] == "Invalid collection ID"
+        with pytest.raises(InvalidObjectId):
+            storage.view.handle(request)
 
     def test_object_not_found(self, storage):
         request = RequestFactory().post("/", data={
@@ -141,10 +141,9 @@ class TestDeleteCollectionView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        response = storage.view.handle(request)
 
-        assert isinstance(response, JsonResponse)
-        assert json.loads(response.content)["errors"][0] == "Collection not found"
+        with pytest.raises(ObjectDoesNotExist):
+            storage.view.handle(request)
 
     def test_success(self, storage):
         collection = CustomGallery(
@@ -219,11 +218,9 @@ class TestUploadFileView:
         request.user = storage.user
         storage.view.setup(request)
 
-        with open(NASA_FILEPATH, "rb") as fp:
-            response = storage.view.handle(request, fp)
-
-        assert isinstance(response, JsonResponse)
-        assert json.loads(response.content)["errors"][0] == "Invalid collection ID"
+        with pytest.raises(InvalidObjectId):
+            with open(NASA_FILEPATH, "rb") as fp:
+                storage.view.handle(request, fp)
 
     def test_object_not_found(self, storage):
         request = RequestFactory().post("/", data={
@@ -233,11 +230,9 @@ class TestUploadFileView:
         request.user = storage.user
         storage.view.setup(request)
 
-        with open(NASA_FILEPATH, "rb") as fp:
-            response = storage.view.handle(request, fp)
-
-        assert isinstance(response, JsonResponse)
-        assert json.loads(response.content)["errors"][0] == "Collection not found"
+        with pytest.raises(ObjectDoesNotExist):
+            with open(NASA_FILEPATH, "rb") as fp:
+                storage.view.handle(request, fp)
 
     def test_unsupported_item_type(self, storage):
         collection = CustomGallery(
@@ -355,10 +350,9 @@ class TestDeleteFileView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        response = storage.view.handle(request)
 
-        assert isinstance(response, JsonResponse)
-        assert json.loads(response.content)["errors"][0] == "Invalid itemType"
+        with pytest.raises(InvalidItemType):
+            storage.view.handle(request)
 
     def test_get_item_id(self, storage):
         request = RequestFactory().post("/", data={
@@ -377,10 +371,9 @@ class TestDeleteFileView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        response = storage.view.handle(request)
 
-        assert isinstance(response, JsonResponse)
-        assert json.loads(response.content)["errors"][0] == "Invalid ID"
+        with pytest.raises(InvalidObjectId):
+            storage.view.handle(request)
 
     def test_success(self, storage):
         assert storage.collection.get_items().count() == 1
@@ -482,10 +475,9 @@ class TestSortItemsView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        response = storage.view.handle(request)
 
-        assert isinstance(response, JsonResponse)
-        assert json.loads(response.content)["errors"][0] == "Invalid collection ID"
+        with pytest.raises(InvalidObjectId):
+            storage.view.handle(request)
 
     def test_object_not_found(self, storage):
         request = RequestFactory().post("/", data={
@@ -494,10 +486,9 @@ class TestSortItemsView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        response = storage.view.handle(request)
 
-        assert isinstance(response, JsonResponse)
-        assert json.loads(response.content)["errors"][0] == "Collection not found"
+        with pytest.raises(ObjectDoesNotExist):
+            storage.view.handle(request)
 
     def test_success(self, storage):
         assert storage.collection.get_items().count() == 3

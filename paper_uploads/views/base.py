@@ -5,10 +5,15 @@ from typing import Any, Dict, Iterable, List, Optional, Union
 from uuid import UUID
 
 from django.conf import settings
-from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
+from django.core.exceptions import (
+    NON_FIELD_ERRORS,
+    MultipleObjectsReturned,
+    ObjectDoesNotExist,
+    ValidationError,
+)
 from django.core.files.uploadedfile import UploadedFile
 from django.core.handlers.wsgi import WSGIRequest
-from django.http import JsonResponse, HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.template import loader
 from django.utils.decorators import method_decorator
 from django.utils.functional import Promise
@@ -66,9 +71,21 @@ class ActionView(AjaxView):
     def perform_action(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         try:
             return self.handle(request, *args, **kwargs)
-        except exceptions.InvalidContentType:
+        except exceptions.InvalidContentType as e:
             logger.exception("Error")
-            return self.error_response(_("Invalid ContentType"))
+            return self.error_response(_("Invalid ContentType: %s") % e.value)
+        except exceptions.InvalidObjectId as e:
+            logger.exception("Error")
+            return self.error_response(_("Invalid ID: %s") % e.value)
+        except exceptions.InvalidItemType as e:
+            logger.exception("Error")
+            return self.error_response(_("Invalid itemType: %s") % e.value)
+        except ObjectDoesNotExist:
+            logger.exception("Error")
+            return self.error_response(_("Object not found"))
+        except MultipleObjectsReturned:
+            logger.exception("Error")
+            return self.error_response(_("Multiple objects returned"))
         except ValidationError as e:
             messages = self.get_exception_messages(e)
             logger.debug(messages)
@@ -111,6 +128,8 @@ class UploadFileViewBase(ActionView):
 
         try:
             return self.perform_action(request, file)
+        except exceptions.UnsupportedFileError as e:
+            return self.error_response(e.message)
         finally:
             file.close()
 

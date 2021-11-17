@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-11-15 18:59+0400\n"
+"POT-Creation-Date: 2021-11-17 15:00+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,31 +22,31 @@ msgstr ""
 msgid "Uploaded Files"
 msgstr "Загруженные файлы"
 
-#: cloudinary/models/base.py:253 models/base.py:432
+#: cloudinary/models/base.py:255 models/base.py:432
 #, python-format
 msgid "File `%s` is not an image"
 msgstr "Файл `%s` не является изображением"
 
 #: cloudinary/models/collection.py:49 cloudinary/models/collection.py:90
-#: cloudinary/models/collection.py:135 cloudinary/models/file.py:14
-#: cloudinary/models/file.py:21 cloudinary/models/image.py:14
-#: cloudinary/models/media.py:14 models/collection.py:472
-#: models/collection.py:518 models/collection.py:566 models/file.py:16
-#: models/file.py:24 models/image.py:17
+#: cloudinary/models/collection.py:135 cloudinary/models/file.py:15
+#: cloudinary/models/file.py:22 cloudinary/models/image.py:15
+#: cloudinary/models/media.py:15 models/collection.py:477
+#: models/collection.py:523 models/collection.py:571 models/file.py:20
+#: models/file.py:29 models/image.py:21
 msgid "file"
 msgstr "файл"
 
 #: cloudinary/models/collection.py:53 cloudinary/models/collection.py:94
-#: cloudinary/models/file.py:18 cloudinary/models/media.py:18
-#: models/collection.py:477 models/collection.py:523 models/file.py:21
+#: cloudinary/models/file.py:19 cloudinary/models/media.py:19
+#: models/collection.py:482 models/collection.py:528 models/file.py:25
 msgid "display name"
 msgstr "отображаемое название"
 
-#: cloudinary/models/collection.py:57 models/collection.py:481
+#: cloudinary/models/collection.py:57 models/collection.py:486
 msgid "File item"
 msgstr "Файл"
 
-#: cloudinary/models/collection.py:58 models/collection.py:482
+#: cloudinary/models/collection.py:58 models/collection.py:487
 msgid "File items"
 msgstr "Файлы"
 
@@ -58,27 +58,27 @@ msgstr "Мультимедиа"
 msgid "Media items"
 msgstr "Мультимедиа"
 
-#: cloudinary/models/collection.py:142 models/collection.py:574
+#: cloudinary/models/collection.py:142 models/collection.py:579
 msgid "Image item"
 msgstr "Изображение"
 
-#: cloudinary/models/collection.py:143 models/collection.py:575
+#: cloudinary/models/collection.py:143 models/collection.py:580
 msgid "Image items"
 msgstr "Изображения"
 
-#: cloudinary/models/file.py:22 models/file.py:25
+#: cloudinary/models/file.py:23 models/file.py:30
 msgid "files"
 msgstr "файлы"
 
-#: cloudinary/models/image.py:20 models/image.py:24
+#: cloudinary/models/image.py:21 models/image.py:29
 msgid "image"
 msgstr "изображение"
 
-#: cloudinary/models/image.py:21 models/image.py:25
+#: cloudinary/models/image.py:22 models/image.py:30
 msgid "images"
 msgstr "изображения"
 
-#: cloudinary/models/media.py:21 cloudinary/models/media.py:22
+#: cloudinary/models/media.py:22 cloudinary/models/media.py:23
 msgid "media"
 msgstr "мультимедиа"
 
@@ -169,7 +169,7 @@ msgstr "Максимальная ширина"
 msgid "Maximum image height"
 msgstr "Максимальная высота"
 
-#: models/base.py:68 models/collection.py:136
+#: models/base.py:68 models/collection.py:137
 msgid "created at"
 msgstr "дата создания"
 
@@ -245,40 +245,40 @@ msgstr "высота"
 msgid "crop region"
 msgstr ""
 
-#: models/collection.py:142
+#: models/collection.py:143
 msgid "collection"
 msgstr "коллекция"
 
-#: models/collection.py:143
+#: models/collection.py:144
 msgid "collections"
 msgstr "коллекции"
 
-#: models/collection.py:295
+#: models/collection.py:296
 msgid "type"
 msgstr "тип"
 
-#: models/collection.py:297
+#: models/collection.py:298
 msgid "order"
 msgstr "порядок"
 
-#: models/collection.py:300
+#: models/collection.py:305
 msgid "item"
 msgstr "элемент коллекции"
 
-#: models/collection.py:301
+#: models/collection.py:306
 msgid "items"
 msgstr "элементы коллекции"
 
-#: models/collection.py:408
+#: models/collection.py:413
 #, python-format
 msgid "Unsupported collection item: %s"
 msgstr "Неподдерживаемый элемент коллекции: %s"
 
-#: models/collection.py:527
+#: models/collection.py:532
 msgid "SVG item"
 msgstr "SVG-элемент"
 
-#: models/collection.py:528
+#: models/collection.py:533
 msgid "SVG items"
 msgstr "SVG-элементы"
 
@@ -429,62 +429,49 @@ msgstr ""
 "Изображение `%(name)s` слишком большое. Максимальный размер - "
 "%(width_limit)sx%(height_limit)s пикселей."
 
-#: views/base.py:71
-msgid "Invalid ContentType"
-msgstr "Неверное значение ContentType"
+#: views/base.py:76
+#, python-format
+msgid "Invalid ContentType: %s"
+msgstr "Неверное значение ContentType: %s"
 
-#: views/base.py:97 views/base.py:180 views/base.py:190 views/base.py:205
-#: views/collection.py:31 views/collection.py:63 views/collection.py:253
+#: views/base.py:79
+#, python-format
+msgid "Invalid ID: %s"
+msgstr "Неверный ID: %s"
+
+#: views/base.py:82
+#, python-format
+msgid "Invalid itemType: %s"
+msgstr "Неверное значение itemType: %s"
+
+#: views/base.py:85
+msgid "Object not found"
+msgstr "Объект не найден"
+
+#: views/base.py:88
+msgid "Multiple objects returned"
+msgstr ""
+
+#: views/base.py:114 views/base.py:199 views/base.py:209 views/base.py:224
+#: views/collection.py:32 views/collection.py:64 views/collection.py:206
 msgid "Access denied"
 msgstr "Доступ запрещён"
 
-#: views/base.py:107
+#: views/base.py:124
 #, python-format
 msgid "Invalid UUID: %s"
 msgstr "Неверный UUID: %s"
 
-#: views/base.py:110
+#: views/base.py:127
 msgid "Invalid chunking"
 msgstr "Ошибка разбиения файла"
 
-#: views/base.py:224
+#: views/base.py:243
 #, python-format
 msgid "File not found: %s"
 msgstr "Файл не найден: %s"
 
-#: views/collection.py:81 views/collection.py:113
-msgid "Invalid collection ID"
-msgstr "Неверный ID коллекции"
-
-#: views/collection.py:84 views/collection.py:116
-msgid "Collection not found"
-msgstr "Коллекция не найдена"
-
-#: views/collection.py:87 views/collection.py:119 views/collection.py:194
-#: views/collection.py:241 views/collection.py:272 views/file.py:75
-#: views/file.py:107 views/image.py:75 views/image.py:107
-msgid "Multiple objects returned"
-msgstr ""
-
-#: views/collection.py:152
+#: views/collection.py:129
 #, python-format
 msgid "Unsupported file: %s"
 msgstr "Файл не поддерживается: %s"
-
-#: views/collection.py:182 views/collection.py:229
-msgid "Invalid itemType"
-msgstr "Неверное значение itemType"
-
-#: views/collection.py:188 views/collection.py:235 views/collection.py:266
-#: views/file.py:69 views/file.py:103 views/image.py:69 views/image.py:103
-msgid "Invalid ID"
-msgstr "Неверный ID"
-
-#: views/collection.py:238 views/collection.py:269 views/file.py:72
-#: views/file.py:105 views/image.py:72 views/image.py:105
-msgid "Object not found"
-msgstr "Объект не найден"
-
-#: views/collection.py:279
-msgid "Invalid order value"
-msgstr "Неверное значение order"
