@@ -229,19 +229,15 @@ class ChangeFileView(ChangeFileViewBase):
         try:
             item_model = collection_cls.get_item_model(item_type)
         except exceptions.InvalidItemType:
-            logger.exception("Error")
-            return self.error_response(_("Invalid itemType"))
+            raise exceptions.AjaxFormError(_("Invalid itemType"))
 
         try:
             return helpers.get_instance(item_model, item_id)
         except exceptions.InvalidObjectId:
-            logger.exception("Error")
             raise exceptions.AjaxFormError(_("Invalid ID"))
         except ObjectDoesNotExist:
-            logger.exception("Error")
             raise exceptions.AjaxFormError(_("Object not found"))
         except MultipleObjectsReturned:
-            logger.exception("Error")
             raise exceptions.AjaxFormError(_("Multiple objects returned"))
 
 
