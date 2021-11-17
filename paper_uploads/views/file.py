@@ -12,6 +12,7 @@ from ..forms.dialogs.file import UploadedFileDialog
 from ..helpers import run_validators
 from ..logging import logger
 from ..models.base import FileResource
+from ..models.mixins import BacklinkModelMixin
 from . import helpers
 from .base import ChangeFileViewBase, DeleteFileViewBase, UploadFileViewBase
 
@@ -28,7 +29,10 @@ class UploadFileView(UploadFileViewBase):
 
     def handle(self, request: WSGIRequest, file: UploadedFile) -> HttpResponse:
         instance = self.get_instance()
-        owner_field = instance.get_owner_field()
+
+        owner_field = None
+        if isinstance(instance, BacklinkModelMixin):
+            owner_field = instance.get_owner_field()
 
         try:
             instance.attach_file(file)
