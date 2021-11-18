@@ -10,6 +10,6 @@ class UploadedImageDialog(UploadedFileBaseForm):
         fields = ("new_name", "title", "description")
         widgets = {
             "description": forms.Textarea(attrs={
-                "rows": 3
+                "rows": 2
             })
         }
