@@ -17,6 +17,7 @@
 ### Features
 - Add abstract base classes for uploaded files.
 - Updated view classes for easier customization.
+- Added new class `paper_uploads.forms.fields.base.ResourceFieldBase`.
 ### Bug Fixes
 - Fixed caption update for collection items.
 
