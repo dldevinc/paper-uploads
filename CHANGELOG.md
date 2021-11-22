@@ -14,10 +14,13 @@
 - Changed some admin URLs for collections.
 - Add an ability to override the `admin_preview` variation for `ImageItem` 
   via `VARIATIONS` property.
+- `FileWidgetBase` has been renamed to `FileResourceWidgetBase`.
+- `FileUploaderWidgetMixin` has been renamed to `DisplayFileLimitationsMixin`.
 ### Features
 - Add abstract base classes for uploaded files.
 - Updated view classes for easier customization.
 - Added new class `paper_uploads.forms.fields.base.ResourceFieldBase`.
+- Added new class `paper_uploads.forms.widgets.base.ResourceWidgetBase`.
 ### Bug Fixes
 - Fixed caption update for collection items.
 

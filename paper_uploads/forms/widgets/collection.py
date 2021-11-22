@@ -2,11 +2,11 @@ from django import forms
 from django.urls import reverse_lazy
 
 from ...conf import settings
-from .base import FileWidgetBase
-from .mixins import FileUploaderWidgetMixin
+from .base import FileResourceWidgetBase
+from .mixins import DisplayFileLimitationsMixin
 
 
-class CollectionWidget(FileUploaderWidgetMixin, FileWidgetBase):
+class CollectionWidget(DisplayFileLimitationsMixin, FileResourceWidgetBase):
     template_name = "paper_uploads/collection_widget.html"
 
     @property

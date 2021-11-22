@@ -3,11 +3,11 @@ from django.contrib.admin import site
 from django.contrib.admin.sites import NotRegistered
 from django.urls import reverse_lazy
 
-from .base import FileWidgetBase
-from .mixins import FileUploaderWidgetMixin
+from .base import FileResourceWidgetBase
+from .mixins import DisplayFileLimitationsMixin
 
 
-class FileWidget(FileUploaderWidgetMixin, FileWidgetBase):
+class FileWidget(DisplayFileLimitationsMixin, FileResourceWidgetBase):
     template_name = "paper_uploads/file_widget.html"
 
     @property

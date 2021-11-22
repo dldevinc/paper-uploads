@@ -1,43 +1,28 @@
-import json
-
 from django.utils.translation import gettext_lazy as _
 
 from ...typing import Limitations
 from ...utils import filesizeformat
+from .base import FileResourceWidgetBase
 
 
-class FileUploaderWidgetMixin:
-    configuration = None  # type: dict
-
-    def __init__(self, *args, **kwargs):
-        self.configuration = self.configuration or {}
-        super().__init__(*args, **kwargs)
-
+class DisplayFileLimitationsMixin:
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)  # noqa: F821
         context.update(
             {
-                "configuration": json.dumps(self.get_configuration()),
                 "limitations": self.get_limitations(),
             }
         )
         return context
-
-    def get_configuration(self):
-        configuration_method = getattr(self.model, "get_configuration", None)  # noqa: F821
-        if configuration_method is not None and callable(configuration_method):
-            config = configuration_method()
-        else:
-            config = {}
-
-        config.update(self.configuration)
-        return config
 
     def get_limitations(self) -> Limitations:
         """
         Список ограничений, накладываемых на загружаемые файлы.
         Используется только для вывода в виде текста.
         """
+        if not isinstance(self, FileResourceWidgetBase):
+            return []
+
         limits = []  # type: Limitations
         configuration = self.get_configuration()
         if not configuration:
