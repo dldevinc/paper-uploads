@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.8.0](https://github.com/dldevinc/paper-uploads/tree/v0.8.0) - 2021-11-15
+## [0.8.0](https://github.com/dldevinc/paper-uploads/tree/v0.8.0) - 2021-11-22
 ### ⚠ BREAKING CHANGES
 - Mixin `BacklinkModelMixin` has been moved from `Resource` class to 
   `UploadedFile`, `UploadedImage` and `CollectionBase`. 
@@ -12,6 +12,8 @@
 - `FileResource`'s method `get_basename()` has been renamed to `get_caption()`.
 - Added new `InvalidItemType` exception.
 - Changed some admin URLs for collections.
+- Add an ability to override the `admin_preview` variation for `ImageItem` 
+  via `VARIATIONS` property.
 ### Features
 - Add abstract base classes for uploaded files.
 - Updated view classes for easier customization.

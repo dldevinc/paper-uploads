@@ -67,4 +67,7 @@ class CompleteCollection(Collection):
             size=(0, 600),
             clip=False
         ),
+        admin_preview=dict(
+            size=(200, 100),
+        )
     )

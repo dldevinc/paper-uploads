@@ -17,6 +17,7 @@ from app.models import (
 )
 from app.models.custom import CustomGallery, CustomImageItem
 from paper_uploads import exceptions
+from paper_uploads.conf import settings
 from paper_uploads.helpers import _get_item_types
 from paper_uploads.models import Collection, FileItem, ImageCollection, ImageItem, SVGItem
 
@@ -809,8 +810,21 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
 
     def test_get_variations(self, storage):
         variations = storage.resource.get_variations()
-        for name in storage.resource.PREVIEW_VARIATIONS:
-            assert name in variations
+
+        assert "desktop" in variations
+        assert "mobile" in variations
+        assert "admin_preview" in variations
+
+        assert variations["desktop"].size == (800, 0)
+        assert variations["mobile"].size == (0, 600)
+
+        # admin variation overriden
+        assert variations["admin_preview"].size == (200, 100)
+        assert variations["admin_preview"].format == "AUTO"
+
+        # ensure that setting has not changed
+        assert ImageItem.PREVIEW_VARIATIONS["admin_preview"]["size"] == (180, 135)
+        assert settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS["admin_preview"]["size"] == (180, 135)
 
     def test_width(self, storage):
         assert storage.resource.width == 1534

@@ -631,8 +631,8 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
             variations = rel.options["variations"]
         else:
             variations = getattr(collection_cls, "VARIATIONS", None)
-        variations = (variations or {}).copy()
-        variations.update(cls.PREVIEW_VARIATIONS)
+        variations = variations or {}
+        variations = dict(cls.PREVIEW_VARIATIONS, **variations)
         return variations
 
 
