@@ -3,11 +3,11 @@ from django.urls import path
 
 from .. import views
 from ..models.image import UploadedImage
-from .base import UploadedFileBase
+from .base import ResourceAdminBase
 
 
 @admin.register(UploadedImage)
-class UploadedImageAdmin(UploadedFileBase):
+class UploadedImageAdmin(ResourceAdminBase):
     upload_view_class = views.image.UploadFileView
     delete_view_class = views.image.DeleteFileView
     change_view_class = views.image.ChangeFileView

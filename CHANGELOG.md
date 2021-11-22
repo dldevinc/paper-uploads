@@ -16,6 +16,7 @@
   via `VARIATIONS` property.
 - `FileWidgetBase` has been renamed to `FileResourceWidgetBase`.
 - `FileUploaderWidgetMixin` has been renamed to `DisplayFileLimitationsMixin`.
+- `paper_uploads.admin.base.UploadedFileBase` has been renamed to `ResourceAdminBase`.
 ### Features
 - Add abstract base classes for uploaded files.
 - Updated view classes for easier customization.

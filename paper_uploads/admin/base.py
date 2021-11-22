@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 
-class UploadedFileBase(admin.ModelAdmin):
+class ResourceAdminBase(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 

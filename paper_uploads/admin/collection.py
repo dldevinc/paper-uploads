@@ -1,10 +1,10 @@
 from django.urls import path
 
 from .. import views
-from .base import UploadedFileBase
+from .base import ResourceAdminBase
 
 
-class CollectionAdminBase(UploadedFileBase):
+class CollectionAdminBase(ResourceAdminBase):
     create_collection_view_class = views.collection.CreateCollectionView
     delete_collection_view_class = views.collection.DeleteCollectionView
     upload_item_view_class = views.collection.UploadFileView
