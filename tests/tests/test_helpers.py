@@ -173,9 +173,9 @@ class TestImplicitVariations:
         assert self.variations['tablet_webp_4x'].name == 'tablet_webp_4x'
 
     def test_shared_params(self):
-        for varaition in self.variations.values():
-            assert varaition.upscale is True
-            assert varaition.anchor == (1, 1)
+        for variation in self.variations.values():
+            assert variation.upscale is True
+            assert variation.anchor == (1, 1)
 
 
 @pytest.mark.django_db
