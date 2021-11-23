@@ -1,10 +1,10 @@
 from django import forms
 
 from ...models.image import UploadedImage
-from .base import UploadedFileBaseForm
+from .base import ChangeFileResourceDialogBase
 
 
-class UploadedImageDialog(UploadedFileBaseForm):
+class ChangeUploadedImageDialog(ChangeFileResourceDialogBase):
     class Meta:
         model = UploadedImage
         fields = ("new_name", "title", "description")

@@ -15,7 +15,7 @@ from .utils import generate_filename
 
 
 class UploadedImageBase(VersatileImageResourceMixin, BacklinkModelMixin, FileFieldResource):
-    change_form_class: Optional[Union[str, forms.Form]] = "paper_uploads.forms.dialogs.image.UploadedImageDialog"
+    change_form_class: Optional[Union[str, forms.Form]] = "paper_uploads.forms.dialogs.image.ChangeUploadedImageDialog"
 
     file = VariationalFileField(
         _("file"),

@@ -14,7 +14,7 @@ from .utils import generate_filename
 
 
 class UploadedFileBase(BacklinkModelMixin, FileFieldResource):
-    change_form_class: Optional[Union[str, forms.Form]] = "paper_uploads.forms.dialogs.file.UploadedFileDialog"
+    change_form_class: Optional[Union[str, forms.Form]] = "paper_uploads.forms.dialogs.file.ChangeUploadedFileDialog"
 
     file = models.FileField(
         _("file"),

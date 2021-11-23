@@ -17,6 +17,11 @@
 - `FileWidgetBase` has been renamed to `FileResourceWidgetBase`.
 - `FileUploaderWidgetMixin` has been renamed to `DisplayFileLimitationsMixin`.
 - `paper_uploads.admin.base.UploadedFileBase` has been renamed to `ResourceAdminBase`.
+- `paper_uploads.forms.dialogs.base.UploadedFileBaseForm` has been renamed to `ChangeFileResourceDialogBase`.
+- `UploadedFileDialog` has been renamed to `ChangeUploadedFileDialog`.
+- `UploadedImageDialog` has been renamed to `ChangeUploadedImageDialog`.
+- `FileItemDialog` has been renamed to `ChangeFileItemDialog`.
+- `ImageItemDialog` has been renamed to `ChangeImageItemDialog`.
 ### Features
 - Add abstract base classes for uploaded files.
 - Updated view classes for easier customization.

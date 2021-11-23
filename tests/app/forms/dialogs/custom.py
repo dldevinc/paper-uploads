@@ -1,16 +1,16 @@
 from django import forms
 
 from app.models.custom import CustomImageItem, CustomUploadedFile, CustomUploadedImage
-from paper_uploads.forms.dialogs.base import UploadedFileBaseForm
+from paper_uploads.forms.dialogs.base import ChangeFileResourceDialogBase
 
 
-class CustomUploadedFileDialog(UploadedFileBaseForm):
+class CustomUploadedFileDialog(ChangeFileResourceDialogBase):
     class Meta:
         model = CustomUploadedFile
         fields = ("new_name", "display_name", "author")
 
 
-class CustomUploadedImageDialog(UploadedFileBaseForm):
+class CustomUploadedImageDialog(ChangeFileResourceDialogBase):
     class Meta:
         model = CustomUploadedImage
         fields = ("new_name", "title", "description", "author")
@@ -21,7 +21,7 @@ class CustomUploadedImageDialog(UploadedFileBaseForm):
         }
 
 
-class CustomImageItemDialog(UploadedFileBaseForm):
+class CustomImageItemDialog(ChangeFileResourceDialogBase):
     class Meta:
         model = CustomImageItem
         fields = ("new_name", "caption", "title", "description")

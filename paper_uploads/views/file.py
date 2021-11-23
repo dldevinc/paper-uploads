@@ -5,7 +5,7 @@ from django.core.handlers.wsgi import WSGIRequest
 from django.http import HttpResponse
 from django.utils.module_loading import import_string
 
-from ..forms.dialogs.file import UploadedFileDialog
+from ..forms.dialogs.file import ChangeUploadedFileDialog
 from ..helpers import run_validators
 from ..models.base import FileResource
 from ..models.mixins import BacklinkModelMixin
@@ -73,7 +73,7 @@ class ChangeFileView(ChangeFileViewBase):
     def get_form_class(self):
         # compat
         if not hasattr(self.instance, "change_form_class"):
-            return UploadedFileDialog
+            return ChangeUploadedFileDialog
 
         if isinstance(self.instance.change_form_class, str):
             return import_string(self.instance.change_form_class)

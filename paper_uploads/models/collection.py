@@ -469,7 +469,7 @@ class FilePreviewMixin(models.Model):
 
 
 class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
-    change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
+    change_form_class = "paper_uploads.forms.dialogs.collection.ChangeFileItemDialog"
     template_name = "paper_uploads/items/file.html"
     preview_template_name = "paper_uploads/items/preview/file.html"
 
@@ -515,7 +515,7 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
 
 
 class SVGItemBase(CollectionFileItemBase):
-    change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
+    change_form_class = "paper_uploads.forms.dialogs.collection.ChangeFileItemDialog"
     template_name = "paper_uploads/items/svg.html"
     preview_template_name = "paper_uploads/items/preview/svg.html"
 
@@ -563,7 +563,7 @@ class SVGItemBase(CollectionFileItemBase):
 
 class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
     PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
-    change_form_class = "paper_uploads.forms.dialogs.collection.ImageItemDialog"
+    change_form_class = "paper_uploads.forms.dialogs.collection.ChangeImageItemDialog"
     template_name = "paper_uploads/items/image.html"
     preview_template_name = "paper_uploads/items/preview/image.html"
 
