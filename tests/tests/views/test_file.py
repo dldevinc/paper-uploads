@@ -26,6 +26,16 @@ class TestUploadFileView:
         storage.view = UploadFileView()
         yield
 
+    def test_get_file_model(self, storage):
+        request = RequestFactory().post("/", data={
+            "paperContentType": storage.content_type.pk,
+        })
+        request.user = storage.user
+        storage.view.setup(request)
+        file_model = storage.view.get_file_model()
+
+        assert file_model is CustomProxyUploadedFile
+
     def test_get_instance(self, storage):
         request = RequestFactory().post("/", data={
             "paperContentType": storage.content_type.pk,

@@ -14,10 +14,13 @@ from .base import ChangeFileViewBase, DeleteFileViewBase, UploadFileViewBase
 
 
 class UploadFileView(UploadFileViewBase):
-    def get_instance(self) -> FileResource:
+    def get_file_model(self) -> Type[FileResource]:
         content_type_id = self.request.POST.get("paperContentType")
-        model_class = helpers.get_model_class(content_type_id, FileResource)
-        return model_class(
+        return helpers.get_model_class(content_type_id, FileResource)
+
+    def get_instance(self) -> FileResource:
+        file_model = self.get_file_model()
+        return file_model(
             owner_app_label=self.request.POST.get("paperOwnerAppLabel"),
             owner_model_name=self.request.POST.get("paperOwnerModelName"),
             owner_fieldname=self.request.POST.get("paperOwnerFieldName"),
@@ -57,9 +60,9 @@ class DeleteFileView(DeleteFileViewBase):
         return self.request.POST.get("pk")
 
     def handle(self, request: WSGIRequest) -> HttpResponse:
-        model = self.get_file_model()
-        pk = self.get_file_id()
-        instance = helpers.get_instance(model, pk)
+        file_model = self.get_file_model()
+        file_id = self.get_file_id()
+        instance = helpers.get_instance(file_model, file_id)
         instance.delete()
         return self.success()
 
@@ -88,6 +91,6 @@ class ChangeFileView(ChangeFileViewBase):
         return self.request.GET.get("pk")
 
     def get_instance(self, request: WSGIRequest, *args, **kwargs):
-        model = self.get_file_model()
-        pk = self.get_file_id()
-        return helpers.get_instance(model, pk)
+        file_model = self.get_file_model()
+        file_id = self.get_file_id()
+        return helpers.get_instance(file_model, file_id)
