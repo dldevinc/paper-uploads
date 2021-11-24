@@ -1,6 +1,6 @@
 {% load filesizeformat %}
 
-<div class="image-uploader dropzone {% if not widget.value %}empty{% endif %}"
+<div class="image-uploader dropzone image-uploader--{{ widget.value|yesno:"ready,empty" }}"
      data-upload-url="{{ upload_url }}"
      data-change-url="{{ change_url }}"
      data-delete-url="{{ delete_url }}"

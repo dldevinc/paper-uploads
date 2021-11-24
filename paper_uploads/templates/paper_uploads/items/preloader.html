@@ -1,4 +1,6 @@
-<div class="collection__item collection-item collection-item--preloader" style="width: {{ preview_width }}px"
+<div class="collection-item collection-item--preloader"
+     style="width: {{ preview_width }}px"
+     data-uuid="{% verbatim %}{{ uuid }}{% endverbatim %}"
      data-order="{% verbatim %}{{ order }}{% endverbatim %}">
   <div class="collection-item__header">
     <div class="collection-item__caption text-muted" title="{% verbatim %}{{ name }}{% endverbatim %}">

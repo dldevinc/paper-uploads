@@ -131,6 +131,20 @@ class Uploader extends EventEmitter {
     }
 
     cancel(file) {
+        if (typeof file === "string") {
+            let uuid = file;
+            let files = this.instance.files.filter((file) => {
+                return file.upload.uuid === uuid
+            });
+
+            if (files.length) {
+                file = files[0];
+            } else {
+                console.warn(`Not found file with UUID: ${uuid}`);
+                return;
+            }
+        }
+
         this.instance.removeFile(file);
     }
 

@@ -29,6 +29,17 @@ class ImageUploader extends EventEmitter {
         deleteButton: ".image-uploader__delete-button",
     }
 
+    static STATUS = {
+        EMPTY: "empty",
+        LOADING: "loading",
+        PROCESSING: "processing",
+        READY: "ready"
+    }
+
+    static CSS = {
+        container: "image-uploader",
+    }
+
     constructor(root, options) {
         super();
 
@@ -43,6 +54,14 @@ class ImageUploader extends EventEmitter {
         }
 
         this.init();
+    }
+
+    get STATUS() {
+        return this.constructor.STATUS;
+    }
+
+    get CSS() {
+        return this.constructor.CSS;
     }
 
     get uploader() {
@@ -65,33 +84,11 @@ class ImageUploader extends EventEmitter {
         this.input.value = value;
     }
 
-    get empty() {
-        return this.root.classList.contains("empty");
-    }
-
-    set empty(value) {
-        this.root.classList.toggle("empty", value);
-    }
-
-    get loading() {
-        return this.root.classList.contains("loading");
-    }
-
-    set loading(value) {
-        this.root.classList.toggle("loading", value);
-    }
-
-    get processing() {
-        return this.root.classList.contains("processing");
-    }
-
-    set processing(value) {
-        this.root.classList.toggle("processing", value);
-    }
+    /**
+     * Public methods
+     */
 
     init() {
-        this.empty = !Boolean(this.instanceId);
-
         // store instance
         this.root.imageUploader = this;
 
@@ -107,6 +104,170 @@ class ImageUploader extends EventEmitter {
         this.root.imageUploader = null;
     }
 
+    /**
+     * @returns {string}
+     */
+    getStatus() {
+        return Object.values(this.STATUS).find(value => {
+            return this.root.classList.contains(`${this.CSS.container}--${value}`)
+        });
+    }
+
+    /**
+     * @param {string} status
+     */
+    setStatus(status) {
+        Object.values(this.STATUS).forEach(value => {
+            this.root.classList.toggle(
+                `${this.CSS.container}--${value}`,
+                status === value
+            );
+        });
+    }
+
+    /**
+     * @param {String|String[]} message
+     */
+    collectError(message) {
+        const errorKey = `file_${this.input.name}`;
+        utils.collectError(errorKey, message);
+    }
+
+    showCollectedErrors() {
+        const errorKey = `image_${this.input.name}`;
+        utils.showCollectedErrors(errorKey);
+    }
+
+    /**
+     * Удаление файла.
+     *
+     * @returns {Promise}
+     */
+    deleteFile() {
+        if (!this.instanceId) {
+            return Promise.reject("Instance doesn't exist");
+        }
+
+        const formData = new FormData();
+
+        const params = utils.getPaperParams(this.root);
+        Object.keys(params).forEach(name => {
+            formData.append(name, params[name]);
+        });
+        formData.append("pk", this.instanceId);
+
+        return modals.showSmartPreloader(
+            fetch(this.root.dataset.deleteUrl, {
+                method: "POST",
+                credentials: "same-origin",
+                body: formData
+            }).then(response => {
+                if (!response.ok) {
+                    throw `${response.status} ${response.statusText}`;
+                }
+                return response.json();
+            })
+        ).then(response => {
+            if (response.errors && response.errors.length) {
+                throw response.errors;
+            }
+
+            this.setStatus(this.STATUS.EMPTY);
+
+            this._disposeFile(response);
+        });
+    }
+
+    /**
+     * Получение с сервера формы изменения файла.
+     *
+     * @returns {Promise}
+     */
+    fetchChangeForm() {
+        if (!this.instanceId) {
+            return Promise.reject("Instance doesn't exist");
+        }
+
+        const formData = new FormData();
+
+        const params = utils.getPaperParams(this.root);
+        Object.keys(params).forEach(name => {
+            formData.append(name, params[name]);
+        });
+        formData.append("pk", this.instanceId);
+
+        const queryString = new URLSearchParams(formData).toString();
+
+        return modals.showSmartPreloader(
+            fetch(`${this.root.dataset.changeUrl}?${queryString}`, {
+                credentials: "same-origin",
+            }).then(response => {
+                if (!response.ok) {
+                    throw `${response.status} ${response.statusText}`;
+                }
+                return response.json();
+            })
+        )
+    }
+
+    /**
+     * Отправка формы редактирования файла.
+     *
+     * @param {PaperModal} modal
+     * @returns {Promise}
+     */
+    sendChangeForm(modal) {
+        if (!this.instanceId) {
+            return Promise.reject("Instance doesn't exist");
+        }
+
+        const form = modal._body.querySelector("form");
+        if (!form) {
+            return Promise.reject("Form not found");
+        }
+
+        const formData = new FormData(form);
+
+        return modals.showSmartPreloader(
+            fetch(form.action, {
+                method: "POST",
+                credentials: "same-origin",
+                body: formData
+            }).then(response => {
+                if (!response.ok) {
+                    throw `${response.status} ${response.statusText}`;
+                }
+                return response.json();
+            })
+        ).then(response => {
+            if (response.errors && response.errors.length) {
+                throw response.errors;
+            }
+
+            formUtils.cleanAllErrors(modal._body);
+            if (response.form_errors) {
+                formUtils.setErrorsFromJSON(modal._body, response.form_errors);
+            } else {
+                modal.destroy();
+
+                this._updateFile(response);
+            }
+        }).catch(reason => {
+            if (reason instanceof Error) {
+                // JS-ошибки дублируем в консоль
+                console.error(reason);
+            }
+            modals.showErrors(reason);
+        });
+    }
+
+    /**
+     * Private methods
+     */
+
+    /**
+     * @private
+     */
     _createUploader() {
         const options = Object.assign({
             url: this.root.dataset.uploadUrl,
@@ -121,105 +282,97 @@ class ImageUploader extends EventEmitter {
         new Uploader(options);
     }
 
+    /**
+     * @private
+     */
     _addListeners() {
         const _this = this;
 
-        this.uploader.on("submitted", function() {
-            if (!this.loading) {
-                this.loading = true;
+        this.uploader.on("submitted", () => {
+            const status = this.getStatus();
+            if (status !== this.STATUS.LOADING) {
+                this.setStatus(this.STATUS.LOADING);
 
                 const progressBar = this.progressBar;
                 progressBar && (progressBar.style.width = "0%");
             }
-        }.bind(this));
+        });
 
-        this.uploader.on("progress", function(file, percentage) {
+        this.uploader.on("progress", (file, percentage) => {
             const progressBar = this.progressBar;
             progressBar && (progressBar.style.width = percentage + "%");
 
             this.showCollectedErrors();
 
             if (percentage >= 100) {
-                this.loading = false;
-                this.processing = true;
+                this.setStatus(this.STATUS.PROCESSING);
 
                 // Добавление минимальной задержки для стадии processing,
                 // чтобы переход от стадии loading к finished был более плавным.
-                this.processingPromise = new Promise(function(resolve) {
+                this.processingPromise = new Promise(resolve => {
                     setTimeout(() => {resolve()}, 600);
                 });
             }
-        }.bind(this));
+        });
 
-        this.uploader.on("complete", function(file, response) {
-            const onComplete = function() {
-                this.processing = false;
-                this.empty = false;
-                this.instanceId = response.id;
-
-                const fileName = this.root.querySelector(this.config.fileName);
-                fileName && (fileName.textContent = response.name);
-
-                const fileInfo = this.root.querySelector(this.config.fileInfo);
-                fileInfo && (fileInfo.textContent = response.file_info);
-
-                const previewLink = this.root.querySelector(this.config.viewButton);
-                previewLink && (previewLink.href = response.url);
-            }.bind(this);
-
+        this.uploader.on("complete", (file, response) => {
             if (this.processingPromise) {
-                this.processingPromise.then(function() {
+                this.processingPromise.then(() => {
                     this.processingPromise = null;
-                    onComplete();
-                }.bind(this));
+                    this._fillFile(response);
+                });
             } else {
                 // Сюда попадать не должны, но на всякий случай...
                 console.warn("processingPromise undefined");
-                onComplete();
+                this._fillFile(response);
             }
-        }.bind(this));
+        });
 
-        this.uploader.on("error", function(file, message) {
+        this.uploader.on("error", (file, message) => {
             this.collectError(message);
-        }.bind(this));
+        });
 
-        this.uploader.on("all_complete", function() {
-            const onAllComplete = function() {
-                this.processing = false;
+        this.uploader.on("all_complete", () => {
+            const onAllComplete = () => {
+                this.setStatus(this.STATUS.READY);
 
                 const progressBar = this.progressBar;
                 progressBar && (progressBar.style.width = "");
 
                 this.showCollectedErrors();
-            }.bind(this);
+            };
 
             if (this.processingPromise) {
-                this.processingPromise.then(function() {
+                this.processingPromise.then(() => {
                     this.processingPromise = null;
                     onAllComplete();
-                }.bind(this));
+                });
             } else {
                 onAllComplete();
             }
-        }.bind(this));
+        });
 
         // отмена загрузки
         if (this.config.cancelButton) {
-            this.root.addEventListener("click", function(event) {
+            this.root.addEventListener("click", event => {
                 const cancelButton = event.target.closest(this.config.cancelButton);
                 if (cancelButton) {
                     event.preventDefault();
 
                     this.uploader.cancelAll();
-                    this.loading = false;
-                    this.processing = false;
+
+                    if (this.instanceId) {
+                        this.setStatus(this.STATUS.READY);
+                    } else {
+                        this.setStatus(this.STATUS.EMPTY);
+                    }
                 }
-            }.bind(this));
+            });
         }
 
         // удаление файла
         if (this.config.deleteButton) {
-            this.root.addEventListener("click", function(event) {
+            this.root.addEventListener("click", event => {
                 const deleteButton = event.target.closest(this.config.deleteButton);
                 if (deleteButton) {
                     event.preventDefault();
@@ -234,18 +387,18 @@ class ImageUploader extends EventEmitter {
                         buttons: [{
                             label: gettext("Cancel"),
                             buttonClass: "btn-light",
-                            onClick: function(event, popup) {
+                            onClick: (event, popup) => {
                                 popup.destroy();
                             }
                         }, {
                             autofocus: true,
                             label: gettext("Delete"),
                             buttonClass: "btn-danger",
-                            onClick: function(event, popup) {
+                            onClick: (event, popup) => {
                                 Promise.all([
                                     popup.destroy(),
-                                    _this.deleteFile()
-                                ]).catch(function(reason) {
+                                    this.deleteFile()
+                                ]).catch(reason => {
                                     if (reason instanceof Error) {
                                         // JS-ошибки дублируем в консоль
                                         console.error(reason);
@@ -262,12 +415,12 @@ class ImageUploader extends EventEmitter {
                         }
                     });
                 }
-            }.bind(this));
+            });
         }
 
         // изменение файла
         if (this.config.changeButton) {
-            this.root.addEventListener("click", function(event) {
+            this.root.addEventListener("click", event => {
                 const changeButton = event.target.closest(this.config.changeButton);
                 if (changeButton) {
                     event.preventDefault();
@@ -277,7 +430,7 @@ class ImageUploader extends EventEmitter {
 
                     this.fetchChangeForm(
                         //
-                    ).then(function(response) {
+                    ).then(response => {
                         if (response.errors && response.errors.length) {
                             throw response.errors;
                         }
@@ -288,20 +441,20 @@ class ImageUploader extends EventEmitter {
                             buttons: [{
                                 label: gettext("Cancel"),
                                 buttonClass: "btn-light",
-                                onClick: function(event, popup) {
+                                onClick: (event, popup) => {
                                     popup.destroy();
                                 }
                             }, {
                                 label: gettext("Save"),
                                 buttonClass: "btn-success",
-                                onClick: function(event, popup) {
-                                    _this.sendChangeForm(popup);
+                                onClick: (event, popup) => {
+                                    this.sendChangeForm(popup);
                                 }
                             }],
                             onInit: function() {
                                 const popup = this;
                                 const form = popup._body.querySelector("form");
-                                form && form.addEventListener("submit", function(event) {
+                                form && form.addEventListener("submit", event => {
                                     event.preventDefault();
                                     _this.sendChangeForm(popup);
                                 });
@@ -309,7 +462,7 @@ class ImageUploader extends EventEmitter {
                                 popup.show();
 
                                 // autofocus first field
-                                $(popup._element).on("autofocus.bs.modal", function() {
+                                $(popup._element).on("autofocus.bs.modal", () => {
                                     const firstWidget = popup._body.querySelector(".paper-widget");
                                     const firstField = firstWidget && firstWidget.querySelector("input, select, textarea");
                                     firstField && firstField.focus();
@@ -319,7 +472,7 @@ class ImageUploader extends EventEmitter {
                                 changeButton.disabled = false;
                             }
                         });
-                    }).catch(function(reason) {
+                    }).catch(reason => {
                         if (reason instanceof Error) {
                             // JS-ошибки дублируем в консоль
                             console.error(reason);
@@ -327,152 +480,54 @@ class ImageUploader extends EventEmitter {
                         modals.showErrors(reason);
                     });
                 }
-            }.bind(this));
+            });
         }
-    }
-
-    collectError(message) {
-        const errorKey = `image_${this.input.name}`;
-        utils.collectError(errorKey, message);
-    }
-
-    showCollectedErrors() {
-        const errorKey = `image_${this.input.name}`;
-        utils.showCollectedErrors(errorKey);
     }
 
     /**
-     * Удаление файла.
-     * @returns {Promise}
+     * @param {object<string,*>} response
+     * @private
      */
-    deleteFile() {
-        if (!this.instanceId) {
-            return Promise.reject("Instance doesn't exist");
-        }
+    _fillFile(response) {
+        this.instanceId = response.id;
 
-        const formData = new FormData();
+        const fileName = this.root.querySelector(this.config.fileName);
+        fileName && (fileName.textContent = response.name);
 
-        const params = utils.getPaperParams(this.root);
-        Object.keys(params).forEach(function(name) {
-            formData.append(name, params[name]);
-        });
-        formData.append("pk", this.instanceId);
+        const fileInfo = this.root.querySelector(this.config.fileInfo);
+        fileInfo && (fileInfo.textContent = response.file_info);
 
-        const _this = this;
-        return modals.showSmartPreloader(
-            fetch(this.root.dataset.deleteUrl, {
-                method: "POST",
-                credentials: "same-origin",
-                body: formData
-            }).then(function(response) {
-                if (!response.ok) {
-                    throw `${response.status} ${response.statusText}`;
-                }
-                return response.json();
-            })
-        ).then(function(response) {
-            if (response.errors && response.errors.length) {
-                throw response.errors;
-            }
-
-            _this.empty = true;
-            _this.instanceId = "";
-
-            const fileName = _this.root.querySelector(_this.config.fileName);
-            fileName && (fileName.textContent = "");
-
-            const fileInfo = _this.root.querySelector(_this.config.fileInfo);
-            fileInfo && (fileInfo.textContent = "");
-        });
+        const previewLink = this.root.querySelector(this.config.viewButton);
+        previewLink && (previewLink.href = response.url);
     }
 
     /**
-     * Получение с сервера формы изменения файла.
-     * @returns {Promise}
+     * @param {object<string,*>} response
+     * @private
      */
-    fetchChangeForm() {
-        if (!this.instanceId) {
-            return Promise.reject("Instance doesn't exist");
-        }
+    _updateFile(response) {
+        const fileName = this.root.querySelector(this.config.fileName);
+        fileName && (fileName.textContent = response.name);
 
-        const formData = new FormData();
+        const fileInfo = this.root.querySelector(this.config.fileInfo);
+        fileInfo && (fileInfo.textContent = response.file_info);
 
-        const params = utils.getPaperParams(this.root);
-        Object.keys(params).forEach(function(name) {
-            formData.append(name, params[name]);
-        });
-        formData.append("pk", this.instanceId);
-
-        const queryString = new URLSearchParams(formData).toString();
-
-        return modals.showSmartPreloader(
-            fetch(`${this.root.dataset.changeUrl}?${queryString}`, {
-                credentials: "same-origin",
-            }).then(function(response) {
-                if (!response.ok) {
-                    throw `${response.status} ${response.statusText}`;
-                }
-                return response.json();
-            })
-        )
+        const previewLink = this.root.querySelector(this.config.viewButton);
+        previewLink && (previewLink.href = response.url);
     }
 
     /**
-     * Отправка формы редактирования файла.
-     * @param {PaperModal} modal
-     * @returns {Promise}
+     * @param {object<string,*>} response
+     * @private
      */
-    sendChangeForm(modal) {
-        if (!this.instanceId) {
-            return Promise.reject("Instance doesn't exist");
-        }
+    _disposeFile(response) {
+        this.instanceId = "";
 
-        const form = modal._body.querySelector("form");
-        if (!form) {
-            return Promise.reject("Form not found");
-        }
+        const fileName = this.root.querySelector(this.config.fileName);
+        fileName && (fileName.textContent = "");
 
-        const formData = new FormData(form);
-
-        const _this = this;
-        return modals.showSmartPreloader(
-            fetch(form.action, {
-                method: "POST",
-                credentials: "same-origin",
-                body: formData
-            }).then(function(response) {
-                if (!response.ok) {
-                    throw `${response.status} ${response.statusText}`;
-                }
-                return response.json();
-            })
-        ).then(function(response) {
-            if (response.errors && response.errors.length) {
-                throw response.errors;
-            }
-
-            formUtils.cleanAllErrors(modal._body);
-            if (response.form_errors) {
-                formUtils.setErrorsFromJSON(modal._body, response.form_errors);
-            } else {
-                modal.destroy();
-
-                const fileName = _this.root.querySelector(_this.config.fileName);
-                fileName && (fileName.textContent = response.name);
-
-                const fileInfo = _this.root.querySelector(_this.config.fileInfo);
-                fileInfo && (fileInfo.textContent = response.file_info);
-
-                const previewLink = _this.root.querySelector(_this.config.viewButton);
-                previewLink && (previewLink.href = response.url);
-            }
-        }).catch(function(reason) {
-            if (reason instanceof Error) {
-                // JS-ошибки дублируем в консоль
-                console.error(reason);
-            }
-            modals.showErrors(reason);
-        });
+        const fileInfo = this.root.querySelector(this.config.fileInfo);
+        fileInfo && (fileInfo.textContent = "");
     }
 }
 
@@ -485,7 +540,6 @@ class ImageUploaderWidget extends Widget {
     _destroy(element) {
         if (element.imageUploader) {
             element.imageUploader.destroy();
-            element.imageUploader = null;
         }
     }
 }
