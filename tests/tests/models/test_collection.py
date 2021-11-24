@@ -291,11 +291,23 @@ class TestDeleteCustomCollection:
 
     def test_explicit_deletion(self):
         collection = self._create_collection()
+        item = collection.items.first()  # type: CustomImageItem
+        item_files = [item.get_file(), *(pair[1] for pair in item.variation_files())]
+
         collection.delete()
+
+        for vfile in item_files:
+            vfile.delete()
 
     def test_sql_deletion(self):
         collection = self._create_collection()
+        item = collection.items.first()  # type: CustomImageItem
+        item_files = [item.get_file(), *(pair[1] for pair in item.variation_files())]
+
         CustomGallery.objects.filter(pk=collection.pk).delete()
+
+        for vfile in item_files:
+            vfile.delete()
 
 
 class CollectionItemMixin:
@@ -882,10 +894,12 @@ class TestImageItemRename(TestImageRename):
         storage.old_source_name = file.name
         storage.old_desktop_name = storage.resource.desktop.name
         storage.old_mobile_name = storage.resource.mobile.name
+        storage.old_admin_preview_name = storage.resource.admin_preview.name
 
         storage.old_source_path = file.path
         storage.old_desktop_path = storage.resource.desktop.path
         storage.old_mobile_path = storage.resource.mobile.path
+        storage.old_admin_preview_path = storage.resource.admin_preview.path
 
         storage.resource.rename_file('new_name.png')
 
@@ -894,8 +908,31 @@ class TestImageItemRename(TestImageRename):
         os.remove(storage.old_source_path)
         os.remove(storage.old_desktop_path)
         os.remove(storage.old_mobile_path)
+        os.remove(storage.old_admin_preview_path)
         storage.resource.delete_file()
         storage.resource.delete()
+
+    def test_old_file_name(self, storage):
+        super().test_old_file_name(storage)
+        assert storage.old_admin_preview_name == utils.get_target_filepath(
+            posixpath.join(self.resource_location, 'old_name{suffix}.admin_preview.jpg'),
+            storage.old_source_name
+        )
+
+    def test_new_file_name(self, storage):
+        super().test_new_file_name(storage)
+        assert storage.resource.admin_preview.name == utils.get_target_filepath(
+            posixpath.join(self.resource_location, 'new_name{suffix}.admin_preview.png'),
+            storage.resource.file.name
+        )
+
+    def test_old_file_exists(self, storage):
+        super().test_old_file_exists(storage)
+        assert os.path.exists(storage.old_admin_preview_path) is True
+
+    def test_new_file_exists(self, storage):
+        super().test_old_file_exists(storage)
+        assert os.path.exists(storage.resource.admin_preview.path) is True
 
 
 class TestImageItemDelete(TestImageDelete):
@@ -916,16 +953,29 @@ class TestImageItemDelete(TestImageDelete):
         storage.old_source_name = file.name
         storage.old_desktop_name = storage.resource.desktop.name
         storage.old_mobile_name = storage.resource.mobile.name
+        storage.old_admin_preview_name = storage.resource.admin_preview.name
 
         storage.old_source_path = file.path
         storage.old_desktop_path = storage.resource.desktop.path
         storage.old_mobile_path = storage.resource.mobile.path
+        storage.old_admin_preview_path = storage.resource.admin_preview.path
 
         storage.resource.delete_file()
 
         yield
 
         storage.resource.delete()
+
+    def test_file_name(self, storage):
+        super().test_file_name(storage)
+        assert storage.old_admin_preview_name == utils.get_target_filepath(
+            posixpath.join(self.resource_location, 'old_name{suffix}.admin_preview.jpg'),
+            storage.old_source_name
+        )
+
+    def test_file_not_exists(self, storage):
+        super().test_file_not_exists(storage)
+        assert os.path.exists(storage.old_admin_preview_path) is False
 
 
 class TestImageItemEmpty(TestImageEmpty):

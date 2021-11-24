@@ -93,6 +93,11 @@ class TestUploadFileView:
         assert isinstance(response, JsonResponse)
         assert json.loads(response.content)["name"] == "dummy"
 
+        item_id = json.loads(response.content)["id"]
+        item = CustomProxyUploadedFile.objects.get(pk=item_id)
+        item.delete_file()
+        item.delete()
+
 
 class TestDeleteFileView:
     @staticmethod

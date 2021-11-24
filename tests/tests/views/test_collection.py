@@ -278,6 +278,10 @@ class TestUploadFileView:
         assert json.loads(response.content)["name"] == "dummy"
         assert collection.get_items().count() == 1
 
+        item_id = json.loads(response.content)["id"]
+        item = collection.items.get(pk=item_id)
+        item.delete_file()
+
         collection.delete()
 
 
