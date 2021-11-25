@@ -593,7 +593,7 @@ class Collection extends EventEmitter {
         dropzoneActiveClassName: "dropzone__overlay--highlighted",
 
         // контейнер, содержащий элементы коллекции
-        container: ".collection__items",
+        itemContainer: ".collection__items",
 
         // селектор корневого DOM-элемента элемента коллекции
         item: ".collection-item",
@@ -659,12 +659,12 @@ class Collection extends EventEmitter {
         return this.root.querySelector(this.config.input);
     }
 
-    get container() {
-        return this.root.querySelector(this.config.container);
+    get itemContainer() {
+        return this.root.querySelector(this.config.itemContainer);
     }
 
     get items() {
-        return this.container.querySelectorAll(this.config.item);
+        return this.itemContainer.querySelectorAll(this.config.item);
     }
 
     get maxOrderValue() {
@@ -874,6 +874,8 @@ class Collection extends EventEmitter {
      * @private
      */
     _initItems() {
+        this.itemContainer.innerHTML = "";
+
         const dataElement = this.root.querySelector(this.config.dataJSON);
         const data = JSON.parse(dataElement.textContent);
         for (let itemData of data) {
@@ -881,7 +883,7 @@ class Collection extends EventEmitter {
 
             const itemHTML = this.createItem(itemType, itemData);
 
-            this.container.insertAdjacentHTML("beforeend", itemHTML);
+            this.itemContainer.insertAdjacentHTML("beforeend", itemHTML);
             const items = this.items;
             const item = items[items.length - 1];
 
@@ -932,7 +934,7 @@ class Collection extends EventEmitter {
                 order: this.maxOrderValue + 1
             });
 
-            this.container.insertAdjacentHTML("beforeend", itemHTML);
+            this.itemContainer.insertAdjacentHTML("beforeend", itemHTML);
             const items = this.items;
             const item = items[items.length - 1];
 
@@ -1175,7 +1177,7 @@ class Collection extends EventEmitter {
      * @returns {Sortable}
      */
     _initSortable() {
-        return Sortable.create(this.container, {
+        return Sortable.create(this.itemContainer, {
             animation: 0,
             draggable: this.config.item,
             filter: (event, target) => {

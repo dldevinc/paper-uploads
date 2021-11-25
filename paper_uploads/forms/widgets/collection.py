@@ -24,9 +24,14 @@ class CollectionWidget(DisplayFileLimitationsMixin, FileResourceWidgetBase):
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
+
+        instance = context["instance"]  # type: Collection
+        item_count = instance.get_items().count() if instance is not None else 0
+
         context.update(
             {
                 "collection_cls": self.model,
+                "item_range": range(item_count),
                 "preview_width": settings.COLLECTION_ITEM_PREVIEW_WIDTH,
                 "preview_height": settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
             }

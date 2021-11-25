@@ -19,7 +19,11 @@
          value="{{ widget.value|default:"" }}"
          {% include "django/forms/widgets/attrs.html" %}/>
 
-  <div class="collection__items"></div>
+  <div class="collection__items">
+    {% for _ in item_range %}
+      <div class="collection__skeleton" style="width: {{ preview_width }}px; height: {{ preview_height }}px"></div>
+    {% endfor %}
+  </div>
 
   <button type="button" class="collection__create-collection-button btn btn-success"
           data-toggle="tooltip" data-placement="top" data-trigger="hover"
