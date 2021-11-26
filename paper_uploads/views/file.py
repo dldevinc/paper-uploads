@@ -5,10 +5,9 @@ from django.core.handlers.wsgi import WSGIRequest
 from django.http import HttpResponse
 from django.utils.module_loading import import_string
 
-from ..forms.dialogs.file import ChangeUploadedFileDialog
 from ..helpers import run_validators
 from ..models.base import FileResource
-from ..models.mixins import BacklinkModelMixin
+from ..models.mixins import BacklinkModelMixin, EditableResourceMixin
 from . import helpers
 from .base import ChangeFileViewBase, DeleteFileViewBase, UploadFileViewBase
 
@@ -74,14 +73,11 @@ class ChangeFileView(ChangeFileViewBase):
     template_name = "paper_uploads/dialogs/file.html"
 
     def get_form_class(self):
-        # compat
-        if not hasattr(self.instance, "change_form_class"):
-            return ChangeUploadedFileDialog
+        if self.form_class is not None:
+            return self.form_class
 
-        if isinstance(self.instance.change_form_class, str):
+        if isinstance(self.instance, EditableResourceMixin):
             return import_string(self.instance.change_form_class)
-        else:
-            return self.instance.change_form_class
 
     def get_file_model(self) -> Type[FileResource]:
         content_type_id = self.request.GET.get("paperContentType")

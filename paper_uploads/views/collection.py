@@ -16,6 +16,7 @@ from .. import exceptions, signals
 from ..helpers import run_validators
 from ..logging import logger
 from ..models.collection import CollectionBase, CollectionFileItemBase, CollectionItemBase
+from ..models.mixins import EditableResourceMixin
 from . import helpers
 from .base import ActionView, ChangeFileViewBase, DeleteFileViewBase, UploadFileViewBase
 
@@ -171,10 +172,11 @@ class ChangeFileView(ChangeFileViewBase):
     template_name = "paper_uploads/dialogs/collection.html"
 
     def get_form_class(self):
-        if isinstance(self.instance.change_form_class, str):
+        if self.form_class is not None:
+            return self.form_class
+
+        if isinstance(self.instance, EditableResourceMixin):
             return import_string(self.instance.change_form_class)
-        else:
-            return self.instance.change_form_class
 
     def get_collection_model(self) -> Type[CollectionBase]:
         content_type_id = self.request.GET.get("paperCollectionContentType")

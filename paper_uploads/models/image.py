@@ -1,6 +1,5 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict
 
-from django import forms
 from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
 
@@ -10,12 +9,12 @@ from ..utils import filesizeformat
 from ..variations import PaperVariation
 from .base import FileFieldResource, VersatileImageResourceMixin
 from .fields import VariationalFileField
-from .mixins import BacklinkModelMixin
+from .mixins import BacklinkModelMixin, EditableResourceMixin
 from .utils import generate_filename
 
 
-class UploadedImageBase(VersatileImageResourceMixin, BacklinkModelMixin, FileFieldResource):
-    change_form_class: Optional[Union[str, forms.Form]] = "paper_uploads.forms.dialogs.image.ChangeUploadedImageDialog"
+class UploadedImageBase(VersatileImageResourceMixin, BacklinkModelMixin, EditableResourceMixin, FileFieldResource):
+    change_form_class = "paper_uploads.forms.dialogs.image.ChangeUploadedImageDialog"
 
     file = VariationalFileField(
         _("file"),

@@ -1,9 +1,8 @@
 import posixpath
 from collections import OrderedDict
-from typing import Any, Dict, Iterable, Optional, Type, Union
+from typing import Any, Dict, Iterable, Optional, Type
 
 import magic
-from django import forms
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.finders import find
@@ -16,7 +15,6 @@ from django.db.models.fields.files import FieldFile
 from django.db.models.functions import Coalesce
 from django.db.models.utils import make_model_tuple
 from django.template import loader
-from django.utils.module_loading import import_string
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from polymorphic.base import PolymorphicModelBase
@@ -36,7 +34,7 @@ from .base import (
 from .fields import CollectionItem
 from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
-from .mixins import BacklinkModelMixin
+from .mixins import BacklinkModelMixin, EditableResourceMixin
 from .utils import generate_filename
 
 __all__ = [
@@ -267,16 +265,10 @@ class CollectionItemMetaBase(PolymorphicModelBase, ResourceBaseMeta):
         return super().__new__(cls, name, bases, attrs)
 
 
-class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
+class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=CollectionItemMetaBase):
     """
     Базовый класс элемента коллекции.
     """
-
-    # Флаг для индикации базового класса элемента коллекции.
-    # См. метод _check_form_class()
-    __BaseCollectionItem = True
-
-    change_form_class: Optional[Union[str, forms.Form]] = None
 
     # путь к шаблону, представляющему элемент коллекции в админке
     template_name: Optional[str] = None
@@ -309,43 +301,12 @@ class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
     def check(cls, **kwargs):
         return [
             *super().check(**kwargs),
-            *cls._check_form_class(),
             *cls._check_template_name(),
         ]
 
     @classmethod
-    def _check_form_class(cls, **kwargs):
-        flag = "_{}__BaseCollectionItem".format(cls.__name__)
-        if getattr(cls, flag, None) is True or cls._meta.abstract:
-            return []
-
-        errors = []
-        if cls.change_form_class is None:
-            errors.append(
-                checks.Error(
-                    "{} requires a definition of 'change_form_class'".format(
-                        cls.__name__
-                    ),
-                    obj=cls,
-                )
-            )
-        else:
-            try:
-                import_string(cls.change_form_class)
-            except ImportError:
-                errors.append(
-                    checks.Error(
-                        "The value of 'change_form_class' refers to '%s', which does "
-                        "not exists" % cls.change_form_class,
-                        obj=cls,
-                    )
-                )
-        return errors
-
-    @classmethod
     def _check_template_name(cls, **kwargs):
-        flag = "_{}__BaseCollectionItem".format(cls.__name__)
-        if getattr(cls, flag, None) is True or cls._meta.abstract:
+        if cls._meta.abstract or cls is CollectionItemBase:
             return []
 
         errors = []

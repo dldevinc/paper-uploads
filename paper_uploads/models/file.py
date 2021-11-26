@@ -1,6 +1,5 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict
 
-from django import forms
 from django.db import models
 from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
@@ -9,12 +8,12 @@ from ..conf import settings
 from ..storage import upload_storage
 from ..utils import filesizeformat
 from .base import FileFieldResource
-from .mixins import BacklinkModelMixin
+from .mixins import BacklinkModelMixin, EditableResourceMixin
 from .utils import generate_filename
 
 
-class UploadedFileBase(BacklinkModelMixin, FileFieldResource):
-    change_form_class: Optional[Union[str, forms.Form]] = "paper_uploads.forms.dialogs.file.ChangeUploadedFileDialog"
+class UploadedFileBase(BacklinkModelMixin, EditableResourceMixin, FileFieldResource):
+    change_form_class = "paper_uploads.forms.dialogs.file.ChangeUploadedFileDialog"
 
     file = models.FileField(
         _("file"),
