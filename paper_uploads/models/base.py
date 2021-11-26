@@ -505,7 +505,12 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
 
     def _rename_file(self, new_name: str, **options):
         super()._rename_file(new_name, **options)  # noqa: F821
-        self.recut()
+
+        if settings.RQ_ENABLED:
+            self.recut_async()
+        else:
+            self.recut()
+
         self._setup_variation_files()
 
     def get_variations(self) -> Dict[str, PaperVariation]:
