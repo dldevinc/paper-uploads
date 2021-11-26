@@ -202,13 +202,10 @@ class DeleteFileViewBase(ActionView):
 
 class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
     http_method_names = ["get", "post"]
-    instance = None
 
     def get(self, request: WSGIRequest, *args, **kwargs):
         if not request.user.has_perm("paper_uploads.change"):
             return self.error_response(_("Access denied"))
-
-        self.instance = self.get_instance(request, *args, **kwargs)
 
         context = self.get_context_data(**kwargs)
         return self.success_response({
@@ -218,8 +215,6 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
     def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         if not request.user.has_perm("paper_uploads.change"):
             return self.error_response(_("Access denied"))
-
-        self.instance = self.get_instance(request, *args, **kwargs)
 
         form = self.get_form()
         if not form.is_valid():
@@ -231,16 +226,15 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
         context = super().get_context_data(**kwargs)
         context.update({
             "action": self.request.get_full_path(),
-            "instance": self.instance,
         })
         return context
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["instance"] = self.instance
+        kwargs["instance"] = self.get_instance()
         return kwargs
 
-    def get_instance(self, request: WSGIRequest, *args, **kwargs):
+    def get_instance(self):
         raise NotImplementedError
 
     def form_valid(self, form):

@@ -175,8 +175,11 @@ class ChangeFileView(ChangeFileViewBase):
         if self.form_class is not None:
             return self.form_class
 
-        if isinstance(self.instance, EditableResourceMixin):
-            return import_string(self.instance.change_form_class)
+        collection_cls = self.get_collection_model()
+        item_type = self.get_item_type()
+        item_model = collection_cls.get_item_model(item_type)
+        if issubclass(item_model, EditableResourceMixin):
+            return import_string(item_model.change_form_class)
 
     def get_collection_model(self) -> Type[CollectionBase]:
         content_type_id = self.request.GET.get("paperCollectionContentType")
@@ -188,7 +191,7 @@ class ChangeFileView(ChangeFileViewBase):
     def get_item_id(self) -> Any:
         return self.request.GET.get("itemId")
 
-    def get_instance(self, request: WSGIRequest, *args, **kwargs):
+    def get_instance(self):
         collection_cls = self.get_collection_model()
         item_type = self.get_item_type()
         item_model = collection_cls.get_item_model(item_type)
