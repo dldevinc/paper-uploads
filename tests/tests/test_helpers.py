@@ -144,6 +144,59 @@ class TestBuildVariations:
             ))
 
 
+class TestIterateVariationNames:
+    def test_plain(self):
+        names = helpers.iterate_variation_names(dict(
+            desktop=dict(
+                size=(200, 300)
+            ),
+            mobile=dict(
+                size=(200, 300)
+            ),
+        ))
+        assert set(names) == {"desktop", "mobile"}
+
+    def test_webp(self):
+        names = helpers.iterate_variation_names(dict(
+            desktop=dict(
+                size=(200, 300),
+                versions={"webp"}
+            ),
+            mobile=dict(
+                size=(200, 300)
+            ),
+        ))
+        assert set(names) == {"desktop", "desktop_webp", "mobile"}
+
+    def test_retina(self):
+        names = helpers.iterate_variation_names(dict(
+            desktop=dict(
+                size=(200, 300),
+                versions={"2x"}
+            ),
+            mobile=dict(
+                size=(200, 300)
+            ),
+        ))
+        assert set(names) == {"desktop", "desktop_2x", "mobile"}
+
+    def test_mixed(self):
+        names = helpers.iterate_variation_names(dict(
+            desktop=dict(
+                size=(200, 300),
+                versions={"webp", "2x"}
+            ),
+            mobile=dict(
+                size=(200, 300),
+                versions={"2x", "3x"}
+            ),
+        ))
+        assert set(names) == {
+            "desktop", "desktop_webp", "desktop_2x", "desktop_webp_2x",
+            "mobile", "mobile_2x", "mobile_3x"
+        }
+
+
 class TestImplicitVariations:
     variations = None
 

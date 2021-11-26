@@ -22,7 +22,12 @@ from polymorphic.models import PolymorphicModel
 
 from .. import exceptions
 from ..conf import FILE_ICON_DEFAULT, FILE_ICON_OVERRIDES, settings
-from ..helpers import _get_item_types, _set_item_types, build_variations
+from ..helpers import (
+    _get_item_types,
+    _set_item_types,
+    build_variations,
+    iterate_variation_names,
+)
 from ..storage import upload_storage
 from ..variations import PaperVariation
 from .base import (
@@ -556,7 +561,7 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         """
         Превью для админки режутся сразу, а остальное — потом.
         """
-        preview_variations = tuple(self.PREVIEW_VARIATIONS.keys())
+        preview_variations = tuple(iterate_variation_names(self.PREVIEW_VARIATIONS))
         self.recut(names=preview_variations)
 
         other_variations = tuple(set(names).difference(preview_variations))

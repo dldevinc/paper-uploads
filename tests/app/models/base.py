@@ -69,5 +69,6 @@ class CompleteCollection(Collection):
         ),
         admin_preview=dict(
             size=(200, 100),
+            versions={"webp", "2x"},
         )
     )

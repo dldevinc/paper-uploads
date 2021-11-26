@@ -36,6 +36,20 @@ def get_extension(filename: str) -> str:
     return extension.lstrip(".")
 
 
+def _variation_name(name: str, scale_factor: int = 1, webp: bool = False) -> str:
+    if webp:
+        variation_name = "{}_webp".format(name)
+    else:
+        variation_name = name
+
+    if scale_factor == 1:
+        pass
+    else:
+        variation_name = "{}_{}x".format(variation_name, scale_factor)
+
+    return variation_name
+
+
 def generate_scaled_versions(
     name: str, config: VariationConfig, scale_factor: int = 1, webp: bool = False
 ) -> Iterator[PaperVariation]:
@@ -44,14 +58,9 @@ def generate_scaled_versions(
     """
     scaled_size = tuple(x * scale_factor for x in config.get("size", (0, 0)))
 
-    if scale_factor == 1:
-        variation_name = name
-    else:
-        variation_name = "{}_{}x".format(name, scale_factor)
-
     variation_config = dict(
         config,
-        name=variation_name,
+        name=_variation_name(name, scale_factor),
         size=scaled_size,
         max_width=scale_factor * config.get("max_width", 0),
         max_height=scale_factor * config.get("max_height", 0),
@@ -60,14 +69,9 @@ def generate_scaled_versions(
     yield PaperVariation(**variation_config)
 
     if webp:
-        if scale_factor == 1:
-            variation_name = "{}_webp".format(name)
-        else:
-            variation_name = "{}_webp_{}x".format(name, scale_factor)
-
         variation_config = dict(
             config,
-            name=variation_name,
+            name=_variation_name(name, scale_factor, webp=True),
             size=scaled_size,
             max_width=scale_factor * config.get("max_width", 0),
             max_height=scale_factor * config.get("max_height", 0),
@@ -118,6 +122,31 @@ def build_variations(options: Dict[str, VariationConfig]) -> Dict[str, PaperVari
                 variations.setdefault(variation.name, variation)
 
     return variations
+
+
+def iterate_variation_names(options: Dict[str, VariationConfig]) -> Iterator[str]:
+    """
+    Перечисляет имена вариаций из словаря конфигураций с учётом параметра `versions`.
+    """
+    def iterate_variation_versions(name: str, scale_factor: int = 1, webp: bool = False) -> Iterator[str]:
+        yield _variation_name(name, scale_factor)
+        if webp:
+            yield _variation_name(name, scale_factor, webp=True)
+
+    for name, config in options.items():
+        new_config = lowercased_dict_keys(settings.VARIATION_DEFAULTS or {})
+        new_config.update(config)
+
+        versions = set(v.lower() for v in config.get("versions", ()))
+        webp = "webp" in versions and config.get("format", "").upper() != "WEBP"
+
+        yield from iterate_variation_versions(name, scale_factor=1, webp=webp)
+        if "2x" in versions:
+            yield from iterate_variation_versions(name, scale_factor=2, webp=webp)
+        if "3x" in versions:
+            yield from iterate_variation_versions(name, scale_factor=3, webp=webp)
+        if "4x" in versions:
+            yield from iterate_variation_versions(name, scale_factor=4, webp=webp)
 
 
 def get_instance(
