@@ -5,7 +5,11 @@ from paper_admin.admin.renderers import PaperFormRenderer
 
 class ChangeFileResourceDialogBase(forms.ModelForm):
     default_renderer = PaperFormRenderer
-    new_name = forms.CharField(required=True, label=_("File name"), max_length=255,)
+    new_name = forms.CharField(
+        required=True,
+        label=_("File name"),
+        max_length=255,
+    )
 
     class Meta:
         fields = ("new_name",)
