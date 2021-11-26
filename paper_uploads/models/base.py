@@ -504,7 +504,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         super()._delete_file()  # noqa: F821
 
     def _rename_file(self, new_name: str, **options):
-        super()._rename_file(new_name)  # noqa: F821
+        super()._rename_file(new_name, **options)  # noqa: F821
         self.recut()
         self._setup_variation_files()
 

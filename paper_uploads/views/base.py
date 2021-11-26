@@ -239,7 +239,7 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
 
     def form_valid(self, form):
         try:
-            form.save()
+            instance = form.save()
         except exceptions.FileNotFoundError as e:
             error = _("File not found: %s") % e.name
             logger.debug(error)
@@ -252,7 +252,7 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
                 message = type(e).__name__
             return self.error_response(message)
 
-        return self.success_response(self.instance.as_dict())  # noqa: F821
+        return self.success_response(instance.as_dict())  # noqa: F821
 
     def form_invalid(self, form):
         return JsonResponse({
