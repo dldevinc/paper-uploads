@@ -499,19 +499,14 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         self.need_recut = True
         self._setup_variation_files()
 
-    def _delete_file(self):
-        self.delete_variations()
-        super()._delete_file()  # noqa: F821
-
-    def _rename_file(self, new_name: str, **options):
-        super()._rename_file(new_name, **options)  # noqa: F821
-
-        if settings.RQ_ENABLED:
-            self.recut_async()
-        else:
-            self.recut()
-
+    def rename_file(self, new_name: str, **options):
+        super().rename_file(new_name, **options)  # noqa: F821
+        self.need_recut = True
         self._setup_variation_files()
+
+    def delete_file(self, **options):
+        super().delete_file(**options)  # noqa: F821
+        self.delete_variations()
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         raise NotImplementedError

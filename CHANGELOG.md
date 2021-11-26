@@ -27,6 +27,7 @@
 - Updated view classes for easier customization.
 - Added new class `paper_uploads.forms.fields.base.ResourceFieldBase`.
 - Added new class `paper_uploads.forms.widgets.base.ResourceWidgetBase`.
+- `rename_file()` now uses `recut_async()` when supported.
 ### Bug Fixes
 - Fixed caption update for collection items.
 

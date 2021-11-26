@@ -93,7 +93,9 @@ class TestUploadedFileRename(BacklinkModelMixin, TestFileFieldResourceRename):
         file = storage.resource.get_file()
         storage.old_source_name = file.name
         storage.old_source_path = file.path
+
         storage.resource.rename_file('new_name.png')
+        storage.resource.save()
 
         yield
 

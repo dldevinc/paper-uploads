@@ -1078,6 +1078,13 @@ class TestVersatileImageResource(TestImageFieldResource):
 class TestImageAttach(TestImageFieldResourceAttach):
     resource_class = DummyVersatileImageResource
 
+    def test_need_recut(self):
+        with self.get_resource() as resource:
+            with open(NASA_FILEPATH, 'rb') as fp:
+                resource.attach_file(fp)
+
+            assert resource.need_recut is True
+
 
 class TestImageRename(TestImageFieldResourceRename):
     resource_class = DummyVersatileImageResource
@@ -1100,6 +1107,8 @@ class TestImageRename(TestImageFieldResourceRename):
         storage.old_mobile_path = storage.resource.mobile.path
 
         storage.resource.rename_file('new_name.png')
+        assert storage.resource.need_recut is True
+        storage.resource.save()
 
         yield
 
