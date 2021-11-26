@@ -34,12 +34,6 @@ class InvalidChunking(Exception):
     pass
 
 
-class AjaxFormError(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(message)
-
-
 class UnsupportedFileError(Exception):
     """
     Исключение, вызываемое внутри метода `attach_file` при обнаружении

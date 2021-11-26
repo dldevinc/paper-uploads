@@ -208,11 +208,7 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
         if not request.user.has_perm("paper_uploads.change"):
             return self.error_response(_("Access denied"))
 
-        try:
-            self.instance = self.get_instance(request, *args, **kwargs)
-        except exceptions.AjaxFormError as exc:
-            logger.exception("Error")
-            return self.error_response(exc.message)
+        self.instance = self.get_instance(request, *args, **kwargs)
 
         context = self.get_context_data(**kwargs)
         return self.success_response({
@@ -223,29 +219,13 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
         if not request.user.has_perm("paper_uploads.change"):
             return self.error_response(_("Access denied"))
 
-        try:
-            self.instance = self.get_instance(request, *args, **kwargs)
-        except exceptions.AjaxFormError as exc:
-            logger.exception("Error")
-            return self.error_response(exc.message)
+        self.instance = self.get_instance(request, *args, **kwargs)
 
         form = self.get_form()
         if not form.is_valid():
             return self.form_invalid(form)
 
-        try:
-            return self.form_valid(form)
-        except ValidationError as e:
-            messages = self.get_exception_messages(e)
-            logger.debug(messages)
-            return self.error_response(messages)
-        except exceptions.FileNotFoundError as e:
-            error = _("File not found: %s") % e.name
-            logger.debug(error)
-            return self.error_response(error)
-        except exceptions.AjaxFormError as exc:
-            logger.exception("Error")
-            return self.error_response(exc.message)
+        return self.form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -264,7 +244,20 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
         raise NotImplementedError
 
     def form_valid(self, form):
-        form.save()
+        try:
+            form.save()
+        except exceptions.FileNotFoundError as e:
+            error = _("File not found: %s") % e.name
+            logger.debug(error)
+            return self.error_response(error)
+        except Exception as e:
+            logger.exception("Error")
+            if hasattr(e, "args"):
+                message = "{}: {}".format(type(e).__name__, e.args[0])
+            else:
+                message = type(e).__name__
+            return self.error_response(message)
+
         return self.success_response(self.instance.as_dict())  # noqa: F821
 
     def form_invalid(self, form):
