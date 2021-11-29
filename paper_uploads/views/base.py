@@ -1,12 +1,13 @@
 import os
 import shutil
 import tempfile
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, ClassVar, Dict, Iterable, List, Optional, Union
 from uuid import UUID
 
 from django.conf import settings
 from django.core.exceptions import (
     NON_FIELD_ERRORS,
+    ImproperlyConfigured,
     MultipleObjectsReturned,
     ObjectDoesNotExist,
     ValidationError,
@@ -20,7 +21,6 @@ from django.utils.functional import Promise
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.edit import FormMixin
 
 from .. import exceptions
@@ -200,7 +200,8 @@ class DeleteFileViewBase(ActionView):
         return self.perform_action(request, *args, **kwargs)
 
 
-class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
+class ChangeFileViewBase(FormMixin, AjaxView):
+    template_name: ClassVar[str] = None
     http_method_names = ["get", "post"]
 
     def get(self, request: WSGIRequest, *args, **kwargs):
@@ -209,7 +210,7 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
 
         context = self.get_context_data(**kwargs)
         return self.success_response({
-            "form": loader.render_to_string(self.template_name, context, request=request)
+            "form": self.render_form(context)
         })
 
     def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
@@ -221,6 +222,18 @@ class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
             return self.form_invalid(form)
 
         return self.form_valid(form)
+
+    def get_template_name(self):
+        if self.template_name is None:
+            raise ImproperlyConfigured(
+                "ChangeFileViewBase requires either a definition of "
+                "'template_name' or an implementation of 'get_template_name()'")
+        else:
+            return self.template_name
+
+    def render_form(self, context):
+        template_name = self.get_template_name()
+        return loader.render_to_string(template_name, context, request=self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
