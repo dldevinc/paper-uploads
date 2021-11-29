@@ -18,11 +18,14 @@ class TestVariationFile:
         storage.resource = DummyVersatileImageResource()
         with open(NASA_FILEPATH, 'rb') as fp:
             storage.resource.attach_file(fp)
+
+        assert storage.resource.need_recut is True
         storage.resource.save()
 
         storage.file = VariationFile(storage.resource, 'desktop')
 
         yield
+
         storage.resource.delete_file()
         storage.resource.delete()
 
