@@ -1,5 +1,5 @@
 import os
-from typing import Any, Type
+from typing import Any, Type, cast
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
@@ -15,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .. import exceptions, signals
 from ..helpers import run_validators
 from ..logging import logger
-from ..models.collection import CollectionBase, CollectionFileItemBase, CollectionItemBase
+from ..models.collection import CollectionBase, CollectionItemBase
 from ..models.mixins import EditableResourceMixin
 from . import helpers
 from .base import ActionView, ChangeFileViewBase, DeleteFileViewBase, UploadFileViewBase
@@ -33,10 +33,13 @@ class CreateCollectionView(ActionView):
             return self.error_response(_("Access denied"))
         return self.perform_action(request, *args, **kwargs)
 
-    def get_instance(self) -> CollectionBase:
+    def get_collection_model(self) -> Type[CollectionBase]:
         content_type_id = self.request.POST.get("paperCollectionContentType")
-        model_class = helpers.get_model_class(content_type_id, CollectionBase)
-        return model_class(
+        return helpers.get_model_class(content_type_id, CollectionBase)
+
+    def get_instance(self) -> CollectionBase:
+        collection_cls = self.get_collection_model()
+        return collection_cls(
             owner_app_label=self.request.POST.get("paperOwnerAppLabel"),
             owner_model_name=self.request.POST.get("paperOwnerModelName"),
             owner_fieldname=self.request.POST.get("paperOwnerFieldName"),
@@ -72,10 +75,13 @@ class DeleteCollectionView(ActionView):
     def get_collection_id(self) -> Any:
         return self.request.POST.get("collectionId")
 
-    def handle(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
+    def get_instance(self) -> CollectionBase:
         collection_cls = self.get_collection_model()
         collection_id = self.get_collection_id()
-        collection = helpers.get_instance(collection_cls, collection_id)
+        return cast(CollectionBase, helpers.get_instance(collection_cls, collection_id))
+
+    def handle(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
+        collection = self.get_instance()
         collection.delete()
         return self.success()
 
@@ -91,10 +97,22 @@ class UploadFileView(UploadFileViewBase):
     def get_collection_id(self) -> Any:
         return self.request.POST.get("collectionId")
 
-    def handle(self, request: WSGIRequest, file: UploadedFile) -> HttpResponse:
+    def get_collection_instance(self) -> CollectionBase:
         collection_cls = self.get_collection_model()
         collection_id = self.get_collection_id()
-        collection = helpers.get_instance(collection_cls, collection_id)
+        return cast(CollectionBase, helpers.get_instance(collection_cls, collection_id))
+
+    def get_instance(self, item_type: str, **kwargs) -> CollectionItemBase:
+        collection_cls = self.get_collection_model()
+        item_model = collection_cls.get_item_model(item_type)
+        return item_model(
+            item_type=item_type,
+            **kwargs
+        )
+
+    def handle(self, request: WSGIRequest, file: UploadedFile) -> HttpResponse:
+        collection_cls = self.get_collection_model()
+        collection = self.get_collection_instance()
 
         try:
             order = max(0, int(request.POST.get("order")))
@@ -105,7 +123,8 @@ class UploadFileView(UploadFileViewBase):
         # не найдем тот, который будет успешно создан
         for item_type in collection.detect_item_type(file):  # noqa: F821
             item_type_field = collection_cls.item_types[item_type]
-            item = item_type_field.model(
+
+            item = self.get_instance(
                 collection=collection,
                 item_type=item_type,
                 size=file.size,
@@ -133,7 +152,7 @@ class UploadFileView(UploadFileViewBase):
 
         return self.success(item)
 
-    def success(self, instance: CollectionFileItemBase) -> HttpResponse:
+    def success(self, instance: CollectionItemBase) -> HttpResponse:
         return self.success_response(instance.as_dict())
 
 
@@ -148,14 +167,16 @@ class DeleteFileView(DeleteFileViewBase):
     def get_item_id(self) -> Any:
         return self.request.POST.get("itemId")
 
-    def handle(self, request: WSGIRequest) -> HttpResponse:
+    def get_instance(self) -> CollectionItemBase:
         collection_cls = self.get_collection_model()
         item_type = self.get_item_type()
         item_model = collection_cls.get_item_model(item_type)
         item_id = self.get_item_id()
+        return cast(CollectionItemBase, helpers.get_instance(item_model, item_id))
 
+    def handle(self, request: WSGIRequest) -> HttpResponse:
         try:
-            item = helpers.get_instance(item_model, item_id)
+            item = self.get_instance()
         except ObjectDoesNotExist:
             # silently skip
             pass
@@ -171,16 +192,6 @@ class DeleteFileView(DeleteFileViewBase):
 class ChangeFileView(ChangeFileViewBase):
     template_name = "paper_uploads/dialogs/collection.html"
 
-    def get_form_class(self):
-        if self.form_class is not None:
-            return self.form_class
-
-        collection_cls = self.get_collection_model()
-        item_type = self.get_item_type()
-        item_model = collection_cls.get_item_model(item_type)
-        if issubclass(item_model, EditableResourceMixin):
-            return import_string(item_model.change_form_class)
-
     def get_collection_model(self) -> Type[CollectionBase]:
         content_type_id = self.request.GET.get("paperCollectionContentType")
         return helpers.get_model_class(content_type_id, CollectionBase)
@@ -191,12 +202,22 @@ class ChangeFileView(ChangeFileViewBase):
     def get_item_id(self) -> Any:
         return self.request.GET.get("itemId")
 
-    def get_instance(self):
+    def get_instance(self) -> CollectionItemBase:
+        collection_cls = self.get_collection_model()
+        item_id = self.get_item_id()
+        item_type = self.get_item_type()
+        item_model = collection_cls.get_item_model(item_type)
+        return cast(CollectionItemBase, helpers.get_instance(item_model, item_id))
+
+    def get_form_class(self):
+        if self.form_class is not None:
+            return self.form_class
+
         collection_cls = self.get_collection_model()
         item_type = self.get_item_type()
         item_model = collection_cls.get_item_model(item_type)
-        item_id = self.get_item_id()
-        return helpers.get_instance(item_model, item_id)
+        if issubclass(item_model, EditableResourceMixin):
+            return import_string(item_model.change_form_class)
 
 
 class SortItemsView(ActionView):

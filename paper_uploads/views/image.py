@@ -1,4 +1,4 @@
-from typing import Any, Type
+from typing import Any, Type, cast
 
 from django.core.files.uploadedfile import UploadedFile
 from django.core.handlers.wsgi import WSGIRequest
@@ -58,10 +58,13 @@ class DeleteFileView(DeleteFileViewBase):
     def get_file_id(self) -> Any:
         return self.request.POST.get("pk")
 
-    def handle(self, request: WSGIRequest) -> HttpResponse:
+    def get_instance(self) -> FileResource:
         file_model = self.get_file_model()
         file_id = self.get_file_id()
-        instance = helpers.get_instance(file_model, file_id)
+        return cast(FileResource, helpers.get_instance(file_model, file_id))
+
+    def handle(self, request: WSGIRequest) -> HttpResponse:
+        instance = self.get_instance()
         instance.delete()
         return self.success()
 
@@ -72,14 +75,6 @@ class DeleteFileView(DeleteFileViewBase):
 class ChangeFileView(ChangeFileViewBase):
     template_name = "paper_uploads/dialogs/image.html"
 
-    def get_form_class(self):
-        if self.form_class is not None:
-            return self.form_class
-
-        file_model = self.get_file_model()
-        if issubclass(file_model, EditableResourceMixin):
-            return import_string(file_model.change_form_class)
-
     def get_file_model(self) -> Type[FileResource]:
         content_type_id = self.request.GET.get("paperContentType")
         return helpers.get_model_class(content_type_id, FileResource)
@@ -87,7 +82,15 @@ class ChangeFileView(ChangeFileViewBase):
     def get_file_id(self) -> Any:
         return self.request.GET.get("pk")
 
-    def get_instance(self):
+    def get_instance(self) -> FileResource:
         file_model = self.get_file_model()
         file_id = self.get_file_id()
-        return helpers.get_instance(file_model, file_id)
+        return cast(FileResource, helpers.get_instance(file_model, file_id))
+
+    def get_form_class(self):
+        if self.form_class is not None:
+            return self.form_class
+
+        file_model = self.get_file_model()
+        if issubclass(file_model, EditableResourceMixin):
+            return import_string(file_model.change_form_class)
