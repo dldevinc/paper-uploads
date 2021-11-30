@@ -22,6 +22,7 @@
 - `UploadedImageDialog` has been renamed to `ChangeUploadedImageDialog`.
 - `FileItemDialog` has been renamed to `ChangeFileItemDialog`.
 - `ImageItemDialog` has been renamed to `ChangeImageItemDialog`.
+- Management commands rewritten.
 ### Features
 - Add abstract base classes for uploaded files.
 - Updated view classes for easier customization.

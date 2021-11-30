@@ -1,14 +1,17 @@
+import datetime
+from collections import defaultdict
 from datetime import timedelta
+from typing import Type
 
 from django.apps import apps
-from django.contrib.contenttypes.models import ContentType
 from django.core.management import BaseCommand
-from django.db import DEFAULT_DB_ALIAS, models, transaction
+from django.db import DEFAULT_DB_ALIAS
 from django.utils.timezone import now
-from polymorphic.models import PolymorphicModel
 
+from ... import helpers
+from ...models import Collection
 from ...models.base import FileResource
-from ...models.collection import CollectionBase
+from ...models.mixins import BacklinkModelMixin
 
 
 class Command(BaseCommand):
@@ -29,17 +32,23 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--min-age",
-            type=int,
-            default=60,
-            help="Minimum instance age in minutes to look for",
-        )
-        parser.add_argument(
             "--database",
             action="store",
             dest="database",
             default=DEFAULT_DB_ALIAS,
             help="Nominates the database to use. Defaults to the 'default' database.",
+        )
+        parser.add_argument(
+            "-o", "--check-ownership",
+            action="store_true",
+            default=False,
+            help="Check `owner_XXX` fields.",
+        )
+        parser.add_argument(
+            "-f", "--check-files",
+            action="store_true",
+            default=False,
+            help="Check file existence.",
         )
         parser.add_argument(
             "--noinput",
@@ -48,216 +57,200 @@ class Command(BaseCommand):
             dest="interactive",
             help="Do NOT prompt the user for input of any kind.",
         )
+        parser.add_argument(
+            "--min-age",
+            type=int,
+            default=3600,
+            help="Minimum instance age in seconds to look for",
+        )
 
-    @staticmethod
-    def search_fields(related_model):
-        """
-        Поиск полей, ссылающихся на заданную модель related_model.
+    def _get_start_time(self) -> datetime.datetime:
+        return now() - timedelta(seconds=self.options["min_age"])
 
-        :type related_model: type
-        :rtype: list of (models.Model, list)
-        """
-        for model in apps.get_models():
-            if not model._meta.managed or model._meta.proxy:
-                continue
+    def _clean_objects_with_invalid_ownership(self, model: Type[BacklinkModelMixin]):
+        grouped_invalid_objects = defaultdict(list)
 
-            fields = []
-            for field in model._meta.get_fields():
-                if not field.concrete:
-                    continue
-
-                if not field.is_relation:
-                    continue
-
-                if issubclass(field.related_model, related_model):
-                    fields.append(field)
-
-            if fields:
-                yield model, fields
-
-    def get_used_ids(self, related_model, exclude_models=None):
-        """
-        Возвращает множество ID экземпляров модели related_model, на которые
-        существуют ссылки.
-        """
-        used_ids = set()
-        for model, fields in self.search_fields(related_model):
-            if exclude_models and issubclass(model, exclude_models):
-                continue
-
-            with transaction.atomic(self.database):
-                for field in fields:
-                    used_ids.update(
-                        model._base_manager.using(self.database)
-                            .exclude(models.Q((field.name, None)))
-                            .values_list(field.name, flat=True)
-                    )
-        return used_ids
-
-    def clean_model(self, queryset, exclude_models=None):
-        """
-        Поиск экземпляров, на которые нет ссылок с других моделей.
-        """
-        related_model = queryset.model
-        used_ids = self.get_used_ids(related_model, exclude_models)
-
-        unused_qs = queryset.exclude(pk__in=used_ids)
-        unused_count = unused_qs.count()
-
-        if not unused_count:
-            if self.verbosity >= 2:
-                self.stderr.write(
-                    self.style.NOTICE(
-                        "There are no unused instances of {}".format(
-                            related_model.__name__
+        queryset = model.objects.using(self.database).filter(created_at__lte=self._get_start_time())
+        for instance in queryset.iterator():
+            owner_model = instance.get_owner_model()
+            if owner_model is None:
+                model = type(instance)
+                grouped_invalid_objects[model].append(instance)
+            else:
+                owner_field = instance.get_owner_field()
+                if owner_field is None:
+                    model = type(instance)
+                    grouped_invalid_objects[model].append(instance)
+                else:
+                    try:
+                        owner_model._base_manager.using(self.database).get(
+                            (instance.owner_fieldname, instance.pk)
                         )
-                    )
-                )
+                    except owner_model.DoesNotExist:
+                        model = type(instance)
+                        grouped_invalid_objects[model].append(instance)
+
+        if not grouped_invalid_objects:
             return
 
         if self.interactive:
-            while True:
-                answer = input(
-                    "Found \033[92m%d unused %s\033[0m objects. \n"
-                    "IDs: %s\n"
-                    "What would you like to do with them?\n"
-                    "(p)rint / (k)eep / (d)elete [default=keep]? "
-                    % (
-                        unused_count,
-                        related_model.__name__,
-                        ", ".join(map(str, unused_qs.values_list("pk", flat=True))),
-                    )
-                )
-                answer = answer.lower() or "k"
-                if answer in {"p", "print"}:
-                    self.stdout.write("\n")
-                    qs = unused_qs.order_by("pk")
-                    for index, item in enumerate(qs, start=1):
-                        self.stdout.write(
-                            "  {}) {} #{} (File: {})".format(
-                                index,
-                                type(item).__name__,
-                                item.pk,
-                                item.name,
-                            )
+            for actual_model, instances in grouped_invalid_objects.items():
+                while True:
+                    print("-" * 64)
+                    answer = input(
+                        "Found \033[92m%d '%s.%s'\033[0m objects with invalid ownership.\n"
+                        "IDs: %s\n"
+                        "What would you like to do with them?\n"
+                        "(p)rint / (k)eep / (d)elete [default=keep]? "
+                        % (
+                            len(instances),
+                            actual_model._meta.app_label,
+                            actual_model.__name__,
+                            ", ".join(map(str, [obj.pk for obj in instances])),
                         )
-                    self.stdout.write("\n")
-                elif answer in {"k", "keep"}:
-                    return
-                elif answer in {"d", "delete"}:
-                    # `unused_qs.delete()` не используется по причине зацикленной рекурсии.
-                    # Полиморфная модель ImageItem при инициализации добавляет в себя
-                    # ссылки на файлы вариаций. Для этого требуется обращение к полю `file`.
-                    # Но при удалении *коллекции* этого поля в модели нет, т.к. для SQL
-                    # DELETE оно не нужно. Из-за этого вызывается метод
-                    # `refresh_from_db`, который снова инициализирует модель ImageItem.
-                    with transaction.atomic():
-                        for obj in unused_qs:
-                            obj.delete()
-                    return
+                    )
+                    answer = answer.lower() or "k"
+                    if answer in {"p", "print"}:
+                        self.stdout.write("\n")
 
-    def clean_source_missing(self, queryset):
+                        sorted_objects = sorted(instances, key=lambda obj: obj.pk)
+                        for index, obj in enumerate(sorted_objects, start=1):
+                            prefix = "{})".format(index)
+                            self.stdout.write(
+                                "{:<3} \033[92m{}.{}\033[0m (ID: {})\n"
+                                "    File: {}".format(
+                                    prefix,
+                                    actual_model._meta.app_label,
+                                    actual_model.__name__,
+                                    obj.pk,
+                                    obj.name,
+                                )
+                            )
+                        self.stdout.write("\n")
+                    elif answer in {"k", "keep"}:
+                        break
+                    elif answer in {"d", "delete"}:
+                        model.objects.using(self.database).filter(
+                            pk__in=[obj.pk for obj in instances]
+                        ).delete()
+                        break
+        else:
+            for actual_model, instances in grouped_invalid_objects.items():
+                model.objects.using(self.database).filter(
+                    pk__in=[obj.pk for obj in instances]
+                ).delete()
+
+    def clean_objects_with_invalid_ownership(self):
+        if self.verbosity >= 2:
+            self.stdout.write(self.style.SUCCESS("Checking resource ownership..."))
+
+        for node in helpers.get_resource_model_trees(include_proxy=False):
+            model = node.model
+
+            if not issubclass(model, BacklinkModelMixin):
+                continue
+
+            self._clean_objects_with_invalid_ownership(model)
+
+        for model in apps.get_models():
+            if not issubclass(model, Collection):
+                continue
+
+            if model._meta.proxy:
+                continue
+
+            self._clean_objects_with_invalid_ownership(model)
+
+    def _clean_objects_with_missing_files(self, model: Type[FileResource]):
         """
         Поиск экземпляров с утерянными файлами
         """
-        sourceless_items = set()
-        related_model = queryset.model
+        grouped_invalid_objects = defaultdict(list)
+
+        queryset = model.objects.using(self.database).filter(created_at__lte=self._get_start_time())
         for instance in queryset.iterator():
             if not instance.file_exists():
-                sourceless_items.add(instance.pk)
+                model = type(instance)
+                grouped_invalid_objects[model].append(instance)
 
-        sourceless_qs = queryset.filter(pk__in=sourceless_items)
-        sourceless_count = sourceless_qs.count()
-
-        if not sourceless_count:
-            if self.verbosity >= 2:
-                self.stderr.write(
-                    self.style.NOTICE(
-                        "There are no instances of {} which have no source file.".format(
-                            related_model.__name__
-                        )
-                    )
-                )
+        if not grouped_invalid_objects:
             return
 
         if self.interactive:
-            while True:
-                answer = input(
-                    "Found \033[92m%d %s\033[0m objects which are linked to a non-existent files.\n"
-                    "IDs: %s\n"
-                    "What would you like to do with them?\n"
-                    "(p)rint / (k)eep / (d)elete [default=keep]? "
-                    % (
-                        sourceless_count,
-                        related_model.__name__,
-                        ", ".join(map(str, sourceless_qs.values_list("pk", flat=True))),
-                    )
-                )
-                answer = answer.lower() or "k"
-                if answer in {"p", "print"}:
-                    self.stdout.write("\n")
-                    qs = sourceless_qs.order_by("pk")
-                    for index, item in enumerate(qs, start=1):
-                        self.stdout.write(
-                            "  {}) {} #{} (File: {})".format(
-                                index,
-                                type(item).__name__,
-                                item.pk,
-                                item.name,
-                            )
+            for actual_model, instances in grouped_invalid_objects.items():
+                while True:
+                    print("-" * 64)
+                    answer = input(
+                        "Found \033[92m%d '%s.%s'\033[0m objects that refers to a file that does not exist.\n"
+                        "IDs: %s\n"
+                        "What would you like to do with them?\n"
+                        "(p)rint / (k)eep / (d)elete [default=keep]? "
+                        % (
+                            len(instances),
+                            actual_model._meta.app_label,
+                            actual_model.__name__,
+                            ", ".join(map(str, [obj.pk for obj in instances])),
                         )
-                    self.stdout.write("\n")
-                elif answer in {"k", "keep"}:
-                    return
-                elif answer in {"d", "delete"}:
-                    sourceless_qs.delete()
-                    return
+                    )
+                    answer = answer.lower() or "k"
+                    if answer in {"p", "print"}:
+                        self.stdout.write("\n")
+
+                        sorted_objects = sorted(instances, key=lambda obj: obj.pk)
+                        for index, obj in enumerate(sorted_objects, start=1):
+                            prefix = "{})".format(index)
+                            self.stdout.write(
+                                "{:<3} \033[92m{}.{}\033[0m (ID: {})\n"
+                                "    File: {}".format(
+                                    prefix,
+                                    actual_model._meta.app_label,
+                                    actual_model.__name__,
+                                    obj.pk,
+                                    obj.name,
+                                )
+                            )
+                        self.stdout.write("\n")
+                    elif answer in {"k", "keep"}:
+                        break
+                    elif answer in {"d", "delete"}:
+                        model.objects.using(self.database).filter(
+                            pk__in=[obj.pk for obj in instances]
+                        ).delete()
+                        break
+        else:
+            for actual_model, instances in grouped_invalid_objects.items():
+                model.objects.using(self.database).filter(
+                    pk__in=[obj.pk for obj in instances]
+                ).delete()
+
+    def clean_objects_with_missing_files(self):
+        if self.verbosity >= 2:
+            self.stdout.write(self.style.SUCCESS("Checking file existence..."))
+
+        for node in helpers.get_resource_model_trees(include_proxy=False):
+            model = node.model
+
+            if not issubclass(model, FileResource):
+                continue
+
+            self._clean_objects_with_missing_files(model)
 
     def handle(self, *args, **options):
+        self.options = options
         self.verbosity = options["verbosity"]
         self.database = options["database"]
         self.interactive = options["interactive"]
 
-        min_age = now() - timedelta(minutes=options["min_age"])
+        check_ownership = options["check_ownership"]
+        check_files = options["check_files"]
 
-        for model in apps.get_models():
-            if not issubclass(model, FileResource):
-                continue
+        check_all = not any([
+            check_ownership,
+            check_files,
+        ])
 
-            if issubclass(model, PolymorphicModel):
-                continue
+        if check_all or check_ownership:
+            self.clean_objects_with_invalid_ownership()
 
-            if model._meta.abstract or model._meta.proxy:
-                continue
-
-            self.clean_source_missing(model._base_manager.using(self.database).all())
-            self.clean_model(
-                model._base_manager.using(self.database).filter(
-                    uploaded_at__lte=min_age
-                )
-            )
-
-        for model in apps.get_models():
-            if not issubclass(model, FileResource):
-                continue
-
-            if not issubclass(model, PolymorphicModel):
-                continue
-
-            if model._meta.abstract:
-                continue
-
-            self.clean_source_missing(
-                model.objects.using(self.database).non_polymorphic()
-            )
-
-        # Do not touch fresh galleries - they may not be saved yet.
-        for model in apps.get_models():
-            if issubclass(model, CollectionBase) and not model._meta.abstract:
-                content_type = ContentType.objects.get_for_model(
-                    model, for_concrete_model=False
-                )
-                collection_qs = model._base_manager.using(self.database).filter(
-                    collection_content_type=content_type, created_at__lte=min_age
-                )
-                self.clean_model(collection_qs)
+        if check_all or check_files:
+            self.clean_objects_with_missing_files()

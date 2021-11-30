@@ -77,7 +77,7 @@ class ItemTypesDescriptor:
             return OrderedDict(getattr(cls, cache_attname))
 
         item_types = OrderedDict()
-        parents = [base for base in cls.mro() if issubclass(base, CollectionBase)]
+        parents = [base for base in cls.__mro__ if issubclass(base, CollectionBase)]
         for base in reversed(parents):
             base_item_types = _get_item_types(base)
             if base_item_types is not None:

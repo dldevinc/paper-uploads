@@ -1,7 +1,9 @@
 import os
 import time
-from typing import Any, Dict, Iterable, Iterator, List, Set
+from functools import lru_cache
+from typing import Any, Dict, Iterable, Iterator, List, Set, Tuple
 
+from anytree import Node
 from django.apps import apps
 from django.core import exceptions
 from django.core.exceptions import ObjectDoesNotExist
@@ -147,6 +149,61 @@ def iterate_variation_names(options: Dict[str, VariationConfig]) -> Iterator[str
             yield from iterate_variation_versions(name, scale_factor=3, webp=webp)
         if "4x" in versions:
             yield from iterate_variation_versions(name, scale_factor=4, webp=webp)
+
+
+@lru_cache()
+def get_resource_model_trees(include_proxy=True) -> Tuple[Node]:
+    """
+    Возвращает иерархии класов ресурсов в виде anytree.Node.
+    """
+    from .models.base import Resource
+
+    resource_models = [
+        model
+        for model in apps.get_models()
+        if issubclass(model, Resource) and (include_proxy is True or model._meta.proxy is False)
+    ]
+
+    resource_bases = {
+        model: [
+            base
+            for base in model.__mro__[1:]
+            if base in resource_models
+        ]
+        for model in resource_models
+    }
+
+    # Иерархии ресурсов, отсортированные по длине
+    ordered_resource_bases = sorted(resource_bases.items(), key=lambda p: len(p[1]), reverse=True)
+
+    # Ссылки на все узлы всех деревьев
+    node_map = {}
+
+    # Список корневых узлов деревьев
+    trees = []  # type: list[Node]
+
+    def _get_or_create_node(model, parent=None):
+        if model in node_map:
+            return node_map[model]
+        else:
+            node = Node(model.__name__, model=model, parent=parent)
+            node_map[model] = node
+
+            if parent is None:
+                trees.append(node)
+
+            return node
+
+    # Перебор цепочек классов от самых длинных к самым коротким гарантирует,
+    # что родительские классы появятся в дереве раньше дочерних.
+    for model, bases in ordered_resource_bases:
+        base_parent = None
+        for base in reversed(bases):
+            base_parent = _get_or_create_node(base, base_parent)
+
+        _get_or_create_node(model, base_parent)
+
+    return tuple(trees)
 
 
 def get_instance(
