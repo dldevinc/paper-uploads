@@ -181,7 +181,7 @@ class TestCollection:
             assert item3.collection_id == 3
 
     def test_manager(self, storage):
-        assert Collection.objects.count() == 0
+        assert Collection.objects.count() == 3
         assert FileCollection.objects.count() == 1
         assert PhotoCollection.objects.count() == 1
         assert CompleteCollection.objects.count() == 1

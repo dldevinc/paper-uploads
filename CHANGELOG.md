@@ -14,6 +14,7 @@
 - Changed some admin URLs for collections.
 - Add an ability to override the `admin_preview` variation for `ImageItem` 
   via `VARIATIONS` property.
+- Disabled implicit `content_type` filtration for concrete collection models.
 - `FileWidgetBase` has been renamed to `FileResourceWidgetBase`.
 - `FileUploaderWidgetMixin` has been renamed to `DisplayFileLimitationsMixin`.
 - `paper_uploads.admin.base.UploadedFileBase` has been renamed to `ResourceAdminBase`.

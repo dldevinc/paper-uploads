@@ -132,16 +132,24 @@ class CollectionMeta(NoPermissionsMetaBase, ModelBase):
 
 class CollectionManager(models.Manager):
     """
-    Из-за того, что все галереи являются прокси-моделями, запросы от имени
-    любого из классов галереи затрагивает абсолютно все объекты галереи.
-    С помощью этого менеджера можно работать только с галереями текущего типа.
+    Из-за того, что в большинстве случаев коллекции являются прокси-моделями
+    для Collection, любые запросы от имени любой прокси-коллекции будут распространяться
+    на все экземпляры Collection.
+
+    Этот менеджер ограничивает область действия запросов той прокси-коллекцией,
+    от которой исходит запрос.
+    
+    Для не-прокси моделей поведение стандартное: запрос вернёт все экземпляры таблицы.
     """
 
     def get_queryset(self):
-        collection_ct = ContentType.objects.get_for_model(
-            self.model, for_concrete_model=False
-        )
-        return super().get_queryset().filter(collection_content_type=collection_ct)
+        if self.model._meta.proxy:
+            collection_ct = ContentType.objects.get_for_model(
+                self.model, for_concrete_model=False
+            )
+            return super().get_queryset().filter(collection_content_type=collection_ct)
+        else:
+            return super().get_queryset()
 
 
 class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
