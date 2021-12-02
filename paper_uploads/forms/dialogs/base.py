@@ -12,7 +12,7 @@ class ChangeFileResourceDialogBase(forms.ModelForm):
     )
 
     class Meta:
-        fields = ("new_name",)
+        fields = ["new_name"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
