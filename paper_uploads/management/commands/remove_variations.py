@@ -9,7 +9,7 @@ from django.db.models.fields import Field
 from paper_uploads.models import CollectionItem
 
 from ...models.base import Resource, VersatileImageResourceMixin
-from ...models.collection import Collection
+from ...models.collection import CollectionBase
 
 
 def is_image(field: Field) -> bool:
@@ -29,14 +29,14 @@ def is_image_item(field: CollectionItem) -> bool:
     return issubclass(field.model, VersatileImageResourceMixin)
 
 
-def is_collection(model: Type[Union[models.Model, Collection]]) -> bool:
+def is_collection(model: Type[Union[models.Model, CollectionBase]]) -> bool:
     """
     Возвращает True, если model - коллекция.
     """
-    return issubclass(model, Collection)
+    return issubclass(model, CollectionBase)
 
 
-def get_collection_variations(model: Type[Collection], item_type_class: CollectionItem) -> List[str]:
+def get_collection_variations(model: Type[CollectionBase], item_type_class: CollectionItem) -> List[str]:
     return list(
         item_type_class.model.get_variation_config(item_type_class, model).keys()
     )
@@ -100,7 +100,7 @@ class Command(BaseCommand):
     def get_model(self):
         return apps.get_model(self.options["model"])
 
-    def _process_collection(self, model: Type[Collection], item_type, variations):
+    def _process_collection(self, model: Type[CollectionBase], item_type, variations):
         collection_model = model.collection_content_type.model_class()
         queryset = collection_model.objects.using(self.database)
 
@@ -123,7 +123,7 @@ class Command(BaseCommand):
                         variation_file = item.get_variation_file(variation_name)
                         variation_file.delete()
 
-    def process_collection(self, model: Type[Collection]):
+    def process_collection(self, model: Type[CollectionBase]):
         item_type = self.options["item_type"]
         if not item_type:
             raise RuntimeError("The argument 'item-type' is required")

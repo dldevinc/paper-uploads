@@ -9,8 +9,8 @@ from django.db import DEFAULT_DB_ALIAS
 from django.utils.timezone import now
 
 from ... import helpers
-from ...models import Collection
 from ...models.base import FileResource
+from ...models.collection import CollectionBase
 from ...models.mixins import BacklinkModelMixin
 
 
@@ -153,7 +153,7 @@ class Command(BaseCommand):
             self._clean_objects_with_invalid_ownership(model)
 
         for model in apps.get_models():
-            if not issubclass(model, Collection):
+            if not issubclass(model, CollectionBase):
                 continue
 
             if model._meta.proxy:

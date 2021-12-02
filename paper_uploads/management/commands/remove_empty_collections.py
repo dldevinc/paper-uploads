@@ -6,7 +6,7 @@ from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.timezone import now
 
-from ...models.collection import Collection
+from ...models.collection import CollectionBase
 
 
 class Command(BaseCommand):
@@ -39,7 +39,7 @@ class Command(BaseCommand):
 
     def remove_empty_collections(self):
         for model in apps.get_models():
-            if not issubclass(model, Collection):
+            if not issubclass(model, CollectionBase):
                 continue
 
             queryset = model.objects.using(self.database).filter(

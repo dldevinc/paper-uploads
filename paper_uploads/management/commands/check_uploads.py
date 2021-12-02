@@ -6,7 +6,7 @@ from django.db import DEFAULT_DB_ALIAS
 
 from ... import helpers
 from ...models.base import FileResource, VersatileImageResourceMixin
-from ...models.collection import Collection, CollectionItemBase
+from ...models.collection import CollectionBase, CollectionItemBase
 from ...models.mixins import BacklinkModelMixin
 
 
@@ -123,7 +123,7 @@ class Command(BaseCommand):
             self._check_model_owners(model)
 
         for model in apps.get_models():
-            if not issubclass(model, Collection):
+            if not issubclass(model, CollectionBase):
                 continue
 
             if model._meta.proxy:

@@ -130,7 +130,24 @@ class CollectionMeta(NoPermissionsMetaBase, ModelBase):
         return new_class
 
 
+class CollectionManager(models.Manager):
+    """
+    Из-за того, что все галереи являются прокси-моделями, запросы от имени
+    любого из классов галереи затрагивает абсолютно все объекты галереи.
+    С помощью этого менеджера можно работать только с галереями текущего типа.
+    """
+
+    def get_queryset(self):
+        collection_ct = ContentType.objects.get_for_model(
+            self.model, for_concrete_model=False
+        )
+        return super().get_queryset().filter(collection_content_type=collection_ct)
+
+
 class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
+    collection_content_type = models.ForeignKey(
+        ContentType, null=True, on_delete=models.SET_NULL, editable=False
+    )
     items = ContentItemRelation(
         "paper_uploads.CollectionItemBase",
         content_type_field="collection_content_type",
@@ -139,15 +156,26 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
     )
     created_at = models.DateTimeField(_("created at"), default=now, editable=False)
 
+    default_mgr = models.Manager()  # fix migrations manager
+    objects = CollectionManager()
+
     class Meta:
         proxy = False
         abstract = True
         default_permissions = ()
+        default_manager_name = "default_mgr"
         verbose_name = _("collection")
         verbose_name_plural = _("collections")
 
+    def save(self, *args, **kwargs):
+        if not self.collection_content_type:
+            self.collection_content_type = ContentType.objects.get_for_model(
+                self, for_concrete_model=False
+            )
+        super().save(*args, **kwargs)
+
     def delete(self, using=None, keep_parents=False):
-        # Удаляем элементы вручную из-за рекурсии (см. clean_uploads.py, строка 145)
+        # Удаляем элементы вручную из-за рекурсии.
         # Удалить элементы с помощью `.all().delete()` нельзя из-за того, что в
         # файле (django/db/models/deletion.py:248) указано следующее:
         #   model = new_objs[0].__class__
@@ -194,38 +222,9 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
                     yield item_type
 
 
-class CollectionManager(models.Manager):
-    """
-    Из-за того, что все галереи являются прокси-моделями, запросы от имени
-    любого из классов галереи затрагивает абсолютно все объекты галереи.
-    С помощью этого менеджера можно работать только с галереями текущего типа.
-    """
-
-    def get_queryset(self):
-        collection_ct = ContentType.objects.get_for_model(
-            self.model, for_concrete_model=False
-        )
-        return super().get_queryset().filter(collection_content_type=collection_ct)
-
-
 class Collection(CollectionBase):
-    collection_content_type = models.ForeignKey(
-        ContentType, null=True, on_delete=models.SET_NULL, editable=False
-    )
-
-    default_mgr = models.Manager()  # fix migrations manager
-    objects = CollectionManager()
-
     class Meta:
         proxy = False  # явно указываем, что это не прокси-модель
-        default_manager_name = "default_mgr"
-
-    def save(self, *args, **kwargs):
-        if not self.collection_content_type:
-            self.collection_content_type = ContentType.objects.get_for_model(
-                self, for_concrete_model=False
-            )
-        super().save(*args, **kwargs)
 
 
 # ======================================================================================
@@ -260,7 +259,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=Coll
     order = models.IntegerField(_("order"), default=0, editable=False)
 
     class Meta:
-        # Испольуется обратный порядок полей в составном индексе,
+        # Используется обратный порядок полей в составном индексе,
         # т.к. слективность поля collection_id выше, а для поля
         # `collection_content_type` уже есть отдельный индекс.
         index_together = [("collection_id", "collection_content_type")]
