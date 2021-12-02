@@ -1,6 +1,8 @@
+from django.contrib import admin
 from django.urls import path
 
 from .. import views
+from ..models.collection import Collection
 from .base import ResourceAdminBase
 
 
@@ -47,3 +49,8 @@ class CollectionAdminBase(ResourceAdminBase):
             ),
         ]
         return urlpatterns
+
+
+@admin.register(Collection)
+class CollectionAdmin(CollectionAdminBase):
+    pass

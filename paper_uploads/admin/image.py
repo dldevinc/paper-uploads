@@ -6,8 +6,7 @@ from ..models.image import UploadedImage
 from .base import ResourceAdminBase
 
 
-@admin.register(UploadedImage)
-class UploadedImageAdmin(ResourceAdminBase):
+class UploadedImageAdminBase(ResourceAdminBase):
     upload_view_class = views.image.UploadFileView
     delete_view_class = views.image.DeleteFileView
     change_view_class = views.image.ChangeFileView
@@ -32,3 +31,8 @@ class UploadedImageAdmin(ResourceAdminBase):
             ),
         ]
         return urlpatterns
+
+
+@admin.register(UploadedImage)
+class UploadedImageAdmin(UploadedImageAdminBase):
+    pass

@@ -6,8 +6,7 @@ from ..models.file import UploadedFile
 from .base import ResourceAdminBase
 
 
-@admin.register(UploadedFile)
-class UploadedFileAdmin(ResourceAdminBase):
+class UploadedFileAdminBase(ResourceAdminBase):
     upload_view_class = views.file.UploadFileView
     delete_view_class = views.file.DeleteFileView
     change_view_class = views.file.ChangeFileView
@@ -32,3 +31,8 @@ class UploadedFileAdmin(ResourceAdminBase):
             ),
         ]
         return urlpatterns
+
+
+@admin.register(UploadedFile)
+class UploadedFileAdmin(UploadedFileAdminBase):
+    pass

@@ -26,8 +26,8 @@ class FileWidget(DisplayFileLimitationsMixin, FileResourceWidgetBase):
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
 
-        # support proxy models
-        for model_class in {self.model, self.model._meta.concrete_model}:
+        # proxy-models will use same URLs, except they have their own ModelAdmin
+        for model_class in (self.model, self.model._meta.concrete_model):
             if site.is_registered(model_class):
                 info = model_class._meta.app_label, model_class._meta.model_name
                 context.update(
