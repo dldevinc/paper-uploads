@@ -1,7 +1,7 @@
 import os
 import shutil
 import tempfile
-from typing import Any, ClassVar, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 from uuid import UUID
 
 from django.conf import settings
@@ -201,10 +201,10 @@ class DeleteFileViewBase(ActionView):
 
 
 class ChangeFileViewBase(FormMixin, AjaxView):
-    template_name: ClassVar[str] = None
+    template_name = None
     http_method_names = ["get", "post"]
 
-    def get(self, request: WSGIRequest, *args, **kwargs):
+    def get(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         if not request.user.has_perm("paper_uploads.change"):
             return self.error_response(_("Access denied"))
 
@@ -223,7 +223,7 @@ class ChangeFileViewBase(FormMixin, AjaxView):
 
         return self.form_valid(form)
 
-    def get_template_name(self):
+    def get_template_name(self) -> str:
         if self.template_name is None:
             raise ImproperlyConfigured(
                 "ChangeFileViewBase requires either a definition of "
@@ -231,7 +231,7 @@ class ChangeFileViewBase(FormMixin, AjaxView):
         else:
             return self.template_name
 
-    def render_form(self, context):
+    def render_form(self, context) -> str:
         template_name = self.get_template_name()
         return loader.render_to_string(template_name, context, request=self.request)
 
