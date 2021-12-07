@@ -1,7 +1,6 @@
 from typing import Any, Type, cast
 
 from django.core.files.uploadedfile import UploadedFile
-from django.core.handlers.wsgi import WSGIRequest
 from django.http import HttpResponse
 from django.utils.module_loading import import_string
 
@@ -25,7 +24,7 @@ class UploadFileView(UploadFileViewBase):
             owner_fieldname=self.request.POST.get("paperOwnerFieldName"),
         )
 
-    def handle(self, request: WSGIRequest, file: UploadedFile) -> HttpResponse:
+    def handle(self, file: UploadedFile) -> HttpResponse:
         instance = self.get_instance()
 
         owner_field = None
@@ -63,7 +62,7 @@ class DeleteFileView(DeleteFileViewBase):
         file_id = self.get_file_id()
         return cast(FileResource, helpers.get_instance(file_model, file_id))
 
-    def handle(self, request: WSGIRequest) -> HttpResponse:
+    def handle(self) -> HttpResponse:
         instance = self.get_instance()
         instance.delete()
         return self.success()

@@ -26,6 +26,7 @@ from django.views.generic.edit import FormMixin
 from .. import exceptions
 from ..files import TemporaryUploadedFile
 from ..logging import logger
+from ..models.base import Resource
 
 
 class AjaxView(View):
@@ -66,43 +67,42 @@ class AjaxView(View):
         data.update(extra_data)
         return JsonResponse(data)
 
+    @classmethod
+    def wrap(cls, func):
+        def inner(*args, **kwargs) -> HttpResponse:
+            try:
+                return func(*args, **kwargs)
+            except exceptions.InvalidContentType as e:
+                logger.exception("Error")
+                return cls.error_response(_("Invalid ContentType: %s") % e.value)
+            except exceptions.InvalidObjectId as e:
+                logger.exception("Error")
+                return cls.error_response(_("Invalid ID: %s") % e.value)
+            except exceptions.InvalidItemType as e:
+                logger.exception("Error")
+                return cls.error_response(_("Invalid itemType: %s") % e.value)
+            except ObjectDoesNotExist:
+                logger.exception("Error")
+                return cls.error_response(_("Object not found"))
+            except MultipleObjectsReturned:
+                logger.exception("Error")
+                return cls.error_response(_("Multiple objects returned"))
+            except ValidationError as e:
+                messages = cls.get_exception_messages(e)
+                logger.debug(messages)
+                return cls.error_response(messages)
+            except Exception as e:
+                logger.exception("Error")
+                if hasattr(e, "args"):
+                    message = "{}: {}".format(type(e).__name__, e.args[0])
+                else:
+                    message = type(e).__name__
+                return cls.error_response(message)
 
-class ActionView(AjaxView):
-    def perform_action(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
-        try:
-            return self.handle(request, *args, **kwargs)
-        except exceptions.InvalidContentType as e:
-            logger.exception("Error")
-            return self.error_response(_("Invalid ContentType: %s") % e.value)
-        except exceptions.InvalidObjectId as e:
-            logger.exception("Error")
-            return self.error_response(_("Invalid ID: %s") % e.value)
-        except exceptions.InvalidItemType as e:
-            logger.exception("Error")
-            return self.error_response(_("Invalid itemType: %s") % e.value)
-        except ObjectDoesNotExist:
-            logger.exception("Error")
-            return self.error_response(_("Object not found"))
-        except MultipleObjectsReturned:
-            logger.exception("Error")
-            return self.error_response(_("Multiple objects returned"))
-        except ValidationError as e:
-            messages = self.get_exception_messages(e)
-            logger.debug(messages)
-            return self.error_response(messages)
-        except Exception as e:
-            logger.exception("Error")
-            if hasattr(e, "args"):
-                message = "{}: {}".format(type(e).__name__, e.args[0])
-            else:
-                message = type(e).__name__
-            return self.error_response(message)
-
-    def handle(self, *args, **kwargs) -> HttpResponse:
-        raise NotImplementedError
+        return inner
 
 
-class UploadFileViewBase(ActionView):
+class UploadFileViewBase(AjaxView):
     http_method_names = ["post"]
 
     @method_decorator(csrf_exempt)
@@ -127,7 +127,7 @@ class UploadFileViewBase(ActionView):
             return self.error_response(_("Invalid chunking"), preventRetry=True)
 
         try:
-            return self.perform_action(request, file)
+            return self.wrap(self.handle)(file)
         except exceptions.UnsupportedFileError as e:
             return self.error_response(e.message)
         finally:
@@ -186,8 +186,11 @@ class UploadFileViewBase(ActionView):
             )
         return file
 
+    def handle(self, file: UploadedFile) -> HttpResponse:
+        raise NotImplementedError
 
-class DeleteFileViewBase(ActionView):
+
+class DeleteFileViewBase(AjaxView):
     http_method_names = ["post"]
 
     @method_decorator(csrf_exempt)
@@ -197,7 +200,10 @@ class DeleteFileViewBase(ActionView):
     def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         if not request.user.has_perm("paper_uploads.delete"):
             return self.error_response(_("Access denied"))
-        return self.perform_action(request, *args, **kwargs)
+        return self.wrap(self.handle)()
+
+    def handle(self) -> HttpResponse:
+        raise NotImplementedError
 
 
 class ChangeFileViewBase(FormMixin, AjaxView):
@@ -208,15 +214,21 @@ class ChangeFileViewBase(FormMixin, AjaxView):
         if not request.user.has_perm("paper_uploads.change"):
             return self.error_response(_("Access denied"))
 
-        context = self.get_context_data(**kwargs)
+        form_response = self.wrap(self.render_form)()
+        if isinstance(form_response, HttpResponse):
+            return form_response
+
         return self.success_response({
-            "form": self.render_form(context)
+            "form": form_response
         })
 
     def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         if not request.user.has_perm("paper_uploads.change"):
             return self.error_response(_("Access denied"))
 
+        return self.wrap(self.validate_form)()
+
+    def validate_form(self):
         form = self.get_form()
         if not form.is_valid():
             return self.form_invalid(form)
@@ -230,10 +242,6 @@ class ChangeFileViewBase(FormMixin, AjaxView):
                 "'template_name' or an implementation of 'get_template_name()'")
         else:
             return self.template_name
-
-    def render_form(self, context) -> str:
-        template_name = self.get_template_name()
-        return loader.render_to_string(template_name, context, request=self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -250,6 +258,11 @@ class ChangeFileViewBase(FormMixin, AjaxView):
     def get_instance(self):
         raise NotImplementedError
 
+    def render_form(self, **kwargs) -> str:
+        context = self.get_context_data(**kwargs)
+        template_name = self.get_template_name()
+        return loader.render_to_string(template_name, context, request=self.request)
+
     def form_valid(self, form):
         try:
             instance = form.save()
@@ -265,9 +278,12 @@ class ChangeFileViewBase(FormMixin, AjaxView):
                 message = type(e).__name__
             return self.error_response(message)
 
-        return self.success_response(instance.as_dict())  # noqa: F821
+        return self.success(instance)  # noqa: F821
 
     def form_invalid(self, form):
         return JsonResponse({
             "form_errors": form.errors.get_json_data()
         })
+
+    def success(self, instance: Resource) -> HttpResponse:
+        return self.success_response(instance.as_dict())

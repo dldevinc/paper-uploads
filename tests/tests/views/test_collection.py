@@ -8,10 +8,12 @@ from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.test import RequestFactory
 
+from app.forms.dialogs.custom import CustomImageItemDialog
 from app.models.custom import CustomGallery, CustomImageItem
 from app.models.site import CollectionFieldObject
 from paper_uploads.exceptions import InvalidContentType, InvalidItemType, InvalidObjectId
 from paper_uploads.views.collection import (
+    ChangeFileView,
     CreateCollectionView,
     DeleteCollectionView,
     DeleteFileView,
@@ -42,10 +44,9 @@ class TestCreateCollectionView:
             "paperOwnerFieldName": "custom_collection"
         })
         request.user = storage.user
-
         storage.view.setup(request)
-        instance = storage.view.get_instance()
 
+        instance = storage.view.get_instance()
         assert isinstance(instance, CustomGallery)
         assert instance.pk is None
         assert instance.get_owner_field() is CollectionFieldObject._meta.get_field("custom_collection")
@@ -74,8 +75,8 @@ class TestCreateCollectionView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        response = storage.view.handle(request)
 
+        response = storage.view.handle()
         assert isinstance(response, JsonResponse)
         assert type(json.loads(response.content)["collection_id"]) is int
 
@@ -98,8 +99,8 @@ class TestDeleteCollectionView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        collection_cls = storage.view.get_collection_model()
 
+        collection_cls = storage.view.get_collection_model()
         assert collection_cls is CustomGallery
 
     def test_invalid_content_type(self, storage):
@@ -132,7 +133,7 @@ class TestDeleteCollectionView:
         storage.view.setup(request)
 
         with pytest.raises(InvalidObjectId):
-            storage.view.handle(request)
+            storage.view.get_instance()
 
     def test_object_not_found(self, storage):
         request = RequestFactory().post("/", data={
@@ -143,23 +144,23 @@ class TestDeleteCollectionView:
         storage.view.setup(request)
 
         with pytest.raises(ObjectDoesNotExist):
-            storage.view.handle(request)
+            storage.view.get_instance()
 
     def test_success(self, storage):
         collection = CustomGallery(
-            pk=5472
+            pk=5489
         )
         collection.set_owner_from(CollectionFieldObject._meta.get_field("custom_collection"))
         collection.save()
 
         request = RequestFactory().post("/", data={
             "paperCollectionContentType": storage.content_type.pk,
-            "collectionId": 5472
+            "collectionId": collection.pk
         })
         request.user = storage.user
         storage.view.setup(request)
-        response = storage.view.handle(request)
 
+        response = storage.view.handle()
         assert isinstance(response, JsonResponse)
         assert response.status_code == 200
         assert json.loads(response.content) == {}
@@ -185,8 +186,8 @@ class TestUploadFileView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        collection_cls = storage.view.get_collection_model()
 
+        collection_cls = storage.view.get_collection_model()
         assert collection_cls is CustomGallery
 
     def test_invalid_content_type(self, storage):
@@ -220,7 +221,7 @@ class TestUploadFileView:
 
         with pytest.raises(InvalidObjectId):
             with open(NASA_FILEPATH, "rb") as fp:
-                storage.view.handle(request, fp)
+                storage.view.handle(fp)
 
     def test_object_not_found(self, storage):
         request = RequestFactory().post("/", data={
@@ -232,7 +233,7 @@ class TestUploadFileView:
 
         with pytest.raises(ObjectDoesNotExist):
             with open(NASA_FILEPATH, "rb") as fp:
-                storage.view.handle(request, fp)
+                storage.view.handle(fp)
 
     def test_unsupported_item_type(self, storage):
         collection = CustomGallery(
@@ -249,7 +250,7 @@ class TestUploadFileView:
         storage.view.setup(request)
 
         with open(AUDIO_FILEPATH, "rb") as fp:
-            response = storage.view.handle(request, fp)
+            response = storage.view.handle(fp)
 
         assert isinstance(response, JsonResponse)
         assert "Unsupported file" in json.loads(response.content)["errors"][0]
@@ -269,11 +270,13 @@ class TestUploadFileView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        response = storage.view.handle(
-            request,
-            ContentFile(b'GIF89a\x01\x00\x01\x00\x00\xff\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x00;', name="dummy.gif")
-        )
 
+        response = storage.view.handle(
+            ContentFile(
+                b'GIF89a\x01\x00\x01\x00\x00\xff\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x00;',
+                name="dummy.gif"
+            )
+        )
         assert isinstance(response, JsonResponse)
         assert json.loads(response.content)["name"] == "dummy"
         assert collection.get_items().count() == 1
@@ -321,8 +324,8 @@ class TestDeleteFileView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        collection_cls = storage.view.get_collection_model()
 
+        collection_cls = storage.view.get_collection_model()
         assert collection_cls is CustomGallery
 
     def test_invalid_content_type(self, storage):
@@ -356,7 +359,7 @@ class TestDeleteFileView:
         storage.view.setup(request)
 
         with pytest.raises(InvalidItemType):
-            storage.view.handle(request)
+            storage.view.handle()
 
     def test_get_item_id(self, storage):
         request = RequestFactory().post("/", data={
@@ -377,7 +380,7 @@ class TestDeleteFileView:
         storage.view.setup(request)
 
         with pytest.raises(InvalidObjectId):
-            storage.view.handle(request)
+            storage.view.get_instance()
 
     def test_success(self, storage):
         assert storage.collection.get_items().count() == 1
@@ -389,10 +392,128 @@ class TestDeleteFileView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        response = storage.view.handle(request)
 
+        response = storage.view.handle()
         assert isinstance(response, JsonResponse)
         assert storage.collection.get_items().count() == 0
+
+
+class TestChangeFileView:
+    @staticmethod
+    def init_class(storage):
+        storage.content_type = ContentType.objects.get_for_model(CustomGallery, for_concrete_model=False)
+
+        storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
+        permission = Permission.objects.get(name="Can upload files")
+        storage.user.user_permissions.add(permission)
+
+        storage.view = ChangeFileView()
+
+        # collection
+        storage.collection = CustomGallery(
+            pk=5965
+        )
+        storage.collection.set_owner_from(CollectionFieldObject._meta.get_field("custom_collection"))
+        storage.collection.save()
+
+        # item
+        storage.item = CustomImageItem()
+        storage.item.attach_to(storage.collection)
+        with open(NASA_FILEPATH, "rb") as fp:
+            storage.item.attach_file(fp)
+        storage.item.save()
+
+        yield
+
+        storage.item.delete_file()
+        storage.collection.delete()
+
+    def test_form_class(self, storage):
+        request = RequestFactory().get("/", data={
+            "paperCollectionContentType": storage.content_type.pk,
+            "itemType": "image"
+        })
+        request.user = storage.user
+        storage.view.setup(request)
+
+        form_class = storage.view.get_form_class()
+        assert form_class is CustomImageItemDialog
+
+    def test_get_collection_model(self, storage):
+        request = RequestFactory().get("/", data={
+            "paperCollectionContentType": storage.content_type.pk,
+        })
+        request.user = storage.user
+        storage.view.setup(request)
+
+        collection_cls = storage.view.get_collection_model()
+        assert collection_cls is CustomGallery
+
+    def test_invalid_content_type(self, storage):
+        content_type = ContentType.objects.get_for_model(CollectionFieldObject, for_concrete_model=False)
+
+        request = RequestFactory().get("/", data={
+            "paperCollectionContentType": content_type.pk
+        })
+        request.user = storage.user
+        storage.view.setup(request)
+
+        with pytest.raises(InvalidContentType):
+            storage.view.get_collection_model()
+
+    def test_get_item_type(self, storage):
+        request = RequestFactory().get("/", data={
+            "paperCollectionContentType": storage.content_type.pk,
+            "itemType": "image",
+        })
+        request.user = storage.user
+        storage.view.setup(request)
+
+        assert storage.view.get_item_type() == "image"
+
+    def test_invalid_item_type(self, storage):
+        request = RequestFactory().get("/", data={
+            "paperCollectionContentType": storage.content_type.pk,
+            "itemType": "file",
+        })
+        request.user = storage.user
+        storage.view.setup(request)
+
+        with pytest.raises(InvalidItemType):
+            storage.view.get_instance()
+
+    def test_get_item_id(self, storage):
+        request = RequestFactory().get("/", data={
+            "itemId": "78",
+        })
+        request.user = storage.user
+        storage.view.setup(request)
+
+        assert storage.view.get_item_id() == "78"
+
+    def test_invalid_id(self, storage):
+        request = RequestFactory().get("/", data={
+            "paperCollectionContentType": storage.content_type.pk,
+            "itemType": "image",
+            "itemId": "five"
+        })
+        request.user = storage.user
+        storage.view.setup(request)
+
+        with pytest.raises(InvalidObjectId):
+            storage.view.get_instance()
+
+    def test_object_not_found(self, storage):
+        request = RequestFactory().get("/", data={
+            "paperCollectionContentType": storage.content_type.pk,
+            "itemType": "image",
+            "itemId": 9999
+        })
+        request.user = storage.user
+        storage.view.setup(request)
+
+        with pytest.raises(ObjectDoesNotExist):
+            storage.view.get_instance()
 
 
 class TestSortItemsView:
@@ -447,8 +568,8 @@ class TestSortItemsView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        collection_cls = storage.view.get_collection_model()
 
+        collection_cls = storage.view.get_collection_model()
         assert collection_cls is CustomGallery
 
     def test_invalid_content_type(self, storage):
@@ -481,7 +602,7 @@ class TestSortItemsView:
         storage.view.setup(request)
 
         with pytest.raises(InvalidObjectId):
-            storage.view.handle(request)
+            storage.view.handle()
 
     def test_object_not_found(self, storage):
         request = RequestFactory().post("/", data={
@@ -492,7 +613,7 @@ class TestSortItemsView:
         storage.view.setup(request)
 
         with pytest.raises(ObjectDoesNotExist):
-            storage.view.handle(request)
+            storage.view.handle()
 
     def test_success(self, storage):
         assert storage.collection.get_items().count() == 3
@@ -511,9 +632,9 @@ class TestSortItemsView:
         })
         request.user = storage.user
         storage.view.setup(request)
-        response = storage.view.handle(request)
-        response_map = json.loads(response.content)["orderMap"]
 
+        response = storage.view.handle()
+        response_map = json.loads(response.content)["orderMap"]
         assert response_map == {
             str(storage.itemB.pk): 0,
             str(storage.itemC.pk): 1,

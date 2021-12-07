@@ -18,10 +18,10 @@ from ..logging import logger
 from ..models.collection import CollectionBase, CollectionItemBase
 from ..models.mixins import EditableResourceMixin
 from . import helpers
-from .base import ActionView, ChangeFileViewBase, DeleteFileViewBase, UploadFileViewBase
+from .base import AjaxView, ChangeFileViewBase, DeleteFileViewBase, UploadFileViewBase
 
 
-class CreateCollectionView(ActionView):
+class CreateCollectionView(AjaxView):
     http_method_names = ["post"]
 
     @method_decorator(csrf_exempt)
@@ -31,7 +31,7 @@ class CreateCollectionView(ActionView):
     def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         if not request.user.has_perm("paper_uploads.upload"):
             return self.error_response(_("Access denied"))
-        return self.perform_action(request, *args, **kwargs)
+        return self.wrap(self.handle)()
 
     def get_collection_model(self) -> Type[CollectionBase]:
         content_type_id = self.request.POST.get("paperCollectionContentType")
@@ -45,7 +45,7 @@ class CreateCollectionView(ActionView):
             owner_fieldname=self.request.POST.get("paperOwnerFieldName"),
         )
 
-    def handle(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
+    def handle(self) -> HttpResponse:
         instance = self.get_instance()
         instance.save()
         return self.success(instance)
@@ -56,7 +56,7 @@ class CreateCollectionView(ActionView):
         })
 
 
-class DeleteCollectionView(ActionView):
+class DeleteCollectionView(AjaxView):
     http_method_names = ["post"]
 
     @method_decorator(csrf_exempt)
@@ -66,7 +66,7 @@ class DeleteCollectionView(ActionView):
     def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         if not request.user.has_perm("paper_uploads.delete"):
             return self.error_response(_("Access denied"))
-        return self.perform_action(request, *args, **kwargs)
+        return self.wrap(self.handle)()
 
     def get_collection_model(self) -> Type[CollectionBase]:
         content_type_id = self.request.POST.get("paperCollectionContentType")
@@ -80,7 +80,7 @@ class DeleteCollectionView(ActionView):
         collection_id = self.get_collection_id()
         return cast(CollectionBase, helpers.get_instance(collection_cls, collection_id))
 
-    def handle(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
+    def handle(self) -> HttpResponse:
         collection = self.get_instance()
         collection.delete()
         return self.success()
@@ -110,14 +110,19 @@ class UploadFileView(UploadFileViewBase):
             **kwargs
         )
 
-    def handle(self, request: WSGIRequest, file: UploadedFile) -> HttpResponse:
-        collection_cls = self.get_collection_model()
-        collection = self.get_collection_instance()
+    def get_order(self) -> int:
+        order = self.request.POST.get("order")
 
         try:
-            order = max(0, int(request.POST.get("order")))
+            order = max(0, int(order))
         except (TypeError, ValueError):
             order = None
+
+        return order
+
+    def handle(self, file: UploadedFile) -> HttpResponse:
+        collection_cls = self.get_collection_model()
+        collection = self.get_collection_instance()
 
         # перебираем все подходящие классы элементов пока
         # не найдем тот, который будет успешно создан
@@ -128,7 +133,7 @@ class UploadFileView(UploadFileViewBase):
                 collection=collection,
                 item_type=item_type,
                 size=file.size,
-                order=order
+                order=self.get_order()
             )
 
             try:
@@ -174,7 +179,7 @@ class DeleteFileView(DeleteFileViewBase):
         item_id = self.get_item_id()
         return cast(CollectionItemBase, helpers.get_instance(item_model, item_id))
 
-    def handle(self, request: WSGIRequest) -> HttpResponse:
+    def handle(self) -> HttpResponse:
         try:
             item = self.get_instance()
         except ObjectDoesNotExist:
@@ -220,7 +225,7 @@ class ChangeFileView(ChangeFileViewBase):
             return import_string(item_model.change_form_class)
 
 
-class SortItemsView(ActionView):
+class SortItemsView(AjaxView):
     http_method_names = ["post"]
 
     @method_decorator(csrf_exempt)
@@ -230,7 +235,7 @@ class SortItemsView(ActionView):
     def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         if not request.user.has_perm("paper_uploads.change"):
             return self.error_response(_("Access denied"))
-        return self.perform_action(request, *args, **kwargs)
+        return self.wrap(self.handle)()
 
     def get_collection_model(self) -> Type[CollectionBase]:
         content_type_id = self.request.POST.get("paperCollectionContentType")
@@ -239,14 +244,14 @@ class SortItemsView(ActionView):
     def get_collection_id(self) -> Any:
         return self.request.POST.get("collectionId")
 
-    def handle(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
+    def handle(self) -> HttpResponse:
         collection_cls = self.get_collection_model()
         collection_id = self.get_collection_id()
         collection_content_type = ContentType.objects.get_for_model(collection_cls, for_concrete_model=False)
         collection = helpers.get_instance(collection_cls, collection_id)
 
         # Получение списка ID элементов в том порядке, в котором они должны быть расположены
-        order_string = request.POST.get("orderList", "")
+        order_string = self.request.POST.get("orderList", "")
         ordered_item_ids = (item.strip() for item in order_string.split(","))
         ordered_item_ids = tuple(pk for pk in ordered_item_ids if pk)
 
