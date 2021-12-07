@@ -4,17 +4,32 @@ from django.utils.translation import gettext_lazy as _
 from paper_uploads.models import *
 
 
-class StandardCollection(Collection):
-    """ Implicit proxy model on Collection """
+class FilesOnlyCollection(Collection):
+    file = CollectionItem(FileItem)
+
+
+class ImagesOnlyCollection(ImageCollection):
+    pass
+
+
+class MixedCollection(Collection):
     svg = CollectionItem(SVGItem)
     image = CollectionItem(ImageItem)
     file = CollectionItem(FileItem)
 
 
 class Page(models.Model):
-    collection = CollectionField(
-        StandardCollection,
-        verbose_name=_("collection")
+    file_collection = CollectionField(
+        FilesOnlyCollection,
+        verbose_name=_("file collection")
+    )
+    image_collection = CollectionField(
+        ImagesOnlyCollection,
+        verbose_name=_("image collection")
+    )
+    mixed_collection = CollectionField(
+        MixedCollection,
+        verbose_name=_("mixed collection")
     )
 
     class Meta:

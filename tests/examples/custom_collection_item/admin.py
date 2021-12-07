@@ -3,11 +3,11 @@ from django.contrib import admin
 from paper_uploads.admin.collection import CollectionAdminBase
 
 from . import views
-from .models import CollectionDefinition, Page
+from .models import CustomImageCollection, Page
 
 
-@admin.register(CollectionDefinition)
-class CollectionDefinitionAdmin(CollectionAdminBase):
+@admin.register(CustomImageCollection)
+class CustomImageCollectionAdmin(CollectionAdminBase):
     upload_item_view_class = views.UploadCustomCollectionItemView
 
 

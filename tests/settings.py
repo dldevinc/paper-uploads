@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'examples.proxy_collection_item',
     'examples.custom_collection_item',
     'examples.validators',
+    'examples.variations',
 ]
 
 MIDDLEWARE = [
@@ -198,6 +199,12 @@ PAPER_MENU = [
                 label=_("Validators"),
                 models=[
                     'validators.Page',
+                ]
+            ),
+            dict(
+                label=_("Variations"),
+                models=[
+                    'variations.Page',
                 ]
             ),
         ]

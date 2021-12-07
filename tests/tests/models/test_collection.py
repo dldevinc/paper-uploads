@@ -6,16 +6,16 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.core.files import File
 from django.template.loader import render_to_string
-
-from app.models import (
-    ChildFileCollection,
-    CollectionFieldObject,
-    CompleteCollection,
-    FileCollection,
-    IsolatedFileCollection,
-    PhotoCollection,
+from examples.custom_collection.models import CustomCollection, CustomSubCollection
+from examples.custom_collection_item.models import CustomImageCollection, CustomImageItem
+from examples.standard_collection.models import (
+    FilesOnlyCollection,
+    ImagesOnlyCollection,
+    MixedCollection,
+    Page,
 )
-from app.models.custom import CustomGallery, CustomImageItem
+from examples.variations.models import PhotoCollection
+
 from paper_uploads import exceptions
 from paper_uploads.conf import settings
 from paper_uploads.helpers import _get_item_types
@@ -38,63 +38,69 @@ from .test_dummy import (
 
 class TestCollectionMetaclass:
     def test_proxy_state(self):
-        assert FileCollection._meta.proxy is True
-        assert FileCollection._meta.proxy_for_model is Collection
+        assert FilesOnlyCollection._meta.proxy is True
+        assert FilesOnlyCollection._meta.proxy_for_model is Collection
 
-        assert CompleteCollection._meta.proxy is True
-        assert CompleteCollection._meta.proxy_for_model is Collection
+        assert ImagesOnlyCollection._meta.proxy is True
+        assert ImagesOnlyCollection._meta.proxy_for_model is ImageCollection
+
+        assert MixedCollection._meta.proxy is True
+        assert MixedCollection._meta.proxy_for_model is Collection
 
     def test_explicit_non_proxy(self):
-        assert IsolatedFileCollection._meta.proxy is False
+        assert CustomCollection._meta.proxy is False
 
     def test_child_collection_proxy_state(self):
-        assert ChildFileCollection._meta.proxy is True
-        assert ChildFileCollection._meta.proxy_for_model is IsolatedFileCollection
+        assert CustomSubCollection._meta.proxy is True
+        assert CustomSubCollection._meta.proxy_for_model is CustomCollection
 
-    def test_defined_item_types(self):
+    def test_declared_item_types(self):
+        """
+        Проверка классов элементов коллекции, объявленных в самих классах.
+        Унаследованные классы не учитываются.
+        """
         collection_types = _get_item_types(Collection)
         assert collection_types == {}
 
         image_collection_types = _get_item_types(ImageCollection)
         assert list(image_collection_types.keys()) == ['image']
 
-        file_collection_types = _get_item_types(FileCollection)
+        file_collection_types = _get_item_types(FilesOnlyCollection)
         assert list(file_collection_types.keys()) == ['file']
 
-        photo_collection_types = _get_item_types(PhotoCollection)
+        photo_collection_types = _get_item_types(ImagesOnlyCollection)
         assert list(photo_collection_types.keys()) == []
 
-        isolated_collection_types = _get_item_types(IsolatedFileCollection)
-        assert list(isolated_collection_types.keys()) == ['file']
+        custom_collection_types = _get_item_types(CustomCollection)
+        assert list(custom_collection_types.keys()) == ['image']
 
-        child_collection_types = _get_item_types(ChildFileCollection)
-        assert list(child_collection_types.keys()) == ['image', 'svg']
+        custom_subcollection_types = _get_item_types(CustomSubCollection)
+        assert list(custom_subcollection_types.keys()) == ['svg']
 
-        complete_collection_types = _get_item_types(CompleteCollection)
-        assert list(complete_collection_types.keys()) == ['svg', 'image', 'file']
+        mixed_collection_types = _get_item_types(MixedCollection)
+        assert list(mixed_collection_types.keys()) == ['svg', 'image', 'file']
 
     def test_item_types(self):
         assert Collection.item_types == {}
         assert list(ImageCollection.item_types.keys()) == ['image']
-        assert list(PhotoCollection.item_types.keys()) == ['image']
-        assert list(FileCollection.item_types.keys()) == ['file']
-        assert list(IsolatedFileCollection.item_types.keys()) == ['file']
-        assert list(ChildFileCollection.item_types.keys()) == ['image', 'svg']
-        assert list(ChildFileCollection.item_types.keys()) == ['image', 'svg']
-        assert list(CompleteCollection.item_types.keys()) == ['svg', 'image', 'file']
+        assert list(ImagesOnlyCollection.item_types.keys()) == ['image']
+        assert list(FilesOnlyCollection.item_types.keys()) == ['file']
+        assert list(CustomCollection.item_types.keys()) == ['image']
+        assert list(CustomSubCollection.item_types.keys()) == ['image', 'svg']
+        assert list(MixedCollection.item_types.keys()) == ['svg', 'image', 'file']
 
 
 class TestCollection:
     @staticmethod
     def init_class(storage):
         # collection #1 (files only)
-        storage.file_collection = FileCollection.objects.create()
+        storage.file_collection = FilesOnlyCollection.objects.create()
 
         # collection #2 (images only)
-        storage.image_collection = PhotoCollection.objects.create()
+        storage.image_collection = ImagesOnlyCollection.objects.create()
 
         # collection #3 (all types allowed)
-        storage.global_collection = CompleteCollection.objects.create()
+        storage.global_collection = MixedCollection.objects.create()
 
         file_item = FileItem()
         file_item.attach_to(storage.file_collection)
@@ -182,24 +188,24 @@ class TestCollection:
 
     def test_manager(self, storage):
         assert Collection.objects.count() == 3
-        assert FileCollection.objects.count() == 1
-        assert PhotoCollection.objects.count() == 1
-        assert CompleteCollection.objects.count() == 1
+        assert FilesOnlyCollection.objects.count() == 1
+        assert ImagesOnlyCollection.objects.count() == 1
+        assert MixedCollection.objects.count() == 1
 
     def test_get_collection_class(self, storage):
         file1, file2 = FileItem.objects.order_by('id')
-        assert file1.get_collection_class() is FileCollection
-        assert file2.get_collection_class() is CompleteCollection
+        assert file1.get_collection_class() is FilesOnlyCollection
+        assert file2.get_collection_class() is MixedCollection
 
     def test_get_itemtype_field(self, storage):
         image_item1 = storage.image_collection.get_items('image').first()
-        assert image_item1.get_itemtype_field() is PhotoCollection.item_types['image']
+        assert image_item1.get_itemtype_field() is ImagesOnlyCollection.item_types['image']
 
         image_item2 = storage.global_collection.get_items('image').first()
-        assert image_item2.get_itemtype_field() is CompleteCollection.item_types['image']
+        assert image_item2.get_itemtype_field() is MixedCollection.item_types['image']
 
         svg_item = storage.global_collection.get_items('svg').first()
-        assert svg_item.get_itemtype_field() is CompleteCollection.item_types['svg']
+        assert svg_item.get_itemtype_field() is MixedCollection.item_types['svg']
 
     def test_attach_to_file_collection(self, storage):
         file_item = FileItem()
@@ -207,7 +213,7 @@ class TestCollection:
 
         assert file_item.collection_id == storage.file_collection.pk
         assert file_item.collection_content_type == ContentType.objects.get_for_model(
-            FileCollection, for_concrete_model=False)
+            FilesOnlyCollection, for_concrete_model=False)
         assert file_item.item_type == 'file'
 
     def test_attach_to_global_collection(self, storage):
@@ -216,7 +222,7 @@ class TestCollection:
 
         assert file_item.collection_id == storage.global_collection.pk
         assert file_item.collection_content_type == ContentType.objects.get_for_model(
-            CompleteCollection, for_concrete_model=False)
+            MixedCollection, for_concrete_model=False)
         assert file_item.item_type == 'file'
 
     def test_get_preview_url(self):
@@ -260,12 +266,12 @@ class TestCollection:
             assert next(storage.image_collection.detect_item_type(file)) == 'image'
 
     def test_set_owner_from(self, storage):
-        owner_field = CollectionFieldObject._meta.get_field("file_collection")
+        owner_field = Page._meta.get_field("file_collection")
         storage.file_collection.set_owner_from(owner_field)
-        assert storage.file_collection.owner_app_label == "app"
-        assert storage.file_collection.owner_model_name == "collectionfieldobject"
+        assert storage.file_collection.owner_app_label == "standard_collection"
+        assert storage.file_collection.owner_model_name == "page"
         assert storage.file_collection.owner_fieldname == "file_collection"
-        assert storage.file_collection.get_owner_model() is CollectionFieldObject
+        assert storage.file_collection.get_owner_model() is Page
         assert storage.file_collection.get_owner_field() is owner_field
 
     def test_get_item_model(self, storage):
@@ -277,9 +283,9 @@ class TestCollection:
 
 
 @pytest.mark.django_db
-class TestDeleteCustomCollection:
+class TestDeleteCustomImageCollection:
     def _create_collection(self):
-        collection = CustomGallery.objects.create()
+        collection = CustomImageCollection.objects.create()
 
         image_item = CustomImageItem()
         image_item.attach_to(collection)
@@ -304,7 +310,7 @@ class TestDeleteCustomCollection:
         item = collection.items.first()  # type: CustomImageItem
         item_files = [item.get_file(), *(pair[1] for pair in item.variation_files())]
 
-        CustomGallery.objects.filter(pk=collection.pk).delete()
+        CustomCollection.objects.filter(pk=collection.pk).delete()
 
         for vfile in item_files:
             vfile.delete()
@@ -347,7 +353,7 @@ class CollectionItemMixin:
 @pytest.mark.django_db
 class TestAttachWrongItemClassToCollection:
     def test_attach(self):
-        collection = PhotoCollection.objects.create()
+        collection = ImagesOnlyCollection.objects.create()
         resource = FileItem()
 
         with pytest.raises(TypeError):
@@ -364,7 +370,7 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
     resource_size = 672759
     resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
     file_field_name = 'file'
-    collection_class = FileCollection
+    collection_class = FilesOnlyCollection
 
     @classmethod
     def init_class(cls, storage):
@@ -434,7 +440,7 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
 @pytest.mark.django_db
 class TestFileItemAttach(TestFileFieldResourceAttach):
     resource_class = FileItem
-    collection_class = CompleteCollection
+    collection_class = MixedCollection
 
     @contextmanager
     def get_resource(self):
@@ -451,7 +457,7 @@ class TestFileItemAttach(TestFileFieldResourceAttach):
 class TestFileItemRename(TestFileFieldResourceRename):
     resource_class = FileItem
     resource_location = 'collections/files/%Y-%m-%d'
-    collection_class = FileCollection
+    collection_class = FilesOnlyCollection
 
     @classmethod
     def init_class(cls, storage):
@@ -478,7 +484,7 @@ class TestFileItemRename(TestFileFieldResourceRename):
 class TestFileItemDelete(TestFileFieldResourceDelete):
     resource_class = FileItem
     resource_location = 'collections/files/%Y-%m-%d'
-    collection_class = FileCollection
+    collection_class = FilesOnlyCollection
 
     @classmethod
     def init_class(cls, storage):
@@ -501,7 +507,7 @@ class TestFileItemDelete(TestFileFieldResourceDelete):
 
 class TestFileItemEmpty(TestFileFieldResourceEmpty):
     recource_class = FileItem
-    collection_class = FileCollection
+    collection_class = FilesOnlyCollection
 
     @classmethod
     def init_class(cls, storage):
@@ -515,7 +521,7 @@ class TestFileItemEmpty(TestFileFieldResourceEmpty):
 class TestFileItemExists:
     @staticmethod
     def init_class(storage):
-        storage.collection = FileCollection.objects.create()
+        storage.collection = FilesOnlyCollection.objects.create()
 
         storage.resource = FileItem()
         storage.resource.attach_to(storage.collection)
@@ -548,7 +554,7 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
     resource_size = 47193
     resource_checksum = '7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d'
     file_field_name = 'file'
-    collection_class = CompleteCollection
+    collection_class = MixedCollection
 
     @classmethod
     def init_class(cls, storage):
@@ -636,7 +642,7 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
 @pytest.mark.django_db
 class TestSVGItemAttach(TestFileFieldResourceAttach):
     resource_class = SVGItem
-    collection_class = CompleteCollection
+    collection_class = MixedCollection
 
     @contextmanager
     def get_resource(self):
@@ -653,7 +659,7 @@ class TestSVGItemAttach(TestFileFieldResourceAttach):
 class TestSVGItemRename(TestFileFieldResourceRename):
     resource_class = SVGItem
     resource_location = 'collections/files/%Y-%m-%d'
-    collection_class = CompleteCollection
+    collection_class = MixedCollection
 
     @classmethod
     def init_class(cls, storage):
@@ -680,7 +686,7 @@ class TestSVGItemRename(TestFileFieldResourceRename):
 class TestSVGItemDelete(TestFileFieldResourceDelete):
     resource_class = SVGItem
     resource_location = 'collections/files/%Y-%m-%d'
-    collection_class = CompleteCollection
+    collection_class = MixedCollection
 
     @classmethod
     def init_class(cls, storage):
@@ -703,7 +709,7 @@ class TestSVGItemDelete(TestFileFieldResourceDelete):
 
 class TestSVGItemEmpty(TestFileFieldResourceEmpty):
     recource_class = SVGItem
-    collection_class = CompleteCollection
+    collection_class = MixedCollection
 
     @classmethod
     def init_class(cls, storage):
@@ -717,7 +723,7 @@ class TestSVGItemEmpty(TestFileFieldResourceEmpty):
 class TestSVGItemExists:
     @classmethod
     def init_class(cls, storage):
-        storage.collection = CompleteCollection.objects.create()
+        storage.collection = MixedCollection.objects.create()
 
         storage.resource = SVGItem()
         storage.resource.attach_to(storage.collection)
@@ -750,7 +756,7 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
     resource_size = 672759
     resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
     file_field_name = 'file'
-    collection_class = CompleteCollection
+    collection_class = PhotoCollection
 
     @classmethod
     def init_class(cls, storage):
@@ -864,7 +870,7 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
 @pytest.mark.django_db
 class TestImageItemAttach(TestImageAttach):
     resource_class = ImageItem
-    collection_class = CompleteCollection
+    collection_class = PhotoCollection
 
     @contextmanager
     def get_resource(self):
@@ -881,7 +887,7 @@ class TestImageItemAttach(TestImageAttach):
 class TestImageItemRename(TestImageRename):
     resource_class = ImageItem
     resource_location = 'collections/images/%Y-%m-%d'
-    collection_class = CompleteCollection
+    collection_class = PhotoCollection
 
     @classmethod
     def init_class(cls, storage):
@@ -942,7 +948,7 @@ class TestImageItemRename(TestImageRename):
 class TestImageItemDelete(TestImageDelete):
     resource_class = ImageItem
     resource_location = 'collections/images/%Y-%m-%d'
-    collection_class = CompleteCollection
+    collection_class = PhotoCollection
 
     @classmethod
     def init_class(cls, storage):
@@ -984,7 +990,7 @@ class TestImageItemDelete(TestImageDelete):
 
 class TestImageItemEmpty(TestImageEmpty):
     recource_class = ImageItem
-    collection_class = CompleteCollection
+    collection_class = PhotoCollection
 
     @classmethod
     def init_class(cls, storage):
@@ -998,7 +1004,7 @@ class TestImageItemEmpty(TestImageEmpty):
 class TestImageItemExists:
     @classmethod
     def init_class(cls, storage):
-        storage.collection = CompleteCollection.objects.create()
+        storage.collection = PhotoCollection.objects.create()
 
         storage.resource = ImageItem()
         storage.resource.attach_to(storage.collection)

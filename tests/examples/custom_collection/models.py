@@ -6,9 +6,7 @@ from paper_uploads.models import *
 
 
 class CustomCollection(Collection):
-    svg = CollectionItem(SVGItem)
     image = CollectionItem(ImageItem)
-    file = CollectionItem(FileItem)
 
     # addition field
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
@@ -16,6 +14,10 @@ class CustomCollection(Collection):
     class Meta:
         # must be explicitly declared
         proxy = False
+
+
+class CustomSubCollection(CustomCollection):
+    svg = CollectionItem(SVGItem)
 
 
 class Page(models.Model):

@@ -66,6 +66,15 @@ class Page(models.Model):
         help_text=_("Image should be at most 1024x768 pixels")
     )
 
+    filter_image_ext = ImageField(
+        _("extension (image)"),
+        blank=True,
+        validators=[
+            ExtensionValidator([".gif", ".png"])
+        ],
+        help_text=_("Only `png` and `gif` allowed")
+    )
+
     collection = CollectionField(
         CollectionDefinition,
         verbose_name=_("collection")

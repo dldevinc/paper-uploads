@@ -7,9 +7,8 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.test import RequestFactory
+from examples.proxy_files.models import Page, UploadedFileProxy
 
-from app.models.custom import CustomProxyUploadedFile
-from app.models.site import FileFieldObject
 from paper_uploads.exceptions import InvalidContentType, InvalidObjectId
 from paper_uploads.forms.dialogs.file import ChangeUploadedFileDialog
 from paper_uploads.views.file import ChangeFileView, DeleteFileView, UploadFileView
@@ -18,7 +17,7 @@ from paper_uploads.views.file import ChangeFileView, DeleteFileView, UploadFileV
 class TestUploadFileView:
     @staticmethod
     def init_class(storage):
-        storage.content_type = ContentType.objects.get_for_model(CustomProxyUploadedFile, for_concrete_model=False)
+        storage.content_type = ContentType.objects.get_for_model(UploadedFileProxy, for_concrete_model=False)
 
         storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
         permission = Permission.objects.get(name="Can upload files")
@@ -35,31 +34,31 @@ class TestUploadFileView:
         storage.view.setup(request)
 
         file_model = storage.view.get_file_model()
-        assert file_model is CustomProxyUploadedFile
+        assert file_model is UploadedFileProxy
 
     def test_get_instance(self, storage):
         request = RequestFactory().post("/", data={
             "paperContentType": storage.content_type.pk,
-            "paperOwnerAppLabel": "app",
-            "paperOwnerModelName": "filefieldobject",
-            "paperOwnerFieldName": "file_custom_proxy"
+            "paperOwnerAppLabel": "proxy_files",
+            "paperOwnerModelName": "page",
+            "paperOwnerFieldName": "file"
         })
         request.user = storage.user
         storage.view.setup(request)
 
         instance = storage.view.get_instance()
-        assert isinstance(instance, CustomProxyUploadedFile)
+        assert isinstance(instance, UploadedFileProxy)
         assert instance.pk is None
-        assert instance.get_owner_field() is FileFieldObject._meta.get_field("file_custom_proxy")
+        assert instance.get_owner_field() is Page._meta.get_field("file")
 
     def test_invalid_content_type(self, storage):
-        content_type = ContentType.objects.get_for_model(FileFieldObject, for_concrete_model=False)
+        wrong_content_type = ContentType.objects.get_for_model(User, for_concrete_model=False)
 
         request = RequestFactory().post("/", data={
-            "paperContentType": content_type.pk,
-            "paperOwnerAppLabel": "app",
-            "paperOwnerModelName": "filefieldobject",
-            "paperOwnerFieldName": "file_custom_proxy"
+            "paperContentType": wrong_content_type.pk,
+            "paperOwnerAppLabel": "proxy_files",
+            "paperOwnerModelName": "page",
+            "paperOwnerFieldName": "file"
         })
         request.user = storage.user
         storage.view.setup(request)
@@ -70,9 +69,9 @@ class TestUploadFileView:
     def test_validation_errors(self, storage):
         request = RequestFactory().post("/", data={
             "paperContentType": storage.content_type.pk,
-            "paperOwnerAppLabel": "app",
-            "paperOwnerModelName": "filefieldobject",
-            "paperOwnerFieldName": "file_extensions"
+            "paperOwnerAppLabel": "validators",
+            "paperOwnerModelName": "page",
+            "paperOwnerFieldName": "filter_ext"
         })
         request.user = storage.user
         storage.view.setup(request)
@@ -83,9 +82,9 @@ class TestUploadFileView:
     def test_success(self, storage):
         request = RequestFactory().post("/", data={
             "paperContentType": storage.content_type.pk,
-            "paperOwnerAppLabel": "app",
-            "paperOwnerModelName": "filefieldobject",
-            "paperOwnerFieldName": "file_extensions"
+            "paperOwnerAppLabel": "proxy_files",
+            "paperOwnerModelName": "page",
+            "paperOwnerFieldName": "file"
         })
         request.user = storage.user
         storage.view.setup(request)
@@ -95,7 +94,7 @@ class TestUploadFileView:
         assert json.loads(response.content)["name"] == "dummy"
 
         item_id = json.loads(response.content)["id"]
-        item = CustomProxyUploadedFile.objects.get(pk=item_id)
+        item = UploadedFileProxy.objects.get(pk=item_id)
         item.delete_file()
         item.delete()
 
@@ -103,7 +102,7 @@ class TestUploadFileView:
 class TestDeleteFileView:
     @staticmethod
     def init_class(storage):
-        storage.content_type = ContentType.objects.get_for_model(CustomProxyUploadedFile, for_concrete_model=False)
+        storage.content_type = ContentType.objects.get_for_model(UploadedFileProxy, for_concrete_model=False)
 
         storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
         permission = Permission.objects.get(name="Can upload files")
@@ -120,13 +119,13 @@ class TestDeleteFileView:
         storage.view.setup(request)
 
         file_model = storage.view.get_file_model()
-        assert file_model is CustomProxyUploadedFile
+        assert file_model is UploadedFileProxy
 
     def test_invalid_content_type(self, storage):
-        content_type = ContentType.objects.get_for_model(FileFieldObject, for_concrete_model=False)
+        wrong_content_type = ContentType.objects.get_for_model(User, for_concrete_model=False)
 
         request = RequestFactory().post("/", data={
-            "paperContentType": content_type.pk,
+            "paperContentType": wrong_content_type.pk,
         })
         request.user = storage.user
         storage.view.setup(request)
@@ -166,10 +165,10 @@ class TestDeleteFileView:
             storage.view.get_instance()
 
     def test_success(self, storage):
-        file = CustomProxyUploadedFile(
+        file = UploadedFileProxy(
             pk=5486
         )
-        file.set_owner_from(FileFieldObject._meta.get_field("file_custom_proxy"))
+        file.set_owner_from(Page._meta.get_field("file"))
         file.save()
 
         request = RequestFactory().post("/", data={
@@ -191,16 +190,16 @@ class TestDeleteFileView:
 class TestChangeFileView:
     @staticmethod
     def init_class(storage):
-        storage.content_type = ContentType.objects.get_for_model(CustomProxyUploadedFile, for_concrete_model=False)
+        storage.content_type = ContentType.objects.get_for_model(UploadedFileProxy, for_concrete_model=False)
 
         storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
         permission = Permission.objects.get(name="Can upload files")
         storage.user.user_permissions.add(permission)
 
-        storage.object = CustomProxyUploadedFile(
+        storage.object = UploadedFileProxy(
             pk=5487
         )
-        storage.object.set_owner_from(FileFieldObject._meta.get_field("file_custom_proxy"))
+        storage.object.set_owner_from(Page._meta.get_field("file"))
         storage.object.save()
 
         storage.view = ChangeFileView()
@@ -225,10 +224,10 @@ class TestChangeFileView:
         storage.view.setup(request)
 
         file_model = storage.view.get_file_model()
-        assert file_model is CustomProxyUploadedFile
+        assert file_model is UploadedFileProxy
 
     def test_invalid_content_type(self, storage):
-        content_type = ContentType.objects.get_for_model(FileFieldObject, for_concrete_model=False)
+        content_type = ContentType.objects.get_for_model(Page, for_concrete_model=False)
 
         request = RequestFactory().get("/", data={
             "paperContentType": content_type.pk,
