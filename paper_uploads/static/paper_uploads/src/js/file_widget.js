@@ -334,7 +334,11 @@ class FileUploader extends EventEmitter {
 
         this.uploader.on("all_complete", () => {
             const onAllComplete = () => {
-                this.setStatus(this.STATUS.READY);
+                if (this.instanceId) {
+                    this.setStatus(this.STATUS.READY);
+                } else {
+                    this.setStatus(this.STATUS.EMPTY);
+                }
 
                 const progressBar = this.progressBar;
                 progressBar && (progressBar.style.width = "");
