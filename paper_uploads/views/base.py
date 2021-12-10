@@ -210,36 +210,14 @@ class ChangeFileViewBase(FormMixin, AjaxView):
     template_name = None
     http_method_names = ["get", "post"]
 
-    def get(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
-        if not request.user.has_perm("paper_uploads.change"):
-            return self.error_response(_("Access denied"))
-
-        form_response = self.wrap(self.render_form)()
-        if isinstance(form_response, HttpResponse):
-            return form_response
-
-        return self.success_response({
-            "form": form_response
-        })
-
-    def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
-        if not request.user.has_perm("paper_uploads.change"):
-            return self.error_response(_("Access denied"))
-
-        return self.wrap(self.validate_form)()
-
-    def validate_form(self):
-        form = self.get_form()
-        if not form.is_valid():
-            return self.form_invalid(form)
-
-        return self.form_valid(form)
-
     def get_template_name(self) -> str:
         if self.template_name is None:
             raise ImproperlyConfigured(
-                "ChangeFileViewBase requires either a definition of "
-                "'template_name' or an implementation of 'get_template_name()'")
+                "{} requires either a definition of "
+                "'template_name' or an implementation of 'get_template_name()'".format(
+                    type(self).__name__
+                )
+            )
         else:
             return self.template_name
 
@@ -258,29 +236,47 @@ class ChangeFileViewBase(FormMixin, AjaxView):
     def get_instance(self):
         raise NotImplementedError
 
+    def get(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
+        if not request.user.has_perm("paper_uploads.change"):
+            return self.error_response(_("Access denied"))
+
+        form_response = self.wrap(self.render_form)()
+        if isinstance(form_response, HttpResponse):
+            return form_response
+
+        return self.success_response({
+            "form": form_response
+        })
+
     def render_form(self, **kwargs) -> str:
         context = self.get_context_data(**kwargs)
         template_name = self.get_template_name()
         return loader.render_to_string(template_name, context, request=self.request)
 
-    def form_valid(self, form):
+    def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
+        if not request.user.has_perm("paper_uploads.change"):
+            return self.error_response(_("Access denied"))
+
+        return self.wrap(self.validate_form)()
+
+    def validate_form(self) -> HttpResponse:
+        form = self.get_form()
+        if not form.is_valid():
+            return self.form_invalid(form)
+
+        return self.form_valid(form)
+
+    def form_valid(self, form) -> HttpResponse:
         try:
             instance = form.save()
         except exceptions.FileNotFoundError as e:
             error = _("File not found: %s") % e.name
             logger.debug(error)
             return self.error_response(error)
-        except Exception as e:
-            logger.exception("Error")
-            if hasattr(e, "args"):
-                message = "{}: {}".format(type(e).__name__, e.args[0])
-            else:
-                message = type(e).__name__
-            return self.error_response(message)
 
-        return self.success(instance)  # noqa: F821
+        return self.success(instance)
 
-    def form_invalid(self, form):
+    def form_invalid(self, form) -> HttpResponse:
         return JsonResponse({
             "form_errors": form.errors.get_json_data()
         })
