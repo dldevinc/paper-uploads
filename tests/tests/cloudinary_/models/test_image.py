@@ -144,7 +144,7 @@ class TestCloudinaryImageRename(TestImageFieldResourceRename):
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
-        storage.resource.rename_file('new_image_name_{}.png'.format(storage.uid))
+        storage.resource.rename('new_image_name_{}.png'.format(storage.uid))
 
         yield
 

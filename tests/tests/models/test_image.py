@@ -103,7 +103,7 @@ class TestUploadedImageRename(BacklinkModelMixin, TestImageRename):
         storage.old_desktop_path = storage.resource.desktop.path
         storage.old_mobile_path = storage.resource.mobile.path
 
-        storage.resource.rename_file('new_name.png')
+        storage.resource.rename('new_name.png')
         assert storage.resource.need_recut is True
         storage.resource.save()
 

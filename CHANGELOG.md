@@ -26,6 +26,9 @@
 - Changed some admin URLs for collections.
 - Added new `InvalidItemType` exception.
 ### Features
+- Method `.attach_file()` is now deprecated in favor of `.attach()`.
+- Method `.rename_file()` is now deprecated in favor of `.rename()`.
+- Exception `UnsupportedFileError` is now deprecated in favor of `UnsupportedResource`.
 - Add abstract base classes for uploaded files.
 - Updated view classes for easier customization.
 - Added new class `paper_uploads.forms.fields.base.ResourceFieldBase`.

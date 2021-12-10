@@ -161,7 +161,7 @@ class TestFileItemRename(TestFileFieldResourceRename):
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
-        storage.resource.rename_file('new_cfile_name_{}.png'.format(storage.uid))
+        storage.resource.rename('new_cfile_name_{}.png'.format(storage.uid))
 
         yield
 
@@ -442,7 +442,7 @@ class TestMediaItemRename(TestFileFieldResourceRename):
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
-        storage.resource.rename_file('new_cmedia_name_{}.ogg'.format(storage.uid))
+        storage.resource.rename('new_cmedia_name_{}.ogg'.format(storage.uid))
 
         yield
 
@@ -682,7 +682,7 @@ class TestImageItemRename(TestImageFieldResourceRename):
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
-        storage.resource.rename_file('new_cimage_name_{}.png'.format(storage.uid))
+        storage.resource.rename('new_cimage_name_{}.png'.format(storage.uid))
 
         yield
 

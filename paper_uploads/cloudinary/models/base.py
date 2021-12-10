@@ -281,7 +281,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         self.extension = file_format or ""
         return result
 
-    def _rename_file(self, new_name: str, **options):
+    def _rename(self, new_name: str, **options):
         # TODO: Cloudinary can't copy files. We dont't want to do it manually
         cloudinary_options = self.get_cloudinary_options()
         cloudinary_options.update(options.get("cloudinary", {}))

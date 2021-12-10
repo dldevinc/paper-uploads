@@ -471,7 +471,7 @@ class TestFileItemRename(TestFileFieldResourceRename):
         file = storage.resource.get_file()
         storage.old_source_name = file.name
         storage.old_source_path = file.path
-        storage.resource.rename_file('new_name.png')
+        storage.resource.rename('new_name.png')
         storage.resource.save()
 
         yield
@@ -673,7 +673,7 @@ class TestSVGItemRename(TestFileFieldResourceRename):
         file = storage.resource.get_file()
         storage.old_source_name = file.name
         storage.old_source_path = file.path
-        storage.resource.rename_file('new_name.png')
+        storage.resource.rename('new_name.png')
         storage.resource.save()
 
         yield
@@ -915,7 +915,7 @@ class TestImageItemRename(TestImageRename):
         storage.old_mobile_path = storage.resource.mobile.path
         storage.old_admin_preview_path = storage.resource.admin_preview.path
 
-        storage.resource.rename_file('new_name.png')
+        storage.resource.rename('new_name.png')
         assert storage.resource.need_recut is True
         storage.resource.save()
 

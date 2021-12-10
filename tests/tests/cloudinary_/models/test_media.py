@@ -193,7 +193,7 @@ class TestCloudinaryMediaRename(BacklinkModelMixin, TestFileFieldResourceRename)
         file = storage.resource.get_file()
         storage.old_source_name = file.name
 
-        storage.resource.rename_file('new_media_name_{}.ogg'.format(storage.uid))
+        storage.resource.rename('new_media_name_{}.ogg'.format(storage.uid))
 
         yield
 

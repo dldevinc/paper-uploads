@@ -633,13 +633,13 @@ class Page(models.Model):
 photo = UploadedImage()
 photo.set_owner_from(Page._meta.get_field("photo"))
 with open("picture.jpg", "rb") as fp:
-    photo.attach_file(fp)
+    photo.attach(fp)
 photo.save()
 
 report = UploadedFile()
 report.set_owner_from(Page._meta.get_field("report"))
 with open("file.doc", "rb") as fp:
-    report.attach_file(fp)
+    report.attach(fp)
 report.save()
 
 
@@ -671,7 +671,7 @@ gallery.save()
 item = ImageItem()
 item.attach_to(gallery)
 with open("image.jpg", "rb") as fp:
-    item.attach_file(fp)
+    item.attach(fp)
 item.save()
 
 

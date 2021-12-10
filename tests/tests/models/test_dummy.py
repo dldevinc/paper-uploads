@@ -408,7 +408,7 @@ class TestFileResourceSignals:
 
         assert pre_signal_fired is False
         assert post_signal_fired is False
-        resource.rename_file(os.path.basename(NASA_FILEPATH))
+        resource.rename(os.path.basename(NASA_FILEPATH))
         assert pre_signal_fired is True
         assert post_signal_fired is True
 
@@ -433,7 +433,7 @@ class TestFileResourceSignals:
             assert old_name == 'milky-way-nasa.jpg'
             assert new_name == 'new name.png'
 
-            # extra parameters passed to `rename_file`
+            # extra parameters passed to `rename()`
             assert options == {
                 'key1': 'value1',
                 'key2': 'value2'
@@ -445,7 +445,7 @@ class TestFileResourceSignals:
             resource.attach(fp)
 
         assert signal_fired is False
-        resource.rename_file('new name.png', key1='value1', key2='value2')
+        resource.rename('new name.png', key1='value1', key2='value2')
         assert signal_fired is True
 
         resource.delete_file()
@@ -465,13 +465,13 @@ class TestFileResourceSignals:
             assert old_name == 'milky-way-nasa.jpg'
             assert new_name == 'new name.png'
 
-            # extra parameters passed to `rename_file`
+            # extra parameters passed to `rename()`
             assert options == {
                 'key1': 'value1',
                 'key2': 'value2'
             }
 
-            # result of `_rename_file` method
+            # result of `_rename()` method
             assert response == {
                 'success': True,
             }
@@ -482,7 +482,7 @@ class TestFileResourceSignals:
             resource.attach(fp)
 
         assert signal_fired is False
-        resource.rename_file('new name.png', key1='value1', key2='value2')
+        resource.rename('new name.png', key1='value1', key2='value2')
         assert signal_fired is True
 
         resource.delete_file()
@@ -519,7 +519,7 @@ class TestFileResourceSignals:
             assert sender is DummyFileResource
             assert instance is resource
 
-            # extra parameters passed to `rename_file`
+            # extra parameters passed to `rename()`
             assert options == {
                 'key1': 'value1',
                 'key2': 'value2'
@@ -756,7 +756,7 @@ class TestFileFieldResourceRename:
         file = storage.resource.get_file()
         storage.old_source_name = file.name
         storage.old_source_path = file.path
-        storage.resource.rename_file('new_name.png')
+        storage.resource.rename('new_name.png')
 
         yield
 
@@ -870,7 +870,7 @@ class TestFileFieldResourceEmpty:
 
     def test_rename_file(self, storage):
         with pytest.raises(ValueError):
-            storage.resource.rename_file('bla-bla.jpg')
+            storage.resource.rename('bla-bla.jpg')
 
     def test_delete_file(self, storage):
         storage.resource.delete_file()
@@ -1106,7 +1106,7 @@ class TestImageRename(TestImageFieldResourceRename):
         storage.old_desktop_path = storage.resource.desktop.path
         storage.old_mobile_path = storage.resource.mobile.path
 
-        storage.resource.rename_file('new_name.png')
+        storage.resource.rename('new_name.png')
         assert storage.resource.need_recut is True
         storage.resource.save()
 

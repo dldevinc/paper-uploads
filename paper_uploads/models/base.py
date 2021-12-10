@@ -334,10 +334,10 @@ class FileResource(FileProxyMixin, Resource):
         )
         return self._attach(*args, **kwargs)
 
-    def rename_file(self, new_name: str, **options):
+    def rename(self, new_name: str, **options):
         """
         Переименование файла.
-        В действительности, переименование файла происходит в методе `_rename_file`.
+        В действительности, переименование файла происходит в методе `_rename`.
         Не переопределяйте этот метод, если не уверены в том, что вы делаете.
         """
         self._require_file()
@@ -355,7 +355,7 @@ class FileResource(FileProxyMixin, Resource):
             options=options,
         )
 
-        response = self._rename_file(new_name, **options)
+        response = self._rename(new_name, **options)
 
         self.modified_at = now()
 
@@ -368,8 +368,24 @@ class FileResource(FileProxyMixin, Resource):
             response=response,
         )
 
-    def _rename_file(self, new_name: str, **options):
+    def rename_file(self, *args, **kwargs):
+        warnings.warn(
+            "rename_file() is deprecated in favor of rename()",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self.rename(*args, **kwargs)
+
+    def _rename(self, new_name: str, **options):
         raise NotImplementedError
+
+    def _rename_file(self, *args, **kwargs):
+        warnings.warn(
+            "_rename_file() is deprecated in favor of _rename()",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self._rename(*args, **kwargs)
 
     def delete_file(self, **options):
         """
@@ -428,7 +444,7 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
         self.basename = helpers.get_filename(file.name)
         self.extension = helpers.get_extension(self.name)
 
-    def _rename_file(self, new_name: str, **options):
+    def _rename(self, new_name: str, **options):
         file = self.get_file()
         with file.open() as fp:
             file.save(new_name, fp, save=False)
@@ -554,8 +570,8 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         self.need_recut = True
         self._setup_variation_files()
 
-    def rename_file(self, new_name: str, **options):
-        super().rename_file(new_name, **options)  # noqa: F821
+    def rename(self, new_name: str, **options):
+        super().rename(new_name, **options)  # noqa: F821
         self.need_recut = True
         self._setup_variation_files()
 

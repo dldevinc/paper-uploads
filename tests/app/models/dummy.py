@@ -68,7 +68,7 @@ class DummyFileResource(FileResource):
             'success': True,
         }
 
-    def _rename_file(self, new_name: str, **options):
+    def _rename(self, new_name: str, **options):
         self.__filename = new_name
         self.basename = helpers.get_filename(new_name)
         self.extension = helpers.get_extension(new_name)

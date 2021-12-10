@@ -122,7 +122,7 @@ class TestCloudinaryFileRename(BacklinkModelMixin, TestFileFieldResourceRename):
         file = storage.resource.get_file()
         storage.old_source_name = file.name
 
-        storage.resource.rename_file('new_file_name_{}.png'.format(storage.uid))
+        storage.resource.rename('new_file_name_{}.png'.format(storage.uid))
 
         yield
 
