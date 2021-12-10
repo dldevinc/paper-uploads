@@ -39,10 +39,10 @@ from .test_base import CloudinaryFileResource
 class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
     resource_url = '/media/collections/files/%Y-%m-%d'
     resource_location = 'collections/files/%Y-%m-%d'
-    resource_name = 'document'
-    resource_extension = 'pdf'
-    resource_size = 3028
-    resource_checksum = '93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e'
+    resource_name = 'table'
+    resource_extension = 'xls'
+    resource_size = 8704
+    resource_checksum = 'c9c8ad905aa5142731b1e8ab34d5862f871627fa7ad8005264494c2489d2061e'
     file_field_name = 'file'
     collection_class = CloudinaryCompleteCollection
 
@@ -52,7 +52,7 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
 
         storage.resource = CloudinaryFileItem()
         storage.resource.attach_to(storage.collection)
-        with open(DOCUMENT_FILEPATH, 'rb') as fp:
+        with open(EXCEL_FILEPATH, 'rb') as fp:
             storage.resource.attach(fp)
         storage.resource.save()
 
@@ -78,17 +78,17 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
 
     def test_public_id(self, storage):
         public_id = storage.resource.get_file().public_id
-        pattern = posixpath.join(self.resource_location, 'document{suffix}.pdf')
+        pattern = posixpath.join(self.resource_location, 'table{suffix}.xls')
         assert public_id == utils.get_target_filepath(pattern, public_id)
 
     def test_name(self, storage):
         file_name = storage.resource.name
-        pattern = posixpath.join(self.resource_location, 'document{suffix}.pdf')
+        pattern = posixpath.join(self.resource_location, 'table{suffix}.xls')
         assert file_name == utils.get_target_filepath(pattern, file_name)
 
     def test_read(self, storage):
         with storage.resource.open() as fp:
-            assert fp.read(4) == b'%PDF'
+            assert fp.read(4) == b'\xd0\xcf\x11\xe0'
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
@@ -114,7 +114,7 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
         }
 
     def test_file_supported(self, storage):
-        with open(DOCUMENT_FILEPATH, 'rb') as fp:
+        with open(EXCEL_FILEPATH, 'rb') as fp:
             assert storage.resource.file_supported(File(fp)) is True
 
         with open(NATURE_FILEPATH, 'rb') as fp:
@@ -335,7 +335,7 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
         }
 
     def test_file_supported(self, storage):
-        with open(DOCUMENT_FILEPATH, 'rb') as fp:
+        with open(EXCEL_FILEPATH, 'rb') as fp:
             assert storage.resource.file_supported(File(fp)) is False
 
         with open(NATURE_FILEPATH, 'rb') as fp:
@@ -629,7 +629,7 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
         assert storage.resource.height == 2301
 
     def test_file_supported(self, storage):
-        with open(DOCUMENT_FILEPATH, 'rb') as fp:
+        with open(EXCEL_FILEPATH, 'rb') as fp:
             assert storage.resource.file_supported(File(fp)) is False
 
         with open(NATURE_FILEPATH, 'rb') as fp:
@@ -660,7 +660,7 @@ class TestImageItemAttach(TestImageFieldResourceAttach):
 
     def test_unsupported_file(self):
         with self.get_resource() as resource:
-            with open(DOCUMENT_FILEPATH, 'rb') as fp:
+            with open(EXCEL_FILEPATH, 'rb') as fp:
                 with pytest.raises(exceptions.UnsupportedResource):
                     resource.attach(fp)
 

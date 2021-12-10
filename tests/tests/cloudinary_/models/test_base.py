@@ -13,11 +13,11 @@ class TestCloudinaryFieldFile:
     type = 'private'
     resource_type = 'raw'
 
-    upload_file = DOCUMENT_FILEPATH
-    resource_name = 'document'
-    resource_ext = '.pdf'
-    resource_size = 3028
-    resource_checksum = '93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e'
+    upload_file = EXCEL_FILEPATH
+    resource_name = 'table'
+    resource_ext = '.xls'
+    resource_size = 8704
+    resource_checksum = 'c9c8ad905aa5142731b1e8ab34d5862f871627fa7ad8005264494c2489d2061e'
 
     @classmethod
     def init_class(cls, storage):
@@ -127,7 +127,7 @@ class TestCloudinaryFieldFile:
 
     def test_read(self, storage):
         with storage.file.open() as fp:
-            assert fp.read(4) == b'%PDF'
+            assert fp.read(4) == b'\xd0\xcf\x11\xe0'
 
     def test_seek(self, storage):
         with storage.file.open() as fp:
