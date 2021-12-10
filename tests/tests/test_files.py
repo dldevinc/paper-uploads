@@ -17,7 +17,7 @@ class TestVariationFile:
     def init_class(storage):
         storage.resource = DummyVersatileImageResource()
         with open(NASA_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
 
         assert storage.resource.need_recut is True
         storage.resource.save()

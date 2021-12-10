@@ -53,7 +53,7 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
         storage.resource = CloudinaryFileItem()
         storage.resource.attach_to(storage.collection)
         with open(DOCUMENT_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
 
         yield
@@ -156,7 +156,7 @@ class TestFileItemRename(TestFileFieldResourceRename):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_cfile_name_{}.jpg'.format(storage.uid))
+            storage.resource.attach(fp, name='old_cfile_name_{}.jpg'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -216,7 +216,7 @@ class TestFileItemDelete(TestFileFieldResourceDelete):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -274,7 +274,7 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
         storage.resource = CloudinaryMediaItem()
         storage.resource.attach_to(storage.collection)
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
 
         yield
@@ -369,7 +369,7 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
     def test_file(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp)
+                resource.attach(fp)
 
             assert resource.basename == 'audio'
             assert resource.extension == 'mp3'
@@ -380,7 +380,7 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
                 file = File(fp, name='milky-way-nasa.jpg')
-                resource.attach_file(file)
+                resource.attach(file)
 
             assert resource.basename == 'milky-way-nasa'
             assert resource.extension == 'mp3'
@@ -390,7 +390,7 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
     def test_override_name(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp, name='overwritten.jpg')
+                resource.attach(fp, name='overwritten.jpg')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
@@ -399,7 +399,7 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
                 file = File(fp, name='not_used.png')
-                resource.attach_file(file, name='overwritten.jpg')
+                resource.attach(file, name='overwritten.jpg')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
@@ -407,7 +407,7 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
     def test_wrong_extension(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp, name='overwritten.gif')
+                resource.attach(fp, name='overwritten.gif')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
@@ -415,14 +415,14 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
     def test_file_position_at_end(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp)
+                resource.attach(fp)
                 assert fp.tell() == self.resource_size
 
     def test_unsupported_file(self):
         with self.get_resource() as resource:
             with open(NASA_FILEPATH, 'rb') as fp:
                 with pytest.raises(exceptions.UnsupportedResource):
-                    resource.attach_file(fp)
+                    resource.attach(fp)
 
 
 class TestMediaItemRename(TestFileFieldResourceRename):
@@ -437,7 +437,7 @@ class TestMediaItemRename(TestFileFieldResourceRename):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_cmedia_name_{}.mp3'.format(storage.uid))
+            storage.resource.attach(fp, name='old_cmedia_name_{}.mp3'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -500,7 +500,7 @@ class TestMediaItemDelete(TestFileFieldResourceDelete):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -564,7 +564,7 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
         storage.resource = CloudinaryImageItem()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
 
         yield
@@ -662,7 +662,7 @@ class TestImageItemAttach(TestImageFieldResourceAttach):
         with self.get_resource() as resource:
             with open(DOCUMENT_FILEPATH, 'rb') as fp:
                 with pytest.raises(exceptions.UnsupportedResource):
-                    resource.attach_file(fp)
+                    resource.attach(fp)
 
 
 class TestImageItemRename(TestImageFieldResourceRename):
@@ -677,7 +677,7 @@ class TestImageItemRename(TestImageFieldResourceRename):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_cimage_name_{}.jpg'.format(storage.uid))
+            storage.resource.attach(fp, name='old_cimage_name_{}.jpg'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -740,7 +740,7 @@ class TestImageItemDelete(TestImageFieldResourceDelete):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()

@@ -1,4 +1,5 @@
 import os
+import warnings
 from typing import Any, Dict, Iterable, Optional, Tuple
 
 from django.core.files import File
@@ -257,10 +258,10 @@ class FileResource(FileProxyMixin, Resource):
         """
         raise NotImplementedError
 
-    def attach_file(self, file: FileLike, name: str = None, **options):
+    def attach(self, file: FileLike, name: str = None, **options):
         """
         Присоединение файла к экземпляру ресурса.
-        В действительности, сохранение файла происходит в методе `_attach_file`.
+        В действительности, сохранение файла происходит в методе `_attach`.
         Не переопределяйте этот метод, если не уверены в том, что вы делаете.
 
         Если на данном этапе обнаруживается, что переданный файл не может
@@ -285,7 +286,7 @@ class FileResource(FileProxyMixin, Resource):
         if prepared_file.seekable():
             prepared_file.seek(0)
 
-        response = self._attach_file(prepared_file, **options)
+        attach_result = self._attach(prepared_file, **options)
 
         self.size = self.get_file_size()
         self.uploaded_at = now()
@@ -305,8 +306,16 @@ class FileResource(FileProxyMixin, Resource):
             instance=self,
             file=self.get_file(),
             options=options,
-            response=response,
+            response=attach_result,
         )
+
+    def attach_file(self, *args, **kwargs):
+        warnings.warn(
+            "attach_file() is deprecated in favor of attach()",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self.attach(*args, **kwargs)
 
     def _prepare_file(self, file: File, **options) -> File:
         """
@@ -314,8 +323,16 @@ class FileResource(FileProxyMixin, Resource):
         """
         return file
 
-    def _attach_file(self, file: File, **options):
+    def _attach(self, file: File, **options):
         raise NotImplementedError
+
+    def _attach_file(self, *args, **kwargs):
+        warnings.warn(
+            "_attach_file() is deprecated in favor of _attach()",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self._attach(*args, **kwargs)
 
     def rename_file(self, new_name: str, **options):
         """
@@ -405,7 +422,7 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
             return False
         return file.storage.exists(file.name)
 
-    def _attach_file(self, file: File, **options):
+    def _attach(self, file: File, **options):
         self.get_file().save(file.name, file, save=False)
 
         self.basename = helpers.get_filename(file.name)
@@ -532,8 +549,8 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
             else:
                 self.recut()
 
-    def attach_file(self, file: FileLike, name: str = None, **options):
-        super().attach_file(file, name=name, **options)  # noqa: F821
+    def attach(self, file: FileLike, name: str = None, **options):
+        super().attach(file, name=name, **options)  # noqa: F821
         self.need_recut = True
         self._setup_variation_files()
 

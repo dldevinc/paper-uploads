@@ -325,7 +325,7 @@ class TestFileResourceSignals:
             # ensure original file
             assert file.size == 9711423
 
-            # extra parameters passed to `attach_file`
+            # extra parameters passed to `attach()`
             assert options == {
                 'key1': 'value1',
                 'key2': 'value2'
@@ -335,7 +335,7 @@ class TestFileResourceSignals:
 
         with open(NASA_FILEPATH, 'rb') as fp:
             assert signal_fired is False
-            resource.attach_file(fp, key1='value1', key2='value2')
+            resource.attach(fp, key1='value1', key2='value2')
             assert signal_fired is True
 
         resource.delete_file()
@@ -363,13 +363,13 @@ class TestFileResourceSignals:
             # ensure modified file
             assert file.size == 28
 
-            # extra parameters passed to `attach_file`
+            # extra parameters passed to `attach()`
             assert options == {
                 'key1': 'value1',
                 'key2': 'value2'
             }
 
-            # result of `_attach_file` method
+            # result of `_attach()` method
             assert response == {
                 'success': True,
             }
@@ -378,7 +378,7 @@ class TestFileResourceSignals:
 
         with open(NASA_FILEPATH, 'rb') as fp:
             assert signal_fired is False
-            resource.attach_file(fp, key1='value1', key2='value2')
+            resource.attach(fp, key1='value1', key2='value2')
             assert signal_fired is True
 
         resource.delete_file()
@@ -401,7 +401,7 @@ class TestFileResourceSignals:
         signals.post_rename_file.connect(post_signal_handler)
 
         with open(NASA_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
+            resource.attach(fp)
 
         orig_name = resource.name
         orig_basename = resource.basename
@@ -442,7 +442,7 @@ class TestFileResourceSignals:
         signals.pre_rename_file.connect(signal_handler)
 
         with open(NASA_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
+            resource.attach(fp)
 
         assert signal_fired is False
         resource.rename_file('new name.png', key1='value1', key2='value2')
@@ -479,7 +479,7 @@ class TestFileResourceSignals:
         signals.post_rename_file.connect(signal_handler)
 
         with open(NASA_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
+            resource.attach(fp)
 
         assert signal_fired is False
         resource.rename_file('new name.png', key1='value1', key2='value2')
@@ -501,7 +501,7 @@ class TestFileResourceSignals:
         signals.pre_delete_file.connect(signal_handler)
 
         with open(NASA_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
+            resource.attach(fp)
 
         assert signal_fired is False
         resource.delete_file()
@@ -533,7 +533,7 @@ class TestFileResourceSignals:
         signals.post_delete_file.connect(signal_handler)
 
         with open(NASA_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
+            resource.attach(fp)
 
         assert signal_fired is False
         resource.delete_file(key1='value1', key2='value2')
@@ -555,7 +555,7 @@ class TestFileFieldResource(TestFileResource):
     def init_class(cls, storage):
         storage.resource = DummyFileFieldResource()
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
         yield
         storage.resource.delete_file()
@@ -692,7 +692,7 @@ class TestFileFieldResourceAttach:
     def test_file(self):
         with self.get_resource() as resource:
             with open(NASA_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp)
+                resource.attach(fp)
 
             assert resource.basename == 'milky-way-nasa'
             assert resource.extension == 'jpg'
@@ -703,7 +703,7 @@ class TestFileFieldResourceAttach:
         with self.get_resource() as resource:
             with open(NASA_FILEPATH, 'rb') as fp:
                 file = File(fp, name='milky-way-nasa.jpg')
-                resource.attach_file(file)
+                resource.attach(file)
 
             assert resource.basename == 'milky-way-nasa'
             assert resource.extension == 'jpg'
@@ -713,7 +713,7 @@ class TestFileFieldResourceAttach:
     def test_override_name(self):
         with self.get_resource() as resource:
             with open(NASA_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp, name='overwritten.jpg')
+                resource.attach(fp, name='overwritten.jpg')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'jpg'
@@ -722,7 +722,7 @@ class TestFileFieldResourceAttach:
         with self.get_resource() as resource:
             with open(NASA_FILEPATH, 'rb') as fp:
                 file = File(fp, name='not_used.png')
-                resource.attach_file(file, name='overwritten.jpg')
+                resource.attach(file, name='overwritten.jpg')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'jpg'
@@ -730,7 +730,7 @@ class TestFileFieldResourceAttach:
     def test_wrong_extension(self):
         with self.get_resource() as resource:
             with open(NASA_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp, name='overwritten.gif')
+                resource.attach(fp, name='overwritten.gif')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'gif'
@@ -738,7 +738,7 @@ class TestFileFieldResourceAttach:
     def test_file_position_at_end(self):
         with self.get_resource() as resource:
             with open(NASA_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp)
+                resource.attach(fp)
                 assert fp.tell() == self.resource_size
 
 
@@ -750,7 +750,7 @@ class TestFileFieldResourceRename:
     def init_class(cls, storage):
         storage.resource = cls.resource_class()
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -801,7 +801,7 @@ class TestFileFieldResourceDelete:
     def init_class(cls, storage):
         storage.resource = cls.resource_class()
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -892,7 +892,7 @@ class TestImageFieldResource(TestFileFieldResource):
             description='Calliphora is a genus of blow flies, also known as bottle flies',
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
         yield
         storage.resource.delete_file()
@@ -967,7 +967,7 @@ class TestImageFieldResourceAttach(TestFileFieldResourceAttach):
     def test_wrong_extension(self):
         with self.get_resource() as resource:
             with open(NASA_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp, name='overwritten.gif')
+                resource.attach(fp, name='overwritten.gif')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'jpg'  # extension detected by content
@@ -1003,7 +1003,7 @@ class TestVersatileImageResource(TestImageFieldResource):
             description='Calliphora is a genus of blow flies, also known as bottle flies',
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
 
         yield
@@ -1081,7 +1081,7 @@ class TestImageAttach(TestImageFieldResourceAttach):
     def test_need_recut(self):
         with self.get_resource() as resource:
             with open(NASA_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp)
+                resource.attach(fp)
 
             assert resource.need_recut is True
 
@@ -1094,7 +1094,7 @@ class TestImageRename(TestImageFieldResourceRename):
     def init_class(cls, storage):
         storage.resource = DummyVersatileImageResource()
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -1165,7 +1165,7 @@ class TestImageDelete(TestImageFieldResourceDelete):
     def init_class(cls, storage):
         storage.resource = cls.resource_class()
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -1221,7 +1221,7 @@ class TestImageResourceVariations:
     def test_variation_attributes_after_delete(self):
         resource = self.resource_class()
         with open(NASA_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
+            resource.attach(fp)
         resource.delete_file()
 
         with pytest.raises(AttributeError):
@@ -1230,7 +1230,7 @@ class TestImageResourceVariations:
     def test_variation_files_after_delete(self):
         resource = self.resource_class()
         with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
+            resource.attach(fp)
         resource.delete_file()
 
         assert list(resource.variation_files()) == []
@@ -1238,7 +1238,7 @@ class TestImageResourceVariations:
     def test_reattach_file(self):
         resource = self.resource_class()
         with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp, name='initial.jpg')
+            resource.attach(fp, name='initial.jpg')
 
         assert resource.desktop.name == 'versatile_image/initial.desktop.jpg'
         assert resource._variation_files_cache == {
@@ -1248,7 +1248,7 @@ class TestImageResourceVariations:
 
         os.remove(resource.file.path)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp, name='reattached.jpg')
+            resource.attach(fp, name='reattached.jpg')
 
         assert resource.desktop.name == 'versatile_image/reattached.desktop.jpg'
         assert resource._variation_files_cache == {
@@ -1261,7 +1261,7 @@ class TestImageResourceVariations:
     def test_delete_file(self):
         resource = self.resource_class()
         with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
+            resource.attach(fp)
         resource.save()
 
         source_path = resource.file.path
@@ -1284,7 +1284,7 @@ class TestImageResourceVariations:
     def test_recut(self):
         resource = self.resource_class()
         with open(NATURE_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
+            resource.attach(fp)
         resource.save()
 
         os.remove(resource.desktop.path)
@@ -1306,7 +1306,7 @@ class TestImageResourceVariations:
     def test_variation_created_signal(self):
         resource = self.resource_class()
         with open(NATURE_FILEPATH, 'rb') as fp:
-            resource.attach_file(fp)
+            resource.attach(fp)
 
         signal_fired_times = 0
         signals_fired = {

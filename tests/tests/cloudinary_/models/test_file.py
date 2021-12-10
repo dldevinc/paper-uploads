@@ -42,7 +42,7 @@ class TestCloudinaryFile(BacklinkModelMixin, CloudinaryFileResource):
             owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
         yield
         storage.resource.delete_file()
@@ -116,7 +116,7 @@ class TestCloudinaryFileRename(BacklinkModelMixin, TestFileFieldResourceRename):
             owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_file_name_{}.jpg'.format(storage.uid))
+            storage.resource.attach(fp, name='old_file_name_{}.jpg'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -182,7 +182,7 @@ class TestCloudinaryFileDelete(BacklinkModelMixin, TestFileFieldResourceDelete):
             owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()

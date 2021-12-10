@@ -27,7 +27,7 @@ class TestTemplateTags:
             owner_fieldname='image'
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
         yield
         storage.resource.delete_file()

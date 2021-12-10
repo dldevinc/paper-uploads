@@ -326,7 +326,7 @@ class TestDeleteFileView:
         storage.item = CustomImageItem()
         storage.item.attach_to(storage.collection)
         with open(NASA_FILEPATH, "rb") as fp:
-            storage.item.attach_file(fp)
+            storage.item.attach(fp)
         storage.item.save()
 
         yield
@@ -436,7 +436,7 @@ class TestChangeFileView:
         storage.item = CustomImageItem()
         storage.item.attach_to(storage.collection)
         with open(NASA_FILEPATH, "rb") as fp:
-            storage.item.attach_file(fp)
+            storage.item.attach(fp)
         storage.item.save()
 
         yield
@@ -554,21 +554,21 @@ class TestSortItemsView:
         storage.itemA = ImageItem()
         storage.itemA.attach_to(storage.collection)
         with open(NASA_FILEPATH, "rb") as fp:
-            storage.itemA.attach_file(fp)
+            storage.itemA.attach(fp)
         storage.itemA.save()
 
         # item 2
         storage.itemB = ImageItem()
         storage.itemB.attach_to(storage.collection)
         with open(NATURE_FILEPATH, "rb") as fp:
-            storage.itemB.attach_file(fp)
+            storage.itemB.attach(fp)
         storage.itemB.save()
 
         # item 3
         storage.itemC = ImageItem()
         storage.itemC.attach_to(storage.collection)
         with open(CALLIPHORA_FILEPATH, "rb") as fp:
-            storage.itemC.attach_file(fp)
+            storage.itemC.attach(fp)
         storage.itemC.save()
 
         yield

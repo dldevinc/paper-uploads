@@ -557,7 +557,7 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
     @classmethod
     def file_supported(cls, file: File) -> bool:
         mimetype = magic.from_buffer(file.read(1024), mime=True)
-        file.seek(0)  # correct file position after mimetype detection
+        file.seek(0)  # reset file position after mimetype detection
         basetype, subtype = mimetype.split("/", 1)
         return basetype == "image"
 

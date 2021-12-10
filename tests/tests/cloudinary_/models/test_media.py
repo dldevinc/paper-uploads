@@ -44,7 +44,7 @@ class TestCloudinaryMedia(BacklinkModelMixin, CloudinaryFileResource):
             owner_fieldname=cls.owner_fieldname
         )
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
         yield
         storage.resource.delete_file()
@@ -114,7 +114,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
     def test_file(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp)
+                resource.attach(fp)
 
             assert resource.basename == 'audio'
             assert resource.extension == 'mp3'
@@ -125,7 +125,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
                 file = File(fp, name='audio.ogg')
-                resource.attach_file(file)
+                resource.attach(file)
 
             assert resource.basename == 'audio'
             assert resource.extension == 'mp3'
@@ -135,7 +135,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
     def test_override_name(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp, name='overwritten.ogg')
+                resource.attach(fp, name='overwritten.ogg')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
@@ -144,7 +144,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
                 file = File(fp, name='not_used.ogg')
-                resource.attach_file(file, name='overwritten.mp3')
+                resource.attach(file, name='overwritten.mp3')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
@@ -152,7 +152,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
     def test_wrong_extension(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp, name='overwritten.gif')
+                resource.attach(fp, name='overwritten.gif')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
@@ -160,14 +160,14 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
     def test_file_position_at_end(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp)
+                resource.attach(fp)
                 assert fp.tell() == self.resource_size
 
     def test_unsupported_file(self):
         with self.get_resource() as resource:
             with open(NASA_FILEPATH, 'rb') as fp:
                 with pytest.raises(exceptions.UnsupportedResource):
-                    resource.attach_file(fp)
+                    resource.attach(fp)
 
 
 class TestCloudinaryMediaRename(BacklinkModelMixin, TestFileFieldResourceRename):
@@ -187,7 +187,7 @@ class TestCloudinaryMediaRename(BacklinkModelMixin, TestFileFieldResourceRename)
             owner_fieldname=cls.owner_fieldname
         )
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_media_name_{}.mp3'.format(storage.uid))
+            storage.resource.attach(fp, name='old_media_name_{}.mp3'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -256,7 +256,7 @@ class TestCloudinaryMediaDelete(BacklinkModelMixin, TestFileFieldResourceDelete)
             owner_fieldname=cls.owner_fieldname
         )
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.mp3')
+            storage.resource.attach(fp, name='old_name.mp3')
         storage.resource.save()
 
         file = storage.resource.get_file()

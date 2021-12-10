@@ -44,7 +44,7 @@ class TestCloudinaryImage(CloudinaryFileResource):
             owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
         yield
         storage.resource.delete_file()
@@ -120,7 +120,7 @@ class TestCloudinaryImageAttach(TestImageFieldResourceAttach):
         with self.get_resource() as resource:
             with open(DOCUMENT_FILEPATH, 'rb') as fp:
                 with pytest.raises(exceptions.UnsupportedResource):
-                    resource.attach_file(fp)
+                    resource.attach(fp)
 
 
 class TestCloudinaryImageRename(TestImageFieldResourceRename):
@@ -139,7 +139,7 @@ class TestCloudinaryImageRename(TestImageFieldResourceRename):
             owner_fieldname=cls.owner_fieldname
         )
         with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_image_name_{}.jpg'.format(storage.uid))
+            storage.resource.attach(fp, name='old_image_name_{}.jpg'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -206,7 +206,7 @@ class TestCloudinaryImageDelete(TestImageFieldResourceDelete):
             owner_fieldname=cls.owner_fieldname
         )
         with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()

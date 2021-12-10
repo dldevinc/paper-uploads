@@ -31,7 +31,7 @@ class UploadFileView(UploadFileViewBase):
         if isinstance(instance, BacklinkModelMixin):
             owner_field = instance.get_owner_field()
 
-        instance.attach_file(file)
+        instance.attach(file)
 
         try:
             instance.full_clean()

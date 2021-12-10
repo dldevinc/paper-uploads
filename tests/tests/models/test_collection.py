@@ -105,31 +105,31 @@ class TestCollection:
         file_item = FileItem()
         file_item.attach_to(storage.file_collection)
         with open(DOCUMENT_FILEPATH, 'rb') as fp:
-            file_item.attach_file(fp, name='file_c1.pdf')
+            file_item.attach(fp, name='file_c1.pdf')
         file_item.save()
 
         image_item = ImageItem()
         image_item.attach_to(storage.image_collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            image_item.attach_file(fp, name='image_c2.jpg')
+            image_item.attach(fp, name='image_c2.jpg')
         image_item.save()
 
         file_item = FileItem()
         file_item.attach_to(storage.global_collection)
         with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            file_item.attach_file(fp, name='file_c3.jpg')
+            file_item.attach(fp, name='file_c3.jpg')
         file_item.save()
 
         image_item = ImageItem()
         image_item.attach_to(storage.global_collection)
         with open(NASA_FILEPATH, 'rb') as fp:
-            image_item.attach_file(fp, name='image_c3.jpg')
+            image_item.attach(fp, name='image_c3.jpg')
         image_item.save()
 
         svg_item = SVGItem()
         svg_item.attach_to(storage.global_collection)
         with open(MEDITATION_FILEPATH, 'rb') as fp:
-            svg_item.attach_file(fp, name='svg_c3.svg')
+            svg_item.attach(fp, name='svg_c3.svg')
         svg_item.save()
 
         yield
@@ -290,7 +290,7 @@ class TestDeleteCustomImageCollection:
         image_item = CustomImageItem()
         image_item.attach_to(collection)
         with open(NASA_FILEPATH, 'rb') as fp:
-            image_item.attach_file(fp, name='image_del.jpg')
+            image_item.attach(fp, name='image_del.jpg')
         image_item.save()
 
         return collection
@@ -379,7 +379,7 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
         storage.resource = FileItem()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
 
         yield
@@ -465,7 +465,7 @@ class TestFileItemRename(TestFileFieldResourceRename):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -492,7 +492,7 @@ class TestFileItemDelete(TestFileFieldResourceDelete):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -526,7 +526,7 @@ class TestFileItemExists:
         storage.resource = FileItem()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
 
         yield
@@ -563,7 +563,7 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
         storage.resource = SVGItem()
         storage.resource.attach_to(storage.collection)
         with open(MEDITATION_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
 
         yield
@@ -667,7 +667,7 @@ class TestSVGItemRename(TestFileFieldResourceRename):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(MEDITATION_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -694,7 +694,7 @@ class TestSVGItemDelete(TestFileFieldResourceDelete):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(MEDITATION_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -728,7 +728,7 @@ class TestSVGItemExists:
         storage.resource = SVGItem()
         storage.resource.attach_to(storage.collection)
         with open(MEDITATION_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
 
         yield
@@ -765,7 +765,7 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
         storage.resource = ImageItem()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
 
         yield
@@ -887,7 +887,7 @@ class TestImageItemAttach(TestImageAttach):
         resource = self.resource_class()
         with pytest.raises(exceptions.UnsupportedResource):
             with open(AUDIO_FILEPATH, "rb") as fp:
-                resource.attach_file(fp)
+                resource.attach(fp)
 
 
 class TestImageItemRename(TestImageRename):
@@ -901,7 +901,7 @@ class TestImageItemRename(TestImageRename):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -962,7 +962,7 @@ class TestImageItemDelete(TestImageDelete):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -1015,7 +1015,7 @@ class TestImageItemExists:
         storage.resource = ImageItem()
         storage.resource.attach_to(storage.collection)
         with open(NASA_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
 
         yield

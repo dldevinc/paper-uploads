@@ -231,7 +231,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
 
         return options
 
-    def _attach_file(self, file: File, **options):
+    def _attach(self, file: File, **options):
         cloudinary_options = self.get_cloudinary_options()
         cloudinary_options.update(options.get("cloudinary", {}))
 

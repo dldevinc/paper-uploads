@@ -60,7 +60,7 @@ class DummyFileResource(FileResource):
     def file_exists(self) -> bool:
         return True
 
-    def _attach_file(self, file: File, **options):
+    def _attach(self, file: File, **options):
         self.__filename = file.name
         self.basename = helpers.get_filename(file.name)
         self.extension = helpers.get_extension(file.name)
