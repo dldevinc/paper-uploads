@@ -13,15 +13,16 @@ from app.models.site import (
     CloudinaryFileCollection,
     CloudinaryMediaCollection,
 )
+from paper_uploads import exceptions
 from paper_uploads.cloudinary.models import (
     CloudinaryFileItem,
     CloudinaryImageItem,
     CloudinaryMediaItem,
 )
-from paper_uploads.exceptions import UnsupportedFileError
 
 from ... import utils
 from ...dummy import *
+from ...models.test_collection import CollectionItemMixin
 from ...models.test_dummy import (
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
@@ -32,7 +33,6 @@ from ...models.test_dummy import (
     TestImageFieldResourceEmpty,
     TestImageFieldResourceRename,
 )
-from ...models.test_collection import CollectionItemMixin
 from .test_base import CloudinaryFileResource
 
 
@@ -421,7 +421,7 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
     def test_unsupported_file(self):
         with self.get_resource() as resource:
             with open(NASA_FILEPATH, 'rb') as fp:
-                with pytest.raises(UnsupportedFileError):
+                with pytest.raises(exceptions.UnsupportedResource):
                     resource.attach_file(fp)
 
 
@@ -661,7 +661,7 @@ class TestImageItemAttach(TestImageFieldResourceAttach):
     def test_unsupported_file(self):
         with self.get_resource() as resource:
             with open(DOCUMENT_FILEPATH, 'rb') as fp:
-                with pytest.raises(UnsupportedFileError):
+                with pytest.raises(exceptions.UnsupportedResource):
                     resource.attach_file(fp)
 
 

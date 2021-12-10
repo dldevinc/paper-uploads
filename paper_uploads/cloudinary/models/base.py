@@ -251,7 +251,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
             )
         except cloudinary.exceptions.Error as e:
             if e.args and "Unsupported file type" in e.args[0]:
-                raise exceptions.UnsupportedFileError(
+                raise exceptions.UnsupportedResource(
                     _("File `%s` is not an image") % file.name
                 )
             else:

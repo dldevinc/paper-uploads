@@ -1,3 +1,6 @@
+import warnings
+
+
 class InvalidParameter(Exception):
     def __init__(self, value):
         self.value = value
@@ -34,14 +37,20 @@ class InvalidChunking(Exception):
     pass
 
 
-class UnsupportedFileError(Exception):
-    """
-    Исключение, вызываемое внутри метода `attach_file` при обнаружении
-    ситуации, когда файл не может быть представлен текущей моделью.
-    """
+class UnsupportedResource(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(message)
+
+
+class UnsupportedFileError(UnsupportedResource):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "UnsupportedFileError is deprecated in favor of UnsupportedResource",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        super().__init__(*args, **kwargs)
 
 
 class FileNotFoundError(Exception):

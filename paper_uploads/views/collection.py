@@ -138,7 +138,7 @@ class UploadFileView(UploadFileViewBase):
 
             try:
                 item.attach_file(file)
-            except exceptions.UnsupportedFileError:
+            except exceptions.UnsupportedResource:
                 continue
 
             try:

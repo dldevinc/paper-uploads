@@ -8,8 +8,8 @@ from django.core.files import File
 from django.utils.crypto import get_random_string
 
 from app.models import CloudinaryMediaExample
+from paper_uploads import exceptions
 from paper_uploads.cloudinary.models import CloudinaryMedia
-from paper_uploads.exceptions import UnsupportedFileError
 
 from ... import utils
 from ...dummy import *
@@ -166,7 +166,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
     def test_unsupported_file(self):
         with self.get_resource() as resource:
             with open(NASA_FILEPATH, 'rb') as fp:
-                with pytest.raises(UnsupportedFileError):
+                with pytest.raises(exceptions.UnsupportedResource):
                     resource.attach_file(fp)
 
 

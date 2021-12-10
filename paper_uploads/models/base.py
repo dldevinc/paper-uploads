@@ -265,7 +265,7 @@ class FileResource(FileProxyMixin, Resource):
 
         Если на данном этапе обнаруживается, что переданный файл не может
         быть представлен этой моделью, необходимо вызвать исключение
-        UnsupportedFileError.
+        UnsupportedResource.
         """
         if not isinstance(file, File):
             name = name or getattr(file, "name", None)
@@ -466,7 +466,7 @@ class ImageFileResourceMixin(models.Model):
         try:
             image = Image.open(file)
         except OSError:
-            raise exceptions.UnsupportedFileError(
+            raise exceptions.UnsupportedResource(
                 _("File `%s` is not an image") % file.name
             )
         else:

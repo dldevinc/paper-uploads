@@ -128,7 +128,7 @@ class UploadFileViewBase(AjaxView):
 
         try:
             return self.wrap(self.handle)(file)
-        except exceptions.UnsupportedFileError as e:
+        except exceptions.UnsupportedResource as e:
             return self.error_response(e.message)
         finally:
             file.close()

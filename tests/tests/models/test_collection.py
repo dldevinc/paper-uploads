@@ -883,6 +883,12 @@ class TestImageItemAttach(TestImageAttach):
             resource.delete_file()
             collection.delete()
 
+    def test_unsupported_file(self):
+        resource = self.resource_class()
+        with pytest.raises(exceptions.UnsupportedResource):
+            with open(AUDIO_FILEPATH, "rb") as fp:
+                resource.attach_file(fp)
+
 
 class TestImageItemRename(TestImageRename):
     resource_class = ImageItem
