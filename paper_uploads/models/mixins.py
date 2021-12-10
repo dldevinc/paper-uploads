@@ -188,6 +188,10 @@ class FileFieldProxyMixin:
 
 
 class EditableResourceMixin:
+    """
+    Добавление поля сос ссылкой на класс формы, через которую
+    следует редактировать ресурс в интерфейсе администратора.
+    """
     change_form_class: Optional[str] = None
 
     @classmethod
