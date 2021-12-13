@@ -6,8 +6,8 @@ import allSettled from "promise.allsettled";
 import deepmerge from "deepmerge";
 import EventEmitter from "wolfy87-eventemitter";
 import Mustache from "mustache";
-import {Uploader} from "./uploader";
-import * as utils from "./utils";
+import {Uploader} from "../uploader.js";
+import * as utils from "../utils.js";
 
 // PaperAdmin API
 const Sortable = window.paperAdmin.Sortable;
@@ -566,22 +566,7 @@ class PermanentCollectionItemBase extends CollectionItemBase {
 }
 
 
-class FileItem extends PermanentCollectionItemBase {
-
-}
-
-
-class ImageItem extends PermanentCollectionItemBase {
-
-}
-
-
-class SVGItem extends PermanentCollectionItemBase {
-
-}
-
-
-class MediaItem extends PermanentCollectionItemBase {
+class CollectionItem extends PermanentCollectionItemBase {
 
 }
 
@@ -607,16 +592,7 @@ class Collection extends EventEmitter {
         itemTemplatePattern: ".collection__{}-item-template",
 
         // JSON с данными о элементах коллекции
-        dataJSON: ".collection--data",
-
-        // карта соответствий типа элемента и JS-класса
-        itemClasses: {
-            preloader: PreloaderItem,
-            file: FileItem,
-            image: ImageItem,
-            svg: SVGItem,
-            media: MediaItem,
-        }
+        dataJSON: ".collection--data"
     }
 
     static STATUS = {
@@ -860,8 +836,11 @@ class Collection extends EventEmitter {
      * @returns {CollectionItemBase}
      */
     initItem(itemType, element, options) {
-        const itemClass = this.config.itemClasses[itemType];
-        return new itemClass(element, this, options);
+        if (itemType === "preloader") {
+            return new PreloaderItem(element, this, options);
+        } else {
+            return new CollectionItem(element, this, options);
+        }
     }
 
     /**
@@ -1357,6 +1336,10 @@ class CollectionWidget extends Widget {
 }
 
 
-const widget = new CollectionWidget();
-widget.observe(".collection");
-widget.initAll(".collection");
+export {
+    CollectionItemBase,
+    PreloaderItem,
+    PermanentCollectionItemBase,
+    Collection,
+    CollectionWidget
+}

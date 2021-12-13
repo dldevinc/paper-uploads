@@ -178,6 +178,10 @@
     box-sizing: content-box;
   }
 
+  &__buttons {
+
+  }
+
 
   &--empty &__items {
     display: none;
@@ -188,9 +192,13 @@
     display: none;
   }
 
-  // скрытие остальных кнопок на пустом виджете
-  &--empty &__upload-item-button,
-  &--empty &__delete-collection-button {
+  // скрытие на пустом виджете всех кнопок, кроме кнопки создания коллекции
+  &--empty &__buttons button:not(&__create-collection-button){
+    display: none;
+  }
+
+  // показ кнопки создания коллекции только на пустом виджете
+  &:not(&--empty) &__create-collection-button {
     display: none;
   }
 
@@ -199,10 +207,5 @@
     .sortable-handler {
       cursor: default;
     }
-  }
-
-  // показ кнопки создания коллекции только на пустом виджете
-  &:not(&--empty) &__create-collection-button {
-    display: none;
   }
 }

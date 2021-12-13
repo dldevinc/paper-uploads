@@ -25,26 +25,30 @@
     {% endfor %}
   </div>
 
-  <button type="button" class="collection__create-collection-button btn btn-success"
-          data-toggle="tooltip" data-placement="top" data-trigger="hover"
-          data-html="true" title="{{ _("Create collection") }}">
-    <i class="fa fa-fw fa-plus"></i>
-    {{ _("Create collection") }}
-  </button>
+  <div class="collection__buttons">
+    {% block buttons %}
+      <button type="button" class="collection__create-collection-button btn btn-success"
+              data-toggle="tooltip" data-placement="top" data-trigger="hover"
+              data-html="true" title="{{ _("Create collection") }}">
+        <i class="fa fa-fw fa-plus"></i>
+        {{ _("Create collection") }}
+      </button>
 
-  <button type="button" class="collection__upload-item-button btn btn-success"
-          data-toggle="tooltip" data-placement="top" data-trigger="hover"
-          data-html="true" title="{{ _("Select files") }}">
-    <i class="fa fa-fw fa-folder-open"></i>
-    {{ _("Select files") }}
-  </button>
+      <button type="button" class="collection__upload-item-button btn btn-success"
+              data-toggle="tooltip" data-placement="top" data-trigger="hover"
+              data-html="true" title="{{ _("Select files") }}">
+        <i class="fa fa-fw fa-folder-open"></i>
+        {{ _("Select files") }}
+      </button>
 
-  <button type="button" class="collection__delete-collection-button btn btn-danger"
-          data-toggle="tooltip" data-placement="top" data-trigger="hover"
-          data-html="true" title="{{ _("Delete collection") }}">
-    <i class="fa fa-fw fa-trash"></i>
-    {{ _("Delete collection") }}
-  </button>
+      <button type="button" class="collection__delete-collection-button btn btn-danger"
+              data-toggle="tooltip" data-placement="top" data-trigger="hover"
+              data-html="true" title="{{ _("Delete collection") }}">
+        <i class="fa fa-fw fa-trash"></i>
+        {{ _("Delete collection") }}
+      </button>
+    {% endblock buttons %}
+  </div>
 
   {% if limitations %}
     <div class="image-uploader__limitations small text-muted mt-2">

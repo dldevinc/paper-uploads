@@ -1,7 +1,7 @@
 /* global gettext */
 
 import EventEmitter from "wolfy87-eventemitter";
-import {Dropzone} from "./dropzone";
+import {Dropzone} from "./dropzone.js";
 
 
 /**

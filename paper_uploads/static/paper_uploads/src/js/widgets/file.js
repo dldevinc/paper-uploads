@@ -1,8 +1,8 @@
 /* global gettext */
 
 import EventEmitter from "wolfy87-eventemitter";
-import {Uploader} from "./uploader";
-import * as utils from "./utils";
+import {Uploader} from "../uploader.js";
+import * as utils from "../utils.js";
 
 // PaperAdmin API
 const Widget = window.paperAdmin.Widget;
@@ -549,6 +549,7 @@ class FileUploaderWidget extends Widget {
 }
 
 
-const widget = new FileUploaderWidget();
-widget.observe(".file-uploader");
-widget.initAll(".file-uploader");
+export {
+    FileUploader,
+    FileUploaderWidget
+}
