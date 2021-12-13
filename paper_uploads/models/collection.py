@@ -363,7 +363,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=Coll
         }
 
 
-class CollectionFileItemBase(CollectionItemBase, FileFieldResource, metaclass=CollectionItemMetaBase):
+class CollectionFileItemBase(CollectionItemBase, FileFieldResource):
     """
     Базовый класс элемента галереи, содержащего файл.
     """
