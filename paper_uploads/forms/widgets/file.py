@@ -8,7 +8,7 @@ from .mixins import DisplayFileLimitationsMixin
 
 
 class FileWidget(DisplayFileLimitationsMixin, FileResourceWidgetBase):
-    template_name = "paper_uploads/file_widget.html"
+    template_name = "paper_uploads/widgets/file.html"
 
     @property
     def media(self):

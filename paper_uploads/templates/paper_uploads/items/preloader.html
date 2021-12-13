@@ -2,31 +2,38 @@
      style="width: {{ preview_width }}px"
      data-uuid="{% verbatim %}{{ uuid }}{% endverbatim %}"
      data-order="{% verbatim %}{{ order }}{% endverbatim %}">
+
   <div class="collection-item__header">
-    <div class="collection-item__caption text-muted" title="{% verbatim %}{{ name }}{% endverbatim %}">
-      {% verbatim %}{{ name }}{% endverbatim %}
-    </div>
-    <div>
-      <button type="button" class="collection-item__cancel-button"
-              data-toggle="tooltip" data-placement="top" data-trigger="hover"
-              data-html="true" title="{{ _("Cancel upload") }}">
-        <i class="fa fa-fw fa-times text-danger"></i>
-      </button>
-    </div>
+    {% block header %}
+      <div class="collection-item__caption text-muted" title="{% verbatim %}{{ name }}{% endverbatim %}">
+        {% verbatim %}{{ name }}{% endverbatim %}
+      </div>
+      <div>
+        <button type="button" class="collection-item__cancel-button"
+                data-toggle="tooltip" data-placement="top" data-trigger="hover"
+                data-html="true" title="{{ _("Cancel upload") }}">
+          <i class="fa fa-fw fa-times text-danger"></i>
+        </button>
+      </div>
+    {% endblock header %}
   </div>
 
   <div class="collection-item__preview" style="width: {{ preview_width }}px; height: {{ preview_height }}px">
-    <div class="progress">
-      <div class="progress-bar progress-bar-animated progress-bar-striped"
-           role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
-           style="height: 0">
+    {% block preview %}
+      <div class="progress">
+        <div class="progress-bar progress-bar-animated progress-bar-striped"
+             role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+             style="height: 0">
+        </div>
       </div>
-    </div>
+    {% endblock preview %}
   </div>
 
   <div class="collection-item__footer">
-    <div class="btn-square-group d-flex align-items-center">
-
-    </div>
+    {% block footer %}
+      <div class="btn-square-group d-flex align-items-center">
+        {% block buttons %}{% endblock buttons %}
+      </div>
+    {% endblock footer %}
   </div>
 </div>
