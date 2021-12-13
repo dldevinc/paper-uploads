@@ -1,13 +1,13 @@
 import os
 import time
 from functools import lru_cache
-from typing import Any, Dict, Iterable, Iterator, List, Set, Tuple
+from typing import Any, Dict, Generator, Iterable, Iterator, List, Set, Tuple, Type
 
 from anytree import Node
 from django.apps import apps
 from django.core import exceptions
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import DEFAULT_DB_ALIAS
+from django.db import DEFAULT_DB_ALIAS, models
 
 from .conf import settings
 from .logging import logger
@@ -240,6 +240,15 @@ def run_validators(value: FileLike, validators: Iterable[Any]):
 
     if errors:
         raise exceptions.ValidationError(errors)
+
+
+def iterate_parent_models(model: models.Model) -> Generator[Type[models.Model], Any, None]:
+    """
+    Итерация модели и её родительских классов-моделей.
+    """
+    for klass in model.__mro__:
+        if issubclass(klass, models.Model):
+            yield klass
 
 
 def _get_item_types(cls):

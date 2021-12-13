@@ -4,6 +4,7 @@ from django.contrib.admin.sites import NotRegistered
 from django.urls import reverse_lazy
 
 from ...conf import settings
+from ...helpers import iterate_parent_models
 from .base import FileResourceWidgetBase
 from .mixins import DisplayFileLimitationsMixin
 
@@ -39,8 +40,7 @@ class CollectionWidget(DisplayFileLimitationsMixin, FileResourceWidgetBase):
             }
         )
 
-        # proxy-models will use same URLs, except they have their own ModelAdmin
-        for model_class in (self.model, self.model._meta.concrete_model):
+        for model_class in iterate_parent_models(self.model):
             if site.is_registered(model_class):
                 info = model_class._meta.app_label, model_class._meta.model_name
                 context.update(
