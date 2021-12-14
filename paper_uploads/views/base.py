@@ -269,8 +269,8 @@ class ChangeFileViewBase(FormMixin, AjaxView):
     def form_valid(self, form) -> HttpResponse:
         try:
             instance = form.save()
-        except exceptions.FileNotFoundError as e:
-            error = _("File not found: %s") % e.name
+        except FileNotFoundError as e:
+            error = _("File not found: %s") % e.args[0] if e.args else "???"
             logger.debug(error)
             return self.error_response(error)
 

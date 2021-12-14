@@ -6,7 +6,6 @@ from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS, models
 from django.db.models.fields import Field
 
-from ... import exceptions
 from ...models.base import Resource, VersatileImageResourceMixin
 from ...models.collection import CollectionBase
 from ...models.fields.collection import CollectionItem
@@ -120,7 +119,7 @@ class Command(BaseCommand):
             for item in collection.get_items(item_type).iterator():
                 try:
                     item.recut(names=variations)
-                except exceptions.FileNotFoundError:
+                except FileNotFoundError:
                     self.stderr.write(
                         "File missing for '{}.{}' (ID: {item.pk})".format(
                             type(item)._meta.app_label,
@@ -170,7 +169,7 @@ class Command(BaseCommand):
 
             try:
                 field.recut(names=variations)
-            except exceptions.FileNotFoundError:
+            except FileNotFoundError:
                 self.stderr.write(
                     "File missing for '{}.{}' (ID: {instance.pk})".format(
                         type(instance)._meta.app_label,

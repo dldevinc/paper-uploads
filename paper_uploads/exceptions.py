@@ -51,10 +51,3 @@ class UnsupportedFileError(UnsupportedResource):
             stacklevel=2
         )
         super().__init__(*args, **kwargs)
-
-
-class FileNotFoundError(Exception):
-    def __init__(self, file):
-        self.file = file
-        self.name = file.name
-        super().__init__()

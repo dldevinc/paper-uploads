@@ -25,6 +25,7 @@
 - `ImageItemDialog` has been renamed to `ChangeImageItemDialog`.
 - Changed some admin URLs for collections.
 - Added new `InvalidItemType` exception.
+- Deleted `FileNotFoundError` exception.
 ### Features
 - Method `.attach_file()` is now deprecated in favor of `.attach()`.
 - Method `.rename_file()` is now deprecated in favor of `.rename()`.

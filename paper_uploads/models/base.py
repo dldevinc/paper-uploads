@@ -192,7 +192,7 @@ class FileResource(FileProxyMixin, Resource):
         """
         Требование наличия непустой ссылки на файл.
         Физическое существование файла не гарантируется и должно проверяться
-        методом `file_exists`.
+        методом `.file_exists()`.
         """
         file = self.get_file()
         if not file:
@@ -343,7 +343,7 @@ class FileResource(FileProxyMixin, Resource):
         self._require_file()
 
         if not self.file_exists():
-            raise exceptions.FileNotFoundError(self)
+            raise FileNotFoundError(self.name)
 
         old_name = self.name
 
@@ -628,7 +628,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         Можно указать имена конкретных вариаций в параметре `names`.
         """
         if not self.file_exists():
-            raise exceptions.FileNotFoundError(self)
+            raise FileNotFoundError(self.name)
 
         file = self.get_file()
         with file.open() as source:
