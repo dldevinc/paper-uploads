@@ -32,11 +32,7 @@ class CollectionCloudinaryFileItemBase(CollectionItemBase, CloudinaryFileResourc
         abstract = True
 
     @classmethod
-    def file_supported(cls, file: File) -> bool:
-        """
-        Проверка возможности представления загруженного файла
-        текущим классом элемента в коллекции.
-        """
+    def accept(cls, file: File) -> bool:
         raise NotImplementedError
 
 
@@ -77,7 +73,7 @@ class CloudinaryFileItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase)
         return self._meta.get_field("file")
 
     @classmethod
-    def file_supported(cls, file: File) -> bool:
+    def accept(cls, file: File) -> bool:
         return True
 
 
@@ -118,7 +114,7 @@ class CloudinaryMediaItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase
         return self._meta.get_field("file")
 
     @classmethod
-    def file_supported(cls, file: File) -> bool:
+    def accept(cls, file: File) -> bool:
         mimetype = magic.from_buffer(file.read(1024), mime=True)
         file.seek(0)  # correct file position after mimetype detection
         basetype, subtype = mimetype.split("/", 1)
@@ -157,7 +153,7 @@ class CloudinaryImageItemBase(ImageFileResourceMixin, CollectionCloudinaryFileIt
         return self._meta.get_field("file")
 
     @classmethod
-    def file_supported(cls, file: File) -> bool:
+    def accept(cls, file: File) -> bool:
         mimetype = magic.from_buffer(file.read(1024), mime=True)
         file.seek(0)  # correct file position after mimetype detection
         basetype, subtype = mimetype.split("/", 1)

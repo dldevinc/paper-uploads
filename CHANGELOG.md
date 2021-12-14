@@ -28,6 +28,7 @@
 ### Features
 - Method `.attach_file()` is now deprecated in favor of `.attach()`.
 - Method `.rename_file()` is now deprecated in favor of `.rename()`.
+- Method `.file_supported()` is now deprecated in favor of `.accept()`.
 - Exception `UnsupportedFileError` is now deprecated in favor of `UnsupportedResource`.
 - Add abstract base classes for uploaded files.
 - Updated view classes for easier customization.

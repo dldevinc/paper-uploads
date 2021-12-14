@@ -1,4 +1,5 @@
 import posixpath
+import warnings
 from collections import OrderedDict
 from typing import Any, Dict, Iterable, Optional, Type
 
@@ -225,8 +226,8 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         на возможность представления данных, переданных в параметрах.
         """
         for item_type, field in self.item_types.items():
-            if hasattr(field.model, "file_supported"):
-                if field.model.file_supported(*args, **kwargs):
+            if hasattr(field.model, "accept"):
+                if field.model.accept(*args, **kwargs):
                     yield item_type
 
 
@@ -316,6 +317,14 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=Coll
                 self.order = self.get_order()
         super().save(*args, **kwargs)
 
+    @classmethod
+    def accept(cls, *args, **kwargs) -> bool:
+        """
+        Возвращает True, если переданные данные могут быть представлены
+        текущей моделью элемента коллекции.
+        """
+        raise NotImplementedError
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
@@ -372,12 +381,17 @@ class CollectionFileItemBase(CollectionItemBase, FileFieldResource):
         abstract = True
 
     @classmethod
-    def file_supported(cls, file: File) -> bool:
-        """
-        Проверка возможности представления загруженного файла
-        текущим классом элемента в коллекции.
-        """
+    def accept(cls, file: File) -> bool:
         raise NotImplementedError
+
+    @classmethod
+    def file_supported(cls, file: File) -> bool:
+        warnings.warn(
+            "file_supported() is deprecated in favor of accept()",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return cls.accept(file)
 
 
 class FilePreviewMixin(models.Model):
@@ -448,7 +462,7 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
         return name
 
     @classmethod
-    def file_supported(cls, file: File) -> bool:
+    def accept(cls, file: File) -> bool:
         return True
 
 
@@ -494,7 +508,7 @@ class SVGItemBase(CollectionFileItemBase):
         return name
 
     @classmethod
-    def file_supported(cls, file: File) -> bool:
+    def accept(cls, file: File) -> bool:
         filename, ext = posixpath.splitext(file.name)
         return ext.lower() == ".svg"
 
@@ -555,7 +569,7 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         return self._variations_cache
 
     @classmethod
-    def file_supported(cls, file: File) -> bool:
+    def accept(cls, file: File) -> bool:
         mimetype = magic.from_buffer(file.read(1024), mime=True)
         file.seek(0)  # reset file position after mimetype detection
         basetype, subtype = mimetype.split("/", 1)

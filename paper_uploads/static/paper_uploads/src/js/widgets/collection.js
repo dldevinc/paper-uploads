@@ -836,6 +836,7 @@ class Collection extends EventEmitter {
      * @returns {CollectionItemBase}
      */
     initItem(itemType, element, options) {
+        // TODO: ability to register custom itemType
         if (itemType === "preloader") {
             return new PreloaderItem(element, this, options);
         } else {

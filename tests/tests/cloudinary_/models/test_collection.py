@@ -113,18 +113,18 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
             'uploaded': storage.resource.uploaded_at.isoformat(),
         }
 
-    def test_file_supported(self, storage):
+    def test_accept(self, storage):
         with open(EXCEL_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
+            assert storage.resource.accept(File(fp)) is True
 
         with open(NATURE_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
+            assert storage.resource.accept(File(fp)) is True
 
         with open(MEDITATION_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
+            assert storage.resource.accept(File(fp)) is True
 
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
+            assert storage.resource.accept(File(fp)) is True
 
 
 @pytest.mark.django_db
@@ -334,18 +334,18 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
             'uploaded': storage.resource.uploaded_at.isoformat(),
         }
 
-    def test_file_supported(self, storage):
+    def test_accept(self, storage):
         with open(EXCEL_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is False
+            assert storage.resource.accept(File(fp)) is False
 
         with open(NATURE_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is False
+            assert storage.resource.accept(File(fp)) is False
 
         with open(MEDITATION_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is False
+            assert storage.resource.accept(File(fp)) is False
 
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
+            assert storage.resource.accept(File(fp)) is True
 
 
 @pytest.mark.django_db
@@ -628,18 +628,18 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
     def test_height(self, storage):
         assert storage.resource.height == 2301
 
-    def test_file_supported(self, storage):
+    def test_accept(self, storage):
         with open(EXCEL_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is False
+            assert storage.resource.accept(File(fp)) is False
 
         with open(NATURE_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
+            assert storage.resource.accept(File(fp)) is True
 
         with open(MEDITATION_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
+            assert storage.resource.accept(File(fp)) is True
 
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is False
+            assert storage.resource.accept(File(fp)) is False
 
 
 @pytest.mark.django_db
