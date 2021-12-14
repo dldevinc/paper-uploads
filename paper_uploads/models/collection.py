@@ -220,16 +220,6 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
             raise exceptions.InvalidItemType(item_type)
         return self.items.filter(item_type=item_type).order_by("order")
 
-    def detect_item_type(self, *args, **kwargs) -> Optional[str]:
-        """
-        Генератор, поочередно проверяющий классы элементов коллекции
-        на возможность представления данных, переданных в параметрах.
-        """
-        for item_type, field in self.item_types.items():
-            if hasattr(field.model, "accept"):
-                if field.model.accept(*args, **kwargs):
-                    yield item_type
-
 
 class Collection(CollectionBase):
     class Meta:

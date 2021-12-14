@@ -241,30 +241,6 @@ class TestCollection:
         file_item = FileItem(extension='py')
         assert file_item.get_preview_url() == '/static/paper_uploads/dist/assets/unknown.svg'
 
-    def test_detect_item_type(self, storage):
-        with open(DOCUMENT_FILEPATH, 'rb') as fp:
-            file = File(fp)
-            assert next(storage.file_collection.detect_item_type(file)) == 'file'
-
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            file = File(fp)
-            assert next(storage.image_collection.detect_item_type(file)) == 'image'
-
-        with open(MEDITATION_FILEPATH, 'rb') as fp:
-            file = File(fp)
-            assert next(storage.global_collection.detect_item_type(file)) == 'svg'
-
-    def test_detect_item_type_unsupported(self, storage):
-        with open(DOCUMENT_FILEPATH, 'rb') as fp:
-            file = File(fp)
-            with pytest.raises(StopIteration):
-                next(storage.image_collection.detect_item_type(file))
-
-    def test_svg_detects_as_image(self, storage):
-        with open(MEDITATION_FILEPATH, 'rb') as fp:
-            file = File(fp)
-            assert next(storage.image_collection.detect_item_type(file)) == 'image'
-
     def test_set_owner_from(self, storage):
         owner_field = Page._meta.get_field("file_collection")
         storage.file_collection.set_owner_from(owner_field)

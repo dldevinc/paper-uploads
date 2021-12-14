@@ -1,5 +1,5 @@
 import os
-from typing import Any, Type, cast
+from typing import Any, Generator, Tuple, Type, Union, cast
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
@@ -15,7 +15,8 @@ from django.views.decorators.csrf import csrf_exempt
 from .. import exceptions, signals
 from ..helpers import run_validators
 from ..logging import logger
-from ..models.collection import CollectionBase, CollectionItemBase
+from ..models.collection import CollectionBase, CollectionFileItemBase, CollectionItemBase
+from ..models.fields.collection import CollectionItem
 from ..models.mixins import EditableResourceMixin
 from . import helpers
 from .base import AjaxView, ChangeFileViewBase, DeleteFileViewBase, UploadFileViewBase
@@ -120,15 +121,21 @@ class UploadFileView(UploadFileViewBase):
 
         return order
 
+    def get_accepted_item_types(
+        self,
+        collection: Union[CollectionBase, Type[CollectionBase]],
+        file: UploadedFile
+    ) -> Generator[Tuple[str, CollectionItem], Any, None]:
+        for item_type, field in collection.item_types.items():
+            if issubclass(field.model, CollectionFileItemBase) and field.model.accept(file):
+                yield item_type, field
+
     def handle(self, file: UploadedFile) -> HttpResponse:
-        collection_cls = self.get_collection_model()
         collection = self.get_collection_instance()
 
         # перебираем все подходящие классы элементов пока
         # не найдем тот, который будет успешно создан
-        for item_type in collection.detect_item_type(file):  # noqa: F821
-            item_type_field = collection_cls.item_types[item_type]
-
+        for item_type, item_type_field in self.get_accepted_item_types(collection, file):
             item = self.get_instance(
                 collection=collection,
                 item_type=item_type,
