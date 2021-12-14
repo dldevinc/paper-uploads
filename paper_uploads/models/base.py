@@ -47,7 +47,7 @@ class NoPermissionsMetaBase:
     """
     Отменяет создание автоматических объектов Permission у наследников класса.
     """
-    def __new__(mcs, name, bases, attrs, **kwargs):
+    def __new__(cls, name, bases, attrs, **kwargs):
         meta = attrs.pop("Meta", None)
         if meta is None:
             meta = type("Meta", (), {"default_permissions": ()})
@@ -57,7 +57,7 @@ class NoPermissionsMetaBase:
             meta = type("Meta", meta.__bases__, meta_attrs)
         attrs["Meta"] = meta
 
-        return super().__new__(mcs, name, bases, attrs, **kwargs)
+        return super().__new__(cls, name, bases, attrs, **kwargs)
 
 
 class ResourceBaseMeta(NoPermissionsMetaBase, models.base.ModelBase):
@@ -73,7 +73,7 @@ class ResourceBaseMeta(NoPermissionsMetaBase, models.base.ModelBase):
     https://docs.djangoproject.com/en/3.2/topics/db/models/#specifying-the-parent-link-field
     """
 
-    def __new__(cls, name, bases, attrs, **kwargs):
+    def __new__(mcs, name, bases, attrs, **kwargs):
         parents = [b for b in bases if isinstance(b, ModelBase)]
 
         parent_links = {}
@@ -97,7 +97,7 @@ class ResourceBaseMeta(NoPermissionsMetaBase, models.base.ModelBase):
                         # force delete inherited field
                         attrs[inherited_field.name] = None
 
-        return super().__new__(cls, name, bases, attrs)
+        return super().__new__(mcs, name, bases, attrs)
 
 
 class ResourceBase(models.Model, metaclass=ResourceBaseMeta):

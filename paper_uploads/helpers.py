@@ -11,7 +11,7 @@ from django.db import DEFAULT_DB_ALIAS, models
 
 from .conf import settings
 from .logging import logger
-from .typing import FileLike, VariationConfig
+from .typing import VariationConfig
 from .utils import lowercased_dict_keys
 from .variations import PaperVariation
 
@@ -227,7 +227,7 @@ def get_instance(
                 time.sleep(1)
 
 
-def run_validators(value: FileLike, validators: Iterable[Any]):
+def run_validators(value: Any, validators: Iterable[Any]):
     """
     Based on `django.forms.fields.run_validators` method.
     """
