@@ -1,0 +1,35 @@
+{% block errors %}
+  <ul class="paper-messages mb-3"></ul>
+{% endblock errors %}
+
+<form action="{{ action }}" method="post" class="paper-form">
+  {% csrf_token %}
+
+  {% block hidden_fields %}
+    {% for field in form.hidden_fields %}
+      {{ field }}
+    {% endfor %}
+  {% endblock hidden_fields %}
+
+  {% block visible_fields %}
+    {% for field in form.visible_fields %}
+      <div class="field-{{ field.name }} {% if not forloop.last %}mb-3{% endif %}">
+        <label for="{{ field.id_for_label }}"
+               class="paper-form__label{% if field.field.required %} paper-form__label--required{% endif %}">{{ field.label }}</label>
+
+        <div class="paper-widget">
+          {{ field }}
+        </div>
+
+        <ul class="paper-error-list invalid-feedback"></ul>
+
+        {% if field.help_text %}
+          <div class="small text-muted mt-1">{{ field.help_text }}</div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% endblock visible_fields %}
+
+  {# make form submittable #}
+  <input type="submit" style="position: absolute; left: -9999px"/>
+</form>
