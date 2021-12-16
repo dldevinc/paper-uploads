@@ -358,7 +358,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=Coll
         return {
             "item": self,
             "width": settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-            "height": settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+            "height": settings.COLLECTION_ITEM_PREVIEW_HEIGHT,
         }
 
 

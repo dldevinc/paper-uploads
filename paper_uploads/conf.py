@@ -9,7 +9,7 @@ DEFAULTS = {
     "COLLECTION_FILES_UPLOAD_TO": "collections/files/%Y-%m-%d",
     "COLLECTION_IMAGES_UPLOAD_TO": "collections/images/%Y-%m-%d",
     "COLLECTION_ITEM_PREVIEW_WIDTH": 180,
-    "COLLECTION_ITEM_PREVIEW_HEIGTH": 135,
+    "COLLECTION_ITEM_PREVIEW_HEIGHT": 135,
     "COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS": dict(
         admin_preview=dict(
             size=(180, 135),

@@ -985,7 +985,7 @@ PAPER_UPLOADS = {
 
 Значение по умолчанию: `collections/images/%Y-%m-%d`
 
-### `COLLECTION_ITEM_PREVIEW_WIDTH`, `COLLECTION_ITEM_PREVIEW_HEIGTH`
+### `COLLECTION_ITEM_PREVIEW_WIDTH`, `COLLECTION_ITEM_PREVIEW_HEIGHT`
 Размеры превью элементов коллекций в админке.
 
 Значение по умолчанию: `180` x `135`
@@ -994,7 +994,7 @@ PAPER_UPLOADS = {
 Вариации, добавляемые к каждому классу изображений коллекций
 для отображения превью в админке. Размеры файлов должны
 совпадать с `COLLECTION_ITEM_PREVIEW_WIDTH` и
-`COLLECTION_ITEM_PREVIEW_HEIGTH`.
+`COLLECTION_ITEM_PREVIEW_HEIGHT`.
 
 ### `RQ_ENABLED`
 Включает нарезку картинок на вариации через отложенные задачи.

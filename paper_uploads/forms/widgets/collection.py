@@ -32,7 +32,7 @@ class CollectionWidget(DisplayFileLimitationsMixin, FileResourceWidgetBase):
                 "collection_cls": self.model,
                 "item_range": range(item_count),
                 "preview_width": settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-                "preview_height": settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+                "preview_height": settings.COLLECTION_ITEM_PREVIEW_HEIGHT,
             }
         )
 
