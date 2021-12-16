@@ -17,7 +17,7 @@ from examples.standard_collection.models import (
 from examples.variations.models import PhotoCollection
 
 from paper_uploads import exceptions
-from paper_uploads.conf import settings
+from paper_uploads.conf import IMAGE_ITEM_VARIATIONS, settings
 from paper_uploads.helpers import _get_item_types
 from paper_uploads.models import Collection, FileItem, ImageCollection, ImageItem, SVGItem
 
@@ -820,7 +820,7 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
 
         # ensure that setting has not changed
         assert ImageItem.PREVIEW_VARIATIONS["admin_preview"]["size"] == (180, 135)
-        assert settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS["admin_preview"]["size"] == (180, 135)
+        assert IMAGE_ITEM_VARIATIONS["admin_preview"]["size"] == (180, 135)
 
     def test_width(self, storage):
         assert storage.resource.width == 1534

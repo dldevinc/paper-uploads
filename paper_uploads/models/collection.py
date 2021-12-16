@@ -22,7 +22,7 @@ from polymorphic.base import PolymorphicModelBase
 from polymorphic.models import PolymorphicModel
 
 from .. import exceptions
-from ..conf import FILE_ICON_DEFAULT, FILE_ICON_OVERRIDES, settings
+from ..conf import FILE_ICON_DEFAULT, FILE_ICON_OVERRIDES, IMAGE_ITEM_VARIATIONS, settings
 from ..helpers import (
     _get_item_types,
     _set_item_types,
@@ -504,7 +504,7 @@ class SVGItemBase(CollectionFileItemBase):
 
 
 class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
-    PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
+    PREVIEW_VARIATIONS = IMAGE_ITEM_VARIATIONS
     change_form_class = "paper_uploads.forms.dialogs.collection.ChangeImageItemDialog"
     template_name = "paper_uploads/items/image.html"
     preview_template_name = "paper_uploads/items/preview/image.html"

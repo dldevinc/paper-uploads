@@ -9,6 +9,7 @@
 - Added an ability to override the `admin_preview` variation for `ImageItem` 
   via `VARIATIONS` property.
 - Management commands rewritten.
+- Removed `COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS` setting.
 #### Internal changes
 - Added `change_form_class` property to `UploadedFile` and `UploadedImage`.
   This field can be used to specify a custom dialog form for a given model. 

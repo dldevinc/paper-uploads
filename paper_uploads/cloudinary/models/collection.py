@@ -6,7 +6,7 @@ from django.core.files import File
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from ...conf import settings
+from ...conf import IMAGE_ITEM_VARIATIONS, settings
 from ...models.base import ImageFileResourceMixin
 from ...models.collection import Collection, CollectionItemBase, FilePreviewMixin
 from ...models.fields import CollectionItem
@@ -122,7 +122,7 @@ class CloudinaryMediaItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase
 
 
 class CloudinaryImageItemBase(ImageFileResourceMixin, CollectionCloudinaryFileItemBase):
-    PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
+    PREVIEW_VARIATIONS = IMAGE_ITEM_VARIATIONS
     change_form_class = "paper_uploads.forms.dialogs.collection.ChangeImageItemDialog"
     template_name = "paper_uploads_cloudinary/items/image.html"
     preview_template_name = "paper_uploads_cloudinary/items/preview/image.html"
