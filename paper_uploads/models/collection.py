@@ -540,8 +540,11 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         preview_variations = tuple(iterate_variation_names(self.PREVIEW_VARIATIONS))
         self.recut(names=preview_variations)
 
-        other_variations = tuple(set(names).difference(preview_variations))
-        super().recut_async(other_variations)
+        if not names:
+            names = self.get_variations().keys()
+
+        rest_variations = tuple(set(names).difference(preview_variations))
+        super().recut_async(rest_variations)
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         """
