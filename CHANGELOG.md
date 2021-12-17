@@ -6,8 +6,6 @@
   `UploadedFile`, `UploadedImage` and `CollectionBase`. 
   This update will remove `owner_XXX` fields from collection items.
   Run `makemigrations` and `migrate` commands to apply the change to your data.
-- Added an ability to override the `admin_preview` variation for `ImageItem` 
-  via `VARIATIONS` property.
 - Management commands rewritten.
 - Removed `COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS` setting.
 #### Internal changes
@@ -32,11 +30,10 @@
 - Method `.rename_file()` is now deprecated in favor of `.rename()`.
 - Method `.file_supported()` is now deprecated in favor of `.accept()`.
 - Exception `UnsupportedFileError` is now deprecated in favor of `UnsupportedResource`.
-- Add abstract base classes for uploaded files.
+- Added an ability to override the `admin_preview` variation for `ImageItem`
+  via `VARIATIONS` property.
 - Updated view classes for easier customization.
-- Added new class `paper_uploads.forms.fields.base.ResourceFieldBase`.
-- Added new class `paper_uploads.forms.widgets.base.ResourceWidgetBase`.
-- `rename_file()` now uses `recut_async()` when supported.
+- `rename_file()` will use `recut_async()` when supported.
 ### Bug Fixes
 - Fixed caption update for collection items.
 
