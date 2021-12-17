@@ -99,7 +99,7 @@ class Command(BaseCommand):
     def get_model(self):
         return apps.get_model(self.options["model"])
 
-    def _process_collection(self, model: Type[CollectionBase], item_type, variations):
+    def _process_collection(self, model: Type[CollectionBase], item_type: str, variations):
         collection_model = model.collection_content_type.model_class()
         queryset = collection_model.objects.using(self.database)
 

@@ -51,7 +51,7 @@ class Command(BaseCommand):
             "-t", "--check-item-types",
             action="store_true",
             default=False,
-            help="Check `item_type` values.",
+            help="Check item `type` values.",
         )
         parser.add_argument(
             "--fix-missing-variations",
@@ -212,11 +212,11 @@ class Command(BaseCommand):
     def check_item_types(self):
         """
         Проверяет, что элементы коллекций
-        *) имеют значение item_type, которое присутствует в коллекции
-        *) имеют класс, соответствующий модели, указанной для данного item_type
+        *) имеют значение type, которое присутствует в коллекции
+        *) имеют класс, соответствующий модели, указанной для данного type
         """
         if self.verbosity >= 2:
-            self.stdout.write(self.style.SUCCESS("Checking item_type values..."))
+            self.stdout.write(self.style.SUCCESS("Checking item type values..."))
 
         for item in CollectionItemBase.objects.using(self.database).iterator():
             invalid = False
@@ -227,16 +227,16 @@ class Command(BaseCommand):
             )
 
             collection_cls = item.get_collection_class()
-            if item.item_type not in collection_cls.item_types:
+            if item.type not in collection_cls.item_types:
                 invalid = True
                 message += "\n  Item type '{}' is not defined in collection '{}.{}' (ID: {})".format(
-                    item.item_type,
+                    item.type,
                     collection_cls._meta.app_label,
                     collection_cls.__name__,
                     item.collection_id,
                 )
             else:
-                item_model = collection_cls.get_item_model(item.item_type)
+                item_model = collection_cls.get_item_model(item.type)
                 if item_model is not type(item):
                     invalid = True
                     message += "\n  Item class '{}.{}' differs from '{}.{}' defined for '{}' item type".format(
@@ -244,7 +244,7 @@ class Command(BaseCommand):
                         item.__name__,
                         item_model._meta.app_label,
                         item_model.__name__,
-                        item.item_type
+                        item.type
                     )
 
             if invalid:

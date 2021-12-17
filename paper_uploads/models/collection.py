@@ -218,7 +218,7 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
             return self.items.order_by("order")
         if item_type not in self.item_types:
             raise exceptions.InvalidItemType(item_type)
-        return self.items.filter(item_type=item_type).order_by("order")
+        return self.items.filter(type=item_type).order_by("order")
 
 
 class Collection(CollectionBase):
@@ -252,7 +252,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=Coll
         for_concrete_model=False,
     )
 
-    item_type = models.CharField(
+    type = models.CharField(
         _("type"), max_length=32, db_index=True, editable=False
     )
     order = models.IntegerField(_("order"), default=0, editable=False)
@@ -287,6 +287,24 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=Coll
             )
         return errors
 
+    @property
+    def item_type(self):
+        warnings.warn(
+            "'item_type' is deprecated in favor of 'type'",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self.type
+
+    @item_type.setter
+    def item_type(self, value: str):
+        warnings.warn(
+            "'item_type' is deprecated in favor of 'type'",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        self.type = value
+
     def get_order(self):
         max_order = CollectionItemBase.objects.filter(
             collection_content_type_id=self.collection_content_type_id,
@@ -319,7 +337,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=Coll
         return {
             **super().as_dict(),
             "collectionId": self.collection_id,
-            "itemType": self.item_type,
+            "itemType": self.type,
             "order": self.order,
             "preview": self.render_preview(),
         }
@@ -344,7 +362,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=Coll
         self.collection_id = collection.pk
         for name, field in collection.item_types.items():
             if field.model is type(self):
-                self.item_type = name
+                self.type = name
                 break
         else:
             raise TypeError(_("Unsupported collection item: %s") % type(self).__name__)

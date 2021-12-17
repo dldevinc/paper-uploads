@@ -107,7 +107,7 @@ class UploadFileView(UploadFileViewBase):
         collection_cls = self.get_collection_model()
         item_model = collection_cls.get_item_model(item_type)
         return item_model(
-            item_type=item_type,
+            type=item_type,
             **kwargs
         )
 

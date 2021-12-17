@@ -214,7 +214,7 @@ class TestCollection:
         assert file_item.collection_id == storage.file_collection.pk
         assert file_item.collection_content_type == ContentType.objects.get_for_model(
             FilesOnlyCollection, for_concrete_model=False)
-        assert file_item.item_type == 'file'
+        assert file_item.type == 'file'
 
     def test_attach_to_global_collection(self, storage):
         file_item = FileItem()
@@ -223,7 +223,7 @@ class TestCollection:
         assert file_item.collection_id == storage.global_collection.pk
         assert file_item.collection_content_type == ContentType.objects.get_for_model(
             MixedCollection, for_concrete_model=False)
-        assert file_item.item_type == 'file'
+        assert file_item.type == 'file'
 
     def test_get_preview_url(self):
         file_item = FileItem(extension='pdf')
@@ -371,7 +371,7 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
         assert storage.resource.display_name == self.resource_name
 
     def test_item_type(self, storage):
-        assert storage.resource.item_type == 'file'
+        assert storage.resource.type == 'file'
 
     def test_get_preview_url(self, storage):
         assert storage.resource.get_preview_url() == '/static/paper_uploads/dist/assets/jpg.svg'
@@ -552,7 +552,7 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
         assert storage.resource.get_file_folder() == self.resource_location
 
     def test_item_type(self, storage):
-        assert storage.resource.item_type == 'svg'
+        assert storage.resource.type == 'svg'
 
     def test_name(self, storage):
         file_name = storage.resource.name
@@ -754,7 +754,7 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
         assert storage.resource.get_file_folder() == self.resource_location
 
     def test_item_type(self, storage):
-        assert storage.resource.item_type == 'image'
+        assert storage.resource.type == 'image'
 
     def test_name(self, storage):
         file_name = storage.resource.name

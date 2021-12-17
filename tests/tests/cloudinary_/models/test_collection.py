@@ -69,7 +69,7 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
         assert storage.resource.display_name == self.resource_name
 
     def test_item_type(self, storage):
-        assert storage.resource.item_type == 'file'
+        assert storage.resource.type == 'file'
 
     def test_type(self, storage):
         file_field = storage.resource.get_file_field()
@@ -290,7 +290,7 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
         assert storage.resource.display_name == self.resource_name
 
     def test_item_type(self, storage):
-        assert storage.resource.item_type == 'media'
+        assert storage.resource.type == 'media'
 
     def test_type(self, storage):
         file_field = storage.resource.get_file_field()
@@ -577,7 +577,7 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
         assert storage.resource.get_file_folder() == self.resource_location
 
     def test_item_type(self, storage):
-        assert storage.resource.item_type == 'image'
+        assert storage.resource.type == 'image'
 
     def test_type(self, storage):
         file_field = storage.resource.get_file_field()

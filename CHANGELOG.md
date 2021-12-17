@@ -6,6 +6,7 @@
   `UploadedFile`, `UploadedImage` and `CollectionBase`. 
   This update will remove `owner_XXX` fields from collection items.
   Run `makemigrations` and `migrate` commands to apply the change to your data.
+- Field `CollectionItem.item_type` is now deprecated in favor of `type`.
 - Management commands rewritten.
 - Removed `COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS` setting.
 #### Internal changes
