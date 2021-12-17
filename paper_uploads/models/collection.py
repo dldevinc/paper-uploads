@@ -69,7 +69,7 @@ class ItemTypesDescriptor:
     def __init__(self, name):
         self.name = name
 
-    def __get__(self, instance, cls=None):
+    def __get__(self, instance, cls=None) -> Dict[str, CollectionItem]:
         if cls is None:
             cls = type(instance)
 

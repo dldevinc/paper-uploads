@@ -675,7 +675,13 @@ class Collection extends EventEmitter {
         this.root.collection = this;
 
         this._initItems();
-        this._initUploader();
+
+        // Отключение Drag-n-drop, если коллекция не поддерживает файлы
+        const uploadItemButton = this.root.querySelector(this.config.uploadItemButton);
+        if (uploadItemButton) {
+            this._initUploader();
+        }
+
         this._initSortable();
         this._addListeners();
     }
@@ -786,7 +792,9 @@ class Collection extends EventEmitter {
         formData.append("collectionId", this.instanceId);
 
         // отмена загрузки всех файлов из очереди.
-        this.uploader.cancelAll();
+        if (this.uploader) {
+            this.uploader.cancelAll();
+        }
 
         return modals.showSmartPreloader(
             fetch(this.root.dataset.deleteCollectionUrl, {
@@ -901,68 +909,70 @@ class Collection extends EventEmitter {
      * @private
      */
     _addListeners() {
-        this.uploader.on("submitted", file => {
-            const status = this.getStatus();
-            if (status !== this.STATUS.LOADING) {
-                this.setStatus(this.STATUS.LOADING);
-            }
+        if (this.uploader) {
+            this.uploader.on("submitted", file => {
+                const status = this.getStatus();
+                if (status !== this.STATUS.LOADING) {
+                    this.setStatus(this.STATUS.LOADING);
+                }
 
-            // создание прелоадера
-            const itemHTML = this.createItem("preloader", {
-                uuid: this.uploader.getUUID(file),
-                name: file.name,
-                order: this.maxOrderValue + 1
+                // создание прелоадера
+                const itemHTML = this.createItem("preloader", {
+                    uuid: this.uploader.getUUID(file),
+                    name: file.name,
+                    order: this.maxOrderValue + 1
+                });
+
+                this.itemContainer.insertAdjacentHTML("beforeend", itemHTML);
+                const items = this.items;
+                const item = items[items.length - 1];
+
+                this.initItem("preloader", item);
             });
 
-            this.itemContainer.insertAdjacentHTML("beforeend", itemHTML);
-            const items = this.items;
-            const item = items[items.length - 1];
+            this.uploader.on("upload", (file, xhr, formData) => {
+                const preloader = this._getPreloaderByFile(file);
+                if (preloader) {
+                    preloader.trigger("upload", [file, xhr, formData]);
+                }
+            });
 
-            this.initItem("preloader", item);
-        });
+            this.uploader.on("progress", (file, percentage) => {
+                const preloader = this._getPreloaderByFile(file);
+                if (preloader) {
+                    preloader.trigger("progress", [file, percentage]);
+                }
+            });
 
-        this.uploader.on("upload", (file, xhr, formData) => {
-            const preloader = this._getPreloaderByFile(file);
-            if (preloader) {
-                preloader.trigger("upload", [file, xhr, formData]);
-            }
-        });
+            this.uploader.on("cancel", file => {
+                const preloader = this._getPreloaderByFile(file);
+                if (preloader) {
+                    preloader.trigger("cancel", [file]);
+                }
+            });
 
-        this.uploader.on("progress", (file, percentage) => {
-            const preloader = this._getPreloaderByFile(file);
-            if (preloader) {
-                preloader.trigger("progress", [file, percentage]);
-            }
-        });
+            this.uploader.on("complete", (file, response) => {
+                const preloader = this._getPreloaderByFile(file);
+                if (preloader) {
+                    preloader.trigger("complete", [file, response]);
+                }
+            });
 
-        this.uploader.on("cancel", file => {
-            const preloader = this._getPreloaderByFile(file);
-            if (preloader) {
-                preloader.trigger("cancel", [file]);
-            }
-        });
+            this.uploader.on("error", (file, message) => {
+                this.collectError(message);
 
-        this.uploader.on("complete", (file, response) => {
-            const preloader = this._getPreloaderByFile(file);
-            if (preloader) {
-                preloader.trigger("complete", [file, response]);
-            }
-        });
+                const preloader = this._getPreloaderByFile(file);
+                if (preloader) {
+                    preloader.trigger("error", [file, message]);
+                }
+            });
 
-        this.uploader.on("error", (file, message) => {
-            this.collectError(message);
+            this.uploader.on("all_complete", () => {
+                this.setStatus(this.STATUS.READY);
 
-            const preloader = this._getPreloaderByFile(file);
-            if (preloader) {
-                preloader.trigger("error", [file, message]);
-            }
-        });
-
-        this.uploader.on("all_complete", () => {
-            this.setStatus(this.STATUS.READY);
-
-            this.showCollectedErrors();
-        });
+                this.showCollectedErrors();
+            });
+        }
 
         // создание коллекции
         if (this.config.createCollectionButton) {
