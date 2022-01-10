@@ -176,6 +176,9 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         verbose_name = _("collection")
         verbose_name_plural = _("collections")
 
+    def __iter__(self):
+        return self.get_items().iterator()
+
     def save(self, *args, **kwargs):
         if not self.collection_content_type:
             self.collection_content_type = ContentType.objects.get_for_model(
@@ -213,7 +216,6 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         self.owner_fieldname = field.name
 
     def get_items(self, item_type: str = None) -> 'models.QuerySet[CollectionItemBase]':
-        # TODO: что если класс элемента был удален из коллекции, но элементы остались?
         if item_type is None:
             return self.items.order_by("order")
         if item_type not in self.item_types:

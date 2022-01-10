@@ -17,7 +17,7 @@ from examples.standard_collection.models import (
 from examples.variations.models import PhotoCollection
 
 from paper_uploads import exceptions
-from paper_uploads.conf import IMAGE_ITEM_VARIATIONS, settings
+from paper_uploads.conf import IMAGE_ITEM_VARIATIONS
 from paper_uploads.helpers import _get_item_types
 from paper_uploads.models import Collection, FileItem, ImageCollection, ImageItem, SVGItem
 
@@ -165,6 +165,16 @@ class TestCollection:
         assert storage.global_collection.get_items('image').count() == 1
 
         assert storage.global_collection.get_items('svg').count() == 1
+
+    def test_iter(self, storage):
+        iterator = iter(storage.global_collection)
+        
+        assert isinstance(next(iterator), FileItem)
+        assert isinstance(next(iterator), ImageItem)
+        assert isinstance(next(iterator), SVGItem)
+        
+        with pytest.raises(StopIteration):
+            next(iterator)
 
     def test_get_unsupported_items(self, storage):
         with pytest.raises(exceptions.InvalidItemType):

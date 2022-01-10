@@ -27,6 +27,7 @@
 - Added new `InvalidItemType` exception.
 - Deleted `FileNotFoundError` exception.
 ### Features
+- Implement `__iter__()` for `CollectionBase`.
 - Method `.attach_file()` is now deprecated in favor of `.attach()`.
 - Method `.rename_file()` is now deprecated in favor of `.rename()`.
 - Method `.file_supported()` is now deprecated in favor of `.accept()`.

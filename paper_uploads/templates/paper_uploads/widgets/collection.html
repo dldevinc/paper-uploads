@@ -79,6 +79,6 @@
   {% endfor %}
 
   <script class="collection--data" type="application/json">
-    [{% if widget.value %}{% for item in instance.get_items %}{{ item.as_dict|json }}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}]
+    [{% if widget.value %}{% for item in instance %}{{ item.as_dict|json }}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}]
   </script>
 </div>
