@@ -2,7 +2,8 @@
 Асинхронная загрузка файлов для административного интерфейса Django.
 
 [![PyPI](https://img.shields.io/pypi/v/paper-uploads.svg)](https://pypi.org/project/paper-uploads/)
-[![Build Status](https://travis-ci.org/dldevinc/paper-uploads.svg?branch=master)](https://travis-ci.org/dldevinc/paper-uploads)
+[![Build Status](https://github.com/dldevinc/paper-uploads/actions/workflows/tests.yml/badge.svg)](https://github.com/dldevinc/paper-uploads)
+[![Software license](https://img.shields.io/pypi/l/paper-uploads.svg)](https://pypi.org/project/paper-uploads/)
 
 ![](http://joxi.net/gmvnGZBtqKOOjm.png)
 
@@ -500,23 +501,7 @@ class FileCollection(Collection):
 * `FileItem`. Может хранить любой файл.
 
 Вариации для изображений коллекции можно указать двумя способами:
-1) в атрибуте класса коллекции `VARIATIONS`:
-
-    ```python
-    from paper_uploads.models import *
-
-    class PageGallery(Collection):
-        image = CollectionItem(ImageItem)
-        
-        VARIATIONS = dict(
-            mobile=dict(
-                size=(640, 0),
-                clip=False
-            )
-        )
-    ```
-
-2) в дополнительных параметрах поля `CollectionItem` по ключу `variations`:
+1) В дополнительных параметрах поля `CollectionItem` по ключу `variations`:
 
     ```python
     from paper_uploads.models import *
@@ -530,6 +515,21 @@ class FileCollection(Collection):
                 )
             )
         })
+    ```
+2) В атрибуте класса коллекции `VARIATIONS`:
+
+    ```python
+    from paper_uploads.models import *
+
+    class PageGallery(Collection):
+        image = CollectionItem(ImageItem)
+        
+        VARIATIONS = dict(
+            mobile=dict(
+                size=(640, 0),
+                clip=False
+            )
+        )
     ```
 
 ### ImageCollection
@@ -566,7 +566,7 @@ class PageGallery(ImageCollection):
 
 В простейших случаях можно использовать прокси-модели на основе существующих моделей. 
 Например, для того, чтобы хранить файлы определенной галереи в отдельной папке, 
-можно создать проски модель к `ImageItem`:
+можно создать прокси модель к `ImageItem`:
 
 ```python
 from paper_uploads.models import *
