@@ -1,15 +1,17 @@
 import os
 import time
-from typing import Any, Dict, Iterable, Iterator, List, Set
+from functools import lru_cache
+from typing import Any, Dict, Generator, Iterable, Iterator, List, Set, Tuple, Type
 
+from anytree import Node
 from django.apps import apps
 from django.core import exceptions
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import DEFAULT_DB_ALIAS
+from django.db import DEFAULT_DB_ALIAS, models
 
 from .conf import settings
 from .logging import logger
-from .typing import FileLike, VariationConfig
+from .typing import VariationConfig
 from .utils import lowercased_dict_keys
 from .variations import PaperVariation
 
@@ -36,6 +38,20 @@ def get_extension(filename: str) -> str:
     return extension.lstrip(".")
 
 
+def _variation_name(name: str, scale_factor: int = 1, webp: bool = False) -> str:
+    if webp:
+        variation_name = "{}_webp".format(name)
+    else:
+        variation_name = name
+
+    if scale_factor == 1:
+        pass
+    else:
+        variation_name = "{}_{}x".format(variation_name, scale_factor)
+
+    return variation_name
+
+
 def generate_scaled_versions(
     name: str, config: VariationConfig, scale_factor: int = 1, webp: bool = False
 ) -> Iterator[PaperVariation]:
@@ -44,14 +60,9 @@ def generate_scaled_versions(
     """
     scaled_size = tuple(x * scale_factor for x in config.get("size", (0, 0)))
 
-    if scale_factor == 1:
-        variation_name = name
-    else:
-        variation_name = "{}_{}x".format(name, scale_factor)
-
     variation_config = dict(
         config,
-        name=variation_name,
+        name=_variation_name(name, scale_factor),
         size=scaled_size,
         max_width=scale_factor * config.get("max_width", 0),
         max_height=scale_factor * config.get("max_height", 0),
@@ -60,14 +71,9 @@ def generate_scaled_versions(
     yield PaperVariation(**variation_config)
 
     if webp:
-        if scale_factor == 1:
-            variation_name = "{}_webp".format(name)
-        else:
-            variation_name = "{}_webp_{}x".format(name, scale_factor)
-
         variation_config = dict(
             config,
-            name=variation_name,
+            name=_variation_name(name, scale_factor, webp=True),
             size=scaled_size,
             max_width=scale_factor * config.get("max_width", 0),
             max_height=scale_factor * config.get("max_height", 0),
@@ -120,6 +126,86 @@ def build_variations(options: Dict[str, VariationConfig]) -> Dict[str, PaperVari
     return variations
 
 
+def iterate_variation_names(options: Dict[str, VariationConfig]) -> Iterator[str]:
+    """
+    Перечисляет имена вариаций из словаря конфигураций с учётом параметра `versions`.
+    """
+    def iterate_variation_versions(name: str, scale_factor: int = 1, webp: bool = False) -> Iterator[str]:
+        yield _variation_name(name, scale_factor)
+        if webp:
+            yield _variation_name(name, scale_factor, webp=True)
+
+    for name, config in options.items():
+        new_config = lowercased_dict_keys(settings.VARIATION_DEFAULTS or {})
+        new_config.update(config)
+
+        versions = set(v.lower() for v in config.get("versions", ()))
+        webp = "webp" in versions and config.get("format", "").upper() != "WEBP"
+
+        yield from iterate_variation_versions(name, scale_factor=1, webp=webp)
+        if "2x" in versions:
+            yield from iterate_variation_versions(name, scale_factor=2, webp=webp)
+        if "3x" in versions:
+            yield from iterate_variation_versions(name, scale_factor=3, webp=webp)
+        if "4x" in versions:
+            yield from iterate_variation_versions(name, scale_factor=4, webp=webp)
+
+
+@lru_cache()
+def get_resource_model_trees(include_proxy=True) -> Tuple[Node]:
+    """
+    Возвращает иерархии класов ресурсов в виде anytree.Node.
+    """
+    from .models.base import Resource
+
+    resource_models = [
+        model
+        for model in apps.get_models()
+        if issubclass(model, Resource) and (include_proxy is True or model._meta.proxy is False)
+    ]
+
+    resource_bases = {
+        model: [
+            base
+            for base in model.__mro__[1:]
+            if base in resource_models
+        ]
+        for model in resource_models
+    }
+
+    # Иерархии ресурсов, отсортированные по длине
+    ordered_resource_bases = sorted(resource_bases.items(), key=lambda p: len(p[1]), reverse=True)
+
+    # Ссылки на все узлы всех деревьев
+    node_map = {}
+
+    # Список корневых узлов деревьев
+    trees = []  # type: list[Node]
+
+    def _get_or_create_node(model, parent=None):
+        if model in node_map:
+            return node_map[model]
+        else:
+            node = Node(model.__name__, model=model, parent=parent)
+            node_map[model] = node
+
+            if parent is None:
+                trees.append(node)
+
+            return node
+
+    # Перебор цепочек классов от самых длинных к самым коротким гарантирует,
+    # что родительские классы появятся в дереве раньше дочерних.
+    for model, bases in ordered_resource_bases:
+        base_parent = None
+        for base in reversed(bases):
+            base_parent = _get_or_create_node(base, base_parent)
+
+        _get_or_create_node(model, base_parent)
+
+    return tuple(trees)
+
+
 def get_instance(
     app_label: str, model_name: str, object_id: int, using: str = DEFAULT_DB_ALIAS
 ):
@@ -141,7 +227,7 @@ def get_instance(
                 time.sleep(1)
 
 
-def run_validators(value: FileLike, validators: Iterable[Any]):
+def run_validators(value: Any, validators: Iterable[Any]):
     """
     Based on `django.forms.fields.run_validators` method.
     """
@@ -154,6 +240,15 @@ def run_validators(value: FileLike, validators: Iterable[Any]):
 
     if errors:
         raise exceptions.ValidationError(errors)
+
+
+def iterate_parent_models(model: models.Model) -> Generator[Type[models.Model], Any, None]:
+    """
+    Итерация модели и её родительских классов-моделей.
+    """
+    for klass in model.__mro__:
+        if issubclass(klass, models.Model):
+            yield klass
 
 
 def _get_item_types(cls):

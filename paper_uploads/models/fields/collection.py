@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, cast
 
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core import checks
@@ -86,8 +86,8 @@ class CollectionItem:
 
     def check(self, **kwargs):
         return [
-            *Field._check_field_name(self),
-            *Field._check_validators(self),
+            *Field._check_field_name(cast(Field, self)),
+            *Field._check_validators(cast(Field, self)),
         ]
 
     @cached_property

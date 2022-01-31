@@ -7,46 +7,6 @@
   }
 }
 
-
-.collection {
-  flex-grow: 1;
-
-  &__items {
-    display: flex;
-    margin-right: -0.75rem;
-    flex-flow: row wrap;
-  }
-
-  &__item {
-
-  }
-
-  &.empty {
-    // запрещаем перетаскивать файлы в пустой виджет
-    .dropzone__overlay {
-      display: none;
-    }
-  }
-
-  &.loading {
-    .sortable-handler {
-      cursor: default;
-    }
-  }
-}
-
-// показ кнопки создания коллекции на пустом виджете
-.collection:not(.empty) .collection__create-collection-button {
-  display: none;
-}
-
-// скрытие остальных кнопок на пустом виджете
-.collection.empty .collection__upload-item-button,
-.collection.empty .collection__delete-collection-button {
-  display: none;
-}
-
-
 .collection-item {
   margin-right: 0.75rem;
   margin-bottom: 1rem;
@@ -78,7 +38,7 @@
     border-top: 1px solid #ced4da;
   }
 
-  &__name {
+  &__caption {
     flex: 1 0 0;
     padding: 0.125rem 0.25rem 0.125rem 0.5rem;
     overflow: hidden;
@@ -121,40 +81,18 @@
   }
 
 
-  &.removing {
-    animation: zoomOut cubic-bezier(0, 0, 0.2, 1) 0.4s forwards;
-
-    .collection-item__footer {
-      visibility: hidden;
-    }
-  }
-
-
   &.checked {
     border-color: #1090c0;
     box-shadow: 0 0 0 1px #1090c0;
   }
 
 
+  &--preloader &__preview,
+  &--processing &__preview {
+    position: relative;
+  }
+
   &--preloader {
-    .collection-item__preview {
-      position: relative;
-
-      &:after {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        opacity: 0;
-        transition: opacity 0.1s 0.3s;
-        background-image: url(../img/preloader.svg);
-        background-repeat: no-repeat;
-        background-position: center;
-      }
-    }
-
     .progress {
       position: absolute;
       top: 0;
@@ -171,28 +109,103 @@
       height: 0;
       opacity: 0.5;
       align-self: flex-end;
-      transition: opacity 0.1s 0.3s, height 0.3s ease;
-    }
-
-    &.processing {
-      .collection-item__preview:after {
-        opacity: 1;
-      }
-
-      .progress-bar {
-        opacity: 0;
-      }
-
-      .collection-item__cancel-button {
-        visibility: hidden;
-      }
+      transition: height 0.3s ease;
     }
   }
 
 
-  &--file {
-    .collection-item__preview {
-      padding: 20px;
+  &--processing {
+    .progress {
+      opacity: 0;
+    }
+  }
+
+  &--processing &__preview {
+    &:after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      transition: opacity 0.1s 0.3s;
+      background-image: url(../img/preloader.svg);
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+  }
+
+  &--processing &__cancel-button {
+    visibility: hidden;
+  }
+
+
+  &--removing {
+    animation: zoomOut cubic-bezier(0, 0, 0.2, 1) 0.4s forwards;
+  }
+
+  &--removing &__footer {
+    visibility: hidden;
+  }
+
+
+  &--file &__preview {
+    padding: 20px;
+  }
+}
+
+
+.collection {
+  flex-grow: 1;
+
+  &__items {
+    display: flex;
+    margin-right: -0.75rem;
+    flex-flow: row wrap;
+  }
+
+  &__skeleton {
+    padding-top: 31px;      // header
+    padding-bottom: 35px;   // footer
+    margin-right: 0.75rem;
+    margin-bottom: 1rem;
+    flex: 0 0 auto;
+    color: #e3e3e3;
+    user-select: none;
+    border-radius: 0.25rem;
+    border: 1px solid currentColor;
+    background-color: currentColor;
+    box-sizing: content-box;
+  }
+
+  &__buttons {
+
+  }
+
+
+  &--empty &__items {
+    display: none;
+  }
+
+  // запрещаем перетаскивать файлы в пустой виджет
+  &--empty .dropzone__overlay {
+    display: none;
+  }
+
+  // скрытие на пустом виджете всех кнопок, кроме кнопки создания коллекции
+  &--empty &__buttons button:not(&__create-collection-button){
+    display: none;
+  }
+
+  // показ кнопки создания коллекции только на пустом виджете
+  &:not(&--empty) &__create-collection-button {
+    display: none;
+  }
+
+  &--loading,
+  &--removing {
+    .sortable-handler {
+      cursor: default;
     }
   }
 }

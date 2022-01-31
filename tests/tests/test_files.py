@@ -15,18 +15,17 @@ from .dummy import *
 class TestVariationFile:
     @staticmethod
     def init_class(storage):
-        storage.resource = DummyVersatileImageResource(
-            owner_app_label='app',
-            owner_model_name='dummyversatileimageresource',
-            owner_fieldname='file'
-        )
+        storage.resource = DummyVersatileImageResource()
         with open(NASA_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
+
+        assert storage.resource.need_recut is True
         storage.resource.save()
 
         storage.file = VariationFile(storage.resource, 'desktop')
 
         yield
+
         storage.resource.delete_file()
         storage.resource.delete()
 
@@ -44,7 +43,8 @@ class TestVariationFile:
         assert storage.file.variation_name == 'desktop'
 
     def test_size(self, storage):
-        assert storage.file.size == 115559
+        # разный размер - зависит от версии Pillow
+        assert storage.file.size in {115559, 112734}
 
     def test_variation(self, storage):
         assert isinstance(storage.file.variation, PaperVariation)

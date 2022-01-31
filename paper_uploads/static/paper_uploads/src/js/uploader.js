@@ -1,7 +1,7 @@
 /* global gettext */
 
 import EventEmitter from "wolfy87-eventemitter";
-import {Dropzone} from "./dropzone";
+import {Dropzone} from "./dropzone.js";
 
 
 /**
@@ -131,6 +131,20 @@ class Uploader extends EventEmitter {
     }
 
     cancel(file) {
+        if (typeof file === "string") {
+            let uuid = file;
+            let files = this.instance.files.filter((file) => {
+                return file.upload.uuid === uuid
+            });
+
+            if (files.length) {
+                file = files[0];
+            } else {
+                console.warn(`Not found file with UUID: ${uuid}`);
+                return;
+            }
+        }
+
         this.instance.removeFile(file);
     }
 
@@ -299,11 +313,10 @@ class Uploader extends EventEmitter {
 
             // When the complete upload is finished and successful
             success(file, response) {
-                if (response.success) {
-                    _this.trigger("complete", [file, response]);
+                if (response.errors && response.errors.length) {
+                    _this.trigger("error", [file, response.errors]);
                 } else {
-                    let messages = response.errors || response.error;
-                    _this.trigger("error", [file, messages]);
+                    _this.trigger("complete", [file, response]);
                 }
             },
 

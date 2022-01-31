@@ -9,10 +9,13 @@ from ..utils import filesizeformat
 from ..variations import PaperVariation
 from .base import FileFieldResource, VersatileImageResourceMixin
 from .fields import VariationalFileField
+from .mixins import BacklinkModelMixin, EditableResourceMixin
 from .utils import generate_filename
 
 
-class UploadedImage(VersatileImageResourceMixin, FileFieldResource):
+class UploadedImageBase(VersatileImageResourceMixin, BacklinkModelMixin, EditableResourceMixin, FileFieldResource):
+    change_form_class = "paper_uploads.forms.dialogs.image.ChangeUploadedImageDialog"
+
     file = VariationalFileField(
         _("file"),
         max_length=255,
@@ -21,6 +24,7 @@ class UploadedImage(VersatileImageResourceMixin, FileFieldResource):
     )
 
     class Meta(FileFieldResource.Meta):
+        abstract = True
         verbose_name = _("image")
         verbose_name_plural = _("images")
 
@@ -70,3 +74,8 @@ class UploadedImage(VersatileImageResourceMixin, FileFieldResource):
                 "image/webp",
             ],
         }
+
+
+class UploadedImage(UploadedImageBase):
+    class Meta(UploadedImageBase.Meta):
+        pass

@@ -1,21 +1,21 @@
 from django import forms
 
 from ...models.collection import FileItem, ImageItem
-from .base import UploadedFileBaseForm
+from .base import ChangeFileResourceDialogBase
 
 
-class FileItemDialog(UploadedFileBaseForm):
+class ChangeFileItemDialog(ChangeFileResourceDialogBase):
     class Meta:
         model = FileItem
-        fields = ("new_name", "display_name")
+        fields = ["new_name", "display_name"]
 
 
-class ImageItemDialog(UploadedFileBaseForm):
+class ChangeImageItemDialog(ChangeFileResourceDialogBase):
     class Meta:
         model = ImageItem
-        fields = ("new_name", "title", "description")
+        fields = ["new_name", "title", "description"]
         widgets = {
             "description": forms.Textarea(attrs={
-                "rows": 3
+                "rows": 2
             })
         }

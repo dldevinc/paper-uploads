@@ -1,4 +1,5 @@
 import posixpath
+import warnings
 from collections import OrderedDict
 from typing import Any, Dict, Iterable, Optional, Type
 
@@ -15,14 +16,19 @@ from django.db.models.fields.files import FieldFile
 from django.db.models.functions import Coalesce
 from django.db.models.utils import make_model_tuple
 from django.template import loader
-from django.utils.module_loading import import_string
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from polymorphic.base import PolymorphicModelBase
 from polymorphic.models import PolymorphicModel
 
-from ..conf import FILE_ICON_DEFAULT, FILE_ICON_OVERRIDES, settings
-from ..helpers import _get_item_types, _set_item_types, build_variations
+from .. import exceptions
+from ..conf import FILE_ICON_DEFAULT, FILE_ICON_OVERRIDES, IMAGE_ITEM_VARIATIONS, settings
+from ..helpers import (
+    _get_item_types,
+    _set_item_types,
+    build_variations,
+    iterate_variation_names,
+)
 from ..storage import upload_storage
 from ..variations import PaperVariation
 from .base import (
@@ -34,11 +40,12 @@ from .base import (
 from .fields import CollectionItem
 from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
-from .mixins import BacklinkModelMixin
+from .mixins import BacklinkModelMixin, EditableResourceMixin
 from .utils import generate_filename
 
 __all__ = [
     "CollectionItemBase",
+    "CollectionFileItemBase",
     "CollectionBase",
     "FilePreviewMixin",
     "FileItemBase",
@@ -62,7 +69,7 @@ class ItemTypesDescriptor:
     def __init__(self, name):
         self.name = name
 
-    def __get__(self, instance, cls=None):
+    def __get__(self, instance, cls=None) -> Dict[str, CollectionItem]:
         if cls is None:
             cls = type(instance)
 
@@ -71,7 +78,7 @@ class ItemTypesDescriptor:
             return OrderedDict(getattr(cls, cache_attname))
 
         item_types = OrderedDict()
-        parents = [base for base in cls.mro() if issubclass(base, CollectionBase)]
+        parents = [base for base in cls.__mro__ if issubclass(base, CollectionBase)]
         for base in reversed(parents):
             base_item_types = _get_item_types(base)
             if base_item_types is not None:
@@ -124,7 +131,32 @@ class CollectionMeta(NoPermissionsMetaBase, ModelBase):
         return new_class
 
 
+class CollectionManager(models.Manager):
+    """
+    Из-за того, что в большинстве случаев коллекции являются прокси-моделями
+    для Collection, любые запросы от имени любой прокси-коллекции будут распространяться
+    на все экземпляры Collection.
+
+    Этот менеджер ограничивает область действия запросов той прокси-коллекцией,
+    от которой исходит запрос.
+    
+    Для не-прокси моделей поведение стандартное: запрос вернёт все экземпляры таблицы.
+    """
+
+    def get_queryset(self):
+        if self.model._meta.proxy:
+            collection_ct = ContentType.objects.get_for_model(
+                self.model, for_concrete_model=False
+            )
+            return super().get_queryset().filter(collection_content_type=collection_ct)
+        else:
+            return super().get_queryset()
+
+
 class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
+    collection_content_type = models.ForeignKey(
+        ContentType, null=True, on_delete=models.SET_NULL, editable=False
+    )
     items = ContentItemRelation(
         "paper_uploads.CollectionItemBase",
         content_type_field="collection_content_type",
@@ -133,15 +165,29 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
     )
     created_at = models.DateTimeField(_("created at"), default=now, editable=False)
 
+    default_mgr = models.Manager()  # fix migrations manager
+    objects = CollectionManager()
+
     class Meta:
         proxy = False
         abstract = True
         default_permissions = ()
+        default_manager_name = "default_mgr"
         verbose_name = _("collection")
         verbose_name_plural = _("collections")
 
+    def __iter__(self):
+        return self.get_items().iterator()
+
+    def save(self, *args, **kwargs):
+        if not self.collection_content_type:
+            self.collection_content_type = ContentType.objects.get_for_model(
+                self, for_concrete_model=False
+            )
+        super().save(*args, **kwargs)
+
     def delete(self, using=None, keep_parents=False):
-        # Удаляем элементы вручную из-за рекурсии (см. clean_uploads.py, строка 145)
+        # Удаляем элементы вручную из-за рекурсии.
         # Удалить элементы с помощью `.all().delete()` нельзя из-за того, что в
         # файле (django/db/models/deletion.py:248) указано следующее:
         #   model = new_objs[0].__class__
@@ -162,7 +208,7 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
     @classmethod
     def get_item_model(cls, item_type: str) -> 'Type[CollectionItemBase]':
         if item_type not in cls.item_types:
-            raise ValueError(_("Unknown item type: %s") % item_type)
+            raise exceptions.InvalidItemType(item_type)
         return cls.item_types[item_type].model
 
     def set_owner_from(self, field: models.Field):
@@ -170,110 +216,29 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         self.owner_fieldname = field.name
 
     def get_items(self, item_type: str = None) -> 'models.QuerySet[CollectionItemBase]':
-        # TODO: что если класс элемента был удален из коллекции, но элементы остались?
         if item_type is None:
             return self.items.order_by("order")
         if item_type not in self.item_types:
-            raise ValueError(_("Unknown item type: %s") % item_type)
-        return self.items.filter(item_type=item_type).order_by("order")
-
-    def detect_item_type(self, *args, **kwargs) -> Optional[str]:
-        """
-        Генератор, поочередно проверяющий классы элементов коллекции
-        на возможность представления данных, переданных в параметрах.
-        """
-        for item_type, field in self.item_types.items():
-            if hasattr(field.model, "file_supported"):
-                if field.model.file_supported(*args, **kwargs):
-                    yield item_type
-
-
-class CollectionManager(models.Manager):
-    """
-    Из-за того, что все галереи являются прокси-моделями, запросы от имени
-    любого из классов галереи затрагивает абсолютно все объекты галереи.
-    С помощью этого менеджера можно работать только с галереями текущего типа.
-    """
-
-    def get_queryset(self):
-        collection_ct = ContentType.objects.get_for_model(
-            self.model, for_concrete_model=False
-        )
-        return super().get_queryset().filter(collection_content_type=collection_ct)
+            raise exceptions.InvalidItemType(item_type)
+        return self.items.filter(type=item_type).order_by("order")
 
 
 class Collection(CollectionBase):
-    collection_content_type = models.ForeignKey(
-        ContentType, null=True, on_delete=models.SET_NULL, editable=False
-    )
-
-    default_mgr = models.Manager()  # fix migrations manager
-    objects = CollectionManager()
-
     class Meta:
         proxy = False  # явно указываем, что это не прокси-модель
-        default_manager_name = "default_mgr"
-
-    def save(self, *args, **kwargs):
-        if not self.collection_content_type:
-            self.collection_content_type = ContentType.objects.get_for_model(
-                self, for_concrete_model=False
-            )
-        super().save(*args, **kwargs)
 
 
 # ======================================================================================
 
 
 class CollectionItemMetaBase(PolymorphicModelBase, ResourceBaseMeta):
-    """
-    Приём, позволяющий переопределить OneToOne-связь между моделями при наследовании
-    от абстрактной модели.
-
-    По умолчанию, при наследовании от абстрактой модели, унаследованной от конкретной
-    (concrete), попытка переопределния OneToOne-связи не замещает поле по умолчанию,
-    а добавляет второе.
-
-    Ссылка:
-    https://docs.djangoproject.com/en/3.2/topics/db/models/#specifying-the-parent-link-field
-    """
-    def __new__(cls, name, bases, attrs, **kwargs):
-        parents = [b for b in bases if isinstance(b, ModelBase)]
-
-        parent_links = {}
-        for base in reversed(parents):
-            # Conceptually equivalent to `if base is Model`.
-            if not hasattr(base, '_meta'):
-                continue
-
-            # Locate OneToOneField instances.
-            for field in base._meta.local_fields:
-                if isinstance(field, models.OneToOneField) and field.remote_field.parent_link:
-                    key = make_model_tuple(field.remote_field.model)
-                    parent_links.setdefault(key, []).append(field)
-
-        for fieldname, field in list(attrs.items()):
-            if isinstance(field, models.OneToOneField) and field.remote_field.parent_link:
-                key = make_model_tuple(field.remote_field.model)
-                if key in parent_links:
-                    inherited_field = parent_links[key].pop()
-                    if fieldname != inherited_field.name:
-                        # force delete inherited field
-                        attrs[inherited_field.name] = None
-
-        return super().__new__(cls, name, bases, attrs)
+    pass
 
 
-class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
+class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=CollectionItemMetaBase):
     """
     Базовый класс элемента коллекции.
     """
-
-    # Флаг для индикации базового класса элемента коллекции.
-    # См. метод _check_form_class()
-    __BaseCollectionItem = True
-
-    change_form_class: Optional[str] = None
 
     # путь к шаблону, представляющему элемент коллекции в админке
     template_name: Optional[str] = None
@@ -289,12 +254,16 @@ class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
         for_concrete_model=False,
     )
 
-    item_type = models.CharField(
+    type = models.CharField(
         _("type"), max_length=32, db_index=True, editable=False
     )
     order = models.IntegerField(_("order"), default=0, editable=False)
 
     class Meta:
+        # Используется обратный порядок полей в составном индексе,
+        # т.к. слективность поля collection_id выше, а для поля
+        # `collection_content_type` уже есть отдельный индекс.
+        index_together = [("collection_id", "collection_content_type")]
         verbose_name = _("item")
         verbose_name_plural = _("items")
 
@@ -302,43 +271,12 @@ class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
     def check(cls, **kwargs):
         return [
             *super().check(**kwargs),
-            *cls._check_form_class(),
             *cls._check_template_name(),
         ]
 
     @classmethod
-    def _check_form_class(cls, **kwargs):
-        flag = "_{}__BaseCollectionItem".format(cls.__name__)
-        if getattr(cls, flag, None) is True or cls._meta.abstract:
-            return []
-
-        errors = []
-        if cls.change_form_class is None:
-            errors.append(
-                checks.Error(
-                    "{} requires a definition of 'change_form_class'".format(
-                        cls.__name__
-                    ),
-                    obj=cls,
-                )
-            )
-        else:
-            try:
-                import_string(cls.change_form_class)
-            except ImportError:
-                errors.append(
-                    checks.Error(
-                        "The value of 'change_form_class' refers to '%s', which does "
-                        "not exists" % cls.change_form_class,
-                        obj=cls,
-                    )
-                )
-        return errors
-
-    @classmethod
     def _check_template_name(cls, **kwargs):
-        flag = "_{}__BaseCollectionItem".format(cls.__name__)
-        if getattr(cls, flag, None) is True or cls._meta.abstract:
+        if cls._meta.abstract or cls is CollectionItemBase:
             return []
 
         errors = []
@@ -350,6 +288,24 @@ class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
                 )
             )
         return errors
+
+    @property
+    def item_type(self):
+        warnings.warn(
+            "'item_type' is deprecated in favor of 'type'",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self.type
+
+    @item_type.setter
+    def item_type(self, value: str):
+        warnings.warn(
+            "'item_type' is deprecated in favor of 'type'",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        self.type = value
 
     def get_order(self):
         max_order = CollectionItemBase.objects.filter(
@@ -371,12 +327,19 @@ class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
                 self.order = self.get_order()
         super().save(*args, **kwargs)
 
+    @classmethod
+    def accept(cls, *args, **kwargs) -> bool:
+        """
+        Возвращает True, если переданные данные могут быть представлены
+        текущей моделью элемента коллекции.
+        """
+        raise NotImplementedError
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
             "collectionId": self.collection_id,
-            "itemType": self.item_type,
-            "caption": self.get_caption(),
+            "itemType": self.type,
             "order": self.order,
             "preview": self.render_preview(),
         }
@@ -401,14 +364,10 @@ class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
         self.collection_id = collection.pk
         for name, field in collection.item_types.items():
             if field.model is type(self):
-                self.item_type = name
+                self.type = name
                 break
         else:
             raise TypeError(_("Unsupported collection item: %s") % type(self).__name__)
-
-    def get_caption(self):
-        """ Заголовок для виджета в админке """
-        return self.get_basename()
 
     def render_preview(self):
         """ Отображение элемента коллекции в админке """
@@ -419,11 +378,11 @@ class CollectionItemBase(PolymorphicModel, metaclass=CollectionItemMetaBase):
         return {
             "item": self,
             "width": settings.COLLECTION_ITEM_PREVIEW_WIDTH,
-            "height": settings.COLLECTION_ITEM_PREVIEW_HEIGTH,
+            "height": settings.COLLECTION_ITEM_PREVIEW_HEIGHT,
         }
 
 
-class CollectionFileItemBase(CollectionItemBase, FileFieldResource, metaclass=CollectionItemMetaBase):
+class CollectionFileItemBase(CollectionItemBase, FileFieldResource):
     """
     Базовый класс элемента галереи, содержащего файл.
     """
@@ -432,12 +391,17 @@ class CollectionFileItemBase(CollectionItemBase, FileFieldResource, metaclass=Co
         abstract = True
 
     @classmethod
-    def file_supported(cls, file: File) -> bool:
-        """
-        Проверка возможности представления загруженного файла
-        текущим классом элемента в коллекции.
-        """
+    def accept(cls, file: File) -> bool:
         raise NotImplementedError
+
+    @classmethod
+    def file_supported(cls, file: File) -> bool:
+        warnings.warn(
+            "file_supported() is deprecated in favor of accept()",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return cls.accept(file)
 
 
 class FilePreviewMixin(models.Model):
@@ -467,7 +431,7 @@ class FilePreviewMixin(models.Model):
 
 
 class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
-    change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
+    change_form_class = "paper_uploads.forms.dialogs.collection.ChangeFileItemDialog"
     template_name = "paper_uploads/items/file.html"
     preview_template_name = "paper_uploads/items/preview/file.html"
 
@@ -501,13 +465,19 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field("file")
 
+    def get_caption(self):
+        name = self.display_name or self.basename
+        if self.extension:
+            return "{}.{}".format(name, self.extension)
+        return name
+
     @classmethod
-    def file_supported(cls, file: File) -> bool:
+    def accept(cls, file: File) -> bool:
         return True
 
 
 class SVGItemBase(CollectionFileItemBase):
-    change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
+    change_form_class = "paper_uploads.forms.dialogs.collection.ChangeFileItemDialog"
     template_name = "paper_uploads/items/svg.html"
     preview_template_name = "paper_uploads/items/preview/svg.html"
 
@@ -541,15 +511,21 @@ class SVGItemBase(CollectionFileItemBase):
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field("file")
 
+    def get_caption(self):
+        name = self.display_name or self.basename
+        if self.extension:
+            return "{}.{}".format(name, self.extension)
+        return name
+
     @classmethod
-    def file_supported(cls, file: File) -> bool:
+    def accept(cls, file: File) -> bool:
         filename, ext = posixpath.splitext(file.name)
         return ext.lower() == ".svg"
 
 
 class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
-    PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
-    change_form_class = "paper_uploads.forms.dialogs.collection.ImageItemDialog"
+    PREVIEW_VARIATIONS = IMAGE_ITEM_VARIATIONS
+    change_form_class = "paper_uploads.forms.dialogs.collection.ChangeImageItemDialog"
     template_name = "paper_uploads/items/image.html"
     preview_template_name = "paper_uploads/items/preview/image.html"
 
@@ -581,11 +557,14 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         """
         Превью для админки режутся сразу, а остальное — потом.
         """
-        preview_variations = tuple(self.PREVIEW_VARIATIONS.keys())
+        preview_variations = tuple(iterate_variation_names(self.PREVIEW_VARIATIONS))
         self.recut(names=preview_variations)
 
-        other_variations = tuple(set(names).difference(preview_variations))
-        super().recut_async(other_variations)
+        if not names:
+            names = self.get_variations().keys()
+
+        rest_variations = tuple(set(names).difference(preview_variations))
+        super().recut_async(rest_variations)
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         """
@@ -603,9 +582,9 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         return self._variations_cache
 
     @classmethod
-    def file_supported(cls, file: File) -> bool:
+    def accept(cls, file: File) -> bool:
         mimetype = magic.from_buffer(file.read(1024), mime=True)
-        file.seek(0)  # correct file position after mimetype detection
+        file.seek(0)  # reset file position after mimetype detection
         basetype, subtype = mimetype.split("/", 1)
         return basetype == "image"
 
@@ -617,8 +596,8 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
             variations = rel.options["variations"]
         else:
             variations = getattr(collection_cls, "VARIATIONS", None)
-        variations = (variations or {}).copy()
-        variations.update(cls.PREVIEW_VARIATIONS)
+        variations = variations or {}
+        variations = dict(cls.PREVIEW_VARIATIONS, **variations)
         return variations
 
 

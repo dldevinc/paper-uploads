@@ -1,8 +1,8 @@
 from ...models.file import UploadedFile
-from .base import UploadedFileBaseForm
+from .base import ChangeFileResourceDialogBase
 
 
-class UploadedFileDialog(UploadedFileBaseForm):
+class ChangeUploadedFileDialog(ChangeFileResourceDialogBase):
     class Meta:
         model = UploadedFile
-        fields = ("new_name", "display_name")
+        fields = ["new_name", "display_name"]

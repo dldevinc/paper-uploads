@@ -1,34 +1,40 @@
-from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
-from django.core.files.uploadedfile import UploadedFile
-from django.utils.translation import gettext_lazy as _
+from typing import Any, Type, cast
 
-from .. import exceptions
-from ..forms.dialogs.file import UploadedFileDialog
+from django.core.files.uploadedfile import UploadedFile
+from django.http import HttpResponse
+from django.utils.module_loading import import_string
+
 from ..helpers import run_validators
-from ..logging import logger
 from ..models.base import FileResource
+from ..models.mixins import BacklinkModelMixin, EditableResourceMixin
 from . import helpers
 from .base import ChangeFileViewBase, DeleteFileViewBase, UploadFileViewBase
 
 
 class UploadFileView(UploadFileViewBase):
-    def handle(self, request, file: UploadedFile):
-        content_type_id = request.POST.get("paperContentType")
-        model_class = helpers.get_model_class(content_type_id, FileResource)
-        instance = model_class(
-            owner_app_label=request.POST.get("paperOwnerAppLabel"),
-            owner_model_name=request.POST.get("paperOwnerModelName"),
-            owner_fieldname=request.POST.get("paperOwnerFieldName"),
+    def get_file_model(self) -> Type[FileResource]:
+        content_type_id = self.request.POST.get("paperContentType")
+        return helpers.get_model_class(content_type_id, FileResource)
+
+    def get_instance(self) -> FileResource:
+        file_model = self.get_file_model()
+        return file_model(
+            owner_app_label=self.request.POST.get("paperOwnerAppLabel"),
+            owner_model_name=self.request.POST.get("paperOwnerModelName"),
+            owner_fieldname=self.request.POST.get("paperOwnerFieldName"),
         )
 
-        try:
-            instance.attach_file(file)
-        except exceptions.UnsupportedFileError as e:
-            return self.error_response(e.message)
+    def handle(self, file: UploadedFile) -> HttpResponse:
+        instance = self.get_instance()
+
+        owner_field = None
+        if isinstance(instance, BacklinkModelMixin):
+            owner_field = instance.get_owner_field()
+
+        instance.attach(file)
 
         try:
             instance.full_clean()
-            owner_field = instance.get_owner_field()
             if owner_field is not None:
                 run_validators(file, owner_field.validators)
         except Exception:
@@ -36,45 +42,54 @@ class UploadFileView(UploadFileViewBase):
             raise
 
         instance.save()
+
+        return self.success(instance)
+
+    def success(self, instance: FileResource) -> HttpResponse:
         return self.success_response(instance.as_dict())
 
 
 class DeleteFileView(DeleteFileViewBase):
-    def handle(self, request):
-        content_type_id = request.POST.get("paperContentType")
-        model_class = helpers.get_model_class(content_type_id, FileResource)
-        pk = request.POST.get("pk")
+    def get_file_model(self) -> Type[FileResource]:
+        content_type_id = self.request.POST.get("paperContentType")
+        return helpers.get_model_class(content_type_id, FileResource)
 
-        try:
-            instance = helpers.get_instance(model_class, pk)
-        except exceptions.InvalidObjectId:
-            logger.exception("Error")
-            return self.error_response(_("Invalid ID"))
-        except ObjectDoesNotExist:
-            logger.exception("Error")
-            return self.error_response(_("Object not found"))
-        except MultipleObjectsReturned:
-            logger.exception("Error")
-            return self.error_response(_("Multiple objects returned"))
+    def get_file_id(self) -> Any:
+        return self.request.POST.get("pk")
 
+    def get_instance(self) -> FileResource:
+        file_model = self.get_file_model()
+        file_id = self.get_file_id()
+        return cast(FileResource, helpers.get_instance(file_model, file_id))
+
+    def handle(self) -> HttpResponse:
+        instance = self.get_instance()
         instance.delete()
+        return self.success()
+
+    def success(self) -> HttpResponse:
         return self.success_response()
 
 
 class ChangeFileView(ChangeFileViewBase):
-    form_class = UploadedFileDialog
     template_name = "paper_uploads/dialogs/file.html"
 
-    def get_instance(self, request, *args, **kwargs):
+    def get_file_model(self) -> Type[FileResource]:
         content_type_id = self.request.GET.get("paperContentType")
-        model_class = helpers.get_model_class(content_type_id, FileResource)
-        pk = self.request.GET.get("pk")
+        return helpers.get_model_class(content_type_id, FileResource)
 
-        try:
-            return helpers.get_instance(model_class, pk)
-        except exceptions.InvalidObjectId:
-            raise exceptions.AjaxFormError(_("Invalid ID"))
-        except ObjectDoesNotExist:
-            raise exceptions.AjaxFormError(_("Object not found"))
-        except MultipleObjectsReturned:
-            raise exceptions.AjaxFormError(_("Multiple objects returned"))
+    def get_file_id(self) -> Any:
+        return self.request.GET.get("pk")
+
+    def get_instance(self) -> FileResource:
+        file_model = self.get_file_model()
+        file_id = self.get_file_id()
+        return cast(FileResource, helpers.get_instance(file_model, file_id))
+
+    def get_form_class(self):
+        if self.form_class is not None:
+            return self.form_class
+
+        file_model = self.get_file_model()
+        if issubclass(file_model, EditableResourceMixin):
+            return import_string(file_model.change_form_class)

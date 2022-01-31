@@ -1,9 +1,11 @@
 from typing import Optional, Type
 
 from django.apps import apps
+from django.core import checks
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from django.db.models.utils import make_model_tuple
+from django.utils.module_loading import import_string
 
 from ..logging import logger
 
@@ -12,6 +14,9 @@ class BacklinkModelMixin(models.Model):
     """
     Миксина, позволяющая обратиться к полю модели, которое ссылается
     на текущий объект.
+
+    Этот миксин должен использоваться в каждой модели, которая используется
+    в полях FileField, ImageField или CollectionField.
     """
 
     owner_app_label = models.CharField(max_length=100, editable=False)
@@ -180,3 +185,38 @@ class FileFieldProxyMixin:
     def url(self):
         self._require_file()  # noqa: F821
         return self.get_file().url  # noqa: F821
+
+
+class EditableResourceMixin:
+    """
+    Добавление поля сос ссылкой на класс формы, через которую
+    следует редактировать ресурс в интерфейсе администратора.
+    """
+    change_form_class: Optional[str] = None
+
+    @classmethod
+    def check(cls, **kwargs):
+        return [
+            *super().check(**kwargs),
+            *cls._check_form_class(),
+        ]
+
+    @classmethod
+    def _check_form_class(cls, **kwargs):
+        if cls._meta.abstract or cls.change_form_class is None:
+            return []
+
+        errors = []
+
+        try:
+            import_string(cls.change_form_class)
+        except ImportError:
+            errors.append(
+                checks.Error(
+                    "The value of 'change_form_class' refers to '%s', which does "
+                    "not exists" % cls.change_form_class,
+                    obj=cls,
+                )
+            )
+
+        return errors

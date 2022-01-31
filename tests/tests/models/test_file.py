@@ -5,6 +5,7 @@ from paper_uploads.models import UploadedFile
 
 from ..dummy import *
 from .test_dummy import (
+    BacklinkModelMixin,
     TestFileFieldResource,
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
@@ -13,7 +14,7 @@ from .test_dummy import (
 )
 
 
-class TestUploadedFile(TestFileFieldResource):
+class TestUploadedFile(BacklinkModelMixin, TestFileFieldResource):
     resource_url = '/media/files/%Y-%m-%d'
     resource_location = 'files/%Y-%m-%d'
     resource_name = 'Nature Tree'
@@ -23,7 +24,7 @@ class TestUploadedFile(TestFileFieldResource):
     owner_app_label = 'app'
     owner_model_name = 'fileexample'
     owner_fieldname = 'file'
-    owner_class = FileExample
+    owner_model = FileExample
     file_field_name = 'file'
 
     @classmethod
@@ -34,7 +35,7 @@ class TestUploadedFile(TestFileFieldResource):
             owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
 
         yield
@@ -53,6 +54,10 @@ class TestUploadedFile(TestFileFieldResource):
             'id': 1,
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
             'file_info': '(Jpeg, 672.8\xa0KB)',
             'url': storage.resource.get_file_url(),
@@ -66,12 +71,13 @@ class TestUploadedFileAttach(TestFileFieldResourceAttach):
     resource_class = UploadedFile
 
 
-class TestUploadedFileRename(TestFileFieldResourceRename):
+class TestUploadedFileRename(BacklinkModelMixin, TestFileFieldResourceRename):
     resource_class = UploadedFile
     resource_location = 'files/%Y-%m-%d'
     owner_app_label = 'app'
     owner_model_name = 'fileexample'
     owner_fieldname = 'file'
+    owner_model = FileExample
 
     @classmethod
     def init_class(cls, storage):
@@ -81,13 +87,15 @@ class TestUploadedFileRename(TestFileFieldResourceRename):
             owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
         storage.old_source_path = file.path
-        storage.resource.rename_file('new_name.png')
+
+        storage.resource.rename('new_name.png')
+        storage.resource.save()
 
         yield
 
@@ -96,12 +104,13 @@ class TestUploadedFileRename(TestFileFieldResourceRename):
         storage.resource.delete()
 
 
-class TestUploadedFileDelete(TestFileFieldResourceDelete):
+class TestUploadedFileDelete(BacklinkModelMixin, TestFileFieldResourceDelete):
     resource_class = UploadedFile
     resource_location = 'files/%Y-%m-%d'
     owner_app_label = 'app'
     owner_model_name = 'fileexample'
     owner_fieldname = 'file'
+    owner_model = FileExample
 
     @classmethod
     def init_class(cls, storage):
@@ -111,7 +120,7 @@ class TestUploadedFileDelete(TestFileFieldResourceDelete):
             owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -128,16 +137,21 @@ class TestUploadedFileEmpty(TestFileFieldResourceEmpty):
     recource_class = UploadedFile
 
 
-class TestUploadedFileExists:
-    @staticmethod
-    def init_class(storage):
+class TestUploadedFileExists(BacklinkModelMixin):
+    owner_app_label = 'app'
+    owner_model_name = 'fileexample'
+    owner_fieldname = 'file'
+    owner_model = FileExample
+
+    @classmethod
+    def init_class(cls, storage):
         storage.resource = UploadedFile(
-            owner_app_label='app',
-            owner_model_name='fileexample',
-            owner_fieldname='file'
+            owner_app_label=cls.owner_app_label,
+            owner_model_name=cls.owner_model_name,
+            owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
 
         yield

@@ -1,10 +1,12 @@
+from django.contrib import admin
 from django.urls import path
 
 from .. import views
-from .base import UploadedFileBase
+from ..models.collection import Collection
+from .base import ResourceAdminBase
 
 
-class CollectionAdminBase(UploadedFileBase):
+class CollectionAdminBase(ResourceAdminBase):
     create_collection_view_class = views.collection.CreateCollectionView
     delete_collection_view_class = views.collection.DeleteCollectionView
     upload_item_view_class = views.collection.UploadFileView
@@ -26,24 +28,29 @@ class CollectionAdminBase(UploadedFileBase):
                 name="%s_%s_delete" % info,
             ),
             path(
-                "upload_item/",
+                "upload-item/",
                 self.admin_site.admin_view(self.upload_item_view_class.as_view()),
                 name="%s_%s_upload_item" % info,
             ),
             path(
-                "delete_item/",
+                "delete-item/",
                 self.admin_site.admin_view(self.delete_item_view_class.as_view()),
                 name="%s_%s_delete_item" % info,
             ),
             path(
-                "change_item/",
+                "change-item/",
                 self.admin_site.admin_view(self.change_item_view_class.as_view()),
                 name="%s_%s_change_item" % info,
             ),
             path(
-                "sort_items/",
+                "sort-items/",
                 self.admin_site.admin_view(self.sort_items_view_class.as_view()),
                 name="%s_%s_sort_items" % info,
             ),
         ]
         return urlpatterns
+
+
+@admin.register(Collection)
+class CollectionAdmin(CollectionAdminBase):
+    pass

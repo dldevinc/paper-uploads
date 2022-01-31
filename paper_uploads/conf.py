@@ -9,20 +9,8 @@ DEFAULTS = {
     "COLLECTION_FILES_UPLOAD_TO": "collections/files/%Y-%m-%d",
     "COLLECTION_IMAGES_UPLOAD_TO": "collections/images/%Y-%m-%d",
     "COLLECTION_ITEM_PREVIEW_WIDTH": 180,
-    "COLLECTION_ITEM_PREVIEW_HEIGTH": 135,
-    "COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS": dict(
-        admin_preview=dict(
-            size=(180, 135),
-            format="jpeg",
-            versions={"webp", "2x"},
-            jpeg=dict(
-                quality=75
-            ),
-            webp=dict(
-                quality=65
-            ),
-        ),
-    ),
+    "COLLECTION_ITEM_PREVIEW_HEIGHT": 135,
+
     "RQ_ENABLED": False,
     "RQ_QUEUE_NAME": "default",
     "VARIATION_DEFAULTS": None,
@@ -136,4 +124,22 @@ class Settings:
 
 settings = Settings(
     getattr(conf.settings, "PAPER_UPLOADS", {}), DEFAULTS, IMPORT_STRINGS
+)
+
+
+IMAGE_ITEM_VARIATIONS = dict(
+    admin_preview=dict(
+        size=(
+            settings.COLLECTION_ITEM_PREVIEW_WIDTH,
+            settings.COLLECTION_ITEM_PREVIEW_HEIGHT
+        ),
+        format="jpeg",
+        versions={"webp", "2x"},
+        jpeg=dict(
+            quality=75
+        ),
+        webp=dict(
+            quality=65
+        ),
+    ),
 )

@@ -20,6 +20,7 @@ from ... import exceptions, helpers, utils
 from ...conf import settings
 from ...logging import logger
 from ...models.base import FileResource
+from ...models.mixins import BacklinkModelMixin
 from .mixins import ReadonlyCloudinaryFileProxyMixin
 
 
@@ -209,9 +210,10 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         options.update(file_field.options)
 
         # owner field`s options should override `CloudinaryField` options
-        owner_field = self.get_owner_field()
-        if owner_field is not None and hasattr(owner_field, "cloudinary"):
-            options.update(owner_field.cloudinary or {})
+        if isinstance(self, BacklinkModelMixin):
+            owner_field = self.get_owner_field()
+            if owner_field is not None and hasattr(owner_field, "cloudinary"):
+                options.update(owner_field.cloudinary or {})
 
         # filter keys
         options = {
@@ -229,7 +231,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
 
         return options
 
-    def _attach_file(self, file: File, **options):
+    def _attach(self, file: File, **options):
         cloudinary_options = self.get_cloudinary_options()
         cloudinary_options.update(options.get("cloudinary", {}))
 
@@ -249,7 +251,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
             )
         except cloudinary.exceptions.Error as e:
             if e.args and "Unsupported file type" in e.args[0]:
-                raise exceptions.UnsupportedFileError(
+                raise exceptions.UnsupportedResource(
                     _("File `%s` is not an image") % file.name
                 )
             else:
@@ -279,7 +281,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         self.extension = file_format or ""
         return result
 
-    def _rename_file(self, new_name: str, **options):
+    def _rename(self, new_name: str, **options):
         # TODO: Cloudinary can't copy files. We dont't want to do it manually
         cloudinary_options = self.get_cloudinary_options()
         cloudinary_options.update(options.get("cloudinary", {}))

@@ -13,15 +13,16 @@ from app.models.site import (
     CloudinaryFileCollection,
     CloudinaryMediaCollection,
 )
+from paper_uploads import exceptions
 from paper_uploads.cloudinary.models import (
     CloudinaryFileItem,
     CloudinaryImageItem,
     CloudinaryMediaItem,
 )
-from paper_uploads.exceptions import UnsupportedFileError
 
 from ... import utils
 from ...dummy import *
+from ...models.test_collection import CollectionItemMixin
 from ...models.test_dummy import (
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
@@ -32,17 +33,16 @@ from ...models.test_dummy import (
     TestImageFieldResourceEmpty,
     TestImageFieldResourceRename,
 )
-from ...models.test_collection import CollectionItemMixin
 from .test_base import CloudinaryFileResource
 
 
 class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
     resource_url = '/media/collections/files/%Y-%m-%d'
     resource_location = 'collections/files/%Y-%m-%d'
-    resource_name = 'document'
-    resource_extension = 'pdf'
-    resource_size = 3028
-    resource_checksum = '93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e'
+    resource_name = 'table'
+    resource_extension = 'xls'
+    resource_size = 8704
+    resource_checksum = 'c9c8ad905aa5142731b1e8ab34d5862f871627fa7ad8005264494c2489d2061e'
     file_field_name = 'file'
     collection_class = CloudinaryCompleteCollection
 
@@ -52,8 +52,8 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
 
         storage.resource = CloudinaryFileItem()
         storage.resource.attach_to(storage.collection)
-        with open(DOCUMENT_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+        with open(EXCEL_FILEPATH, 'rb') as fp:
+            storage.resource.attach(fp)
         storage.resource.save()
 
         yield
@@ -69,7 +69,7 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
         assert storage.resource.display_name == self.resource_name
 
     def test_item_type(self, storage):
-        assert storage.resource.item_type == 'file'
+        assert storage.resource.type == 'file'
 
     def test_type(self, storage):
         file_field = storage.resource.get_file_field()
@@ -78,17 +78,17 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
 
     def test_public_id(self, storage):
         public_id = storage.resource.get_file().public_id
-        pattern = posixpath.join(self.resource_location, 'document{suffix}.pdf')
+        pattern = posixpath.join(self.resource_location, 'table{suffix}.xls')
         assert public_id == utils.get_target_filepath(pattern, public_id)
 
     def test_name(self, storage):
         file_name = storage.resource.name
-        pattern = posixpath.join(self.resource_location, 'document{suffix}.pdf')
+        pattern = posixpath.join(self.resource_location, 'table{suffix}.xls')
         assert file_name == utils.get_target_filepath(pattern, file_name)
 
     def test_read(self, storage):
         with storage.resource.open() as fp:
-            assert fp.read(4) == b'%PDF'
+            assert fp.read(4) == b'\xd0\xcf\x11\xe0'
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
@@ -97,8 +97,11 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
             'itemType': 'file',
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
-            'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
             'order': 0,
             'preview': render_to_string(
                 'paper_uploads/items/preview/file.html',
@@ -110,18 +113,18 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
             'uploaded': storage.resource.uploaded_at.isoformat(),
         }
 
-    def test_file_supported(self, storage):
-        with open(DOCUMENT_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
+    def test_accept(self, storage):
+        with open(EXCEL_FILEPATH, 'rb') as fp:
+            assert storage.resource.accept(File(fp)) is True
 
         with open(NATURE_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
+            assert storage.resource.accept(File(fp)) is True
 
         with open(MEDITATION_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
+            assert storage.resource.accept(File(fp)) is True
 
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
+            assert storage.resource.accept(File(fp)) is True
 
 
 @pytest.mark.django_db
@@ -153,12 +156,12 @@ class TestFileItemRename(TestFileFieldResourceRename):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_cfile_name_{}.jpg'.format(storage.uid))
+            storage.resource.attach(fp, name='old_cfile_name_{}.jpg'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
-        storage.resource.rename_file('new_cfile_name_{}.png'.format(storage.uid))
+        storage.resource.rename('new_cfile_name_{}.png'.format(storage.uid))
 
         yield
 
@@ -213,7 +216,7 @@ class TestFileItemDelete(TestFileFieldResourceDelete):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -260,7 +263,7 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
     owner_app_label = ''
     owner_model_name = ''
     owner_fieldname = ''
-    owner_class = None
+    owner_model = None
     file_field_name = 'file'
     collection_class = CloudinaryCompleteCollection
 
@@ -271,7 +274,7 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
         storage.resource = CloudinaryMediaItem()
         storage.resource.attach_to(storage.collection)
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
 
         yield
@@ -287,7 +290,7 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
         assert storage.resource.display_name == self.resource_name
 
     def test_item_type(self, storage):
-        assert storage.resource.item_type == 'media'
+        assert storage.resource.type == 'media'
 
     def test_type(self, storage):
         file_field = storage.resource.get_file_field()
@@ -315,8 +318,11 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
             'itemType': 'media',
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
-            'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
             'order': 0,
             'preview': render_to_string(
                 'paper_uploads/items/preview/file.html',
@@ -328,18 +334,18 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
             'uploaded': storage.resource.uploaded_at.isoformat(),
         }
 
-    def test_file_supported(self, storage):
-        with open(DOCUMENT_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is False
+    def test_accept(self, storage):
+        with open(EXCEL_FILEPATH, 'rb') as fp:
+            assert storage.resource.accept(File(fp)) is False
 
         with open(NATURE_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is False
+            assert storage.resource.accept(File(fp)) is False
 
         with open(MEDITATION_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is False
+            assert storage.resource.accept(File(fp)) is False
 
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
+            assert storage.resource.accept(File(fp)) is True
 
 
 @pytest.mark.django_db
@@ -363,7 +369,7 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
     def test_file(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp)
+                resource.attach(fp)
 
             assert resource.basename == 'audio'
             assert resource.extension == 'mp3'
@@ -374,7 +380,7 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
                 file = File(fp, name='milky-way-nasa.jpg')
-                resource.attach_file(file)
+                resource.attach(file)
 
             assert resource.basename == 'milky-way-nasa'
             assert resource.extension == 'mp3'
@@ -384,7 +390,7 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
     def test_override_name(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp, name='overwritten.jpg')
+                resource.attach(fp, name='overwritten.jpg')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
@@ -393,7 +399,7 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
                 file = File(fp, name='not_used.png')
-                resource.attach_file(file, name='overwritten.jpg')
+                resource.attach(file, name='overwritten.jpg')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
@@ -401,7 +407,7 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
     def test_wrong_extension(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp, name='overwritten.gif')
+                resource.attach(fp, name='overwritten.gif')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
@@ -409,14 +415,14 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
     def test_file_position_at_end(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp)
+                resource.attach(fp)
                 assert fp.tell() == self.resource_size
 
     def test_unsupported_file(self):
         with self.get_resource() as resource:
             with open(NASA_FILEPATH, 'rb') as fp:
-                with pytest.raises(UnsupportedFileError):
-                    resource.attach_file(fp)
+                with pytest.raises(exceptions.UnsupportedResource):
+                    resource.attach(fp)
 
 
 class TestMediaItemRename(TestFileFieldResourceRename):
@@ -431,12 +437,12 @@ class TestMediaItemRename(TestFileFieldResourceRename):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_cmedia_name_{}.mp3'.format(storage.uid))
+            storage.resource.attach(fp, name='old_cmedia_name_{}.mp3'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
-        storage.resource.rename_file('new_cmedia_name_{}.ogg'.format(storage.uid))
+        storage.resource.rename('new_cmedia_name_{}.ogg'.format(storage.uid))
 
         yield
 
@@ -494,7 +500,7 @@ class TestMediaItemDelete(TestFileFieldResourceDelete):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -547,7 +553,7 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
     owner_app_label = ''
     owner_model_name = ''
     owner_fieldname = ''
-    owner_class = None
+    owner_model = None
     file_field_name = 'file'
     collection_class = CloudinaryCompleteCollection
 
@@ -558,7 +564,7 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
         storage.resource = CloudinaryImageItem()
         storage.resource.attach_to(storage.collection)
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
 
         yield
@@ -571,7 +577,7 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
         assert storage.resource.get_file_folder() == self.resource_location
 
     def test_item_type(self, storage):
-        assert storage.resource.item_type == 'image'
+        assert storage.resource.type == 'image'
 
     def test_type(self, storage):
         file_field = storage.resource.get_file_field()
@@ -595,13 +601,16 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
             'itemType': 'image',
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
             'width': 1534,
             'height': 2301,
             'cropregion': '',
             'title': '',
             'description': '',
-            'caption': '{}.{}'.format(self.resource_name, self.resource_extension),
             'order': 0,
             'preview': render_to_string(
                 'paper_uploads_cloudinary/items/preview/image.html',
@@ -619,18 +628,18 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
     def test_height(self, storage):
         assert storage.resource.height == 2301
 
-    def test_file_supported(self, storage):
-        with open(DOCUMENT_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is False
+    def test_accept(self, storage):
+        with open(EXCEL_FILEPATH, 'rb') as fp:
+            assert storage.resource.accept(File(fp)) is False
 
         with open(NATURE_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
+            assert storage.resource.accept(File(fp)) is True
 
         with open(MEDITATION_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is True
+            assert storage.resource.accept(File(fp)) is True
 
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            assert storage.resource.file_supported(File(fp)) is False
+            assert storage.resource.accept(File(fp)) is False
 
 
 @pytest.mark.django_db
@@ -651,9 +660,9 @@ class TestImageItemAttach(TestImageFieldResourceAttach):
 
     def test_unsupported_file(self):
         with self.get_resource() as resource:
-            with open(DOCUMENT_FILEPATH, 'rb') as fp:
-                with pytest.raises(UnsupportedFileError):
-                    resource.attach_file(fp)
+            with open(EXCEL_FILEPATH, 'rb') as fp:
+                with pytest.raises(exceptions.UnsupportedResource):
+                    resource.attach(fp)
 
 
 class TestImageItemRename(TestImageFieldResourceRename):
@@ -668,12 +677,12 @@ class TestImageItemRename(TestImageFieldResourceRename):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_cimage_name_{}.jpg'.format(storage.uid))
+            storage.resource.attach(fp, name='old_cimage_name_{}.jpg'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
-        storage.resource.rename_file('new_cimage_name_{}.png'.format(storage.uid))
+        storage.resource.rename('new_cimage_name_{}.png'.format(storage.uid))
 
         yield
 
@@ -731,7 +740,7 @@ class TestImageItemDelete(TestImageFieldResourceDelete):
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
         with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()

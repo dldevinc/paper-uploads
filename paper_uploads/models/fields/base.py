@@ -87,7 +87,7 @@ class ResourceFieldBase(models.OneToOneField):
             # Удаление через `owner_instance.file.delete()` приведёт к зацикленности
             # в случае использования `on_delete=CASCADE`. Поэтому используем фильтрацию
             # по pk.
-            self.related_model.objects.filter(pk=resource_id).delete()
+            self.related_model._base_manager.filter(pk=resource_id).delete()
 
 
 class FileResourceFieldBase(ResourceFieldBase):

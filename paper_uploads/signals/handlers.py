@@ -20,7 +20,7 @@ class RenameFileField(migrations.RunPython):
 
             if isinstance(field, FileResourceFieldBase):
                 with transaction.atomic(using=db):
-                    field.related_model.objects.db_manager(db).filter(
+                    field.related_model._base_manager.db_manager(db).filter(
                         owner_app_label=self.app_label,
                         owner_model_name=self.model_name,
                         owner_fieldname=old_name,
@@ -50,7 +50,7 @@ class RenameFileModel(migrations.RunPython):
         for field in state_model._meta.fields:
             if isinstance(field, FileResourceFieldBase):
                 with transaction.atomic(using=db):
-                    field.related_model.objects.db_manager(db).filter(
+                    field.related_model._base_manager.db_manager(db).filter(
                         owner_app_label=self.app_label,
                         owner_model_name=old_name,
                         owner_fieldname=field.name,

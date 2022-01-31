@@ -5,27 +5,34 @@ from typing import Any, Dict, Iterable, List, Optional, Union
 from uuid import UUID
 
 from django.conf import settings
-from django.core.exceptions import NON_FIELD_ERRORS, ValidationError
+from django.core.exceptions import (
+    NON_FIELD_ERRORS,
+    ImproperlyConfigured,
+    MultipleObjectsReturned,
+    ObjectDoesNotExist,
+    ValidationError,
+)
 from django.core.files.uploadedfile import UploadedFile
-from django.http import JsonResponse
+from django.core.handlers.wsgi import WSGIRequest
+from django.http import HttpResponse, JsonResponse
 from django.template import loader
 from django.utils.decorators import method_decorator
+from django.utils.functional import Promise
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic.base import TemplateResponseMixin
 from django.views.generic.edit import FormMixin
 
 from .. import exceptions
 from ..files import TemporaryUploadedFile
 from ..logging import logger
+from ..models.base import Resource
 
 
 class AjaxView(View):
     @staticmethod
     def success_response(data: Optional[Dict[str, Any]] = None) -> JsonResponse:
         data = data or {}
-        data["success"] = True
         return JsonResponse(data)
 
     @staticmethod
@@ -51,46 +58,58 @@ class AjaxView(View):
             errors = []
         elif isinstance(errors, str):
             errors = [errors]
+        elif isinstance(errors, Promise):
+            errors = [str(errors)]
 
         data = {
-            "success": False,
             "errors": errors,
         }
         data.update(extra_data)
         return JsonResponse(data)
 
+    @classmethod
+    def wrap(cls, func):
+        def inner(*args, **kwargs) -> HttpResponse:
+            try:
+                return func(*args, **kwargs)
+            except exceptions.InvalidContentType as e:
+                logger.exception("Error")
+                return cls.error_response(_("Invalid ContentType: %s") % e.value)
+            except exceptions.InvalidObjectId as e:
+                logger.exception("Error")
+                return cls.error_response(_("Invalid ID: %s") % e.value)
+            except exceptions.InvalidItemType as e:
+                logger.exception("Error")
+                return cls.error_response(_("Invalid itemType: %s") % e.value)
+            except ObjectDoesNotExist:
+                logger.exception("Error")
+                return cls.error_response(_("Object not found"))
+            except MultipleObjectsReturned:
+                logger.exception("Error")
+                return cls.error_response(_("Multiple objects returned"))
+            except ValidationError as e:
+                messages = cls.get_exception_messages(e)
+                logger.debug(messages)
+                return cls.error_response(messages)
+            except Exception as e:
+                logger.exception("Error")
+                if hasattr(e, "args"):
+                    message = "{}: {}".format(type(e).__name__, e.args[0])
+                else:
+                    message = type(e).__name__
+                return cls.error_response(message)
 
-class ActionView(AjaxView):
-    def perform_action(self, request, *args, **kwargs):
-        try:
-            return self.handle(request, *args, **kwargs)
-        except exceptions.InvalidContentType:
-            logger.exception("Error")
-            return self.error_response(_("Invalid ContentType"))
-        except ValidationError as e:
-            messages = self.get_exception_messages(e)
-            logger.debug(messages)
-            return self.error_response(messages)
-        except Exception as e:
-            logger.exception("Error")
-            if hasattr(e, "args"):
-                message = "{}: {}".format(type(e).__name__, e.args[0])
-            else:
-                message = type(e).__name__
-            return self.error_response(message)
-
-    def handle(self, *args, **kwargs):
-        raise NotImplementedError
+        return inner
 
 
-class UploadFileViewBase(ActionView):
+class UploadFileViewBase(AjaxView):
     http_method_names = ["post"]
 
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         if not request.user.has_perm("paper_uploads.upload"):
             return self.error_response(_("Access denied"))
 
@@ -108,11 +127,13 @@ class UploadFileViewBase(ActionView):
             return self.error_response(_("Invalid chunking"), preventRetry=True)
 
         try:
-            return self.perform_action(request, file)
+            return self.wrap(self.handle)(file)
+        except exceptions.UnsupportedResource as e:
+            return self.error_response(e.message)
         finally:
             file.close()
 
-    def upload_chunk(self, request) -> UploadedFile:
+    def upload_chunk(self, request: WSGIRequest) -> UploadedFile:
         try:
             chunk_index = int(request.POST["paperChunkIndex"])
             total_chunks = int(request.POST["paperTotalChunkCount"])
@@ -165,88 +186,100 @@ class UploadFileViewBase(ActionView):
             )
         return file
 
+    def handle(self, file: UploadedFile) -> HttpResponse:
+        raise NotImplementedError
 
-class DeleteFileViewBase(ActionView):
+
+class DeleteFileViewBase(AjaxView):
     http_method_names = ["post"]
 
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
         if not request.user.has_perm("paper_uploads.delete"):
             return self.error_response(_("Access denied"))
-        return self.perform_action(request, *args, **kwargs)
+        return self.wrap(self.handle)()
+
+    def handle(self) -> HttpResponse:
+        raise NotImplementedError
 
 
-class ChangeFileViewBase(TemplateResponseMixin, FormMixin, AjaxView):
+class ChangeFileViewBase(FormMixin, AjaxView):
+    template_name = None
     http_method_names = ["get", "post"]
-    instance = None
 
-    def get(self, request, *args, **kwargs):
-        if not request.user.has_perm("paper_uploads.change"):
-            return self.error_response(_("Access denied"))
-
-        try:
-            self.instance = self.get_instance(request, *args, **kwargs)
-        except exceptions.AjaxFormError as exc:
-            logger.exception("Error")
-            return self.error_response(exc.message)
-
-        context = self.get_context_data(**kwargs)
-        return self.success_response({
-            "form": loader.render_to_string(self.template_name, context, request=request)
-        })
-
-    def post(self, request, *args, **kwargs):
-        if not request.user.has_perm("paper_uploads.change"):
-            return self.error_response(_("Access denied"))
-
-        try:
-            self.instance = self.get_instance(request, *args, **kwargs)
-        except exceptions.AjaxFormError as exc:
-            logger.exception("Error")
-            return self.error_response(exc.message)
-
-        form = self.get_form()
-        if not form.is_valid():
-            return self.form_invalid(form)
-
-        try:
-            return self.form_valid(form)
-        except ValidationError as e:
-            messages = self.get_exception_messages(e)
-            logger.debug(messages)
-            return self.error_response(messages)
-        except exceptions.FileNotFoundError as e:
-            error = _("File not found: %s") % e.name
-            logger.debug(error)
-            return self.error_response(error)
-        except exceptions.AjaxFormError as exc:
-            logger.exception("Error")
-            return self.error_response(exc.message)
+    def get_template_name(self) -> str:
+        if self.template_name is None:
+            raise ImproperlyConfigured(
+                "{} requires either a definition of "
+                "'template_name' or an implementation of 'get_template_name()'".format(
+                    type(self).__name__
+                )
+            )
+        else:
+            return self.template_name
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update({
             "action": self.request.get_full_path(),
-            "instance": self.instance,
         })
         return context
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["instance"] = self.instance
+        kwargs["instance"] = self.get_instance()
         return kwargs
 
-    def get_instance(self, request, *args, **kwargs):
+    def get_instance(self):
         raise NotImplementedError
 
-    def form_valid(self, form):
-        form.save()
-        return self.success_response(self.instance.as_dict())  # noqa: F821
+    def get(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
+        if not request.user.has_perm("paper_uploads.change"):
+            return self.error_response(_("Access denied"))
 
-    def form_invalid(self, form):
+        form_response = self.wrap(self.render_form)()
+        if isinstance(form_response, HttpResponse):
+            return form_response
+
+        return self.success_response({
+            "form": form_response
+        })
+
+    def render_form(self, **kwargs) -> str:
+        context = self.get_context_data(**kwargs)
+        template_name = self.get_template_name()
+        return loader.render_to_string(template_name, context, request=self.request)
+
+    def post(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse:
+        if not request.user.has_perm("paper_uploads.change"):
+            return self.error_response(_("Access denied"))
+
+        return self.wrap(self.validate_form)()
+
+    def validate_form(self) -> HttpResponse:
+        form = self.get_form()
+        if not form.is_valid():
+            return self.form_invalid(form)
+
+        return self.form_valid(form)
+
+    def form_valid(self, form) -> HttpResponse:
+        try:
+            instance = form.save()
+        except FileNotFoundError as e:
+            error = _("File not found: %s") % e.args[0] if e.args else "???"
+            logger.debug(error)
+            return self.error_response(error)
+
+        return self.success(instance)
+
+    def form_invalid(self, form) -> HttpResponse:
         return JsonResponse({
             "form_errors": form.errors.get_json_data()
         })
+
+    def success(self, instance: Resource) -> HttpResponse:
+        return self.success_response(instance.as_dict())

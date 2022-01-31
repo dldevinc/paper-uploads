@@ -17,13 +17,13 @@ Class hierarchy:
  ├───►  FileFieldResource  │
  │   └┬────────────────────┘
  │    │
- │    │    ┌────────────────┐
- │    ├────►  UploadedFile  │
- │    │    └────────────────┘
+ │    │    ┌────────────────────┐   ┌────────────────┐
+ │    ├────►  UploadedFileBase  ├───►  UploadedFile  │
+ │    │    └────────────────────┘   └────────────────┘
  │    │
- │    │    ┌─────────────────┐
- │    ├────►  UploadedImage  │
- │    │    └─────────────────┘
+ │    │    ┌─────────────────────┐   ┌─────────────────┐
+ │    ├────►  UploadedImageBase  ├───►  UploadedImage  │
+ │    │    └─────────────────────┘   └─────────────────┘
  │    │
  │    │    ┌──────────────────────────┐
  │    └────►  CollectionFileItemBase  │
@@ -86,11 +86,13 @@ from .collection import (
     SVGItem,
 )
 from .fields import CollectionField, CollectionItem, FileField, ImageField
-from .file import UploadedFile
-from .image import UploadedImage
+from .file import UploadedFileBase, UploadedFile
+from .image import UploadedImageBase, UploadedImage
 
 __all__ = [
+    "UploadedFileBase",
     "UploadedFile",
+    "UploadedImageBase",
     "UploadedImage",
     "FileField",
     "ImageField",

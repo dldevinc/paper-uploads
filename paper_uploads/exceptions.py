@@ -1,27 +1,22 @@
-class InvalidRequest(Exception):
-    pass
+import warnings
 
 
-class InvalidContentType(InvalidRequest):
-    pass
-
-
-class InvalidObjectId(InvalidRequest):
-    pass
-
-
-class InstanceNotFound(InvalidRequest):
-    pass
-
-
-class InvalidChunking(InvalidRequest):
-    pass
-
-
-class InvalidUUID(InvalidRequest):
+class InvalidParameter(Exception):
     def __init__(self, value):
         self.value = value
         super().__init__()
+
+
+class InvalidContentType(InvalidParameter):
+    pass
+
+
+class InvalidItemType(InvalidParameter):
+    pass
+
+
+class InvalidObjectId(InvalidParameter):
+    pass
 
 
 class ContinueUpload(Exception):
@@ -32,24 +27,27 @@ class UncompleteUpload(Exception):
     pass
 
 
-class AjaxFormError(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(message)
-
-
-class UnsupportedFileError(Exception):
-    """
-    Исключение, вызываемое внутри метода `attach_file` при обнаружении
-    ситуации, когда файл не может быть представлен текущей моделью.
-    """
-    def __init__(self, message):
-        self.message = message
-        super().__init__(message)
-
-
-class FileNotFoundError(Exception):
-    def __init__(self, file):
-        self.file = file
-        self.name = file.name
+class InvalidUUID(Exception):
+    def __init__(self, value):
+        self.value = value
         super().__init__()
+
+
+class InvalidChunking(Exception):
+    pass
+
+
+class UnsupportedResource(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
+
+
+class UnsupportedFileError(UnsupportedResource):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "UnsupportedFileError is deprecated in favor of UnsupportedResource",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        super().__init__(*args, **kwargs)

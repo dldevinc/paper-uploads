@@ -19,7 +19,10 @@ let config = {
         path: path.resolve(DIST_DIR),
         publicPath: "/static/paper_uploads/dist/",
         filename: "[name].js",
-        assetModuleFilename: "assets/[name][ext][query]"
+        assetModuleFilename: "assets/[name][ext][query]",
+        library: {
+            type: "window"
+        }
     },
     module: {
         rules: [

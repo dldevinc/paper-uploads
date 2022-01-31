@@ -1,5 +1,44 @@
 # Change Log
 
+## [0.8.0rc1](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc1) - 2021-11-22
+### ⚠ BREAKING CHANGES
+- Mixin `BacklinkModelMixin` has been moved from `Resource` class to 
+  `UploadedFile`, `UploadedImage` and `CollectionBase`. 
+  This update will remove `owner_XXX` fields from collection items.
+  Run `makemigrations` and `migrate` commands to apply the change to your data.
+- Field `CollectionItem.item_type` is now deprecated in favor of `type`.
+- Management commands rewritten.
+- Removed `COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS` setting.
+#### Internal changes
+- Added `change_form_class` property to `UploadedFile` and `UploadedImage`.
+  This field can be used to specify a custom dialog form for a given model. 
+- Disabled implicit `content_type` filtration for concrete collection models.
+- Added composite index for collection items on `collection_id` and `collection_content_type` fields.
+- `FileResource`'s method `get_basename()` has been renamed to `get_caption()`.
+- `FileWidgetBase` has been renamed to `FileResourceWidgetBase`.
+- `FileUploaderWidgetMixin` has been renamed to `DisplayFileLimitationsMixin`.
+- `admin.base.UploadedFileBase` has been renamed to `ResourceAdminBase`.
+- `UploadedFileBaseForm` has been renamed to `ChangeFileResourceDialogBase`.
+- `UploadedFileDialog` has been renamed to `ChangeUploadedFileDialog`.
+- `UploadedImageDialog` has been renamed to `ChangeUploadedImageDialog`.
+- `FileItemDialog` has been renamed to `ChangeFileItemDialog`.
+- `ImageItemDialog` has been renamed to `ChangeImageItemDialog`.
+- Changed some admin URLs for collections.
+- Added new `InvalidItemType` exception.
+- Deleted `FileNotFoundError` exception.
+### Features
+- Implement `__iter__()` for `CollectionBase`.
+- Method `.attach_file()` is now deprecated in favor of `.attach()`.
+- Method `.rename_file()` is now deprecated in favor of `.rename()`.
+- Method `.file_supported()` is now deprecated in favor of `.accept()`.
+- Exception `UnsupportedFileError` is now deprecated in favor of `UnsupportedResource`.
+- Added an ability to override the `admin_preview` variation for `ImageItem`
+  via `VARIATIONS` property.
+- Updated view classes for easier customization.
+- `rename_file()` will use `recut_async()` when supported.
+### Bug Fixes
+- Fixed caption update for collection items.
+
 ## [0.7.0](https://github.com/dldevinc/paper-uploads/tree/v0.7.0) - 2021-11-09
 ### Features
 - Add an ability to override parent link field for collection item models inherited 

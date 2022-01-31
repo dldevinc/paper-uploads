@@ -12,6 +12,7 @@ from paper_uploads.cloudinary.models import CloudinaryFile
 from ... import utils
 from ...dummy import *
 from ...models.test_dummy import (
+    BacklinkModelMixin,
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
     TestFileFieldResourceEmpty,
@@ -20,7 +21,7 @@ from ...models.test_dummy import (
 from .test_base import CloudinaryFileResource
 
 
-class TestCloudinaryFile(CloudinaryFileResource):
+class TestCloudinaryFile(BacklinkModelMixin, CloudinaryFileResource):
     resource_url = '/media/files/%Y-%m-%d'
     resource_location = 'files/%Y-%m-%d'
     resource_name = 'Nature Tree'
@@ -30,7 +31,7 @@ class TestCloudinaryFile(CloudinaryFileResource):
     owner_app_label = 'app'
     owner_model_name = 'cloudinaryfileexample'
     owner_fieldname = 'file'
-    owner_class = CloudinaryFileExample
+    owner_model = CloudinaryFileExample
     file_field_name = 'file'
 
     @classmethod
@@ -41,7 +42,7 @@ class TestCloudinaryFile(CloudinaryFileResource):
             owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
         yield
         storage.resource.delete_file()
@@ -73,6 +74,10 @@ class TestCloudinaryFile(CloudinaryFileResource):
             'id': 1,
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
             'file_info': '(Jpeg, 672.8\xa0KB)',
             'url': storage.resource.get_file_url(),
@@ -84,29 +89,23 @@ class TestCloudinaryFile(CloudinaryFileResource):
 
 class TestCloudinaryFileAttach(TestFileFieldResourceAttach):
     resource_class = CloudinaryFile
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinaryfileexample'
-    owner_fieldname = 'file'
 
     @contextmanager
     def get_resource(self):
-        resource = self.resource_class(
-            owner_app_label=self.owner_app_label,
-            owner_model_name=self.owner_model_name,
-            owner_fieldname=self.owner_fieldname
-        )
+        resource = self.resource_class()
         try:
             yield resource
         finally:
             resource.delete_file()
 
 
-class TestCloudinaryFileRename(TestFileFieldResourceRename):
+class TestCloudinaryFileRename(BacklinkModelMixin, TestFileFieldResourceRename):
     resource_class = CloudinaryFile
     resource_location = 'files/%Y-%m-%d'
     owner_app_label = 'app'
-    owner_model_name = 'fileexample'
+    owner_model_name = 'cloudinaryfileexample'
     owner_fieldname = 'file'
+    owner_model = CloudinaryFileExample
 
     @classmethod
     def init_class(cls, storage):
@@ -117,13 +116,13 @@ class TestCloudinaryFileRename(TestFileFieldResourceRename):
             owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_file_name_{}.jpg'.format(storage.uid))
+            storage.resource.attach(fp, name='old_file_name_{}.jpg'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
 
-        storage.resource.rename_file('new_file_name_{}.png'.format(storage.uid))
+        storage.resource.rename('new_file_name_{}.png'.format(storage.uid))
 
         yield
 
@@ -167,12 +166,13 @@ class TestCloudinaryFileRename(TestFileFieldResourceRename):
         )
 
 
-class TestCloudinaryFileDelete(TestFileFieldResourceDelete):
+class TestCloudinaryFileDelete(BacklinkModelMixin, TestFileFieldResourceDelete):
     resource_class = CloudinaryFile
     resource_location = 'files/%Y-%m-%d'
     owner_app_label = 'app'
-    owner_model_name = 'fileexample'
+    owner_model_name = 'cloudinaryfileexample'
     owner_fieldname = 'file'
+    owner_model = CloudinaryFileExample
 
     @classmethod
     def init_class(cls, storage):
@@ -182,7 +182,7 @@ class TestCloudinaryFileDelete(TestFileFieldResourceDelete):
             owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()

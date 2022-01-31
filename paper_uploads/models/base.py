@@ -1,9 +1,12 @@
 import os
+import warnings
 from typing import Any, Dict, Iterable, Optional, Tuple
 
 from django.core.files import File
 from django.db import models
+from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
+from django.db.models.utils import make_model_tuple
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from PIL import Image
@@ -15,7 +18,7 @@ from ..conf import settings
 from ..files import VariationFile
 from ..typing import FileLike
 from ..variations import PaperVariation
-from .mixins import BacklinkModelMixin, FileFieldProxyMixin, FileProxyMixin
+from .mixins import FileFieldProxyMixin, FileProxyMixin
 
 __all__ = [
     "NoPermissionsMetaBase",
@@ -44,7 +47,7 @@ class NoPermissionsMetaBase:
     """
     Отменяет создание автоматических объектов Permission у наследников класса.
     """
-    def __new__(mcs, name, bases, attrs, **kwargs):
+    def __new__(cls, name, bases, attrs, **kwargs):
         meta = attrs.pop("Meta", None)
         if meta is None:
             meta = type("Meta", (), {"default_permissions": ()})
@@ -54,11 +57,47 @@ class NoPermissionsMetaBase:
             meta = type("Meta", meta.__bases__, meta_attrs)
         attrs["Meta"] = meta
 
-        return super().__new__(mcs, name, bases, attrs, **kwargs)
+        return super().__new__(cls, name, bases, attrs, **kwargs)
 
 
 class ResourceBaseMeta(NoPermissionsMetaBase, models.base.ModelBase):
-    pass
+    """
+    Приём, позволяющий переопределить OneToOne-связь между моделями при наследовании
+    от абстрактной модели.
+
+    По умолчанию, при наследовании от абстрактной модели, унаследованной от конкретной
+    (concrete), попытка переопределния OneToOne-связи не замещает поле по умолчанию,
+    а добавляет второе.
+
+    Ссылка:
+    https://docs.djangoproject.com/en/3.2/topics/db/models/#specifying-the-parent-link-field
+    """
+
+    def __new__(mcs, name, bases, attrs, **kwargs):
+        parents = [b for b in bases if isinstance(b, ModelBase)]
+
+        parent_links = {}
+        for base in reversed(parents):
+            # Conceptually equivalent to `if base is Model`.
+            if not hasattr(base, '_meta'):
+                continue
+
+            # Locate OneToOneField instances.
+            for field in base._meta.local_fields:
+                if isinstance(field, models.OneToOneField) and field.remote_field.parent_link:
+                    key = make_model_tuple(field.remote_field.model)
+                    parent_links.setdefault(key, []).append(field)
+
+        for fieldname, field in list(attrs.items()):
+            if isinstance(field, models.OneToOneField) and field.remote_field.parent_link:
+                key = make_model_tuple(field.remote_field.model)
+                if key in parent_links:
+                    inherited_field = parent_links[key].pop()
+                    if fieldname != inherited_field.name:
+                        # force delete inherited field
+                        attrs[inherited_field.name] = None
+
+        return super().__new__(mcs, name, bases, attrs)
 
 
 class ResourceBase(models.Model, metaclass=ResourceBaseMeta):
@@ -86,11 +125,11 @@ class ResourceBase(models.Model, metaclass=ResourceBaseMeta):
         }
 
 
-class Resource(BacklinkModelMixin, ResourceBase):
+class Resource(ResourceBase):
     """
     Ресурс.
-    Включает поля, позволяющие обратиться к модели и полю,
-    через которые был создан ресурс.
+
+    TODO: после переноса миксины BacklinkModelMixin класс остался пустым.
     """
 
     class Meta(ResourceBase.Meta):
@@ -126,10 +165,10 @@ class FileResource(FileProxyMixin, Resource):
         abstract = True
 
     def __str__(self):
-        return self.get_basename()
+        return self.get_caption()
 
     def __repr__(self):
-        return "{}('{}')".format(type(self).__name__, self.get_basename())
+        return "{}('{}')".format(type(self).__name__, self.get_caption())
 
     @property
     def name(self) -> str:
@@ -140,7 +179,7 @@ class FileResource(FileProxyMixin, Resource):
         """
         raise NotImplementedError
 
-    def get_basename(self) -> str:
+    def get_caption(self) -> str:
         """
         Человекопонятное имя файла.
         Не содержит суффикса, которое может быть добавлено файловым хранилищем.
@@ -153,7 +192,7 @@ class FileResource(FileProxyMixin, Resource):
         """
         Требование наличия непустой ссылки на файл.
         Физическое существование файла не гарантируется и должно проверяться
-        методом `file_exists`.
+        методом `.file_exists()`.
         """
         file = self.get_file()
         if not file:
@@ -165,6 +204,7 @@ class FileResource(FileProxyMixin, Resource):
             **super().as_dict(),
             "name": self.basename,
             "extension": self.extension,
+            "caption": self.get_caption(),
             "size": self.size,
             "url": self.get_file_url(),
             "uploaded": self.uploaded_at.isoformat()
@@ -218,15 +258,15 @@ class FileResource(FileProxyMixin, Resource):
         """
         raise NotImplementedError
 
-    def attach_file(self, file: FileLike, name: str = None, **options):
+    def attach(self, file: FileLike, name: str = None, **options):
         """
         Присоединение файла к экземпляру ресурса.
-        В действительности, сохранение файла происходит в методе `_attach_file`.
+        В действительности, сохранение файла происходит в методе `_attach`.
         Не переопределяйте этот метод, если не уверены в том, что вы делаете.
 
         Если на данном этапе обнаруживается, что переданный файл не может
         быть представлен этой моделью, необходимо вызвать исключение
-        UnsupportedFileError.
+        UnsupportedResource.
         """
         if not isinstance(file, File):
             name = name or getattr(file, "name", None)
@@ -246,7 +286,7 @@ class FileResource(FileProxyMixin, Resource):
         if prepared_file.seekable():
             prepared_file.seek(0)
 
-        response = self._attach_file(prepared_file, **options)
+        attach_result = self._attach(prepared_file, **options)
 
         self.size = self.get_file_size()
         self.uploaded_at = now()
@@ -266,8 +306,16 @@ class FileResource(FileProxyMixin, Resource):
             instance=self,
             file=self.get_file(),
             options=options,
-            response=response,
+            response=attach_result,
         )
+
+    def attach_file(self, *args, **kwargs):
+        warnings.warn(
+            "attach_file() is deprecated in favor of attach()",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self.attach(*args, **kwargs)
 
     def _prepare_file(self, file: File, **options) -> File:
         """
@@ -275,19 +323,27 @@ class FileResource(FileProxyMixin, Resource):
         """
         return file
 
-    def _attach_file(self, file: File, **options):
+    def _attach(self, file: File, **options):
         raise NotImplementedError
 
-    def rename_file(self, new_name: str, **options):
+    def _attach_file(self, *args, **kwargs):
+        warnings.warn(
+            "_attach_file() is deprecated in favor of _attach()",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self._attach(*args, **kwargs)
+
+    def rename(self, new_name: str, **options):
         """
         Переименование файла.
-        В действительности, переименование файла происходит в методе `_rename_file`.
+        В действительности, переименование файла происходит в методе `_rename`.
         Не переопределяйте этот метод, если не уверены в том, что вы делаете.
         """
         self._require_file()
 
         if not self.file_exists():
-            raise exceptions.FileNotFoundError(self)
+            raise FileNotFoundError(self.name)
 
         old_name = self.name
 
@@ -299,7 +355,7 @@ class FileResource(FileProxyMixin, Resource):
             options=options,
         )
 
-        response = self._rename_file(new_name, **options)
+        response = self._rename(new_name, **options)
 
         self.modified_at = now()
 
@@ -312,8 +368,24 @@ class FileResource(FileProxyMixin, Resource):
             response=response,
         )
 
-    def _rename_file(self, new_name: str, **options):
+    def rename_file(self, *args, **kwargs):
+        warnings.warn(
+            "rename_file() is deprecated in favor of rename()",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self.rename(*args, **kwargs)
+
+    def _rename(self, new_name: str, **options):
         raise NotImplementedError
+
+    def _rename_file(self, *args, **kwargs):
+        warnings.warn(
+            "_rename_file() is deprecated in favor of _rename()",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self._rename(*args, **kwargs)
 
     def delete_file(self, **options):
         """
@@ -366,13 +438,13 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
             return False
         return file.storage.exists(file.name)
 
-    def _attach_file(self, file: File, **options):
+    def _attach(self, file: File, **options):
         self.get_file().save(file.name, file, save=False)
 
         self.basename = helpers.get_filename(file.name)
         self.extension = helpers.get_extension(self.name)
 
-    def _rename_file(self, new_name: str, **options):
+    def _rename(self, new_name: str, **options):
         file = self.get_file()
         with file.open() as fp:
             file.save(new_name, fp, save=False)
@@ -427,7 +499,7 @@ class ImageFileResourceMixin(models.Model):
         try:
             image = Image.open(file)
         except OSError:
-            raise exceptions.UnsupportedFileError(
+            raise exceptions.UnsupportedResource(
                 _("File `%s` is not an image") % file.name
             )
         else:
@@ -493,19 +565,19 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
             else:
                 self.recut()
 
-    def attach_file(self, file: FileLike, name: str = None, **options):
-        super().attach_file(file, name=name, **options)  # noqa: F821
+    def attach(self, file: FileLike, name: str = None, **options):
+        super().attach(file, name=name, **options)  # noqa: F821
         self.need_recut = True
         self._setup_variation_files()
 
-    def _delete_file(self):
-        self.delete_variations()
-        super()._delete_file()  # noqa: F821
-
-    def _rename_file(self, new_name: str, **options):
-        super()._rename_file(new_name)  # noqa: F821
-        self.recut()
+    def rename(self, new_name: str, **options):
+        super().rename(new_name, **options)  # noqa: F821
+        self.need_recut = True
         self._setup_variation_files()
+
+    def delete_file(self, **options):
+        super().delete_file(**options)  # noqa: F821
+        self.delete_variations()
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         raise NotImplementedError
@@ -556,7 +628,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         Можно указать имена конкретных вариаций в параметре `names`.
         """
         if not self.file_exists():
-            raise exceptions.FileNotFoundError(self)
+            raise FileNotFoundError(self.name)
 
         file = self.get_file()
         with file.open() as source:

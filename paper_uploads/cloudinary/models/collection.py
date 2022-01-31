@@ -6,7 +6,7 @@ from django.core.files import File
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from ...conf import settings
+from ...conf import IMAGE_ITEM_VARIATIONS, settings
 from ...models.base import ImageFileResourceMixin
 from ...models.collection import Collection, CollectionItemBase, FilePreviewMixin
 from ...models.fields import CollectionItem
@@ -32,16 +32,12 @@ class CollectionCloudinaryFileItemBase(CollectionItemBase, CloudinaryFileResourc
         abstract = True
 
     @classmethod
-    def file_supported(cls, file: File) -> bool:
-        """
-        Проверка возможности представления загруженного файла
-        текущим классом элемента в коллекции.
-        """
+    def accept(cls, file: File) -> bool:
         raise NotImplementedError
 
 
 class CloudinaryFileItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase):
-    change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
+    change_form_class = "paper_uploads.forms.dialogs.collection.ChangeFileItemDialog"
     template_name = "paper_uploads/items/file.html"
     preview_template_name = "paper_uploads/items/preview/file.html"
 
@@ -77,12 +73,12 @@ class CloudinaryFileItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase)
         return self._meta.get_field("file")
 
     @classmethod
-    def file_supported(cls, file: File) -> bool:
+    def accept(cls, file: File) -> bool:
         return True
 
 
 class CloudinaryMediaItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase):
-    change_form_class = "paper_uploads.forms.dialogs.collection.FileItemDialog"
+    change_form_class = "paper_uploads.forms.dialogs.collection.ChangeFileItemDialog"
     template_name = "paper_uploads/items/file.html"
     preview_template_name = "paper_uploads/items/preview/file.html"
 
@@ -118,7 +114,7 @@ class CloudinaryMediaItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase
         return self._meta.get_field("file")
 
     @classmethod
-    def file_supported(cls, file: File) -> bool:
+    def accept(cls, file: File) -> bool:
         mimetype = magic.from_buffer(file.read(1024), mime=True)
         file.seek(0)  # correct file position after mimetype detection
         basetype, subtype = mimetype.split("/", 1)
@@ -126,8 +122,8 @@ class CloudinaryMediaItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase
 
 
 class CloudinaryImageItemBase(ImageFileResourceMixin, CollectionCloudinaryFileItemBase):
-    PREVIEW_VARIATIONS = settings.COLLECTION_IMAGE_ITEM_PREVIEW_VARIATIONS
-    change_form_class = "paper_uploads.forms.dialogs.collection.ImageItemDialog"
+    PREVIEW_VARIATIONS = IMAGE_ITEM_VARIATIONS
+    change_form_class = "paper_uploads.forms.dialogs.collection.ChangeImageItemDialog"
     template_name = "paper_uploads_cloudinary/items/image.html"
     preview_template_name = "paper_uploads_cloudinary/items/preview/image.html"
 
@@ -157,7 +153,7 @@ class CloudinaryImageItemBase(ImageFileResourceMixin, CollectionCloudinaryFileIt
         return self._meta.get_field("file")
 
     @classmethod
-    def file_supported(cls, file: File) -> bool:
+    def accept(cls, file: File) -> bool:
         mimetype = magic.from_buffer(file.read(1024), mime=True)
         file.seek(0)  # correct file position after mimetype detection
         basetype, subtype = mimetype.split("/", 1)

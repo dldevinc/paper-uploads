@@ -35,6 +35,15 @@ INSTALLED_APPS = [
     'django_jinja',
     'cloudinary',
     'app',
+    'examples.standard_files',
+    'examples.proxy_files',
+    'examples.custom_files',
+    'examples.standard_collection',
+    'examples.custom_collection',
+    'examples.proxy_collection_item',
+    'examples.custom_collection_item',
+    'examples.validators',
+    'examples.variations',
 ]
 
 MIDDLEWARE = [
@@ -139,6 +148,66 @@ PAPER_MENU = [
     dict(
         app='app',
         icon='fa fa-fw fa-lg fa-home',
+    ),
+    dict(
+        label=_('Examples'),
+        icon='fa fa-fw fa-lg fa-home',
+        models=[
+            dict(
+                label=_("Standard files"),
+                models=[
+                    'standard_files.Page',
+                ]
+            ),
+            dict(
+                label=_("Proxy model files"),
+                models=[
+                    'proxy_files.Page',
+                ]
+            ),
+            dict(
+                label=_("Custom files"),
+                models=[
+                    'custom_files.Page',
+                ]
+            ),
+            dict(
+                label=_("Standard collection"),
+                models=[
+                    'standard_collection.Page',
+                ]
+            ),
+            dict(
+                label=_("Custom collection"),
+                models=[
+                    'custom_collection.Page',
+                ]
+            ),
+            dict(
+                label=_("Proxy collection item"),
+                models=[
+                    'proxy_collection_item.Page',
+                ]
+            ),
+            dict(
+                label=_("Custom collection item"),
+                models=[
+                    'custom_collection_item.Page',
+                ]
+            ),
+            dict(
+                label=_("Validators"),
+                models=[
+                    'validators.Page',
+                ]
+            ),
+            dict(
+                label=_("Variations"),
+                models=[
+                    'variations.Page',
+                ]
+            ),
+        ]
     ),
     '-',
     'auth',

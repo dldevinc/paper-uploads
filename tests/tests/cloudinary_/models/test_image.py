@@ -7,8 +7,8 @@ from cloudinary import uploader
 from django.utils.crypto import get_random_string
 
 from app.models import CloudinaryImageExample
+from paper_uploads import exceptions
 from paper_uploads.cloudinary.models import CloudinaryImage
-from paper_uploads.exceptions import UnsupportedFileError
 
 from ... import utils
 from ...dummy import *
@@ -31,7 +31,7 @@ class TestCloudinaryImage(CloudinaryFileResource):
     owner_app_label = 'app'
     owner_model_name = 'cloudinaryimageexample'
     owner_fieldname = 'image'
-    owner_class = CloudinaryImageExample
+    owner_model = CloudinaryImageExample
     file_field_name = 'file'
 
     @classmethod
@@ -44,7 +44,7 @@ class TestCloudinaryImage(CloudinaryFileResource):
             owner_fieldname=cls.owner_fieldname
         )
         with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
         yield
         storage.resource.delete_file()
@@ -73,6 +73,10 @@ class TestCloudinaryImage(CloudinaryFileResource):
             'id': 1,
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
             'width': 1534,
             'height': 2301,
@@ -115,8 +119,8 @@ class TestCloudinaryImageAttach(TestImageFieldResourceAttach):
     def test_unsupported_file(self):
         with self.get_resource() as resource:
             with open(DOCUMENT_FILEPATH, 'rb') as fp:
-                with pytest.raises(UnsupportedFileError):
-                    resource.attach_file(fp)
+                with pytest.raises(exceptions.UnsupportedResource):
+                    resource.attach(fp)
 
 
 class TestCloudinaryImageRename(TestImageFieldResourceRename):
@@ -135,12 +139,12 @@ class TestCloudinaryImageRename(TestImageFieldResourceRename):
             owner_fieldname=cls.owner_fieldname
         )
         with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_image_name_{}.jpg'.format(storage.uid))
+            storage.resource.attach(fp, name='old_image_name_{}.jpg'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
-        storage.resource.rename_file('new_image_name_{}.png'.format(storage.uid))
+        storage.resource.rename('new_image_name_{}.png'.format(storage.uid))
 
         yield
 
@@ -202,7 +206,7 @@ class TestCloudinaryImageDelete(TestImageFieldResourceDelete):
             owner_fieldname=cls.owner_fieldname
         )
         with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.jpg')
+            storage.resource.attach(fp, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()

@@ -8,12 +8,13 @@ from django.core.files import File
 from django.utils.crypto import get_random_string
 
 from app.models import CloudinaryMediaExample
+from paper_uploads import exceptions
 from paper_uploads.cloudinary.models import CloudinaryMedia
-from paper_uploads.exceptions import UnsupportedFileError
 
 from ... import utils
 from ...dummy import *
 from ...models.test_dummy import (
+    BacklinkModelMixin,
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
     TestFileFieldResourceEmpty,
@@ -22,7 +23,7 @@ from ...models.test_dummy import (
 from .test_base import CloudinaryFileResource
 
 
-class TestCloudinaryMedia(CloudinaryFileResource):
+class TestCloudinaryMedia(BacklinkModelMixin, CloudinaryFileResource):
     resource_url = '/media/files/%Y-%m-%d'
     resource_location = 'files/%Y-%m-%d'
     resource_name = 'audio'
@@ -32,7 +33,7 @@ class TestCloudinaryMedia(CloudinaryFileResource):
     owner_app_label = 'app'
     owner_model_name = 'cloudinarymediaexample'
     owner_fieldname = 'media'
-    owner_class = CloudinaryMediaExample
+    owner_model = CloudinaryMediaExample
     file_field_name = 'file'
 
     @classmethod
@@ -43,7 +44,7 @@ class TestCloudinaryMedia(CloudinaryFileResource):
             owner_fieldname=cls.owner_fieldname
         )
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp)
+            storage.resource.attach(fp)
         storage.resource.save()
         yield
         storage.resource.delete_file()
@@ -75,6 +76,10 @@ class TestCloudinaryMedia(CloudinaryFileResource):
             'id': 1,
             'name': self.resource_name,
             'extension': self.resource_extension,
+            'caption': '{}.{}'.format(
+                self.resource_name,
+                self.resource_extension
+            ),
             'size': self.resource_size,
             'file_info': '(mp3, 2.1\xa0MB)',
             'url': storage.resource.get_file_url(),
@@ -97,17 +102,10 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
     resource_class = CloudinaryMedia
     resource_size = 2113939
     resource_checksum = '4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d'
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinarymediaexample'
-    owner_fieldname = 'media'
 
     @contextmanager
     def get_resource(self):
-        resource = self.resource_class(
-            owner_app_label=self.owner_app_label,
-            owner_model_name=self.owner_model_name,
-            owner_fieldname=self.owner_fieldname
-        )
+        resource = self.resource_class()
         try:
             yield resource
         finally:
@@ -116,7 +114,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
     def test_file(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp)
+                resource.attach(fp)
 
             assert resource.basename == 'audio'
             assert resource.extension == 'mp3'
@@ -127,7 +125,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
                 file = File(fp, name='audio.ogg')
-                resource.attach_file(file)
+                resource.attach(file)
 
             assert resource.basename == 'audio'
             assert resource.extension == 'mp3'
@@ -137,7 +135,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
     def test_override_name(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp, name='overwritten.ogg')
+                resource.attach(fp, name='overwritten.ogg')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
@@ -146,7 +144,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
                 file = File(fp, name='not_used.ogg')
-                resource.attach_file(file, name='overwritten.mp3')
+                resource.attach(file, name='overwritten.mp3')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
@@ -154,7 +152,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
     def test_wrong_extension(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp, name='overwritten.gif')
+                resource.attach(fp, name='overwritten.gif')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
@@ -162,22 +160,23 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
     def test_file_position_at_end(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach_file(fp)
+                resource.attach(fp)
                 assert fp.tell() == self.resource_size
 
     def test_unsupported_file(self):
         with self.get_resource() as resource:
             with open(NASA_FILEPATH, 'rb') as fp:
-                with pytest.raises(UnsupportedFileError):
-                    resource.attach_file(fp)
+                with pytest.raises(exceptions.UnsupportedResource):
+                    resource.attach(fp)
 
 
-class TestCloudinaryMediaRename(TestFileFieldResourceRename):
+class TestCloudinaryMediaRename(BacklinkModelMixin, TestFileFieldResourceRename):
     resource_class = CloudinaryMedia
     resource_location = 'files/%Y-%m-%d'
     owner_app_label = 'app'
     owner_model_name = 'cloudinarymediaexample'
     owner_fieldname = 'media'
+    owner_model = CloudinaryMediaExample
 
     @classmethod
     def init_class(cls, storage):
@@ -188,13 +187,13 @@ class TestCloudinaryMediaRename(TestFileFieldResourceRename):
             owner_fieldname=cls.owner_fieldname
         )
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_media_name_{}.mp3'.format(storage.uid))
+            storage.resource.attach(fp, name='old_media_name_{}.mp3'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
 
-        storage.resource.rename_file('new_media_name_{}.ogg'.format(storage.uid))
+        storage.resource.rename('new_media_name_{}.ogg'.format(storage.uid))
 
         yield
 
@@ -241,12 +240,13 @@ class TestCloudinaryMediaRename(TestFileFieldResourceRename):
         assert storage.resource.extension == 'mp3'
 
 
-class TestCloudinaryMediaDelete(TestFileFieldResourceDelete):
+class TestCloudinaryMediaDelete(BacklinkModelMixin, TestFileFieldResourceDelete):
     resource_class = CloudinaryMedia
     resource_location = 'files/%Y-%m-%d'
     owner_app_label = 'app'
     owner_model_name = 'cloudinarymediaexample'
     owner_fieldname = 'media'
+    owner_model = CloudinaryMediaExample
 
     @classmethod
     def init_class(cls, storage):
@@ -256,7 +256,7 @@ class TestCloudinaryMediaDelete(TestFileFieldResourceDelete):
             owner_fieldname=cls.owner_fieldname
         )
         with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach_file(fp, name='old_name.mp3')
+            storage.resource.attach(fp, name='old_name.mp3')
         storage.resource.save()
 
         file = storage.resource.get_file()

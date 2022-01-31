@@ -1,6 +1,6 @@
 {% load filesizeformat %}
 
-<div class="file-uploader dropzone {% if not widget.value %}empty{% endif %}"
+<div class="image-uploader dropzone image-uploader--{{ widget.value|yesno:"ready,empty" }}"
      data-upload-url="{{ upload_url }}"
      data-change-url="{{ change_url }}"
      data-delete-url="{{ delete_url }}"
@@ -9,14 +9,14 @@
      data-paper-owner-model-name="{{ owner_model_name }}"
      data-paper-owner-field-name="{{ owner_fieldname }}"
      data-configuration='{{ configuration|safe }}'>
-  <input type="hidden" class="file-uploader__input"
+  <input type="hidden" class="image-uploader__input"
          name="{{ widget.name }}"
          value="{{ widget.value|default:"" }}"
          {% include "django/forms/widgets/attrs.html" %}/>
 
   <div class="paper-input-group input-group input-group-lg">
     <div class="input-group-prepend">
-      <button type="button" class="file-uploader__upload-button input-group-text"
+      <button type="button" class="image-uploader__upload-button input-group-text"
          data-toggle="tooltip" data-placement="top" data-trigger="hover"
          data-html="true" title="{{ _("Select file") }}">
         <i class="fa fa-fw fa-folder-open"></i>
@@ -25,11 +25,11 @@
 
     <div class="form-control">
       <span class="file-name">
-        {% if instance %}{{ instance.display_name }}{% endif %}
+        {% if instance %}{{ instance.basename }}{% endif %}
       </span>
       <span class="file-info text-muted">
         {% if instance %}
-          ({{ instance.extension }}, {{ instance.size|filesizeformat }})
+          ({{ instance.extension }}, {{ instance.width }}x{{ instance.height }}, {{ instance.size|filesizeformat }})
         {% endif %}
       </span>
       <div class="progress">
@@ -40,32 +40,32 @@
     </div>
 
     <div class="input-group-append">
-      <div class="file-uploader__ready-buttons">
+      <div class="image-uploader__ready-buttons">
         <a {% if instance %}href="{{ instance.get_file_url }}"{% endif %}
            target="_blank" tabindex="0"
-           class="file-uploader__view-button input-group-text"
+           class="image-uploader__view-button input-group-text"
            data-toggle="tooltip" data-placement="top" data-trigger="hover"
            data-html="true" title="{{ _("Open file") }}">
           <i class="fa fa-fw fa-eye"></i>
         </a>
 
         <button type="button" tabindex="0"
-                class="file-uploader__change-button input-group-text"
+                class="image-uploader__change-button input-group-text"
                 data-toggle="tooltip" data-placement="top" data-trigger="hover"
                 data-html="true" title="{{ _("Edit file") }}">
           <i class="fa fa-fw fa-pencil"></i>
         </button>
 
         <button type="button" tabindex="0"
-                class="file-uploader__delete-button input-group-text input-group-text--danger"
+                class="image-uploader__delete-button input-group-text input-group-text--danger"
                 data-toggle="tooltip" data-placement="top" data-trigger="hover"
                 data-html="true" title="{{ _("Delete file") }}">
           <i class="fa fa-fw fa-trash"></i>
         </button>
       </div>
-      <div class="file-uploader__loading-buttons">
+      <div class="image-uploader__loading-buttons">
         <button type="button" tabindex="0"
-                class="file-uploader__cancel-button input-group-text input-group-text--danger"
+                class="image-uploader__cancel-button input-group-text input-group-text--danger"
                 data-toggle="tooltip" data-placement="top" data-trigger="hover"
                 data-html="true" title="{{ _("Cancel upload") }}">
           <i class="fa fa-fw fa-times"></i>

@@ -1,3 +1,4 @@
+import datetime
 from datetime import timedelta
 
 from django.apps import apps
@@ -5,7 +6,7 @@ from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 from django.utils.timezone import now
 
-from ...models.collection import Collection
+from ...models.collection import CollectionBase
 
 
 class Command(BaseCommand):
@@ -22,7 +23,8 @@ class Command(BaseCommand):
             help="Nominates the database to use. Defaults to the 'default' database.",
         )
         parser.add_argument(
-            "--dry-run", action="store_true",
+            "--dry-run",
+            action="store_true",
             help="Just show what collections would be deleted; don't actually delete them.",
         )
         parser.add_argument(
@@ -32,16 +34,17 @@ class Command(BaseCommand):
             help="Minimum instance age in seconds to look for",
         )
 
-    def remove_collections(self):
-        min_age = now() - timedelta(seconds=self.options["min_age"])
+    def _get_start_time(self) -> datetime.datetime:
+        return now() - timedelta(seconds=self.options["min_age"])
 
+    def remove_empty_collections(self):
         for model in apps.get_models():
-            if not issubclass(model, Collection):
+            if not issubclass(model, CollectionBase):
                 continue
 
             queryset = model.objects.using(self.database).filter(
                 items=None,
-                created_at__lte=min_age
+                created_at__lte=self._get_start_time()
             )
 
             total = queryset.count()
@@ -63,6 +66,7 @@ class Command(BaseCommand):
                 )
             else:
                 queryset.delete()
+
                 self.stdout.write(
                     "Deleted {count} empty {verb} of {classname}.".format(
                         count=self.style.SUCCESS(total),
@@ -81,4 +85,4 @@ class Command(BaseCommand):
         self.verbosity = options["verbosity"]
         self.database = options["database"]
 
-        self.remove_collections()
+        self.remove_empty_collections()

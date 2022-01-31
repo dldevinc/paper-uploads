@@ -6,8 +6,8 @@ import allSettled from "promise.allsettled";
 import deepmerge from "deepmerge";
 import EventEmitter from "wolfy87-eventemitter";
 import Mustache from "mustache";
-import {Uploader} from "./uploader";
-import * as utils from "./utils";
+import {Uploader} from "../uploader.js";
+import * as utils from "../utils.js";
 
 // PaperAdmin API
 const Sortable = window.paperAdmin.Sortable;
@@ -18,12 +18,21 @@ const formUtils = window.paperAdmin.formUtils;
 // CSS
 import "css/collection_widget.scss";
 
+
 /**
  * Базовый класс элемента коллекции.
  */
 class CollectionItemBase extends EventEmitter {
     static Defaults = {
-        removingState: "removing"
+
+    }
+
+    static STATUS = {
+        REMOVING: "removing"
+    }
+
+    static CSS = {
+        container: "collection-item",
     }
 
     constructor(root, collection, options) {
@@ -44,13 +53,17 @@ class CollectionItemBase extends EventEmitter {
         this.init();
     }
 
-    get removing() {
-        return this.root.classList.contains(this.config.removingState);
+    get STATUS() {
+        return this.constructor.STATUS;
     }
 
-    set removing(value) {
-        this.root.classList.toggle(this.config.removingState, value);
+    get CSS() {
+        return this.constructor.CSS;
     }
+
+    /**
+     * Public methods
+     */
 
     init() {
         // store instance
@@ -64,32 +77,60 @@ class CollectionItemBase extends EventEmitter {
         this.root.remove();
     }
 
-    _addListeners() {
+    /**
+     * @returns {string}
+     */
+    getStatus() {
+        return Object.values(this.STATUS).find(value => {
+            return this.root.classList.contains(`${this.CSS.container}--${value}`)
+        });
+    }
 
+    /**
+     * @param {string} status
+     */
+    setStatus(status) {
+        Object.values(this.STATUS).forEach(value => {
+            this.root.classList.toggle(
+                `${this.CSS.container}--${value}`,
+                status === value
+            );
+        });
     }
 
     /**
      * Анимированное удаление DOM-элемента.
      */
     removeDOM() {
-        const animationPromise = new Promise(function(resolve) {
-            this.root.addEventListener("animationend", () => { resolve() });
-            this.removing = true;
-        }.bind(this));
+        this.setStatus(this.STATUS.REMOVING);
 
-        const fallbackPromise = new Promise(function(resolve) {
+        const animationPromise = new Promise(resolve => {
+            this.root.addEventListener("animationend", () => {
+                resolve()
+            });
+        });
+
+        const fallbackPromise = new Promise(resolve => {
             setTimeout(resolve, 600);
         });
 
-        return Promise.race([animationPromise, fallbackPromise]).then(function() {
+        return Promise.race([animationPromise, fallbackPromise]).then(() => {
             this.destroy();
-        }.bind(this));
+        });
+    }
+
+    /**
+     * Private methods
+     */
+
+    _addListeners() {
+
     }
 }
 
 
 /**
- * Элемент-заглушка, связывающий загружаемый файл и его DOM-элемент.
+ * Элемент-заглушка, представляющая файл, находящийся в очереди на загрузку.
  *
  * События:
  *  1. upload
@@ -125,32 +166,27 @@ class CollectionItemBase extends EventEmitter {
  */
 class PreloaderItem extends CollectionItemBase {
     static Defaults = Object.assign({}, super.Defaults, {
-        processingState: "processing",
-
         progressBar: ".progress-bar",
 
         cancelUploadButton: ".collection-item__cancel-button"
     });
 
-    get file() {
-        return this.config.file;
-    }
+    static STATUS = Object.assign({}, super.STATUS, {
+        PRELOADER: "preloader",
+        PROCESSING: "processing",
+    });
 
     get uuid() {
-        return this.collection.uploader.getUUID(this.file);
+        return this.root.dataset.uuid;
     }
 
     get progressBar() {
         return this.root.querySelector(this.config.progressBar);
     }
 
-    get processing() {
-        return this.root.classList.contains(this.config.processingState);
-    }
-
-    set processing(value) {
-        this.root.classList.toggle(this.config.processingState, value);
-    }
+    /**
+     * Public methods
+     */
 
     init() {
         super.init();
@@ -158,30 +194,41 @@ class PreloaderItem extends CollectionItemBase {
         this.root.setAttribute("data-uuid", this.uuid);
     }
 
+    /**
+     * Отмена загрузки файла.
+     */
+    cancel() {
+        this.collection.uploader.cancel(this.uuid);
+    }
+
+    /**
+     * Private methods
+     */
+
     _addListeners() {
         super._addListeners();
 
-        this.on("progress", function(file, percentage) {
+        this.on("progress", (file, percentage) => {
             const progressBar = this.progressBar;
             progressBar && (progressBar.style.height = percentage + "%");
 
             if (percentage >= 100) {
-                this.processing = true;
+                this.setStatus(this.STATUS.PROCESSING);
 
                 // Добавление минимальной задержки для стадии processing,
                 // чтобы переход от стадии loading к finished был более плавным.
-                this.processingPromise = new Promise(function(resolve) {
+                this.processingPromise = new Promise(resolve => {
                     setTimeout(() => {resolve()}, 500);
                 });
             }
-        }.bind(this));
+        });
 
-        this.on("error", function() {
+        this.on("error", () => {
             this.removeDOM();
-        }.bind(this));
+        });
 
-        this.on("complete", function(file, response) {
-            const onComplete = function(response) {
+        this.on("complete", (file, response) => {
+            const onComplete = response => {
                 const itemType = response.itemType;
 
                 // замена прелоадера перманентным элементом
@@ -193,39 +240,33 @@ class PreloaderItem extends CollectionItemBase {
                 this.collection.initItem(itemType, item, {
                     file: file
                 });
+
                 this.destroy();
-            }.bind(this);
+            };
 
             if (this.processingPromise) {
-                this.processingPromise.then(function() {
+                this.processingPromise.then(() => {
                     this.processingPromise = null;
                     onComplete(response);
-                }.bind(this));
+                });
             } else {
                 // Сюда попадать не должны, но на всякий случай...
                 console.warn("processingPromise undefined");
                 onComplete(response);
             }
-        }.bind(this));
+        });
 
         // отмена загрузки
         if (this.config.cancelUploadButton) {
-            this.root.addEventListener("click", function(event) {
+            this.root.addEventListener("click", event => {
                 const cancelUploadButton = event.target.closest(this.config.cancelUploadButton);
                 if (cancelUploadButton) {
                     event.preventDefault();
                     this.cancel();
                     this.removeDOM();
                 }
-            }.bind(this));
+            });
         }
-    }
-
-    /**
-     * Отмена загрузки файла.
-     */
-    cancel() {
-        this.collection.uploader.cancel(this.file);
     }
 }
 
@@ -234,9 +275,14 @@ class PermanentCollectionItemBase extends CollectionItemBase {
     static Defaults = Object.assign({}, super.Defaults, {
         checkbox: ".collection-item__checkbox",
 
+        caption: ".collection-item__caption",
         viewButton: ".collection-item__view-button",
         changeButton: ".collection-item__change-button",
         deleteButton: ".collection-item__delete-button"
+    });
+
+    static STATUS = Object.assign({}, super.STATUS, {
+        READY: "ready",
     });
 
     get id() {
@@ -267,7 +313,7 @@ class PermanentCollectionItemBase extends CollectionItemBase {
 
         // удаление файла
         if (this.config.deleteButton) {
-            this.root.addEventListener("click", function(event) {
+            this.root.addEventListener("click", event => {
                 const deleteButton = event.target.closest(this.config.deleteButton);
                 if (deleteButton) {
                     event.preventDefault();
@@ -283,18 +329,18 @@ class PermanentCollectionItemBase extends CollectionItemBase {
                         buttons: [{
                             label: gettext("Cancel"),
                             buttonClass: "btn-light",
-                            onClick: function(event, popup) {
+                            onClick: (event, popup) => {
                                 popup.destroy();
                             }
                         }, {
                             autofocus: true,
                             label: gettext("Delete"),
                             buttonClass: "btn-danger",
-                            onClick: function(event, popup) {
+                            onClick: (event, popup) => {
                                 Promise.all([
                                     popup.destroy(),
-                                    _this.delete()
-                                ]).catch(function(reason) {
+                                    this.delete()
+                                ]).catch(reason => {
                                     if (reason instanceof Error) {
                                         // JS-ошибки дублируем в консоль
                                         console.error(reason);
@@ -311,12 +357,12 @@ class PermanentCollectionItemBase extends CollectionItemBase {
                         }
                     });
                 }
-            }.bind(this));
+            });
         }
 
         // изменение файла
         if (this.config.changeButton) {
-            this.root.addEventListener("click", function(event) {
+            this.root.addEventListener("click", event => {
                 const changeButton = event.target.closest(this.config.changeButton);
                 if (changeButton) {
                     event.preventDefault();
@@ -327,7 +373,7 @@ class PermanentCollectionItemBase extends CollectionItemBase {
 
                     this.fetchChangeForm(
                         //
-                    ).then(function(response) {
+                    ).then(response => {
                         if (response.errors && response.errors.length) {
                             throw response.errors;
                         }
@@ -338,20 +384,20 @@ class PermanentCollectionItemBase extends CollectionItemBase {
                             buttons: [{
                                 label: gettext("Cancel"),
                                 buttonClass: "btn-light",
-                                onClick: function(event, popup) {
+                                onClick: (event, popup) => {
                                     popup.destroy();
                                 }
                             }, {
                                 label: gettext("Save"),
                                 buttonClass: "btn-success",
-                                onClick: function(event, popup) {
-                                    _this.sendChangeForm(popup);
+                                onClick: (event, popup) => {
+                                    this.sendChangeForm(popup);
                                 }
                             }],
                             onInit: function() {
                                 const popup = this;
                                 const form = popup._body.querySelector("form");
-                                form && form.addEventListener("submit", function(event) {
+                                form && form.addEventListener("submit", event => {
                                     event.preventDefault();
                                     _this.sendChangeForm(popup);
                                 });
@@ -359,7 +405,7 @@ class PermanentCollectionItemBase extends CollectionItemBase {
                                 popup.show();
 
                                 // autofocus first field
-                                $(popup._element).on("autofocus.bs.modal", function() {
+                                $(popup._element).on("autofocus.bs.modal", () => {
                                     const firstWidget = popup._body.querySelector(".paper-widget");
                                     const firstField = firstWidget && firstWidget.querySelector("input, select, textarea");
                                     firstField && firstField.focus();
@@ -369,7 +415,7 @@ class PermanentCollectionItemBase extends CollectionItemBase {
                                 changeButton.disabled = false;
                             }
                         });
-                    }).catch(function(reason) {
+                    }).catch(reason => {
                         if (reason instanceof Error) {
                             // JS-ошибки дублируем в консоль
                             console.error(reason);
@@ -377,18 +423,18 @@ class PermanentCollectionItemBase extends CollectionItemBase {
                         modals.showErrors(reason);
                     });
                 }
-            }.bind(this));
+            });
         }
 
         // просмотр файла
         if (this.config.viewButton) {
-            this.root.addEventListener("click", function(event) {
+            this.root.addEventListener("click", event => {
                 const viewButton = event.target.closest(this.config.viewButton);
                 if (viewButton) {
                     // отключение выделения при клике с зажатым Ctrl или Shift
                     event.stopPropagation();
                 }
-            }.bind(this));
+            });
         }
     }
 
@@ -404,31 +450,30 @@ class PermanentCollectionItemBase extends CollectionItemBase {
         const formData = new FormData();
 
         const params = utils.getPaperParams(this.collection.root);
-        Object.keys(params).forEach(function(name) {
+        Object.keys(params).forEach(name => {
             formData.append(name, params[name]);
         });
         formData.append("collectionId", this.collection.instanceId.toString());
         formData.append("itemId", this.id.toString());
         formData.append("itemType", this.itemType.toString());
 
-        const _this = this;
         return modals.showSmartPreloader(
             fetch(this.collection.root.dataset.deleteItemUrl, {
                 method: "POST",
                 credentials: "same-origin",
                 body: formData
-            }).then(function(response) {
+            }).then(response => {
                 if (!response.ok) {
                     throw `${response.status} ${response.statusText}`;
                 }
                 return response.json();
             })
-        ).then(function(response) {
+        ).then(response => {
             if (response.errors && response.errors.length) {
                 throw response.errors;
             }
 
-            _this.removeDOM();
+            this.removeDOM();
         });
     }
 
@@ -444,7 +489,7 @@ class PermanentCollectionItemBase extends CollectionItemBase {
         const formData = new FormData();
 
         const params = utils.getPaperParams(this.collection.root);
-        Object.keys(params).forEach(function(name) {
+        Object.keys(params).forEach(name => {
             formData.append(name, params[name]);
         });
         formData.append("collectionId", this.collection.instanceId.toString());
@@ -456,7 +501,7 @@ class PermanentCollectionItemBase extends CollectionItemBase {
         return modals.showSmartPreloader(
             fetch(`${this.collection.root.dataset.changeItemUrl}?${queryString}`, {
                 credentials: "same-origin",
-            }).then(function(response) {
+            }).then(response => {
                 if (!response.ok) {
                     throw `${response.status} ${response.statusText}`;
                 }
@@ -482,19 +527,18 @@ class PermanentCollectionItemBase extends CollectionItemBase {
 
         const formData = new FormData(form);
 
-        const _this = this;
         return modals.showSmartPreloader(
             fetch(form.action, {
                 method: "POST",
                 credentials: "same-origin",
                 body: formData
-            }).then(function(response) {
+            }).then(response => {
                 if (!response.ok) {
                     throw `${response.status} ${response.statusText}`;
                 }
                 return response.json();
             })
-        ).then(function(response) {
+        ).then(response => {
             if (response.errors && response.errors.length) {
                 throw response.errors;
             }
@@ -505,16 +549,13 @@ class PermanentCollectionItemBase extends CollectionItemBase {
             } else {
                 modal.destroy();
 
-                const fileName = _this.root.querySelector(_this.config.fileName);
-                fileName && (fileName.textContent = response.name);
+                const caption = this.root.querySelector(this.config.caption);
+                caption && (caption.textContent = response.caption);
 
-                const fileInfo = _this.root.querySelector(_this.config.fileInfo);
-                fileInfo && (fileInfo.textContent = response.file_info);
-
-                const previewLink = _this.root.querySelector(_this.config.viewButton);
+                const previewLink = this.root.querySelector(this.config.viewButton);
                 previewLink && (previewLink.href = response.url);
             }
-        }).catch(function(reason) {
+        }).catch(reason => {
             if (reason instanceof Error) {
                 // JS-ошибки дублируем в консоль
                 console.error(reason);
@@ -525,43 +566,22 @@ class PermanentCollectionItemBase extends CollectionItemBase {
 }
 
 
-class FileItem extends PermanentCollectionItemBase {
-
-}
-
-
-class ImageItem extends PermanentCollectionItemBase {
-
-}
-
-
-class SVGItem extends PermanentCollectionItemBase {
-
-}
-
-
-class MediaItem extends PermanentCollectionItemBase {
+class CollectionItem extends PermanentCollectionItemBase {
 
 }
 
 
 class Collection extends EventEmitter {
     static Defaults = {
-        emptyState: "empty",
-        loadingState: "loading",
-
         input: ".collection__input",
         dropzone: ".dropzone__overlay",
         dropzoneActiveClassName: "dropzone__overlay--highlighted",
 
         // контейнер, содержащий элементы коллекции
-        container: ".collection__items",
+        itemContainer: ".collection__items",
 
         // селектор корневого DOM-элемента элемента коллекции
-        item: ".collection__item",
-
-        // селектор прелоадеров
-        preloader: ".collection-item--preloader",
+        item: ".collection-item",
 
         // кнопки
         uploadItemButton: ".collection__upload-item-button",
@@ -572,16 +592,18 @@ class Collection extends EventEmitter {
         itemTemplatePattern: ".collection__{}-item-template",
 
         // JSON с данными о элементах коллекции
-        dataJSON: ".collection--data",
+        dataJSON: ".collection--data"
+    }
 
-        // карта соответствий типа элемента и JS-класса
-        itemClasses: {
-            preloader: PreloaderItem,
-            file: FileItem,
-            image: ImageItem,
-            svg: SVGItem,
-            media: MediaItem,
-        }
+    static STATUS = {
+        EMPTY: "empty",
+        LOADING: "loading",
+        READY: "ready",
+        REMOVING: "removing"
+    }
+
+    static CSS = {
+        container: "collection",
     }
 
     constructor(root, options) {
@@ -597,6 +619,14 @@ class Collection extends EventEmitter {
         this.init();
     }
 
+    get STATUS() {
+        return this.constructor.STATUS;
+    }
+
+    get CSS() {
+        return this.constructor.CSS;
+    }
+
     get uploader() {
         return this.root.uploader;
     }
@@ -605,24 +635,24 @@ class Collection extends EventEmitter {
         return this.root.querySelector(this.config.input);
     }
 
-    get container() {
-        return this.root.querySelector(this.config.container);
+    get itemContainer() {
+        return this.root.querySelector(this.config.itemContainer);
     }
 
     get items() {
-        return this.container.querySelectorAll(this.config.item);
+        return this.itemContainer.querySelectorAll(this.config.item);
     }
 
     get maxOrderValue() {
-        let orderValues = Array.from(this.items).map(function(item) {
+        let orderValues = Array.from(this.items).map(item => {
             const instance = item.collectionItem;
             return parseInt(instance.root.dataset.order);
-        }).filter(function(order) {
+        }).filter(order => {
             return !isNaN(order);
         });
 
         if (!orderValues.length) {
-            return 0;
+            return -1;
         }
 
         return Math.max.apply(null, orderValues);
@@ -636,30 +666,22 @@ class Collection extends EventEmitter {
         this.input.value = value;
     }
 
-    get empty() {
-        return this.root.classList.contains(this.config.emptyState);
-    }
-
-    set empty(value) {
-        this.root.classList.toggle(this.config.emptyState, value);
-    }
-
-    get loading() {
-        return this.root.classList.contains(this.config.loadingState);
-    }
-
-    set loading(value) {
-        this.root.classList.toggle(this.config.loadingState, value);
-    }
+    /**
+     * Public methods
+     */
 
     init() {
-        this.empty = !Boolean(this.instanceId);
-
         // store instance
         this.root.collection = this;
 
         this._initItems();
-        this._initUploader();
+
+        // Отключение Drag-n-drop, если коллекция не поддерживает файлы
+        const uploadItemButton = this.root.querySelector(this.config.uploadItemButton);
+        if (uploadItemButton) {
+            this._initUploader();
+        }
+
         this._initSortable();
         this._addListeners();
     }
@@ -673,10 +695,175 @@ class Collection extends EventEmitter {
     }
 
     /**
+     * @returns {string}
+     */
+    getStatus() {
+        return Object.values(this.STATUS).find(value => {
+            return this.root.classList.contains(`${this.CSS.container}--${value}`)
+        });
+    }
+
+    /**
+     * @param {string} status
+     */
+    setStatus(status) {
+        Object.values(this.STATUS).forEach(value => {
+            this.root.classList.toggle(
+                `${this.CSS.container}--${value}`,
+                status === value
+            );
+        });
+    }
+
+    /**
+     * @param {String|String[]} message
+     */
+    collectError(message) {
+        const errorKey = `collection_${this.input.name}`;
+        utils.collectError(errorKey, message);
+    }
+
+    showCollectedErrors() {
+        const errorKey = `collection_${this.input.name}`;
+        utils.showCollectedErrors(errorKey);
+    }
+
+    /**
+     * Создание коллекции.
+     *
+     * @returns {Promise}
+     */
+    createCollection() {
+        if (this.instanceId) {
+            return Promise.reject("Collection already exists");
+        }
+
+        const formData = new FormData();
+
+        const params = utils.getPaperParams(this.root);
+        Object.keys(params).forEach(name => {
+            formData.append(name, params[name]);
+        });
+
+        return modals.showSmartPreloader(
+            fetch(this.root.dataset.createCollectionUrl, {
+                method: "POST",
+                credentials: "same-origin",
+                body: formData
+            }).then(response => {
+                if (!response.ok) {
+                    throw `${response.status} ${response.statusText}`;
+                }
+                return response.json();
+            })
+        ).then(response => {
+            if (response.errors && response.errors.length) {
+                throw response.errors;
+            }
+
+            this.setStatus(this.STATUS.READY);
+
+            this._fillCollection(response);
+        }).catch(reason => {
+            if (reason instanceof Error) {
+                // JS-ошибки дублируем в консоль
+                console.error(reason);
+            }
+            modals.showErrors(reason);
+        });
+    }
+
+    /**
+     * Удаление коллекции.
+     *
+     * @returns {Promise}
+     */
+    deleteCollection() {
+        if (!this.instanceId) {
+            return Promise.reject("Collection doesn't exist");
+        }
+
+        const formData = new FormData();
+
+        const params = utils.getPaperParams(this.root);
+        Object.keys(params).forEach(name => {
+            formData.append(name, params[name]);
+        });
+        formData.append("collectionId", this.instanceId);
+
+        // отмена загрузки всех файлов из очереди.
+        if (this.uploader) {
+            this.uploader.cancelAll();
+        }
+
+        return modals.showSmartPreloader(
+            fetch(this.root.dataset.deleteCollectionUrl, {
+                method: "POST",
+                credentials: "same-origin",
+                body: formData
+            }).then(response => {
+                if (!response.ok) {
+                    throw `${response.status} ${response.statusText}`;
+                }
+                return response.json();
+            })
+        ).then(response => {
+            if (response.errors && response.errors.length) {
+                throw response.errors;
+            }
+
+            this.setStatus(this.STATUS.REMOVING);
+
+            this._disposeCollection(response);
+
+            return this._removeAllItems().then(() => {
+                this.setStatus(this.STATUS.EMPTY);
+            });
+        });
+    }
+
+    /**
+     * Рендеринг шаблона элемента галереи.
+     *
+     * @param {String} itemType
+     * @param {Object?} context
+     * @returns {String}
+     */
+    createItem(itemType, context) {
+        const selector = this.config.itemTemplatePattern.replace("{}", itemType);
+        const template = this.root.querySelector(selector);
+        return Mustache.render(template.innerHTML, context || {});
+    }
+
+    /**
+     * Создание экземпляра JS-класса элемента галереи.
+     *
+     * @param {String} itemType
+     * @param {HTMLElement} element
+     * @param {Object?} options
+     * @returns {CollectionItemBase}
+     */
+    initItem(itemType, element, options) {
+        // TODO: ability to register custom itemType
+        if (itemType === "preloader") {
+            return new PreloaderItem(element, this, options);
+        } else {
+            return new CollectionItem(element, this, options);
+        }
+    }
+
+    /**
+     * Private methods
+     */
+
+    /**
      * Создание элементов коллекции из JSON.
+     *
      * @private
      */
     _initItems() {
+        this.itemContainer.innerHTML = "";
+
         const dataElement = this.root.querySelector(this.config.dataJSON);
         const data = JSON.parse(dataElement.textContent);
         for (let itemData of data) {
@@ -684,7 +871,7 @@ class Collection extends EventEmitter {
 
             const itemHTML = this.createItem(itemType, itemData);
 
-            this.container.insertAdjacentHTML("beforeend", itemHTML);
+            this.itemContainer.insertAdjacentHTML("beforeend", itemHTML);
             const items = this.items;
             const item = items[items.length - 1];
 
@@ -692,19 +879,22 @@ class Collection extends EventEmitter {
         }
     }
 
+    /**
+     * @private
+     */
     _initUploader() {
         const options = Object.assign({
             url: this.root.dataset.uploadItemUrl,
             uploadMultiple: true,
-            params: function(file) {
+            params: file => {
                 const params = utils.getPaperParams(this.root);
                 params.collectionId = this.instanceId;
 
-                const preloader = this.getPreloaderByFile(file);
+                const preloader = this._getPreloaderByFile(file);
                 params.order = preloader.root.dataset.order;
 
                 return params
-            }.bind(this),
+            },
 
             root: this.root,
             button: this.root.querySelector(this.config.uploadItemButton),
@@ -715,75 +905,78 @@ class Collection extends EventEmitter {
         new Uploader(options);
     }
 
+    /**
+     * @private
+     */
     _addListeners() {
-        const _this = this;
+        if (this.uploader) {
+            this.uploader.on("submitted", file => {
+                const status = this.getStatus();
+                if (status !== this.STATUS.LOADING) {
+                    this.setStatus(this.STATUS.LOADING);
+                }
 
-        this.uploader.on("submitted", function(file) {
-            if (!this.loading) {
-                this.loading = true;
-            }
+                // создание прелоадера
+                const itemHTML = this.createItem("preloader", {
+                    uuid: this.uploader.getUUID(file),
+                    name: file.name,
+                    order: this.maxOrderValue + 1
+                });
 
-            // создание прелоадера
-            const itemHTML = this.createItem("preloader", {
-                name: file.name,
-                order: this.maxOrderValue + 1
+                this.itemContainer.insertAdjacentHTML("beforeend", itemHTML);
+                const items = this.items;
+                const item = items[items.length - 1];
+
+                this.initItem("preloader", item);
             });
 
-            this.container.insertAdjacentHTML("beforeend", itemHTML);
-            const items = this.items;
-            const item = items[items.length - 1];
-
-            this.initItem("preloader", item, {
-                file: file
+            this.uploader.on("upload", (file, xhr, formData) => {
+                const preloader = this._getPreloaderByFile(file);
+                if (preloader) {
+                    preloader.trigger("upload", [file, xhr, formData]);
+                }
             });
-        }.bind(this));
 
-        this.uploader.on("upload", function(file, xhr, formData) {
-            const preloader = this.getPreloaderByFile(file);
-            if (preloader) {
-                preloader.trigger("upload", [file, xhr, formData]);
-            }
-        }.bind(this));
+            this.uploader.on("progress", (file, percentage) => {
+                const preloader = this._getPreloaderByFile(file);
+                if (preloader) {
+                    preloader.trigger("progress", [file, percentage]);
+                }
+            });
 
-        this.uploader.on("progress", function(file, percentage) {
-            const preloader = this.getPreloaderByFile(file);
-            if (preloader) {
-                preloader.trigger("progress", [file, percentage]);
-            }
-        }.bind(this));
+            this.uploader.on("cancel", file => {
+                const preloader = this._getPreloaderByFile(file);
+                if (preloader) {
+                    preloader.trigger("cancel", [file]);
+                }
+            });
 
-        this.uploader.on("cancel", function(file) {
-            const preloader = this.getPreloaderByFile(file);
-            if (preloader) {
-                preloader.trigger("cancel", [file]);
-            }
-        }.bind(this));
+            this.uploader.on("complete", (file, response) => {
+                const preloader = this._getPreloaderByFile(file);
+                if (preloader) {
+                    preloader.trigger("complete", [file, response]);
+                }
+            });
 
-        this.uploader.on("complete", function(file, response) {
-            const preloader = this.getPreloaderByFile(file);
-            if (preloader) {
-                preloader.trigger("complete", [file, response]);
-            }
-        }.bind(this));
+            this.uploader.on("error", (file, message) => {
+                this.collectError(message);
 
-        this.uploader.on("error", function(file, message) {
-            this.collectError(message);
+                const preloader = this._getPreloaderByFile(file);
+                if (preloader) {
+                    preloader.trigger("error", [file, message]);
+                }
+            });
 
-            const preloader = this.getPreloaderByFile(file);
-            if (preloader) {
-                preloader.trigger("error", [file, message]);
-            }
-        }.bind(this));
+            this.uploader.on("all_complete", () => {
+                this.setStatus(this.STATUS.READY);
 
-        this.uploader.on("all_complete", function() {
-            this.loading = false;
-
-            this.showCollectedErrors();
-        }.bind(this));
+                this.showCollectedErrors();
+            });
+        }
 
         // создание коллекции
         if (this.config.createCollectionButton) {
-            this.root.addEventListener("click", function(event) {
+            this.root.addEventListener("click", event => {
                 const createCollectionButton = event.target.closest(this.config.createCollectionButton);
                 if (createCollectionButton) {
                     event.preventDefault();
@@ -792,16 +985,16 @@ class Collection extends EventEmitter {
                     createCollectionButton.disabled = true;
 
                     this.createCollection()
-                        .finally(function() {
+                        .finally(() => {
                             createCollectionButton.disabled = false;
                         });
                 }
-            }.bind(this));
+            });
         }
 
         // удаление коллекции
         if (this.config.deleteCollectionButton) {
-            this.root.addEventListener("click", function(event) {
+            this.root.addEventListener("click", event => {
                 const deleteCollectionButton = event.target.closest(this.config.deleteCollectionButton);
                 if (deleteCollectionButton) {
                     event.preventDefault();
@@ -816,18 +1009,18 @@ class Collection extends EventEmitter {
                         buttons: [{
                             label: gettext("Cancel"),
                             buttonClass: "btn-light",
-                            onClick: function(event, popup) {
+                            onClick: (event, popup) => {
                                 popup.destroy();
                             }
                         }, {
                             autofocus: true,
                             label: gettext("Delete"),
                             buttonClass: "btn-danger",
-                            onClick: function(event, popup) {
+                            onClick: (event, popup) => {
                                 Promise.all([
                                     popup.destroy(),
-                                    _this.deleteCollection()
-                                ]).catch(function(reason) {
+                                    this.deleteCollection()
+                                ]).catch(reason => {
                                     if (reason instanceof Error) {
                                         // JS-ошибки дублируем в консоль
                                         console.error(reason);
@@ -844,14 +1037,14 @@ class Collection extends EventEmitter {
                         }
                     });
                 }
-            }.bind(this));
+            });
         }
 
         // выделение элементов галереи
         let lastChangedItem = null;
         let lastChangedItemChecked = true;
-        this.root.addEventListener("click", function(event) {
-            const item = event.target.closest(_this.config.item);
+        this.root.addEventListener("click", event => {
+            const item = event.target.closest(this.config.item);
             if (!item) {
                 return
             }
@@ -876,13 +1069,13 @@ class Collection extends EventEmitter {
             if (event.shiftKey) {
                 if (lastChangedItem) {
                     // mass toggle state
-                    const items = Array.from(_this.items);
+                    const items = Array.from(this.items);
                     const lastChangedItemIndex = items.indexOf(lastChangedItem);
                     const currentItemIndex = items.indexOf(item);
                     const startIndex = Math.min(lastChangedItemIndex, currentItemIndex);
                     const endIndex = Math.max(lastChangedItemIndex, currentItemIndex);
                     const item_slice = items.slice(startIndex, endIndex + 1);
-                    item_slice.forEach(function(item) {
+                    item_slice.forEach(item => {
                         const instance = item.collectionItem;
                         if (instance instanceof PermanentCollectionItemBase) {
                             instance.checked = lastChangedItemChecked;
@@ -917,13 +1110,13 @@ class Collection extends EventEmitter {
         });
 
         // удаление выделенных элементов при нажатии Delete
-        this.root.addEventListener("keyup", function(event) {
+        this.root.addEventListener("keyup", event => {
             if (event.code !== "Delete") {
                 return
             }
 
-            const items = Array.from(_this.items);
-            const selectedItems = items.filter(function(item) {
+            const items = Array.from(this.items);
+            const selectedItems = items.filter(item => {
                 const instance = item.collectionItem;
                 return instance.checked;
             });
@@ -948,17 +1141,17 @@ class Collection extends EventEmitter {
                 buttons: [{
                     label: gettext("Cancel"),
                     buttonClass: "btn-light",
-                    onClick: function(event, popup) {
+                    onClick: (event, popup) => {
                         popup.destroy();
                     }
                 }, {
                     autofocus: true,
                     label: gettext("Delete"),
                     buttonClass: "btn-danger",
-                    onClick: function(event, popup) {
+                    onClick: (event, popup) => {
                         Promise.all([
                             popup.destroy(),
-                            _this._deleteItems(selectedItems)
+                            this._deleteItems(selectedItems)
                         ]);
                     }
                 }],
@@ -969,20 +1162,24 @@ class Collection extends EventEmitter {
         });
     }
 
+    /**
+     * @private
+     * @returns {Sortable}
+     */
     _initSortable() {
-        const _this = this;
-        return Sortable.create(this.container, {
+        return Sortable.create(this.itemContainer, {
             animation: 0,
             draggable: this.config.item,
-            filter: function(event, target) {
+            filter: (event, target) => {
                 // Отключение сортировки при нажатой Ctrl или Shift,
                 // чтобы сортировка не мешала выделять элементы.
                 if (event.ctrlKey || event.shiftKey) {
                     return true
                 }
 
-                // Отключение сортировки при загрузки.
-                if (_this.loading) {
+                // Отключение сортировки при загрузке и удалении.
+                const status = this.getStatus();
+                if ((status === this.STATUS.LOADING) || (status === this.STATUS.REMOVING)) {
                     return true;
                 }
 
@@ -990,7 +1187,7 @@ class Collection extends EventEmitter {
                     return true
                 }
 
-                const item = target.closest(_this.config.item);
+                const item = target.closest(this.config.item);
                 const instance = item.collectionItem;
 
                 // Фильтрация прелоадеров
@@ -999,14 +1196,15 @@ class Collection extends EventEmitter {
                 }
 
                 // Фильтрация удаляемых элементов
-                if (instance.root.classList.contains(instance.config.removingState)) {
+                const itemStatus = instance.getStatus();
+                if (itemStatus === instance.STATUS.REMOVING) {
                     return true
                 }
             },
             handle: ".sortable-handler",
             ghostClass: "sortable-ghost",
-            onEnd: function() {
-                const orderList = Array.from(this.items).map(function(item) {
+            onEnd: () => {
+                const orderList = Array.from(this.items).map(item => {
                     const instance = item.collectionItem;
                     if (instance instanceof PermanentCollectionItemBase) {
                         return instance.id;
@@ -1015,7 +1213,7 @@ class Collection extends EventEmitter {
 
                 const data = new FormData();
                 const params = utils.getPaperParams(this.root);
-                Object.keys(params).forEach(function(name) {
+                Object.keys(params).forEach(name => {
                     data.append(name, params[name]);
                 });
                 data.append("collectionId", this.instanceId.toString());
@@ -1025,12 +1223,12 @@ class Collection extends EventEmitter {
                     method: "POST",
                     credentials: "same-origin",
                     body: data
-                }).then(function(response) {
+                }).then(response => {
                     if (!response.ok) {
                         throw `${response.status} ${response.statusText}`;
                     }
                     return response.json();
-                }).then(function(response) {
+                }).then(response => {
                     if (response.errors && response.errors.length) {
                         throw response.errors;
                     }
@@ -1038,142 +1236,45 @@ class Collection extends EventEmitter {
                     response.orderMap = response.orderMap || {};
 
                     // update order
-                    _this.items.forEach(function(item) {
+                    this.items.forEach(item => {
                         const id = parseInt(item.dataset.id);
                         item.dataset.order = response.orderMap[id];
                     });
-                }).catch(function(reason) {
+                }).catch(reason => {
                     if (reason instanceof Error) {
                         // JS-ошибки дублируем в консоль
                         console.error(reason);
                     }
                     modals.showErrors(reason);
                 });
-            }.bind(this)
-        });
-    }
-
-    collectError(message) {
-        const errorKey = `collection_${this.input.name}`;
-        utils.collectError(errorKey, message);
-    }
-
-    showCollectedErrors() {
-        const errorKey = `collection_${this.input.name}`;
-        utils.showCollectedErrors(errorKey);
-    }
-
-    /**
-     * Создание коллекции.
-     * @returns {Promise}
-     */
-    createCollection() {
-        if (this.instanceId) {
-            return Promise.reject("Collection already exists");
-        }
-
-        const formData = new FormData();
-
-        const params = utils.getPaperParams(this.root);
-        Object.keys(params).forEach(function(name) {
-            formData.append(name, params[name]);
-        });
-
-        const _this = this;
-        return modals.showSmartPreloader(
-            fetch(this.root.dataset.createCollectionUrl, {
-                method: "POST",
-                credentials: "same-origin",
-                body: formData
-            }).then(function(response) {
-                if (!response.ok) {
-                    throw `${response.status} ${response.statusText}`;
-                }
-                return response.json();
-            })
-        ).then(function(response) {
-            if (response.errors && response.errors.length) {
-                throw response.errors;
             }
-
-            _this._initCollection(response.collection_id);
-        }).catch(function(reason) {
-            if (reason instanceof Error) {
-                // JS-ошибки дублируем в консоль
-                console.error(reason);
-            }
-            modals.showErrors(reason);
         });
     }
 
     /**
-     * Инициализация коллекции заданным ID.
-     * @param {Number} collectionId
+     * @param {object<string,*>} response
      * @private
      */
-    _initCollection(collectionId) {
-        this.empty = false;
-        this.instanceId = collectionId;
+    _fillCollection(response) {
+        this.instanceId = response.collection_id;
     }
 
     /**
-     * Удаление коллекции.
-     * @returns {Promise}
-     */
-    deleteCollection() {
-        if (!this.instanceId) {
-            return Promise.reject("Collection doesn't exist");
-        }
-
-        const formData = new FormData();
-
-        const params = utils.getPaperParams(this.root);
-        Object.keys(params).forEach(function(name) {
-            formData.append(name, params[name]);
-        });
-        formData.append("pk", this.instanceId);
-
-        // отмена загрузки всех файлов из очереди.
-        this.uploader.cancelAll();
-
-        const _this = this;
-        return modals.showSmartPreloader(
-            fetch(this.root.dataset.deleteCollectionUrl, {
-                method: "POST",
-                credentials: "same-origin",
-                body: formData
-            }).then(function(response) {
-                if (!response.ok) {
-                    throw `${response.status} ${response.statusText}`;
-                }
-                return response.json();
-            })
-        ).then(function(response) {
-            if (response.errors && response.errors.length) {
-                throw response.errors;
-            }
-
-            _this._disposeCollection();
-            return _this._removeAllItems();
-        });
-    }
-
-    /**
-     * Отвязываение виджета от коллекции.
+     * @param {object<string,*>} response
      * @private
      */
-    _disposeCollection() {
-        this.empty = true;
+    _disposeCollection(response) {
         this.instanceId = "";
     }
 
     /**
      * Анимированное удаление всех элементов коллекции.
-     * @returns {Promise}
+     *
      * @private
+     * @returns {Promise}
      */
     _removeAllItems() {
-        return Promise.all(Array.from(this.items).map(function(item) {
+        return Promise.all(Array.from(this.items).map(item => {
             const instance = item.collectionItem;
             if (instance) {
                 return instance.removeDOM();
@@ -1183,19 +1284,20 @@ class Collection extends EventEmitter {
 
     /**
      * Удаление выбранных элементов.
+     *
      * @param {NodeList|HTMLElement[]} items
-     * @returns {Promise}
      * @private
+     * @returns {Promise}
      */
     _deleteItems(items) {
         return allSettled(
-            Array.from(items).map(function(item) {
+            Array.from(items).map(item => {
                 const instance = item.collectionItem;
                 if (instance instanceof PermanentCollectionItemBase) {
                     return instance.delete();
                 }
             })
-        ).then(function(results) {
+        ).then(results => {
             for (let result of results) {
                 if (result.status === "rejected") {
                     const reason = result.reason;
@@ -1206,46 +1308,27 @@ class Collection extends EventEmitter {
                     this.collectError(reason);
                 }
             }
+
             this.showCollectedErrors();
-        }.bind(this));
-    }
-
-    /**
-     * Рендеринг шаблона элемента галереи.
-     * @param {String} itemType
-     * @param {Object?} context
-     * @returns {String}
-     */
-    createItem(itemType, context) {
-        const selector = this.config.itemTemplatePattern.replace("{}", itemType);
-        const template = this.root.querySelector(selector);
-        return Mustache.render(template.innerHTML, context || {});
-    }
-
-    /**
-     * Создание экземпляра JS-класса элемента галереи.
-     * @param {String} itemType
-     * @param {HTMLElement} element
-     * @param {Object?} options
-     * @returns {CollectionItemBase}
-     */
-    initItem(itemType, element, options) {
-        const itemClass = this.config.itemClasses[itemType];
-        return new itemClass(element, this, options);
+        });
     }
 
     /**
      * Получение DOM-элемента прелоадера для загружаемого файла.
+     *
      * @param {File} file
      * @returns {null|CollectionItemBase|*}
      */
-    getPreloaderByFile(file) {
+    _getPreloaderByFile(file) {
         const uuid = this.uploader.getUUID(file);
-        const preloaders = this.container.querySelectorAll(this.config.preloader);
-        const preloaderElement = Array.from(preloaders).find(function(preloader) {
+
+        const preloaderElement = Array.from(this.items).find(preloader => {
             const instance = preloader.collectionItem;
-            return instance && (instance.uuid === uuid);
+            if (instance instanceof PreloaderItem) {
+                return instance.uuid === uuid;
+            }
         });
+
         return preloaderElement && preloaderElement.collectionItem;
     }
 }
@@ -1259,12 +1342,15 @@ class CollectionWidget extends Widget {
     _destroy(element) {
         if (element.collection) {
             element.collection.destroy();
-            element.collection = null;
         }
     }
 }
 
 
-const widget = new CollectionWidget();
-widget.observe(".collection");
-widget.initAll(".collection");
+export {
+    CollectionItemBase,
+    PreloaderItem,
+    PermanentCollectionItemBase,
+    Collection,
+    CollectionWidget
+}

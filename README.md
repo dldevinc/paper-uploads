@@ -2,7 +2,8 @@
 Асинхронная загрузка файлов для административного интерфейса Django.
 
 [![PyPI](https://img.shields.io/pypi/v/paper-uploads.svg)](https://pypi.org/project/paper-uploads/)
-[![Build Status](https://travis-ci.org/dldevinc/paper-uploads.svg?branch=master)](https://travis-ci.org/dldevinc/paper-uploads)
+[![Build Status](https://github.com/dldevinc/paper-uploads/actions/workflows/tests.yml/badge.svg)](https://github.com/dldevinc/paper-uploads)
+[![Software license](https://img.shields.io/pypi/l/paper-uploads.svg)](https://pypi.org/project/paper-uploads/)
 
 ![](http://joxi.net/gmvnGZBtqKOOjm.png)
 
@@ -428,18 +429,17 @@ class Page(models.Model):
 ```
 
 Класс `Collection` обладает особенным свойством: *любой дочерний
-класс, унаследованный от `Collection`, является proxy-классом для
+класс, унаследованный от `Collection`, является proxy-моделью для
 `Collection`*. 
 
 В большинстве случаев коллекции отличаются друг от друга только 
-набором элементов, которые могут входит в коллекцию. Использование
+набором элементов, которые могут входить в коллекцию. Использование
 proxy-моделей предотвращает создание для каждой такой коллекции
 отдельной таблицы в БД.
 
-Как следствие, вы не можете добавлять собственные поля в классы
-коллеций. Это ограничение можно снять, явно указав, что дочерний 
-класс не должен быть proxy-моделью. В этом случае для коллекции 
-будет создана отдельная таблица в БД.
+Если же для коллекции необходима отдельная таблица (например,
+если вы решили добавить в модель новое поле), то необходимо
+явно установить свойтво `proxy` в значение `False`:
 
 ```python
 from django.db import models
@@ -474,7 +474,7 @@ class PageFiles(Collection):
 
 В приведённом примере, коллекция `PageFiles` может содержать элементы 
 трех классов: `SVGItem`, `ImageItem` и `FileItem`. Порядок подключения 
-элементов коллекции имеет значение: первый класс, чей метод `file_supported()`
+элементов коллекции имеет значение: первый класс, чей метод `accept()`
 вернет `True`, определит модель загруженного файла. По этой причине 
 `FileItem` должен указываться последним, т.к. он принимает любые файлы.
 
@@ -501,23 +501,7 @@ class FileCollection(Collection):
 * `FileItem`. Может хранить любой файл.
 
 Вариации для изображений коллекции можно указать двумя способами:
-1) в атрибуте класса коллекции `VARIATIONS`:
-
-    ```python
-    from paper_uploads.models import *
-
-    class PageGallery(Collection):
-        image = CollectionItem(ImageItem)
-        
-        VARIATIONS = dict(
-            mobile=dict(
-                size=(640, 0),
-                clip=False
-            )
-        )
-    ```
-
-2) в дополнительных параметрах поля `CollectionItem` по ключу `variations`:
+1) В дополнительных параметрах поля `CollectionItem` по ключу `variations`:
 
     ```python
     from paper_uploads.models import *
@@ -531,6 +515,21 @@ class FileCollection(Collection):
                 )
             )
         })
+    ```
+2) В атрибуте класса коллекции `VARIATIONS`:
+
+    ```python
+    from paper_uploads.models import *
+
+    class PageGallery(Collection):
+        image = CollectionItem(ImageItem)
+        
+        VARIATIONS = dict(
+            mobile=dict(
+                size=(640, 0),
+                clip=False
+            )
+        )
     ```
 
 ### ImageCollection
@@ -567,7 +566,7 @@ class PageGallery(ImageCollection):
 
 В простейших случаях можно использовать прокси-модели на основе существующих моделей. 
 Например, для того, чтобы хранить файлы определенной галереи в отдельной папке, 
-можно создать проски модель к `ImageItem`:
+можно создать прокси модель к `ImageItem`:
 
 ```python
 from paper_uploads.models import *
@@ -634,13 +633,13 @@ class Page(models.Model):
 photo = UploadedImage()
 photo.set_owner_from(Page._meta.get_field("photo"))
 with open("picture.jpg", "rb") as fp:
-    photo.attach_file(fp)
+    photo.attach(fp)
 photo.save()
 
 report = UploadedFile()
 report.set_owner_from(Page._meta.get_field("report"))
 with open("file.doc", "rb") as fp:
-    report.attach_file(fp)
+    report.attach(fp)
 report.save()
 
 
@@ -672,7 +671,7 @@ gallery.save()
 item = ImageItem()
 item.attach_to(gallery)
 with open("image.jpg", "rb") as fp:
-    item.attach_file(fp)
+    item.attach(fp)
 item.save()
 
 
@@ -694,17 +693,15 @@ page = Page.objects.create(
 * в модели-владельце существует поле `owner_fieldname`
 * существует единственный экземпляр модели-владельца
 со ссылкой на файл
-* у элементов коллекций указан существующий и допустимый
-`item_type`
-* модель элементов коллекций идентична указанной
-для `item_type`
+* у элементов коллекций указано корректное значение а поле `type`
+* модель элемента коллекции идентична модели, указанной в классе коллекции
 
-При указании ключа `--fix-missing` все отсутствующие
+При указании ключа `--fix-missing-variations` все отсутствующие
 вариации изображений будут автоматически перенарезаны
 из исходников.
 
 ```shell
-python3 manage.py check_uploads --fix-missing
+python3 manage.py check_uploads --fix-missing-variations
 ```
 
 #### clean_uploads
@@ -712,14 +709,14 @@ python3 manage.py check_uploads --fix-missing
 нет владельца) и предлагает их удалить.
 
 Владелец загруженного файла устанавливается в момент сохранения страницы
-в админке. А это происходит позже фактической загрузки файла на сервер. 
+в админке. Это происходит позже фактической загрузки файла на сервер. 
 Как следствие, в течение некоторого времени файл будет являться "сиротой". 
 Для того, чтобы такие файлы не удалялись, команда `clean_uploads` игнорирует
-файлы, загруженные за последние 30 минут. Изменить интервал фильтрации
-(в минутах) можно через ключ `--min-age`.
+файлы, загруженные за последние 60 минут. Изменить интервал фильтрации
+можно через ключ `--min-age`.
 
 ```shell
-python3 manage.py clean_uploads --min-age=60
+python3 manage.py clean_uploads --min-age=1800
 ```
 
 #### recreate_variations
@@ -986,7 +983,7 @@ PAPER_UPLOADS = {
 
 Значение по умолчанию: `collections/images/%Y-%m-%d`
 
-### `COLLECTION_ITEM_PREVIEW_WIDTH`, `COLLECTION_ITEM_PREVIEW_HEIGTH`
+### `COLLECTION_ITEM_PREVIEW_WIDTH`, `COLLECTION_ITEM_PREVIEW_HEIGHT`
 Размеры превью элементов коллекций в админке.
 
 Значение по умолчанию: `180` x `135`
@@ -995,7 +992,7 @@ PAPER_UPLOADS = {
 Вариации, добавляемые к каждому классу изображений коллекций
 для отображения превью в админке. Размеры файлов должны
 совпадать с `COLLECTION_ITEM_PREVIEW_WIDTH` и
-`COLLECTION_ITEM_PREVIEW_HEIGTH`.
+`COLLECTION_ITEM_PREVIEW_HEIGHT`.
 
 ### `RQ_ENABLED`
 Включает нарезку картинок на вариации через отложенные задачи.

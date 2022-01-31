@@ -9,10 +9,12 @@ from django.utils.translation import gettext_lazy as _
 
 from paper_uploads import helpers
 from paper_uploads.models.base import *
+from paper_uploads.models.mixins import BacklinkModelMixin
 from paper_uploads.variations import PaperVariation
 
 __all__ = [
     "DummyResource",
+    "DummyBacklinkResource",
     "DummyFileResource",
     "DummyFileFieldResource",
     "DummyImageFieldResource",
@@ -21,6 +23,10 @@ __all__ = [
 
 
 class DummyResource(Resource):
+    pass
+
+
+class DummyBacklinkResource(BacklinkModelMixin, Resource):
     pass
 
 
@@ -49,12 +55,12 @@ class DummyFileResource(FileResource):
         return 28
 
     def get_file_url(self):
-        return 'http://example.com/{}'.format(quote(self.get_basename()))
+        return 'http://example.com/{}'.format(quote(self.get_caption()))
 
     def file_exists(self) -> bool:
         return True
 
-    def _attach_file(self, file: File, **options):
+    def _attach(self, file: File, **options):
         self.__filename = file.name
         self.basename = helpers.get_filename(file.name)
         self.extension = helpers.get_extension(file.name)
@@ -62,7 +68,7 @@ class DummyFileResource(FileResource):
             'success': True,
         }
 
-    def _rename_file(self, new_name: str, **options):
+    def _rename(self, new_name: str, **options):
         self.__filename = new_name
         self.basename = helpers.get_filename(new_name)
         self.extension = helpers.get_extension(new_name)

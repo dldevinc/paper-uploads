@@ -8,8 +8,8 @@ from django.db.models.fields import Field
 
 from paper_uploads.models import CollectionItem
 
-from ...models.base import VersatileImageResourceMixin
-from ...models.collection import Collection
+from ...models.base import Resource, VersatileImageResourceMixin
+from ...models.collection import CollectionBase
 
 
 def is_image(field: Field) -> bool:
@@ -29,20 +29,20 @@ def is_image_item(field: CollectionItem) -> bool:
     return issubclass(field.model, VersatileImageResourceMixin)
 
 
-def is_collection(model: Type[Union[models.Model, Collection]]) -> bool:
+def is_collection(model: Type[Union[models.Model, CollectionBase]]) -> bool:
     """
     Возвращает True, если model - коллекция.
     """
-    return issubclass(model, Collection)
+    return issubclass(model, CollectionBase)
 
 
-def get_collection_variations(model: Type[Collection], item_type_class: CollectionItem) -> List[str]:
+def get_collection_variations(model: Type[CollectionBase], item_type_class: CollectionItem) -> List[str]:
     return list(
         item_type_class.model.get_variation_config(item_type_class, model).keys()
     )
 
 
-def get_field_variations(field: VersatileImageResourceMixin) -> List[str]:
+def get_field_variations(field: Field) -> List[str]:
     return list(
         field.variations.keys()
     )
@@ -50,10 +50,16 @@ def get_field_variations(field: VersatileImageResourceMixin) -> List[str]:
 
 class Command(BaseCommand):
     help = """
-    Удаление вариаций для указанной модели.
+    Удаление вариаций для всех экземпляров указанной модели.
+    
+    Примеры:
+        python3 manage.py remove_variations blog.post --field=hero
+        python3 manage.py remove_variations blog.gallery --item-type=image
     """
+    options = None
     verbosity = None
     database = DEFAULT_DB_ALIAS
+    interactive = False
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -91,97 +97,108 @@ class Command(BaseCommand):
             help="Nominates the database to use. Defaults to the 'default' database.",
         )
 
-    def handle(self, *args, **options):
-        self.verbosity = options["verbosity"]
-        self.database = options["database"]
+    def get_model(self):
+        return apps.get_model(self.options["model"])
 
-        model_name = options["model"]
-        model = apps.get_model(model_name)
-        if is_collection(model):
-            item_type = options["item_type"]
-            if not item_type:
-                raise RuntimeError("The argument 'item-type' required")
+    def _process_collection(self, model: Type[CollectionBase], item_type, variations):
+        collection_model = model.collection_content_type.model_class()
+        queryset = collection_model.objects.using(self.database)
 
-            if item_type not in model.item_types:
-                raise RuntimeError("Unsupported collection item type: %s" % item_type)
-
-            item_type_class = model.item_types[item_type]
-            if not is_image_item(item_type_class):
-                raise RuntimeError("Not an image or invalid collection item type: %s" % item_type)
-
-            variations = options["variations"]
-            if not variations:
-                if options["interactive"]:
-                    variations = self.select_variations_dialog(model, item_type_class)
-
-            if not variations:
-                variations = set(get_collection_variations(model, item_type_class))
-
-            self.process_collection(model, item_type, variations)
-        else:
-            fieldname = options["field"]
-            if not fieldname:
-                raise RuntimeError("The argument 'field' required")
-
-            field = model._meta.get_field(fieldname)
-            if not is_image(field):
-                raise RuntimeError("Not an image or invalid field: %s" % fieldname)
-
-            variations = options["variations"]
-            if not variations:
-                if options["interactive"]:
-                    variations = self.select_variations_dialog(model, field)
-
-            if not variations:
-                variations = set(get_field_variations(field))
-
-            self.process_field(model, fieldname, variations)
-
-    def process_collection(self, model, item_type, variations):
-        total = model.objects.using(self.database).count()  # use `objects` manager!
-        for index, collection in enumerate(
-            model.objects.using(self.database).iterator(), start=1
-        ):
+        total = queryset.count()
+        for index, collection in enumerate(queryset.iterator(), start=1):
             if self.verbosity >= 1:
                 self.stdout.write(
-                    self.style.SUCCESS(
-                        "Remove variations for `{}` #{} ({}/{}) ... ".format(
-                            model.__name__, collection.pk, index, total
-                        )
+                    "Remove variations for \033[92m'{}.{}'\033[0m (ID: {}) ({}/{}) ... ".format(
+                        collection_model._meta.app_label,
+                        collection_model.__name__,
+                        collection.pk,
+                        index,
+                        total
                     )
                 )
 
-            for item in collection.get_items(item_type).using(self.database).iterator():
+            for item in collection.get_items(item_type).iterator():
                 for variation_name in item.get_variations():
                     if variation_name in variations:
                         variation_file = item.get_variation_file(variation_name)
                         variation_file.delete()
 
-    def process_field(self, model, fieldname, variations):
-        instances = model._base_manager.using(self.database).exclude(
-            (fieldname, None)
-        )
-        total = instances.count()
-        for index, instance in enumerate(instances.iterator(), start=1):
+    def process_collection(self, model: Type[CollectionBase]):
+        item_type = self.options["item_type"]
+        if not item_type:
+            raise RuntimeError("The argument 'item-type' is required")
+
+        if item_type not in model.item_types:
+            raise RuntimeError("Unsupported collection item type: %s" % item_type)
+
+        item_type_field = model.item_types[item_type]
+        if not is_image_item(item_type_field):
+            raise RuntimeError("Specified collection item type has no variations: %s" % item_type)
+
+        variations = self.options["variations"]
+        if not variations:
+            if self.options["interactive"]:
+                variations = self.variations_dialog(model, item_type_field)
+
+        if not variations:
+            variations = set(get_collection_variations(model, item_type_field))
+
+        self._process_collection(model, item_type, variations)
+
+    def _process_resource(self, model: Type[Resource], fieldname, variations):
+        queryset = model.objects.using(self.database).exclude((fieldname, None))
+
+        total = queryset.count()
+        for index, instance in enumerate(queryset.iterator(), start=1):
             if self.verbosity >= 1:
                 self.stdout.write(
-                    self.style.SUCCESS(
-                        "Remove variations for `{}` #{} ({}/{}) ... ".format(
-                            model.__name__, instance.pk, index, total
-                        )
-                    ),
-                    ending="\r",
+                    "Remove variations for \033[92m'{}.{}'\033[0m (ID: {}) ({}/{}) ... ".format(
+                        type(instance)._meta.app_label,
+                        type(instance).__name__,
+                        instance.pk,
+                        index,
+                        total
+                    )
                 )
-
             field = getattr(instance, fieldname)
+
             for variation_name in variations:
                 if variation_name in field.get_variations():
                     variation_file = field.get_variation_file(variation_name)
                     variation_file.delete()
 
-        self.stdout.write("")
+    def process_resource(self, model: Type[Resource]):
+        fieldname = self.options["field"]
+        if not fieldname:
+            raise RuntimeError("The argument 'field' is required")
 
-    def select_variations_dialog(self, model, field):
+        field = model._meta.get_field(fieldname)
+        if not is_image(field):
+            raise RuntimeError("Specified field has no variations: %s" % fieldname)
+
+        variations = self.options["variations"]
+        if not variations:
+            if self.options["interactive"]:
+                variations = self.variations_dialog(model, field)
+
+        if not variations:
+            variations = set(get_field_variations(field))
+
+        self._process_resource(model, fieldname, variations)
+
+    def handle(self, *args, **options):
+        self.options = options
+        self.verbosity = options["verbosity"]
+        self.database = options["database"]
+        self.interactive = options["interactive"]
+
+        model = self.get_model()
+        if is_collection(model):
+            self.process_collection(model)
+        else:
+            self.process_resource(model)
+
+    def variations_dialog(self, model, field):
         if is_collection(model):
             allowed_variations = get_collection_variations(model, field)
         else:

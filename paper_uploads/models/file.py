@@ -8,10 +8,13 @@ from ..conf import settings
 from ..storage import upload_storage
 from ..utils import filesizeformat
 from .base import FileFieldResource
+from .mixins import BacklinkModelMixin, EditableResourceMixin
 from .utils import generate_filename
 
 
-class UploadedFile(FileFieldResource):
+class UploadedFileBase(BacklinkModelMixin, EditableResourceMixin, FileFieldResource):
+    change_form_class = "paper_uploads.forms.dialogs.file.ChangeUploadedFileDialog"
+
     file = models.FileField(
         _("file"),
         max_length=255,
@@ -21,6 +24,7 @@ class UploadedFile(FileFieldResource):
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
     class Meta(FileFieldResource.Meta):
+        abstract = True
         verbose_name = _("file")
         verbose_name_plural = _("files")
 
@@ -41,6 +45,12 @@ class UploadedFile(FileFieldResource):
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field("file")
 
+    def get_caption(self) -> str:
+        name = self.display_name or self.basename
+        if self.extension:
+            return "{}.{}".format(name, self.extension)
+        return name
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
@@ -49,3 +59,8 @@ class UploadedFile(FileFieldResource):
                 ext=self.extension, size=filesizeformat(self.size)
             ),
         }
+
+
+class UploadedFile(UploadedFileBase):
+    class Meta(UploadedFileBase.Meta):
+        pass
