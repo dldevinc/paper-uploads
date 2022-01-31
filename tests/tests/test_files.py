@@ -43,7 +43,8 @@ class TestVariationFile:
         assert storage.file.variation_name == 'desktop'
 
     def test_size(self, storage):
-        assert storage.file.size == 115559
+        # разный размер - зависит от версии Pillow
+        assert storage.file.size in {115559, 112734}
 
     def test_variation(self, storage):
         assert isinstance(storage.file.variation, PaperVariation)
