@@ -15,6 +15,7 @@ jobs:
           - 3.7
           - 3.8
           - 3.9
+          - '3.10'
     env:
       CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
     steps:

@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.8.0rc2](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc2) - 2021-02-01
+### Features
+- Add Django 4.0 support
+- Add Python 3.10 support
+
 ## [0.8.0rc1](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc1) - 2021-11-22
 ### ⚠ BREAKING CHANGES
 - Mixin `BacklinkModelMixin` has been moved from `Resource` class to 
