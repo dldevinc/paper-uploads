@@ -541,6 +541,15 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         verbose_name = _("Image item")
         verbose_name_plural = _("Image items")
 
+    def _setup_variation_files(self):
+        # Предотвращение вероятной бесконечной рекурсии.
+        # Ошибка возникает в случае, когда модель коллекции была удалена,
+        # но соответствующий ContentType остался.
+        if "file" not in self.__dict__:
+            return
+
+        super()._setup_variation_files()
+
     def get_file_folder(self) -> str:
         return settings.COLLECTION_IMAGES_UPLOAD_TO
 
