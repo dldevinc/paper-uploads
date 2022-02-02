@@ -52,6 +52,7 @@
   - [Collection items](#Collection-items)
   - [ImageCollection](#ImageCollection)
   - [Custom collection item classes](#Custom-collection-item-classes)
+  - [HTML Template Example](#HTML-Template-Example)
 - [Programmatically upload files](#Programmatically-upload-files)
 - [Management Commands](#Management-Commands)
 - [Validators](#Validators)
@@ -407,8 +408,7 @@ class Page(models.Model):
 
 Для создания коллекции необходимо объявить класс, унаследованный
 от `Collection` и указать модели элементов, которые могут входить
-в коллекцию. Созданную коллекцию можно подключить к модели с 
-помощью `CollectionField`:
+в коллекцию с помощью псевдо-поля `CollectionItem`:
 
 ```python
 from django.db import models
@@ -430,16 +430,16 @@ class Page(models.Model):
 
 Класс `Collection` обладает особенным свойством: *любой дочерний
 класс, унаследованный от `Collection`, является proxy-моделью для
-`Collection`*. 
+`Collection`*.
 
 В большинстве случаев коллекции отличаются друг от друга только 
 набором элементов, которые могут входить в коллекцию. Использование
-proxy-моделей предотвращает создание для каждой такой коллекции
-отдельной таблицы в БД.
+proxy-моделей предотвращает создание множества одинаковых таблиц 
+в БД.
 
 Если же для коллекции необходима отдельная таблица (например,
-если вы решили добавить в модель новое поле), то необходимо
-явно установить свойтво `proxy` в значение `False`:
+если вы решили добавить в неё новое поле), то необходимо
+явно установить свойтво `Meta.proxy` в значение `False`:
 
 ```python
 from django.db import models
@@ -457,10 +457,10 @@ class CustomCollection(Collection):
 
 ### Collection items
 
-Псевдо-поле `CollectionItem` подключает к коллекции модель элемента 
-под заданным именем. Это имя сохраняется в БД при загрузке файла. 
-По этой причине **не рекомендуется менять имена элементов коллекций,
-если в неё уже загружены файлы**.
+Псевдо-поле `CollectionItem` регистрирует модель элемента коллекции 
+под заданным именем. При добавлении в коллекцию нового элемента,
+это имя помещается в поле `type` элемента коллекции. Это поле можно
+использовать для получения элементов коллекции определённого типа.
 
 ```python
 from paper_uploads.models import *
@@ -473,7 +473,7 @@ class PageFiles(Collection):
 ```
 
 В приведённом примере, коллекция `PageFiles` может содержать элементы 
-трех классов: `SVGItem`, `ImageItem` и `FileItem`. Порядок подключения 
+трех классов: `SVGItem`, `ImageItem` и `FileItem`. Порядок объявления 
 элементов коллекции имеет значение: первый класс, чей метод `accept()`
 вернет `True`, определит модель загруженного файла. По этой причине 
 `FileItem` должен указываться последним, т.к. он принимает любые файлы.
@@ -495,11 +495,16 @@ class FileCollection(Collection):
 ---
 
 В состав библиотеки входят следующие классы элементов:
-* `ImageItem`. Для хранения изображения с возможностью нарезки
-на вариации.
-* `SVGItem`. Для хранения SVG иконок.
-* `FileItem`. Может хранить любой файл.
+* `ImageItem`<br>
+  Для хранения изображения с возможностью нарезки на вариации. 
+  Позволяет хранить любые файлы, которые можно открыть с помощью [Pillow](https://pillow.readthedocs.io/en/stable/). 
 
+* `SVGItem`<br>
+  Для хранения SVG иконок.
+
+* `FileItem`<br>
+  Может хранить любой файл.
+  
 Вариации для изображений коллекции можно указать двумя способами:
 1) В дополнительных параметрах поля `CollectionItem` по ключу `variations`:
 
@@ -564,8 +569,9 @@ class PageGallery(ImageCollection):
 
 ### Custom collection item classes
 
-В простейших случаях можно использовать прокси-модели на основе существующих моделей. 
-Например, для того, чтобы хранить файлы определенной галереи в отдельной папке, 
+В простейших случаях, вместо создания собственного класса элемента коллекции с нуля,
+можно использовать прокси-модели на основе существующих классов. 
+Например, для того, чтобы хранить файлы определённой галереи в отдельной папке, 
 можно создать прокси модель к `ImageItem`:
 
 ```python
@@ -600,6 +606,34 @@ class CustomImageItem(ImageItemBase):  # не ImageItem!
 
 class CustomCollection(Collection):
     image = CollectionItem(CustomImageItem)
+```
+
+### HTML Template Example
+
+```html
+{% if page.gallery %}
+<div class="gallery">
+  {% for item in page.gallery %}
+  
+    {% if item.type == "image" %}
+      <div class="item item--{{ item.type }}">
+        <img src="{{ item.url }}" 
+             width="{{ item.width }}"
+             height="{{ item.height }}"
+             title="{{ item.title }}"
+             alt="{{ item.description }}">
+      </div>
+    {% elif item.type == "file" %}}
+      <div class="item item--{{ item.type }}">
+        <a href="{{ item.url }}" download>
+          Download file "{{ item.display_name }}" ({{ item.size|filesizeformat }})
+        </a>
+      </div>
+    {% endif %}}
+  
+  {% endfor %}
+</div>
+{% endif %}
 ```
 
 ## Programmatically upload files
