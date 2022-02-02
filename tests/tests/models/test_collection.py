@@ -251,14 +251,13 @@ class TestCollection:
         file_item = FileItem(extension='py')
         assert file_item.get_preview_url() == '/static/paper_uploads/dist/assets/unknown.svg'
 
-    def test_set_owner_from(self, storage):
-        owner_field = Page._meta.get_field("file_collection")
-        storage.file_collection.set_owner_from(owner_field)
+    def test_set_owner_field(self, storage):
+        storage.file_collection.set_owner_field(Page, "file_collection")
         assert storage.file_collection.owner_app_label == "standard_collection"
         assert storage.file_collection.owner_model_name == "page"
         assert storage.file_collection.owner_fieldname == "file_collection"
         assert storage.file_collection.get_owner_model() is Page
-        assert storage.file_collection.get_owner_field() is owner_field
+        assert storage.file_collection.get_owner_field() is Page._meta.get_field("file_collection")
 
     def test_get_item_model(self, storage):
         assert storage.global_collection.get_item_model("svg") is SVGItem

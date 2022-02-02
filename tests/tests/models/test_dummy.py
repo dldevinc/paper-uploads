@@ -86,15 +86,14 @@ class TestInvalidBacklinkModelMixin:
         assert obj.get_owner_model() is DummyFileFieldResource
         assert obj.get_owner_field() is None
 
-    def test_set_owner_from(self):
+    def test_set_owner_field(self):
         obj = DummyBacklinkResource()
-        owner_field = FileExample._meta.get_field("file")
-        obj.set_owner_from(owner_field)
+        obj.set_owner_field(FileExample, "file")
         assert obj.owner_app_label == "app"
         assert obj.owner_model_name == "fileexample"
         assert obj.owner_fieldname == "file"
         assert obj.get_owner_model() is FileExample
-        assert obj.get_owner_field() is owner_field
+        assert obj.get_owner_field() is FileExample._meta.get_field("file")
 
 
 class TestResource:

@@ -14,7 +14,6 @@ from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
 from django.db.models.functions import Coalesce
-from django.db.models.utils import make_model_tuple
 from django.template import loader
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
@@ -210,10 +209,6 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         if item_type not in cls.item_types:
             raise exceptions.InvalidItemType(item_type)
         return cls.item_types[item_type].model
-
-    def set_owner_from(self, field: models.Field):
-        self.owner_app_label, self.owner_model_name = make_model_tuple(field.model)
-        self.owner_fieldname = field.name
 
     def get_items(self, item_type: str = None) -> 'models.QuerySet[CollectionItemBase]':
         if item_type is None:

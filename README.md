@@ -652,7 +652,7 @@ class CustomCollection(Collection):
 чтобы обнаружить потенциально неиспользуемые файлы.
 
 Заполнить поля можно вручную, в конструкторе, либо воспользоваться 
-методом `set_owner_from()`.
+методом `set_owner_field()`.
 
 ```python
 from django.db import models
@@ -665,13 +665,13 @@ class Page(models.Model):
 
 
 photo = UploadedImage()
-photo.set_owner_from(Page._meta.get_field("photo"))
+photo.set_owner_field(Page, "photo")
 with open("picture.jpg", "rb") as fp:
     photo.attach(fp)
 photo.save()
 
 report = UploadedFile()
-report.set_owner_from(Page._meta.get_field("report"))
+report.set_owner_field(Page, "report")
 with open("file.doc", "rb") as fp:
     report.attach(fp)
 report.save()
@@ -699,7 +699,7 @@ class Page(models.Model):
 
 
 gallery = PageGallery()
-gallery.set_owner_from(Page._meta.get_field("gallery"))
+gallery.set_owner_field(Page, "gallery")
 gallery.save()
 
 item = ImageItem()

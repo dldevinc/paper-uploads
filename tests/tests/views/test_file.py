@@ -168,7 +168,7 @@ class TestDeleteFileView:
         file = UploadedFileProxy(
             pk=5486
         )
-        file.set_owner_from(Page._meta.get_field("file"))
+        file.set_owner_field(Page, "file")
         file.save()
 
         request = RequestFactory().post("/", data={
@@ -199,7 +199,7 @@ class TestChangeFileView:
         storage.object = UploadedFileProxy(
             pk=5487
         )
-        storage.object.set_owner_from(Page._meta.get_field("file"))
+        storage.object.set_owner_field(Page, "file")
         storage.object.save()
 
         storage.view = ChangeFileView()

@@ -159,7 +159,7 @@ class TestDeleteCollectionView:
         collection = FilesOnlyCollection(
             pk=5489
         )
-        collection.set_owner_from(Page._meta.get_field("file_collection"))
+        collection.set_owner_field(Page, "file_collection")
         collection.save()
 
         request = RequestFactory().post("/", data={
@@ -248,7 +248,7 @@ class TestUploadFileView:
         collection = ImagesOnlyCollection(
             pk=9562
         )
-        collection.set_owner_from(Page._meta.get_field("image_collection"))
+        collection.set_owner_field(Page, "image_collection")
         collection.save()
 
         request = RequestFactory().post("/", data={
@@ -278,7 +278,7 @@ class TestUploadFileView:
         collection = FilesOnlyCollection(
             pk=9563
         )
-        collection.set_owner_from(Page._meta.get_field("file_collection"))
+        collection.set_owner_field(Page, "file_collection")
         collection.save()
 
         request = RequestFactory().post("/", data={
@@ -373,7 +373,7 @@ class TestDeleteFileView:
         storage.collection = CustomImageCollection(
             pk=9564
         )
-        storage.collection.set_owner_from(CustomPage._meta.get_field("gallery"))
+        storage.collection.set_owner_field(CustomPage, "gallery")
         storage.collection.save()
 
         # item
@@ -483,7 +483,7 @@ class TestChangeFileView:
         storage.collection = CustomImageCollection(
             pk=5965
         )
-        storage.collection.set_owner_from(CustomPage._meta.get_field("gallery"))
+        storage.collection.set_owner_field(CustomPage, "gallery")
         storage.collection.save()
 
         # item
@@ -601,7 +601,7 @@ class TestSortItemsView:
         storage.collection = ImagesOnlyCollection(
             pk=9569
         )
-        storage.collection.set_owner_from(Page._meta.get_field("file_collection"))
+        storage.collection.set_owner_field(Page, "file_collection")
         storage.collection.save()
 
         # item 1
