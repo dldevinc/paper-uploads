@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.8.0rc3](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc3) - 2021-02-02
+### ⚠ BREAKING CHANGES
+- Method `set_owner_from()` has been rewritten and renamed to `set_owner_field()`.
+
 ## [0.8.0rc2](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc2) - 2021-02-01
 ### Features
 - Add Django 4.0 support
