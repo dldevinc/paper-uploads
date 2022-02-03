@@ -407,7 +407,8 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
     def test_wrong_extension(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach(fp, name='overwritten.gif')
+                with pytest.raises(cloudinary.exceptions.Error):
+                    resource.attach(fp, name='overwritten.gif')
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
