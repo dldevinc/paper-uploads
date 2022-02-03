@@ -1,4 +1,5 @@
 import os
+import warnings
 from typing import Sequence, Union
 
 import magic
@@ -13,6 +14,7 @@ from .utils import filesizeformat, parse_filesize, remove_dulpicates
 __all__ = [
     "ExtensionValidator",
     "MimeTypeValidator",
+    "MaxSizeValidator",
     "SizeValidator",
     "ImageMinSizeValidator",
     "ImageMaxSizeValidator",
@@ -72,7 +74,7 @@ class MimeTypeValidator:
 
 
 @deconstructible
-class SizeValidator:
+class MaxSizeValidator:
     message = _("File `%(name)s` is too large. Maximum file size is %(limit_value)s.")
     code = "size_limit"
 
@@ -96,6 +98,16 @@ class SizeValidator:
 
     def get_help_text(self):
         return "{}: {}".format(_("Maximum file size"), filesizeformat(self.limit_value))
+
+
+class SizeValidator(MaxSizeValidator):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "SizeValidator is deprecated in favor of MaxSizeValidator",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        super().__init__(*args, **kwargs)
 
 
 @deconstructible

@@ -110,7 +110,7 @@ class FileResourceFieldBase(ResourceFieldBase):
                 config["acceptFiles"] = v.allowed
             elif isinstance(v, validators.ExtensionValidator):
                 config["allowedExtensions"] = v.allowed
-            elif isinstance(v, validators.SizeValidator):
+            elif isinstance(v, validators.MaxSizeValidator):
                 config["sizeLimit"] = v.limit_value
             elif isinstance(v, validators.ImageMinSizeValidator):
                 config["minImageWidth"] = v.width_limit

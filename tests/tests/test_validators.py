@@ -92,15 +92,15 @@ class TestMimetypeValidator:
         assert str(validator.get_help_text()) == 'Allowed types: video/mp4, video/ogg, image/*'
 
 
-class TestSizeValidator:
+class TestMaxSizeValidator:
     def test_valid(self):
-        validator = validators.SizeValidator(limit_value=8)
+        validator = validators.MaxSizeValidator(limit_value=8)
         for size in range(1, 9):
             with make_dummy_file(content=b'1234567890'[:size]) as fp:
                 validator(fp)
 
     def test_fail(self):
-        validator = validators.SizeValidator(limit_value=8)
+        validator = validators.MaxSizeValidator(limit_value=8)
         with pytest.raises(ValidationError) as exc:
             with make_dummy_file(content=b'123456789') as fp:
                 validator(fp)
@@ -111,7 +111,7 @@ class TestSizeValidator:
         )
 
     def test_custom_message(self):
-        validator = validators.SizeValidator(limit_value=2, message='invalid size: %(size)s')
+        validator = validators.MaxSizeValidator(limit_value=2, message='invalid size: %(size)s')
         with pytest.raises(ValidationError) as exc:
             with make_dummy_file(content=b'Hello' * 1024) as fp:
                 validator(fp)
@@ -120,7 +120,7 @@ class TestSizeValidator:
         )
 
     def test_help_text(self):
-        validator = validators.SizeValidator(limit_value=1024*1024)
+        validator = validators.MaxSizeValidator(limit_value=1024*1024)
         assert str(validator.get_help_text()) == 'Maximum file size: 1.0 MB'
 
 

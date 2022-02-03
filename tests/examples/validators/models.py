@@ -7,7 +7,7 @@ from paper_uploads.validators import (
     ImageMaxSizeValidator,
     ImageMinSizeValidator,
     MimeTypeValidator,
-    SizeValidator,
+    MaxSizeValidator,
 )
 
 
@@ -20,7 +20,7 @@ class CollectionDefinition(Collection):
         ImageMaxSizeValidator(4000, 3000)
     ])
     file = CollectionItem(FileItem, validators=[
-        SizeValidator("1Mb")
+        MaxSizeValidator("1Mb")
     ])
 
 
@@ -45,7 +45,7 @@ class Page(models.Model):
         _("size"),
         blank=True,
         validators=[
-            SizeValidator("16kb")
+            MaxSizeValidator("16kb")
         ],
         help_text=_("Maximum file size is 16Kb")
     )

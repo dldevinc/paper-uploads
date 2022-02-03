@@ -49,7 +49,7 @@ class CloudinaryFileExample(models.Model):
         _("Size"),
         blank=True,
         validators=[
-            SizeValidator("16kb")
+            MaxSizeValidator("16kb")
         ],
         help_text=_("Maximum file size is 16Kb")
     )

@@ -4,6 +4,8 @@
 ### ⚠ BREAKING CHANGES
 - Method `set_owner_from()` has been rewritten and renamed to `set_owner_field()`.
 - **Note**: `paper_uploads.cloudinary` will be moved to a separate package.
+### Features
+- `SizeValidator` is now deprecated in favor of `MaxSizeValidator`.
 
 ## [0.8.0rc2](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc2) - 2021-02-01
 ### Features
