@@ -19,9 +19,9 @@ from ..dummy import *
 
 
 class BacklinkModelMixin:
-    owner_app_label = 'app'
-    owner_model_name = 'model'
-    owner_fieldname = 'field'
+    owner_app_label = "app"
+    owner_model_name = "model"
+    owner_fieldname = "field"
     owner_model = None
 
     @classmethod
@@ -47,42 +47,42 @@ class BacklinkModelMixin:
 class TestInvalidBacklinkModelMixin:
     def test_empty_app(self):
         obj = DummyBacklinkResource(
-            owner_model_name='dummyfilefieldresource',
-            owner_fieldname='file'
+            owner_model_name="dummyfilefieldresource",
+            owner_fieldname="file"
         )
         assert obj.get_owner_model() is None
         assert obj.get_owner_field() is None
 
     def test_empty_model(self):
         obj = DummyBacklinkResource(
-            owner_app_label='app',
-            owner_fieldname='file'
+            owner_app_label="app",
+            owner_fieldname="file"
         )
         assert obj.get_owner_model() is None
         assert obj.get_owner_field() is None
 
     def test_empty_field(self):
         obj = DummyBacklinkResource(
-            owner_app_label='app',
-            owner_model_name='dummyfilefieldresource',
+            owner_app_label="app",
+            owner_model_name="dummyfilefieldresource",
         )
         assert obj.get_owner_model() is DummyFileFieldResource
         assert obj.get_owner_field() is None
 
     def test_invalid_model(self):
         obj = DummyBacklinkResource(
-            owner_app_label='app',
-            owner_model_name='nooooo',
-            owner_fieldname='file'
+            owner_app_label="app",
+            owner_model_name="nooooo",
+            owner_fieldname="file"
         )
         assert obj.get_owner_model() is None
         assert obj.get_owner_field() is None
 
     def test_invalid_field(self):
         obj = DummyBacklinkResource(
-            owner_app_label='app',
-            owner_model_name='dummyfilefieldresource',
-            owner_fieldname='nooooo'
+            owner_app_label="app",
+            owner_model_name="dummyfilefieldresource",
+            owner_fieldname="nooooo"
         )
         assert obj.get_owner_model() is DummyFileFieldResource
         assert obj.get_owner_field() is None
@@ -125,17 +125,17 @@ class TestResource:
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
-            'id': 1,
-            'created': storage.resource.created_at.isoformat(),
-            'modified': storage.resource.modified_at.isoformat(),
+            "id": 1,
+            "created": storage.resource.created_at.isoformat(),
+            "modified": storage.resource.modified_at.isoformat(),
         }
 
 
 class TestFileResource(TestResource):
-    resource_name = 'Nature Tree'
-    resource_extension = 'Jpeg'
+    resource_name = "Nature Tree"
+    resource_extension = "Jpeg"
     resource_size = 28
-    resource_checksum = '5d8ec227d0d8794d4d99dfbbdb9ad3b479c16952ad4ef69252644d9c404543a5'
+    resource_checksum = "5d8ec227d0d8794d4d99dfbbdb9ad3b479c16952ad4ef69252644d9c404543a5"
 
     @classmethod
     def init_class(cls, storage):
@@ -149,7 +149,7 @@ class TestFileResource(TestResource):
         storage.resource.delete()
 
     def test_name(self, storage):
-        assert storage.resource.name == '{}.{}'.format(
+        assert storage.resource.name == "{}.{}".format(
             self.resource_name,
             self.resource_extension
         )
@@ -181,22 +181,22 @@ class TestFileResource(TestResource):
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
-            'id': 1,
-            'name': self.resource_name,
-            'extension': self.resource_extension,
-            'caption': '{}.{}'.format(
+            "id": 1,
+            "name": self.resource_name,
+            "extension": self.resource_extension,
+            "caption": "{}.{}".format(
                 self.resource_name,
                 self.resource_extension
             ),
-            'size': self.resource_size,
-            'url': 'http://example.com/Nature%20Tree.Jpeg',
-            'created': storage.resource.created_at.isoformat(),
-            'modified': storage.resource.modified_at.isoformat(),
-            'uploaded': storage.resource.uploaded_at.isoformat(),
+            "size": self.resource_size,
+            "url": "http://example.com/Nature%20Tree.Jpeg",
+            "created": storage.resource.created_at.isoformat(),
+            "modified": storage.resource.modified_at.isoformat(),
+            "uploaded": storage.resource.uploaded_at.isoformat(),
         }
 
     def test_update_checksum(self, storage):
-        storage.resource.checksum = ''
+        storage.resource.checksum = ""
 
         assert storage.resource.update_checksum() is True
         assert storage.resource.checksum == self.resource_checksum
@@ -205,7 +205,7 @@ class TestFileResource(TestResource):
         assert storage.resource.checksum == self.resource_checksum
 
     def test_get_caption(self, storage):
-        assert storage.resource.get_caption() == '{}.{}'.format(
+        assert storage.resource.get_caption() == "{}.{}".format(
             self.resource_name,
             self.resource_extension
         )
@@ -214,14 +214,14 @@ class TestFileResource(TestResource):
         assert storage.resource.get_file_size() == self.resource_size
 
     def test_get_file_url(self, storage):
-        assert storage.resource.get_file_url() == 'http://example.com/Nature%20Tree.Jpeg'
+        assert storage.resource.get_file_url() == "http://example.com/Nature%20Tree.Jpeg"
 
     def test_file_exists(self, storage):
         assert storage.resource.file_exists() is True
 
     def test_prepare_file(self, storage):
         obj = DummyFileResource()
-        with open(NASA_FILEPATH, 'rb') as fp:
+        with open(NASA_FILEPATH, "rb") as fp:
             file = File(fp)
             assert obj._prepare_file(file) is file
 
@@ -286,14 +286,14 @@ class TestFileResourceSignals:
     def test_update_checksum_signal(self):
         resource = DummyFileResource()
         signal_fired = False
-        resource.checksum = ''
+        resource.checksum = ""
 
         def signal_handler(sender, instance, checksum, **kwargs):
             nonlocal signal_fired
             signal_fired = True
             assert sender is DummyFileResource
             assert instance is resource
-            assert checksum == '5d8ec227d0d8794d4d99dfbbdb9ad3b479c16952ad4ef69252644d9c404543a5'
+            assert checksum == "5d8ec227d0d8794d4d99dfbbdb9ad3b479c16952ad4ef69252644d9c404543a5"
 
         signals.checksum_update.connect(signal_handler)
 
@@ -314,10 +314,10 @@ class TestFileResourceSignals:
             assert instance is resource
 
             # ensure instance not filled yet
-            assert instance.basename == ''
-            assert instance.extension == ''
+            assert instance.basename == ""
+            assert instance.extension == ""
             assert instance.size == 0
-            assert instance.checksum == ''
+            assert instance.checksum == ""
 
             # ensure file type
             assert isinstance(file, File)
@@ -327,15 +327,15 @@ class TestFileResourceSignals:
 
             # extra parameters passed to `attach()`
             assert options == {
-                'key1': 'value1',
-                'key2': 'value2'
+                "key1": "value1",
+                "key2": "value2"
             }
 
         signals.pre_attach_file.connect(signal_handler)
 
-        with open(NASA_FILEPATH, 'rb') as fp:
+        with open(NASA_FILEPATH, "rb") as fp:
             assert signal_fired is False
-            resource.attach(fp, key1='value1', key2='value2')
+            resource.attach(fp, key1="value1", key2="value2")
             assert signal_fired is True
 
         resource.delete_file()
@@ -352,10 +352,10 @@ class TestFileResourceSignals:
             assert instance is resource
 
             # ensure instance filled
-            assert instance.basename == 'milky-way-nasa'
-            assert instance.extension == 'jpg'
+            assert instance.basename == "milky-way-nasa"
+            assert instance.extension == "jpg"
             assert instance.size == 28
-            assert instance.checksum == '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
+            assert instance.checksum == "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
 
             # ensure file type
             assert isinstance(file, File)
@@ -365,20 +365,20 @@ class TestFileResourceSignals:
 
             # extra parameters passed to `attach()`
             assert options == {
-                'key1': 'value1',
-                'key2': 'value2'
+                "key1": "value1",
+                "key2": "value2"
             }
 
             # result of `_attach()` method
             assert response == {
-                'success': True,
+                "success": True,
             }
 
         signals.post_attach_file.connect(signal_handler)
 
-        with open(NASA_FILEPATH, 'rb') as fp:
+        with open(NASA_FILEPATH, "rb") as fp:
             assert signal_fired is False
-            resource.attach(fp, key1='value1', key2='value2')
+            resource.attach(fp, key1="value1", key2="value2")
             assert signal_fired is True
 
         resource.delete_file()
@@ -400,7 +400,7 @@ class TestFileResourceSignals:
         signals.pre_rename_file.connect(pre_signal_handler)
         signals.post_rename_file.connect(post_signal_handler)
 
-        with open(NASA_FILEPATH, 'rb') as fp:
+        with open(NASA_FILEPATH, "rb") as fp:
             resource.attach(fp)
 
         orig_name = resource.name
@@ -428,24 +428,24 @@ class TestFileResourceSignals:
             signal_fired = True
             assert sender is DummyFileResource
             assert instance is resource
-            assert instance.basename == 'milky-way-nasa'
-            assert instance.extension == 'jpg'
-            assert old_name == 'milky-way-nasa.jpg'
-            assert new_name == 'new name.png'
+            assert instance.basename == "milky-way-nasa"
+            assert instance.extension == "jpg"
+            assert old_name == "milky-way-nasa.jpg"
+            assert new_name == "new name.png"
 
             # extra parameters passed to `rename()`
             assert options == {
-                'key1': 'value1',
-                'key2': 'value2'
+                "key1": "value1",
+                "key2": "value2"
             }
 
         signals.pre_rename_file.connect(signal_handler)
 
-        with open(NASA_FILEPATH, 'rb') as fp:
+        with open(NASA_FILEPATH, "rb") as fp:
             resource.attach(fp)
 
         assert signal_fired is False
-        resource.rename('new name.png', key1='value1', key2='value2')
+        resource.rename("new name.png", key1="value1", key2="value2")
         assert signal_fired is True
 
         resource.delete_file()
@@ -460,29 +460,29 @@ class TestFileResourceSignals:
             signal_fired = True
             assert sender is DummyFileResource
             assert instance is resource
-            assert instance.basename == 'new name'
-            assert instance.extension == 'png'
-            assert old_name == 'milky-way-nasa.jpg'
-            assert new_name == 'new name.png'
+            assert instance.basename == "new name"
+            assert instance.extension == "png"
+            assert old_name == "milky-way-nasa.jpg"
+            assert new_name == "new name.png"
 
             # extra parameters passed to `rename()`
             assert options == {
-                'key1': 'value1',
-                'key2': 'value2'
+                "key1": "value1",
+                "key2": "value2"
             }
 
             # result of `_rename()` method
             assert response == {
-                'success': True,
+                "success": True,
             }
 
         signals.post_rename_file.connect(signal_handler)
 
-        with open(NASA_FILEPATH, 'rb') as fp:
+        with open(NASA_FILEPATH, "rb") as fp:
             resource.attach(fp)
 
         assert signal_fired is False
-        resource.rename('new name.png', key1='value1', key2='value2')
+        resource.rename("new name.png", key1="value1", key2="value2")
         assert signal_fired is True
 
         resource.delete_file()
@@ -500,7 +500,7 @@ class TestFileResourceSignals:
 
         signals.pre_delete_file.connect(signal_handler)
 
-        with open(NASA_FILEPATH, 'rb') as fp:
+        with open(NASA_FILEPATH, "rb") as fp:
             resource.attach(fp)
 
         assert signal_fired is False
@@ -521,40 +521,40 @@ class TestFileResourceSignals:
 
             # extra parameters passed to `rename()`
             assert options == {
-                'key1': 'value1',
-                'key2': 'value2'
+                "key1": "value1",
+                "key2": "value2"
             }
 
             # result of `_delete_file` method
             assert response == {
-                'success': True,
+                "success": True,
             }
 
         signals.post_delete_file.connect(signal_handler)
 
-        with open(NASA_FILEPATH, 'rb') as fp:
+        with open(NASA_FILEPATH, "rb") as fp:
             resource.attach(fp)
 
         assert signal_fired is False
-        resource.delete_file(key1='value1', key2='value2')
+        resource.delete_file(key1="value1", key2="value2")
         assert signal_fired is True
 
         signals.post_delete_file.disconnect(signal_handler)
 
 
 class TestFileFieldResource(TestFileResource):
-    resource_url = '/media/file_field'
-    resource_location = 'file_field'
-    resource_name = 'Nature Tree'
-    resource_extension = 'Jpeg'
+    resource_url = "/media/file_field"
+    resource_location = "file_field"
+    resource_name = "Nature Tree"
+    resource_extension = "Jpeg"
     resource_size = 672759
-    resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
-    file_field_name = 'file'
+    resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
+    file_field_name = "file"
 
     @classmethod
     def init_class(cls, storage):
         storage.resource = DummyFileFieldResource()
-        with open(NATURE_FILEPATH, 'rb') as fp:
+        with open(NATURE_FILEPATH, "rb") as fp:
             storage.resource.attach(fp)
         storage.resource.save()
         yield
@@ -563,7 +563,7 @@ class TestFileFieldResource(TestFileResource):
 
     def test_name(self, storage):
         file_name = storage.resource.name
-        pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}.Jpeg')
+        pattern = posixpath.join(self.resource_location, "Nature_Tree{suffix}.Jpeg")
         assert file_name == utils.get_target_filepath(pattern, file_name)
 
     def test_get_file_folder(self, storage):
@@ -646,40 +646,40 @@ class TestFileFieldResource(TestFileResource):
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
-        pattern = posixpath.join(self.resource_url, 'Nature_Tree{suffix}.Jpeg')
+        pattern = posixpath.join(self.resource_url, "Nature_Tree{suffix}.Jpeg")
         assert file_url == utils.get_target_filepath(pattern, file_url)
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
-            'id': 1,
-            'name': self.resource_name,
-            'extension': self.resource_extension,
-            'caption': '{}.{}'.format(
+            "id": 1,
+            "name": self.resource_name,
+            "extension": self.resource_extension,
+            "caption": "{}.{}".format(
                 self.resource_name,
                 self.resource_extension
             ),
-            'size': self.resource_size,
-            'url': storage.resource.get_file_url(),
-            'created': storage.resource.created_at.isoformat(),
-            'modified': storage.resource.modified_at.isoformat(),
-            'uploaded': storage.resource.uploaded_at.isoformat(),
+            "size": self.resource_size,
+            "url": storage.resource.get_file_url(),
+            "created": storage.resource.created_at.isoformat(),
+            "modified": storage.resource.modified_at.isoformat(),
+            "uploaded": storage.resource.uploaded_at.isoformat(),
         }
 
     def test_path(self, storage):
         path = storage.resource.path
-        pattern = posixpath.join('media', self.resource_location, 'Nature_Tree{suffix}.Jpeg')
+        pattern = posixpath.join("media", self.resource_location, "Nature_Tree{suffix}.Jpeg")
         assert path.endswith(utils.get_target_filepath(pattern, path))
 
     def test_url(self, storage):
         url = storage.resource.url
-        pattern = posixpath.join(self.resource_url, 'Nature_Tree{suffix}.Jpeg')
+        pattern = posixpath.join(self.resource_url, "Nature_Tree{suffix}.Jpeg")
         assert url == utils.get_target_filepath(pattern, url)
 
 
 class TestFileFieldResourceAttach:
     resource_class = DummyFileFieldResource
     resource_size = 9711423
-    resource_checksum = '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
+    resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
 
     @contextmanager
     def get_resource(self):
@@ -709,11 +709,11 @@ class TestFileFieldResourceAttach:
 
     def test_file(self):
         with self.get_resource() as resource:
-            with open(NASA_FILEPATH, 'rb') as fp:
+            with open(NASA_FILEPATH, "rb") as fp:
                 resource.attach(fp)
 
-            assert resource.basename == 'milky-way-nasa'
-            assert resource.extension == 'jpg'
+            assert resource.basename == "milky-way-nasa"
+            assert resource.extension == "jpg"
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
 
@@ -779,34 +779,34 @@ class TestFileFieldResourceAttach:
 
     def test_wrong_extension(self):
         with self.get_resource() as resource:
-            with open(NASA_FILEPATH, 'rb') as fp:
-                resource.attach(fp, name='overwritten.gif')
+            with open(NASA_FILEPATH, "rb") as fp:
+                resource.attach(fp, name="overwritten.gif")
 
-            assert resource.basename == 'overwritten'
-            assert resource.extension == 'gif'
+            assert resource.basename == "overwritten"
+            assert resource.extension == "gif"
 
     def test_file_position_at_end(self):
         with self.get_resource() as resource:
-            with open(NASA_FILEPATH, 'rb') as fp:
+            with open(NASA_FILEPATH, "rb") as fp:
                 resource.attach(fp)
                 assert fp.tell() == self.resource_size
 
 
 class TestFileFieldResourceRename:
     resource_class = DummyFileFieldResource
-    resource_location = 'file_field'
+    resource_location = "file_field"
 
     @classmethod
     def init_class(cls, storage):
         storage.resource = cls.resource_class()
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp, name='old_name.jpg')
+        with open(NATURE_FILEPATH, "rb") as fp:
+            storage.resource.attach(fp, name="old_name.jpg")
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
         storage.old_source_path = file.path
-        storage.resource.rename('new_name.png')
+        storage.resource.rename("new_name.png")
 
         yield
 
@@ -822,36 +822,36 @@ class TestFileFieldResourceRename:
 
     def test_old_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_name{suffix}.jpg'),
+            posixpath.join(self.resource_location, "old_name{suffix}.jpg"),
             storage.old_source_name
         )
 
     def test_new_file_name(self, storage):
         file = storage.resource.get_file()
         assert file.name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'new_name{suffix}.png'),
+            posixpath.join(self.resource_location, "new_name{suffix}.png"),
             file.name
         )
 
     def test_basename(self, storage):
         assert storage.resource.basename == utils.get_target_filepath(
-            'new_name{suffix}',
+            "new_name{suffix}",
             storage.resource.basename
         )
 
     def test_extension(self, storage):
-        assert storage.resource.extension == 'png'
+        assert storage.resource.extension == "png"
 
 
 class TestFileFieldResourceDelete:
     resource_class = DummyFileFieldResource
-    resource_location = 'file_field'
+    resource_location = "file_field"
 
     @classmethod
     def init_class(cls, storage):
         storage.resource = cls.resource_class()
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp, name='old_name.jpg')
+        with open(NATURE_FILEPATH, "rb") as fp:
+            storage.resource.attach(fp, name="old_name.jpg")
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -865,7 +865,7 @@ class TestFileFieldResourceDelete:
 
     def test_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_name{suffix}.jpg'),
+            posixpath.join(self.resource_location, "old_name{suffix}.jpg"),
             storage.old_source_name
         )
 
@@ -920,28 +920,28 @@ class TestFileFieldResourceEmpty:
 
     def test_rename_file(self, storage):
         with pytest.raises(ValueError):
-            storage.resource.rename('bla-bla.jpg')
+            storage.resource.rename("bla-bla.jpg")
 
     def test_delete_file(self, storage):
         storage.resource.delete_file()
 
 
 class TestImageFieldResource(TestFileFieldResource):
-    resource_url = '/media/image_field'
-    resource_location = 'image_field'
-    resource_name = 'Nature Tree'
-    resource_extension = 'jpg'
+    resource_url = "/media/image_field"
+    resource_location = "image_field"
+    resource_name = "Nature Tree"
+    resource_extension = "jpg"
     resource_size = 672759
-    resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
-    file_field_name = 'image'
+    resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
+    file_field_name = "image"
 
     @classmethod
     def init_class(cls, storage):
         storage.resource = DummyImageFieldResource(
-            title='Calliphora',
-            description='Calliphora is a genus of blow flies, also known as bottle flies',
+            title="Calliphora",
+            description="Calliphora is a genus of blow flies, also known as bottle flies",
         )
-        with open(NATURE_FILEPATH, 'rb') as fp:
+        with open(NATURE_FILEPATH, "rb") as fp:
             storage.resource.attach(fp)
         storage.resource.save()
         yield
@@ -949,20 +949,20 @@ class TestImageFieldResource(TestFileFieldResource):
         storage.resource.delete()
 
     def test_title(self, storage):
-        assert storage.resource.title == 'Calliphora'
+        assert storage.resource.title == "Calliphora"
 
     def test_description(self, storage):
-        assert storage.resource.description == 'Calliphora is a genus of blow flies, ' \
-                                               'also known as bottle flies'
+        assert storage.resource.description == "Calliphora is a genus of blow flies, " \
+                                               "also known as bottle flies"
 
     def test_name(self, storage):
         file_name = storage.resource.name
-        pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}.jpg')
+        pattern = posixpath.join(self.resource_location, "Nature_Tree{suffix}.jpg")
         assert file_name == utils.get_target_filepath(pattern, file_name)
 
     def test_prepare_file(self, storage):
         obj = DummyImageFieldResource()
-        with open(NASA_FILEPATH, 'rb') as fp:
+        with open(NASA_FILEPATH, "rb") as fp:
             file = File(fp)
             assert obj._prepare_file(file) is file
             assert obj.width == 3501
@@ -976,38 +976,38 @@ class TestImageFieldResource(TestFileFieldResource):
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
-            'id': 1,
-            'name': self.resource_name,
-            'extension': self.resource_extension,
-            'caption': '{}.{}'.format(
+            "id": 1,
+            "name": self.resource_name,
+            "extension": self.resource_extension,
+            "caption": "{}.{}".format(
                 self.resource_name,
                 self.resource_extension
             ),
-            'size': self.resource_size,
-            'width': 1534,
-            'height': 2301,
-            'cropregion': '',
-            'title': 'Calliphora',
-            'description': 'Calliphora is a genus of blow flies, also known as bottle flies',
-            'url': storage.resource.get_file_url(),
-            'created': storage.resource.created_at.isoformat(),
-            'modified': storage.resource.modified_at.isoformat(),
-            'uploaded': storage.resource.uploaded_at.isoformat(),
+            "size": self.resource_size,
+            "width": 1534,
+            "height": 2301,
+            "cropregion": "",
+            "title": "Calliphora",
+            "description": "Calliphora is a genus of blow flies, also known as bottle flies",
+            "url": storage.resource.get_file_url(),
+            "created": storage.resource.created_at.isoformat(),
+            "modified": storage.resource.modified_at.isoformat(),
+            "uploaded": storage.resource.uploaded_at.isoformat(),
         }
 
     def test_get_file_url(self, storage):
         file_url = storage.resource.get_file_url()
-        pattern = posixpath.join(self.resource_url, 'Nature_Tree{suffix}.jpg')
+        pattern = posixpath.join(self.resource_url, "Nature_Tree{suffix}.jpg")
         assert file_url == utils.get_target_filepath(pattern, file_url)
 
     def test_path(self, storage):
         path = storage.resource.path
-        pattern = posixpath.join('media', self.resource_location, 'Nature_Tree{suffix}.jpg')
+        pattern = posixpath.join("media", self.resource_location, "Nature_Tree{suffix}.jpg")
         assert path.endswith(utils.get_target_filepath(pattern, path))
 
     def test_url(self, storage):
         url = storage.resource.url
-        pattern = posixpath.join(self.resource_url, 'Nature_Tree{suffix}.jpg')
+        pattern = posixpath.join(self.resource_url, "Nature_Tree{suffix}.jpg")
         assert url == utils.get_target_filepath(pattern, url)
 
 
@@ -1016,21 +1016,21 @@ class TestImageFieldResourceAttach(TestFileFieldResourceAttach):
 
     def test_wrong_extension(self):
         with self.get_resource() as resource:
-            with open(NASA_FILEPATH, 'rb') as fp:
-                resource.attach(fp, name='overwritten.gif')
+            with open(NASA_FILEPATH, "rb") as fp:
+                resource.attach(fp, name="overwritten.gif")
 
-            assert resource.basename == 'overwritten'
-            assert resource.extension == 'jpg'  # extension detected by content
+            assert resource.basename == "overwritten"
+            assert resource.extension == "jpg"  # extension detected by content
 
 
 class TestImageFieldResourceRename(TestFileFieldResourceRename):
     resource_class = DummyImageFieldResource
-    resource_location = 'image_field'
+    resource_location = "image_field"
 
 
 class TestImageFieldResourceDelete(TestFileFieldResourceDelete):
     resource_class = DummyImageFieldResource
-    resource_location = 'image_field'
+    resource_location = "image_field"
 
 
 class TestImageFieldResourceEmpty(TestFileFieldResourceEmpty):
@@ -1038,21 +1038,21 @@ class TestImageFieldResourceEmpty(TestFileFieldResourceEmpty):
 
 
 class TestVersatileImageResource(TestImageFieldResource):
-    resource_url = '/media/versatile_image'
-    resource_location = 'versatile_image'
-    resource_name = 'Nature Tree'
-    resource_extension = 'jpg'
+    resource_url = "/media/versatile_image"
+    resource_location = "versatile_image"
+    resource_name = "Nature Tree"
+    resource_extension = "jpg"
     resource_size = 672759
-    resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
-    file_field_name = 'file'
+    resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
+    file_field_name = "file"
 
     @classmethod
     def init_class(cls, storage):
         storage.resource = DummyVersatileImageResource(
-            title='Calliphora',
-            description='Calliphora is a genus of blow flies, also known as bottle flies',
+            title="Calliphora",
+            description="Calliphora is a genus of blow flies, also known as bottle flies",
         )
-        with open(NATURE_FILEPATH, 'rb') as fp:
+        with open(NATURE_FILEPATH, "rb") as fp:
             storage.resource.attach(fp)
         storage.resource.save()
 
@@ -1062,50 +1062,50 @@ class TestVersatileImageResource(TestImageFieldResource):
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
-            'id': 1,
-            'name': self.resource_name,
-            'extension': self.resource_extension,
-            'caption': '{}.{}'.format(
+            "id": 1,
+            "name": self.resource_name,
+            "extension": self.resource_extension,
+            "caption": "{}.{}".format(
                 self.resource_name,
                 self.resource_extension
             ),
-            'size': self.resource_size,
-            'width': 1534,
-            'height': 2301,
-            'cropregion': '',
-            'title': 'Calliphora',
-            'description': 'Calliphora is a genus of blow flies, also known as bottle flies',
-            'url': storage.resource.get_file_url(),
-            'created': storage.resource.created_at.isoformat(),
-            'modified': storage.resource.modified_at.isoformat(),
-            'uploaded': storage.resource.uploaded_at.isoformat(),
+            "size": self.resource_size,
+            "width": 1534,
+            "height": 2301,
+            "cropregion": "",
+            "title": "Calliphora",
+            "description": "Calliphora is a genus of blow flies, also known as bottle flies",
+            "url": storage.resource.get_file_url(),
+            "created": storage.resource.created_at.isoformat(),
+            "modified": storage.resource.modified_at.isoformat(),
+            "uploaded": storage.resource.uploaded_at.isoformat(),
         }
 
     def test_get_variations(self, storage):
         variations = storage.resource.get_variations()
         assert len(variations) == 2
-        assert set(variations.keys()) == {'desktop', 'mobile'}
+        assert set(variations.keys()) == {"desktop", "mobile"}
         assert all(isinstance(v, PaperVariation) for v in variations.values()) is True
 
     def test_get_variation_file(self, storage):
-        vfile = storage.resource.get_variation_file('desktop')
+        vfile = storage.resource.get_variation_file("desktop")
         assert isinstance(vfile, VariationFile)
         assert vfile.exists() is True
         assert vfile.path.endswith(
             utils.get_target_filepath(
-                'Nature_Tree{suffix}.desktop.jpg',
+                "Nature_Tree{suffix}.desktop.jpg",
                 storage.resource.get_file_url()
             ),
         )
 
     def test_nonexisted_get_variation_file(self, storage):
         with pytest.raises(KeyError):
-            storage.resource.get_variation_file('something')
+            storage.resource.get_variation_file("something")
 
     def test_variation_files(self, storage):
         assert dict(storage.resource.variation_files()) == {
-            'desktop': storage.resource.desktop,
-            'mobile': storage.resource.mobile,
+            "desktop": storage.resource.desktop,
+            "mobile": storage.resource.mobile,
         }
 
     def test_variation_attribute(self, storage):
@@ -1130,7 +1130,7 @@ class TestImageAttach(TestImageFieldResourceAttach):
 
     def test_need_recut(self):
         with self.get_resource() as resource:
-            with open(NASA_FILEPATH, 'rb') as fp:
+            with open(NASA_FILEPATH, "rb") as fp:
                 resource.attach(fp)
 
             assert resource.need_recut is True
@@ -1138,13 +1138,13 @@ class TestImageAttach(TestImageFieldResourceAttach):
 
 class TestImageRename(TestImageFieldResourceRename):
     resource_class = DummyVersatileImageResource
-    resource_location = 'versatile_image'
+    resource_location = "versatile_image"
 
     @classmethod
     def init_class(cls, storage):
         storage.resource = DummyVersatileImageResource()
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp, name='old_name.jpg')
+        with open(NATURE_FILEPATH, "rb") as fp:
+            storage.resource.attach(fp, name="old_name.jpg")
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -1156,7 +1156,7 @@ class TestImageRename(TestImageFieldResourceRename):
         storage.old_desktop_path = storage.resource.desktop.path
         storage.old_mobile_path = storage.resource.mobile.path
 
-        storage.resource.rename('new_name.png')
+        storage.resource.rename("new_name.png")
         assert storage.resource.need_recut is True
         storage.resource.save()
 
@@ -1170,29 +1170,29 @@ class TestImageRename(TestImageFieldResourceRename):
 
     def test_old_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_name{suffix}.jpg'),
+            posixpath.join(self.resource_location, "old_name{suffix}.jpg"),
             storage.old_source_name
         )
         assert storage.old_desktop_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_name{suffix}.desktop.jpg'),
+            posixpath.join(self.resource_location, "old_name{suffix}.desktop.jpg"),
             storage.old_source_name
         )
         assert storage.old_mobile_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_name{suffix}.mobile.jpg'),
+            posixpath.join(self.resource_location, "old_name{suffix}.mobile.jpg"),
             storage.old_source_name
         )
 
     def test_new_file_name(self, storage):
         assert storage.resource.file.name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'new_name{suffix}.png'),
+            posixpath.join(self.resource_location, "new_name{suffix}.png"),
             storage.resource.file.name
         )
         assert storage.resource.desktop.name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'new_name{suffix}.desktop.png'),
+            posixpath.join(self.resource_location, "new_name{suffix}.desktop.png"),
             storage.resource.file.name
         )
         assert storage.resource.mobile.name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'new_name{suffix}.mobile.png'),
+            posixpath.join(self.resource_location, "new_name{suffix}.mobile.png"),
             storage.resource.file.name
         )
 
@@ -1209,13 +1209,13 @@ class TestImageRename(TestImageFieldResourceRename):
 
 class TestImageDelete(TestImageFieldResourceDelete):
     resource_class = DummyVersatileImageResource
-    resource_location = 'versatile_image'
+    resource_location = "versatile_image"
 
     @classmethod
     def init_class(cls, storage):
         storage.resource = cls.resource_class()
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp, name='old_name.jpg')
+        with open(NATURE_FILEPATH, "rb") as fp:
+            storage.resource.attach(fp, name="old_name.jpg")
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -1235,15 +1235,15 @@ class TestImageDelete(TestImageFieldResourceDelete):
 
     def test_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_name{suffix}.jpg'),
+            posixpath.join(self.resource_location, "old_name{suffix}.jpg"),
             storage.old_source_name
         )
         assert storage.old_desktop_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_name{suffix}.desktop.jpg'),
+            posixpath.join(self.resource_location, "old_name{suffix}.desktop.jpg"),
             storage.old_source_name
         )
         assert storage.old_mobile_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_name{suffix}.mobile.jpg'),
+            posixpath.join(self.resource_location, "old_name{suffix}.mobile.jpg"),
             storage.old_source_name
         )
 
@@ -1270,7 +1270,7 @@ class TestImageResourceVariations:
 
     def test_variation_attributes_after_delete(self):
         resource = self.resource_class()
-        with open(NASA_FILEPATH, 'rb') as fp:
+        with open(NASA_FILEPATH, "rb") as fp:
             resource.attach(fp)
         resource.delete_file()
 
@@ -1279,7 +1279,7 @@ class TestImageResourceVariations:
 
     def test_variation_files_after_delete(self):
         resource = self.resource_class()
-        with open(CALLIPHORA_FILEPATH, 'rb') as fp:
+        with open(CALLIPHORA_FILEPATH, "rb") as fp:
             resource.attach(fp)
         resource.delete_file()
 
@@ -1287,30 +1287,30 @@ class TestImageResourceVariations:
 
     def test_reattach_file(self):
         resource = self.resource_class()
-        with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            resource.attach(fp, name='initial.jpg')
+        with open(CALLIPHORA_FILEPATH, "rb") as fp:
+            resource.attach(fp, name="initial.jpg")
 
-        assert resource.desktop.name == 'versatile_image/initial.desktop.jpg'
+        assert resource.desktop.name == "versatile_image/initial.desktop.jpg"
         assert resource._variation_files_cache == {
-            'desktop': resource.desktop,
-            'mobile': resource.mobile,
+            "desktop": resource.desktop,
+            "mobile": resource.mobile,
         }
 
         os.remove(resource.file.path)
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            resource.attach(fp, name='reattached.jpg')
+        with open(NATURE_FILEPATH, "rb") as fp:
+            resource.attach(fp, name="reattached.jpg")
 
-        assert resource.desktop.name == 'versatile_image/reattached.desktop.jpg'
+        assert resource.desktop.name == "versatile_image/reattached.desktop.jpg"
         assert resource._variation_files_cache == {
-            'desktop': resource.desktop,
-            'mobile': resource.mobile,
+            "desktop": resource.desktop,
+            "mobile": resource.mobile,
         }
 
         resource.delete_file()
 
     def test_delete_file(self):
         resource = self.resource_class()
-        with open(CALLIPHORA_FILEPATH, 'rb') as fp:
+        with open(CALLIPHORA_FILEPATH, "rb") as fp:
             resource.attach(fp)
         resource.save()
 
@@ -1333,7 +1333,7 @@ class TestImageResourceVariations:
 
     def test_recut(self):
         resource = self.resource_class()
-        with open(NATURE_FILEPATH, 'rb') as fp:
+        with open(NATURE_FILEPATH, "rb") as fp:
             resource.attach(fp)
         resource.save()
 
@@ -1344,7 +1344,7 @@ class TestImageResourceVariations:
         assert os.path.exists(resource.desktop.path) is False
         assert os.path.exists(resource.mobile.path) is False
 
-        resource.recut('mobile')
+        resource.recut("mobile")
 
         assert os.path.exists(resource.file.path) is True
         assert os.path.exists(resource.desktop.path) is False
@@ -1355,13 +1355,13 @@ class TestImageResourceVariations:
 
     def test_variation_created_signal(self):
         resource = self.resource_class()
-        with open(NATURE_FILEPATH, 'rb') as fp:
+        with open(NATURE_FILEPATH, "rb") as fp:
             resource.attach(fp)
 
         signal_fired_times = 0
         signals_fired = {
-            'desktop': False,
-            'mobile': False,
+            "desktop": False,
+            "mobile": False,
         }
 
         def signal_handler(sender, instance, file, **kwargs):
@@ -1379,8 +1379,8 @@ class TestImageResourceVariations:
 
         assert signal_fired_times == 2
         assert signals_fired == {
-            'desktop': True,
-            'mobile': True,
+            "desktop": True,
+            "mobile": True,
         }
 
         resource.delete_file()

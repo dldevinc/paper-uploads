@@ -66,7 +66,7 @@ def filesizeformat(bytes_: int) -> str:
     try:
         bytes_ = float(bytes_)
     except (TypeError, ValueError, UnicodeDecodeError):
-        value = ngettext("%(size)d byte", "%(size)d bytes", 0) % {'size': 0}
+        value = ngettext("%(size)d byte", "%(size)d bytes", 0) % {"size": 0}
         return avoid_wrapping(value)
 
     def filesize_number_format(value):
@@ -83,7 +83,7 @@ def filesizeformat(bytes_: int) -> str:
         bytes_ = -bytes_  # Allow formatting of negative numbers.
 
     if bytes_ < KB:
-        value = ngettext("%(size)d byte", "%(size)d bytes", bytes_) % {'size': bytes_}
+        value = ngettext("%(size)d byte", "%(size)d bytes", bytes_) % {"size": bytes_}
     elif bytes_ < MB:
         value = gettext("%s KB") % filesize_number_format(bytes_ / KB)
     elif bytes_ < GB:

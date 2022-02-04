@@ -80,7 +80,7 @@ class ResourceBaseMeta(NoPermissionsMetaBase, models.base.ModelBase):
         parent_links = {}
         for base in reversed(parents):
             # Conceptually equivalent to `if base is Model`.
-            if not hasattr(base, '_meta'):
+            if not hasattr(base, "_meta"):
                 continue
 
             # Locate OneToOneField instances.
