@@ -1,6 +1,7 @@
 import os
 import warnings
-from typing import Any, Dict, Iterable, Optional, Tuple
+from pathlib import Path
+from typing import Any, Dict, Iterable, Optional, Tuple, Union
 
 from django.core.files import File
 from django.db import models
@@ -258,23 +259,37 @@ class FileResource(FileProxyMixin, Resource):
         """
         raise NotImplementedError
 
-    def attach(self, file: FileLike, name: str = None, **options):
+    def attach(self, file: Union[str, Path, FileLike], name: str = None, **options):
         """
         Присоединение файла к экземпляру ресурса.
-        В действительности, сохранение файла происходит в методе `_attach`.
-        Не переопределяйте этот метод, если не уверены в том, что вы делаете.
+        Этот метод является обёрткой. Фактическое сохранение файла
+        происходит в методе `_attach()`.
 
         Если на данном этапе обнаруживается, что переданный файл не может
         быть представлен этой моделью, необходимо вызвать исключение
         UnsupportedResource.
         """
-        if not isinstance(file, File):
-            name = name or getattr(file, "name", None)
-            if name:
-                name = os.path.basename(name)
-            file = File(file, name=name)
-        elif name:
+        if not name:
+            if isinstance(file, str):
+                name = file
+            elif isinstance(file, Path):
+                name = str(file)
+            else:
+                name = getattr(file, "name", None)
+
+        # prevent path traversal
+        if name:
+            name = os.path.basename(name)
+
+        # convert to `django.core.files.File` instance
+        need_to_close = False
+        if isinstance(file, (str, Path)):
+            need_to_close = True
+            file = File(open(file, "rb"), name=name)
+        elif isinstance(file, File):
             file.name = name
+        else:
+            file = File(file, name=name)
 
         prepared_file = self._prepare_file(file, **options)
 
@@ -309,6 +324,10 @@ class FileResource(FileProxyMixin, Resource):
             response=attach_result,
         )
 
+        if need_to_close:
+            if not file.closed:
+                file.close()
+
     def attach_file(self, *args, **kwargs):
         warnings.warn(
             "attach_file() is deprecated in favor of attach()",
@@ -337,8 +356,8 @@ class FileResource(FileProxyMixin, Resource):
     def rename(self, new_name: str, **options):
         """
         Переименование файла.
-        В действительности, переименование файла происходит в методе `_rename`.
-        Не переопределяйте этот метод, если не уверены в том, что вы делаете.
+        Этот метод является обёрткой. Фактическое переименование файла
+        происходит в методе `_rename()`.
         """
         self._require_file()
 
@@ -390,8 +409,8 @@ class FileResource(FileProxyMixin, Resource):
     def delete_file(self, **options):
         """
         Удаление файла.
-        В действительности, удаление файла происходит в методе `_delete_file`.
-        Не переопределяйте этот метод, если не уверены в том, что вы делаете.
+        Этот метод является обёрткой. Фактическое удаление файла
+        происходит в методе `_delete_file()`.
         """
         signals.pre_delete_file.send(sender=type(self), instance=self, options=options)
         response = self._delete_file(**options)
