@@ -5,8 +5,6 @@
 [![Build Status](https://github.com/dldevinc/paper-uploads/actions/workflows/tests.yml/badge.svg)](https://github.com/dldevinc/paper-uploads)
 [![Software license](https://img.shields.io/pypi/l/paper-uploads.svg)](https://pypi.org/project/paper-uploads/)
 
-![](http://joxi.net/gmvnGZBtqKOOjm.png)
-
 ## Requirements
 * Python >= 3.6
 * Django >= 2.2
@@ -14,30 +12,36 @@
 * [variations][variations]
 
 ## Features
-* Каждый файл представлен своей моделью, что позволяет
-хранить вместе с изображением дополнительные данные. 
-Например, `alt` и `title`.
-* Загрузка файлов происходит асинхронно и начинается сразу, 
-при выборе файла в интерфейсе администратора.
-* Поля модели, ссылающиеся на файлы, являются производными
-от `OneToOneField` и не используют `<input type="file">`. 
-Благодаря этому, при ошибках валидации формы, прикрепленные 
-файлы не сбрасываются.
+* Каждый файл представлен своей моделью. Это позволяет хранить 
+  вместе с файлом дополнительные данные. Например, `alt` для изображений.
+* Загрузка файлов происходит асинхронно и начинается сразу 
+  при выборе файла в интерфейсе администратора.
+* Поля модели, предоставляемые библиотекой `paper-uploads`, 
+  являются производными от `OneToOneField` и не используют 
+  `<input type="file">`. Благодаря этому, при ошибках валидации формы
+  прикрепленные файлы не сбрасываются.
 * Загруженные картинки можно нарезать на множество вариаций.
-Каждая вариация гибко настраивается. Можно указать размеры,
-качество сжатия, формат, добавить дополнительные
-[pilkit][pilkit]-процессоры, распознавание лиц и другое.
-См. [variations][variations].
+  Каждая вариация гибко настраивается. Можно указать размеры,
+  качество сжатия, формат, добавить дополнительные
+  [pilkit][pilkit]-процессоры, распознавание лиц и прочее.
+  <br>См. [variations][variations].
 * Совместим с [django-storages][django-storages].
 * Опциональная интеграция с [django-rq][django-rq]
-для отложенной нарезки картинок на вариации.
-* Внутренний подмодуль `paper_uploads.cloudinary` предоставляет
-поля и классы, реализующие хранение файлов в облаке 
-[Cloudinary][pycloudinary].
-* Возможность создавать коллекции файлов. В частности, галерей
-изображений с возможностью сортировки элементов.
+  для отложенной нарезки картинок на вариации.
+* Возможность создавать коллекции файлов. В частности, галерей 
+  изображений с возможностью сортировки элементов.
+* Внутренний подмодуль `paper_uploads.cloudinary` предоставляет 
+  поля и классы, реализующие хранение файлов в облаке
+  [Cloudinary][pycloudinary].
 
 ## Table of Contents
+
+- [Installation](#Installation)
+- [Usage](#Usage)
+  - [FileField](#FileField)
+  - [Validators](#Validators) 
+
+
 
 - [Installation](#Installation)
 - [FileField](#FileField)
@@ -55,7 +59,6 @@
   - [HTML Template Example](#HTML-Template-Example)
 - [Programmatically upload files](#Programmatically-upload-files)
 - [Management Commands](#Management-Commands)
-- [Validators](#Validators)
 - [Cloudinary](#Cloudinary)
   - [Installation](#Installation-1)
   - [Model fields](#Model-fields)
@@ -74,7 +77,7 @@ Add `paper_uploads` to `INSTALLED_APPS` in `settings.py`:
 ```python
 INSTALLED_APPS = [
     # ...
-    'paper_uploads',
+    "paper_uploads",
     # ...
 ]
 ```
@@ -82,12 +85,12 @@ INSTALLED_APPS = [
 Configure `paper-uploads` in django's `settings.py`:
 ```python
 PAPER_UPLOADS = {
-    'VARIATION_DEFAULTS': {
-        'jpeg': dict(
+    "VARIATION_DEFAULTS": {
+        "jpeg": dict(
             quality=80,
             progressive=True,
         ),
-        'webp': dict(
+        "webp": dict(
             quality=75,
         )
     }
@@ -95,180 +98,204 @@ PAPER_UPLOADS = {
 
 # Add JS translations
 PAPER_LOCALE_PACKAGES = [
-   "django.contrib.admin",
    "paper_admin",
    "paper_uploads",
+   "django.contrib.admin",
 ]
 ```
 
 ## FileField
-Поле для загрузки файла.
+Поле для загрузки файла. В большинстве случаев это поле можно использовать
+вместо одноименного поля Django.
 
-На загружаемые файлы можно наложить ограничения с помощью
-[валидаторов](#validators).
 ```python
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
-from paper_uploads.models import *
-from paper_uploads.validators import *
+from django.utils.translation import gettext_lazy as _
+from paper_uploads.models import FileField
 
 
 class Page(models.Model):
-    report = FileField(_('file'), blank=True, validators=[
-        SizeValidator(10*1024*1024)    # up to 10Mb
-    ])
+    report = FileField(
+        _("file"), 
+        blank=True
+    )
 ```
 
-При загрузке файла создается экземпляр модели `UploadedFile`.
+Результат с загруженным файлом:
+![image](https://user-images.githubusercontent.com/6928240/152319447-5d7e9a60-5362-4019-bddc-2f2672a6c9cf.png)
 
-### UploadedFile
+На загружаемые файлы можно наложить ограничения с помощью валидаторов.
 
-Модель, представляющая загруженный файл.
+## Validators
 
-Поля модели:
+Модуль `paper-uploads.validators` предоставляет следующие классы для валидации файлов:
 
-| Поле | Тип         | Описание |
-|------|-------------|----------|
-| file | `FileField` | Ссылка на файл, хранящийся в Django-хранилище. |
-| display_name | `CharField` | Удобочитаемое название файла для вывода на сайте.<br>Пример: `Отчёт за 2019 год`. |
-| basename | `CharField` | Имя файла без пути, суффикса и расширения.<br>Пример: `my_document`. |
-| extension | `CharField` | Расширение файла в нижнем регистре, без точки в начале.<br>Пример: `doc`. |
-| size | `PositiveIntegerField` | Размер файла в байтах. |
-| checksum | `CharField` | Контрольная сумма файла. Используется для отслеживания изменений файла. |
-| created_at | `DateTimeField` | Дата создания экземпляра модели. |
-| modified_at | `DateTimeField` | Дата изменения модели. |
-| uploaded_at | `DateTimeField` | Дата загрузки файла. |
+* `MaxSizeValidator` - задает максимально допустимый размер файла.
+  <br>Максимальный размер можно указать как в виде числа (в байтах), 
+  так и в виде строки.
+  <br>Например: `4 * 10 ** 6`, `4mb`, `4MB`, `4M`.
+* `ExtensionValidator` - задает допустимые расширения файлов.
+* `MimeTypeValidator` - задает допустимые MIME-типы файлов.
+* `ImageMinSizeValidator` - устанавливает минимальный размер загружаемых изображений.
+* `ImageMaxSizeValidator` - устанавливает максимальный размер загружаемых изображений.
 
-Свойства модели:
+Пример:
 
-| Поле | Тип         | Описание |
-|------|-------------|----------|
-| name | `str` | Полное имя файла, передающееся в Django storage.<br>Пример: `files/my_document_19sc2Kj.pdf`. |
+```python
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from paper_uploads.models import FileField
+from paper_uploads.validators import ExtensionValidator, MaxSizeValidator
 
-Для упрощения работы с загруженными файлами, некоторые методы и свойства
-стандартного класса `FieldFile` проксированы на уровень модели:
+
+class Page(models.Model):
+    report = FileField(
+        _("file"), 
+        blank=True,
+        validators=[
+            ExtensionValidator([".pdf", ".doc", ".docx"]),
+            MaxSizeValidator("10MB")
+        ]
+    )
+```
+
+Ограничения, наложенные этими валидаторами, отображаются в виджете: 
+![image](https://user-images.githubusercontent.com/6928240/152322863-33108ef9-061c-4af5-8d0c-aeb5b467e04b.png)
+
+## UploadedFile
+
+Файл, загруженный в поле `FileField`, будет представлен экземпляром модели `UploadedFile`.
+Помимо ссылки на файл, эта модель включает множество дополнительных полей:
+
+| Поле | Описание |
+|------|----------|
+| display_name | Удобочитаемое название файла для вывода на сайте.<br>Заполняется в диалоговом окне редактирования файла.<br>Пример: `Annual report 2020`. |
+| basename | Имя файла без пути, суффикса и расширения.<br>Пример: `report2020`. |
+| extension | Расширение файла в нижнем регистре без точки.<br>Пример: `pdf`. |
+| name | Полное имя файла, хранящееся в БД.<br>Пример: `files/report2020_19sc2Kj.pdf`. |
+| size | Размер файла в байтах. |
+| checksum | Контрольная сумма файла.<br>Используется для отслеживания изменений файла. |
+| uploaded_at | Дата и время загрузки файла. |
+| created_at | Дата и время создания экземпляра модели. |
+| modified_at | Дата и время изменения экземпляра модели. |
+
+Большинство этих полей заполняется автоматически при загрузке файла.
+Поле `display_name` можно заполнить в диалоговом окне редактирования файла.
+
+![image](https://user-images.githubusercontent.com/6928240/152342756-9ccf2579-7c47-4627-9504-8e6fc7b4eecf.png)
+
+Несмотря на то, что фактическая ссылка на файл расположена в поле `Page.report.file`,
+для непосредственной работы с файлом на диске во многих случаях можно использовать `Page.report`,
+поскольку многие методы и свойства стандартного класса `FieldFile` проксированы на уровень модели. 
+В их числе:
+* `url`
+* `path`
 * `open`
 * `close`
 * `closed`
 * `read`
 * `seek`
 * `tell`
-* `readable`
-* `writable`
-* `seekable`
-* `url`
-* `path`
 * `chunks`
-
-Таким образом, вместо `page.report.file.url` можно использовать
-`page.report.url`.
 
 Поддерживается протокол контекстного менеджера:
 ```python
 page = Page.objects.first()
+
 with page.report.open() as fp:
     print(fp.read(10))
 ```
 
-## ImageField
-Поле для загрузки изображений.
-
-Во многом аналогично [FileField](#FileField). Может хранить ссылку 
-как на единственное изображение (подобно стандартному полю 
-`ImageField`), так и на семейство вариаций одного изображения,
-созданных из исходного с помощью библиотеки [variations][variations]. 
+## Programmatically upload files
 
 ```python
-from django.db import models
-from django.utils.translation import ugettext_lazy as _
 from paper_uploads.models import *
 
+report = UploadedFile()
+report.set_owner_field(Page, "report")
+report.attach("/tmp/file.doc")
+report.save()
 
-class Page(models.Model):
-    image = ImageField(_('single image'), blank=True)
+page = Page.objects.create(
+    report=report
+)
 ```
 
-При загрузке изображения создается экземпляр модели `UploadedImage`.
+В метод `set_owner_field()` передаётся модель и имя поля этой модели, в которое
+будет сохранен экземпляр модели файла. Эти данные необходимы для выявления
+файлов, которые нигде не используются.
 
-### UploadedImage
+Метод `attach()` произодит непосредственное сохранение файла и заполняет объект
+дополнительными данными о файле. В метод можно передать как путь к файлу, 
+так и файловый объект.
 
-Модель, представляющая загруженное изображение.
-
-Поля модели:
-
-| Поле | Тип         | Описание |
-|------|-------------|----------|
-| file | `FileField` | Ссылка на файл, хранящийся в Django-хранилище. |
-| title | `CharField` | Название изображения, которое можно вставить в атрибут `title` тэга `<img>`. |
-| description | `CharField` | Описание изображения, которое можно вставить в атрибут `alt` тэга `<img>`. |
-| width | `PositiveSmallIntegerField` | Ширина загруженного изображения. |
-| height | `PositiveSmallIntegerField` | Высота загруженного изображения. |
-| basename | `CharField` | Имя файла без пути, суффикса и расширения.<br>Пример: `my_image`. |
-| extension | `CharField` | Расширение файла в нижнем регистре, без точки в начале.<br>Пример: `jpg`. |
-| size | `PositiveIntegerField` | Размер файла в байтах. |
-| checksum | `CharField` | Контрольная сумма файла. Используется для отслеживания изменений файла. |
-| created_at | `DateTimeField` | Дата создания экземпляра модели. |
-| modified_at | `DateTimeField` | Дата изменения модели. |
-| uploaded_at | `DateTimeField` | Дата загрузки файла. |
-
-Свойства модели:
-
-| Поле | Тип         | Описание |
-|------|-------------|----------|
-| name | `str` | Полное имя файла, передающееся в Django storage.<br>Пример: `images/my_image_19sc2Kj.jpg`. |
-
-По аналогии с `FileField`, модель `UploadedImage` проксирует
-методы и свойства стандартного класса `FieldFile`.
-
-### Variations
-
-Вариация - это дополнительное изображение, которое получается 
-из оригинального путём заранее заданных трансформаций. 
-
-Вариации описываются словарем `variations` поля `ImageField`:
+## ImageField
+Поле для загрузки изображений. Может хранить ссылку как на единственное изображение 
+(подобно стандартному полю `ImageField`), так и на группу изображений,
+полученных из исходного с помощью библиотеки [variations][variations]. 
 
 ```python
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from paper_uploads.models import *
 
 
 class Page(models.Model):
-    image = ImageField(_('image with variations'),
+    image = ImageField(
+        _("single image"), 
+        blank=True
+    )
+    image_group = ImageField(
+        _("image group"), 
         blank=True,
         variations=dict(
             desktop=dict(
-                size=(1600, 0),
-                clip=False,
-                jpeg=dict(
-                    quality=80,
-                    progressive=True
-                ),
-            ),
-            tablet=dict(
-                size=(1024, 0),
-                clip=False,
-                jpeg=dict(
-                    quality=75,
-                ),
+                size=(1200, 0),
+                clip=False
             ),
             mobile=dict(
-                size=(640, 0),
-                clip=False,
-            )
+                size=(600, 0),
+                clip=False
+            ),
         )
     )
 ```
 
-Со списком допустимых опций для вариаций можно ознакомиться 
-в библитеке [variations](https://github.com/dldevinc/variations#usage).
+При загрузке изображения создается экземпляр модели `UploadedImage`.
 
-К вариациям можно обращаться прямо из экземпляра `UploadedImage`:
-```python
-print(page.image.desktop.url)
+## UploadedImage
+
+Модель изображения `UploadedImage` отличается от модели файла `UploadedFile` тем, 
+что в ней отстутсвует поле `display_name`, но присутствует несколько специфических полей:
+
+| Поле | Описание |
+|------|----------|
+| title | Название изображения, которое можно вставить в атрибут `title` тэга `<img>`. |
+| description | Описание изображения, которое можно вставить в атрибут `alt` тэга `<img>`. |
+| width | Ширина загруженного изображения. |
+| height | Высота загруженного изображения. |
+| basename | Имя файла без пути, суффикса и расширения.<br>Пример: `photo`. |
+| extension | Расширение файла в нижнем регистре без точки.<br>Пример: `jpg`. |
+| name | Полное имя файла, хранящееся в БД.<br>Пример: `images/photo_19sc2Kj.jpg`. |
+| size | Размер файла в байтах. |
+| checksum | Контрольная сумма файла.<br>Используется для отслеживания изменений файла. |
+| uploaded_at | Дата и время загрузки файла. |
+| created_at | Дата и время создания экземпляра модели. |
+| modified_at | Дата и время изменения экземпляра модели. |
+
+Если для изображения заданы вариации, доступ к ним можно получить через экземпляр 
+`UploadedImage`, используя имена вариаций: 
+
+```html
+<img src="{{ page.image_group.url }}"
+     srcset="{{ page.image_group.desktop.url }} 1200w, {{ page.image_group.mobile.url }} 600px"
+     sizes="100vw"
+     width="{{ page.image_group.width }}"
+     height="{{ page.image_group.height }}"
+     alt="{{ page.image_group.description }}">
 ```
 
-### Manually creating variation files
+## Manually creating variation files
 
 Нарезка изображения на вариации происходит при его загрузке.
 Объявление новых вариаций (равно как изменение существующих) для поля, 
@@ -301,7 +328,7 @@ print(page.image.desktop.url)
 
    Эта команда сгенерирует вариации для всех экземпляров указанной модели.
 
-### Using Redis Queue for variation update 
+## Using Redis Queue for variation update 
 
 Если загрузка изображений происходит достаточно часто и количество вариаций
 для каждого изображения велико, то процесс создания вариаций может занимать 
@@ -330,7 +357,7 @@ PAPER_UPLOADS = {
 синхронно, а все остальные вариации - через отложенную задачу, которая
 помещается в очередь, указанную в опции `RQ_QUEUE_NAME`. 
 
-### Variation versions
+## Variation versions
 
 Допустим, у нас есть изображение, которое нужно отобразить в трех
 вариантах: `desktop`, `tablet` и `mobile`. Если мы хотим поддерживать
@@ -349,7 +376,7 @@ PAPER_UPLOADS = {
 
 ```python
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from paper_uploads.models import *
 
 
@@ -380,7 +407,7 @@ class Page(models.Model):
 
 ```python
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from paper_uploads.models import *
 
 
@@ -483,12 +510,12 @@ class PageFiles(Collection):
 
 ```python
 from paper_uploads.models import *
-from paper_uploads.validators import SizeValidator
+from paper_uploads.validators import MaxSizeValidator
 
 
 class FileCollection(Collection):
     file = CollectionItem(FileItem, validators=[
-        SizeValidator(2 * 1000 * 1000)
+        MaxSizeValidator(2 * 1000 * 1000)
     ])
 ```
 
@@ -638,51 +665,6 @@ class CustomCollection(Collection):
 
 ## Programmatically upload files
 
-В полях `FileField` и `ImageField` по умолчанию используются экземпляры 
-моделей `UploadedFile` и `UploadedImage` соответственно. Обе модели, 
-помимо файлового поля, содержат ещё три поля, которые необходимо 
-заполнить. Эти поля формируют слабую ссылку (weak reference) на поле 
-модели, с которым связан файл:
-* `owner_app_label`
-* `owner_model_name`
-* `owner_fieldname`
-
-С помощью этих полей можно определить, где используется данный файл.
-А management-команда `check_uploads` использует данные этих полей, 
-чтобы обнаружить потенциально неиспользуемые файлы.
-
-Заполнить поля можно вручную, в конструкторе, либо воспользоваться 
-методом `set_owner_field()`.
-
-```python
-from django.db import models
-from paper_uploads.models import *
-
-
-class Page(models.Model):
-    photo = ImageField(_("photo"))
-    report = FileField(_("report"))
-
-
-photo = UploadedImage()
-photo.set_owner_field(Page, "photo")
-with open("picture.jpg", "rb") as fp:
-    photo.attach(fp)
-photo.save()
-
-report = UploadedFile()
-report.set_owner_field(Page, "report")
-with open("file.doc", "rb") as fp:
-    report.attach(fp)
-report.save()
-
-
-page = Page.objects.create(
-    photo=photo,
-    report=report
-)
-```
-
 Такие же поля есть в коллекциях:
 
 ```python
@@ -780,37 +762,6 @@ python3 manage.py recreate_variations 'app.Page' --field='image' --variations bi
 
 ```shell
 python3 manage.py remove_variations 'app.Page' --field='image'
-```
-
-## Validators
-Для добавления ограничений на загружаемые файлы применяются
-специальные валидаторы:
-* `SizeValidator` - задает максимально допустимый размер
-файла в байтах.
-* `ExtensionValidator` - задает допустимые расширения файлов.
-* `MimeTypeValidator` - задает допустимые MIME типы файлов.
-* `ImageMinSizeValidator` - устанавливает минимальный размер
-загружаемых изображений.
-* `ImageMaxSizeValidator` - устанавливает максимальный размер
-загружаемых изображений.
-
-```python
-from django.db import models
-from django.utils.translation import ugettext_lazy as _
-from paper_uploads.models import *
-from paper_uploads.validators import *
-
-class Page(models.Model):
-    image = ImageField(_('image'), blank=True, validators=[
-        SizeValidator(10 * 1000 * 1000),   # max 10Mb
-        ImageMaxSizeValidator(800, 800)    # max dimensions 800x800
-    ])
-
-
-class PageGallery(Collection):
-    file = CollectionItem(FileItem, validators=[
-        SizeValidator(10 * 1000 * 1000),
-    ])
 ```
 
 ## Cloudinary

@@ -12,7 +12,7 @@ from ...models.mixins import BacklinkModelMixin
 
 class Command(BaseCommand):
     help = """
-    Проверка целостности экземпляров файловых моделей.
+    Проверка экземпляров файловых моделей.
     
     Если указан параметр `--fix-missing-variations`, недостающие файлы вариаций
     создаются из исходного изображения.
