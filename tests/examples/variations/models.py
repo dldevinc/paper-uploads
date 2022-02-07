@@ -15,7 +15,7 @@ class PhotoCollection(ImageCollection):
             clip=False
         ),
         admin_preview=dict(
-            size=(200, 100),
+            size=(216, 162),
             versions={"webp", "2x"},
         )
     )
