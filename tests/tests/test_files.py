@@ -16,13 +16,13 @@ class TestVariationFile:
     @staticmethod
     def init_class(storage):
         storage.resource = DummyVersatileImageResource()
-        with open(NASA_FILEPATH, 'rb') as fp:
+        with open(NASA_FILEPATH, "rb") as fp:
             storage.resource.attach(fp)
 
         assert storage.resource.need_recut is True
         storage.resource.save()
 
-        storage.file = VariationFile(storage.resource, 'desktop')
+        storage.file = VariationFile(storage.resource, "desktop")
 
         yield
 
@@ -31,7 +31,7 @@ class TestVariationFile:
 
     def test_name(self, storage):
         assert storage.file.name == utils.get_target_filepath(
-            'versatile_image/milky-way-nasa{suffix}.desktop.jpg',
+            "versatile_image/milky-way-nasa{suffix}.desktop.jpg",
             storage.resource.name
         )
 
@@ -40,7 +40,7 @@ class TestVariationFile:
         assert storage.file.instance is storage.resource
 
     def test_variation_name(self, storage):
-        assert storage.file.variation_name == 'desktop'
+        assert storage.file.variation_name == "desktop"
 
     def test_size(self, storage):
         # разный размер - зависит от версии Pillow
@@ -48,17 +48,17 @@ class TestVariationFile:
 
     def test_variation(self, storage):
         assert isinstance(storage.file.variation, PaperVariation)
-        assert storage.file.variation.name == 'desktop'
+        assert storage.file.variation.name == "desktop"
 
     def test_path(self, storage):
         assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/versatile_image/milky-way-nasa{suffix}.jpg',
+            "/media/versatile_image/milky-way-nasa{suffix}.jpg",
             storage.resource.get_file_url()
         ))
 
     def test_url(self, storage):
         assert storage.resource.url == utils.get_target_filepath(
-            '/media/versatile_image/milky-way-nasa{suffix}.jpg',
+            "/media/versatile_image/milky-way-nasa{suffix}.jpg",
             storage.resource.get_file_url()
         )
 
@@ -80,7 +80,7 @@ class TestVariationFile:
     def test_delete(self, storage):
         source_name = storage.file.name
         source_file = storage.file.path
-        backup_file = os.path.join(settings.BASE_DIR, 'media/versatile_image/nasa.bak.jpg')
+        backup_file = os.path.join(settings.BASE_DIR, "media/versatile_image/nasa.bak.jpg")
         shutil.copyfile(source_file, backup_file)
 
         storage.file.delete()
@@ -106,7 +106,7 @@ class TestVariationFile:
     def test_delete_unexisted(self, storage):
         source_name = storage.file.name
         source_file = storage.file.path
-        backup_file = os.path.join(settings.BASE_DIR, 'media/versatile_image/nasa.bak.jpg')
+        backup_file = os.path.join(settings.BASE_DIR, "media/versatile_image/nasa.bak.jpg")
         shutil.copyfile(source_file, backup_file)
 
         storage.file.delete()

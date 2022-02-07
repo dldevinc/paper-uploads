@@ -305,7 +305,7 @@ class TestUploadFileView:
         collection.delete()
 
     def test_get_accepted_item_types(self, storage):
-        with open(DOCUMENT_FILEPATH, 'rb') as fp:
+        with open(DOCUMENT_FILEPATH, "rb") as fp:
             file = UploadedFile(
                 file=fp,
                 name=os.path.basename(fp.name),
@@ -313,9 +313,9 @@ class TestUploadFileView:
             )
             gen = storage.view.get_accepted_item_types(FilesOnlyCollection, file)
             item_type, _ = next(gen)
-            assert item_type == 'file'
+            assert item_type == "file"
 
-        with open(NATURE_FILEPATH, 'rb') as fp:
+        with open(NATURE_FILEPATH, "rb") as fp:
             file = UploadedFile(
                 file=fp,
                 name=os.path.basename(fp.name),
@@ -323,9 +323,9 @@ class TestUploadFileView:
             )
             gen = storage.view.get_accepted_item_types(ImagesOnlyCollection, file)
             item_type, _ = next(gen)
-            assert item_type == 'image'
+            assert item_type == "image"
 
-        with open(MEDITATION_FILEPATH, 'rb') as fp:
+        with open(MEDITATION_FILEPATH, "rb") as fp:
             file = UploadedFile(
                 file=fp,
                 name=os.path.basename(fp.name),
@@ -333,10 +333,10 @@ class TestUploadFileView:
             )
             gen = storage.view.get_accepted_item_types(MixedCollection, file)
             item_type, _ = next(gen)
-            assert item_type == 'svg'
+            assert item_type == "svg"
 
     def test_no_accepted_item_types(self, storage):
-        with open(AUDIO_FILEPATH, 'rb') as fp:
+        with open(AUDIO_FILEPATH, "rb") as fp:
             file = UploadedFile(
                 file=fp,
                 name=os.path.basename(fp.name),
@@ -347,7 +347,7 @@ class TestUploadFileView:
                 item_type, _ = next(gen)
 
     def test_image_accepts_svg(self, storage):
-        with open(MEDITATION_FILEPATH, 'rb') as fp:
+        with open(MEDITATION_FILEPATH, "rb") as fp:
             file = UploadedFile(
                 file=fp,
                 name=os.path.basename(fp.name),
@@ -355,7 +355,7 @@ class TestUploadFileView:
             )
             gen = storage.view.get_accepted_item_types(ImagesOnlyCollection, file)
             item_type, _ = next(gen)
-            assert item_type == 'image'
+            assert item_type == "image"
 
 
 class TestDeleteFileView:
