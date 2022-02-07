@@ -580,7 +580,7 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         if not hasattr(self, "_variations_cache"):
             collection_cls = self.get_collection_class()
             itemtype_field = self.get_itemtype_field()
-            variation_config = self.get_variation_config(itemtype_field, collection_cls)
+            variation_config = self.get_variation_config(collection_cls, itemtype_field)
             self._variations_cache = build_variations(variation_config)
         return self._variations_cache
 
@@ -593,10 +593,10 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
 
     @classmethod
     def get_variation_config(
-        cls, rel: Optional[CollectionItem], collection_cls: Type[CollectionBase]
+        cls, collection_cls: Type[CollectionBase], item_type_field: Optional[CollectionItem],
     ) -> Dict[str, Any]:
-        if rel is not None and "variations" in rel.options:
-            variations = rel.options["variations"]
+        if item_type_field is not None and "variations" in item_type_field.options:
+            variations = item_type_field.options["variations"]
         else:
             variations = getattr(collection_cls, "VARIATIONS", None)
         variations = variations or {}
