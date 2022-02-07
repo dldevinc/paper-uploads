@@ -824,7 +824,7 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
         assert variations["mobile"].size == (0, 600)
 
         # admin variation overriden
-        assert variations["admin_preview"].size == (200, 100)
+        assert variations["admin_preview"].size == (216, 162)
         assert variations["admin_preview"].format == "AUTO"
 
         # ensure that setting has not changed
