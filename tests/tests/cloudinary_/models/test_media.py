@@ -1,5 +1,6 @@
 import posixpath
 from contextlib import contextmanager
+from pathlib import Path
 
 import cloudinary.exceptions
 import pytest
@@ -111,6 +112,24 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
         finally:
             resource.delete_file()
 
+    def test_file_as_string(self):
+        with self.get_resource() as resource:
+            resource.attach(AUDIO_FILEPATH)
+
+            assert resource.basename == "audio"
+            assert resource.extension == "mp3"
+            assert resource.size == self.resource_size
+            assert resource.checksum == self.resource_checksum
+
+    def test_file_as_path(self):
+        with self.get_resource() as resource:
+            resource.attach(Path(AUDIO_FILEPATH))
+
+            assert resource.basename == "audio"
+            assert resource.extension == "mp3"
+            assert resource.size == self.resource_size
+            assert resource.checksum == self.resource_checksum
+
     def test_file(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
@@ -132,6 +151,18 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
 
+    def test_django_file_with_relative_path(self):
+        with self.get_resource() as resource:
+            with open(AUDIO_FILEPATH, "rb") as fp:
+                file = File(fp, name="audios/audio.ogg")
+                resource.attach(file)
+
+            assert "/audios/" not in resource.name
+            assert resource.basename == "audio"
+            assert resource.extension == "mp3"
+            assert resource.size == self.resource_size
+            assert resource.checksum == self.resource_checksum
+
     def test_override_name(self):
         with self.get_resource() as resource:
             with open(AUDIO_FILEPATH, 'rb') as fp:
@@ -139,6 +170,15 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
+
+    def test_override_name_with_relative_path(self):
+        with self.get_resource() as resource:
+            with open(AUDIO_FILEPATH, "rb") as fp:
+                resource.attach(fp, name="audios/overwritten.mp3")
+
+            assert "/audios/" not in resource.name
+            assert resource.basename == "overwritten"
+            assert resource.extension == "mp3"
 
     def test_override_django_name(self):
         with self.get_resource() as resource:
@@ -148,6 +188,16 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
 
             assert resource.basename == 'overwritten'
             assert resource.extension == 'mp3'
+
+    def test_override_django_name_with_relative_path(self):
+        with self.get_resource() as resource:
+            with open(AUDIO_FILEPATH, "rb") as fp:
+                file = File(fp, name="audios/not_used.png")
+                resource.attach(file, name="overwritten.ogg")
+
+            assert "/audios/" not in resource.name
+            assert resource.basename == "overwritten"
+            assert resource.extension == "mp3"
 
     def test_wrong_extension(self):
         with self.get_resource() as resource:
