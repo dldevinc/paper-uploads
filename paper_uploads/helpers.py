@@ -115,11 +115,12 @@ def build_variations(options: Dict[str, VariationConfig]) -> Dict[str, PaperVari
                 "unknown variation versions: {}".format(", ".join(unknown_versions))
             )
 
-        all_versions = generate_variation_versions(name, new_config, versions)
+        variation_name = new_config.get("name", name)
+
+        all_versions = generate_variation_versions(variation_name, new_config, versions)
         for variation in all_versions:
-            if name == variation.name:
-                # явно заданная вариация переопредеяет любую неявную
-                variations[name] = variation
+            if variation_name == variation.name:  # определение корневой вариации
+                variations[variation_name] = variation
             else:
                 variations.setdefault(variation.name, variation)
 

@@ -78,6 +78,11 @@ class TestBuildVariations:
                     size=(640, 0),
                     clip=False,
                 ),
+                micro=dict(
+                    name="square",  # overriden name
+                    size=(200, 200),
+                    versions={'2x'},
+                ),
             )
         )
 
@@ -86,7 +91,13 @@ class TestBuildVariations:
 
     def test_count(self):
         # 3 normal variations + 3 implicit for `tablet`
-        assert len(self.variations) == 6
+        assert len(self.variations) == 8
+
+    def test_overriden_name(self):
+        assert "square" in self.variations
+        assert "square_2x" in self.variations
+        assert "micro" not in self.variations
+        assert "micro_2x" not in self.variations
 
     def test_size_overriden(self):
         assert self.variations['desktop'].size == (1600, 0)
@@ -121,10 +132,14 @@ class TestBuildVariations:
         assert self.variations['tablet_webp'].name == 'tablet_webp'
         assert self.variations['tablet_2x'].name == 'tablet_2x'
         assert self.variations['tablet_webp_2x'].name == 'tablet_webp_2x'
+        assert self.variations['square'].name == 'square'
+        assert self.variations['square_2x'].name == 'square_2x'
 
     def test_retina_size(self):
         assert self.variations['tablet_2x'].size == (2048, 0)
         assert self.variations['tablet_webp_2x'].size == (2048, 0)
+        assert self.variations['square'].size == (200, 200)
+        assert self.variations['square_2x'].size == (400, 400)
 
     def test_webp_format(self):
         assert self.variations['tablet_2x'].format == 'AUTO'

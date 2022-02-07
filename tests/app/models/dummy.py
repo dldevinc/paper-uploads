@@ -8,6 +8,7 @@ from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
 
 from paper_uploads import helpers
+from paper_uploads.helpers import build_variations
 from paper_uploads.models.base import *
 from paper_uploads.models.mixins import BacklinkModelMixin
 from paper_uploads.variations import PaperVariation
@@ -128,15 +129,17 @@ class DummyVersatileImageResource(VersatileImageResourceMixin, FileFieldResource
         return self._meta.get_field("file")
 
     def get_variations(self) -> Dict[str, PaperVariation]:
-        return {
-            "desktop": PaperVariation(
-                name="desktop",
+        return build_variations({
+            "desktop": dict(
                 size=(800, 0),
                 clip=False
             ),
-            "mobile": PaperVariation(
-                name="mobile",
+            "mobile": dict(
                 size=(0, 600),
                 clip=False
             ),
-        }
+            "micro": dict(
+                name="square",
+                size=(200, 200),
+            ),
+        })

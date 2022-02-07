@@ -23,4 +23,8 @@ class ImageExample(models.Model):
             size=(0, 600),
             clip=False
         ),
+        micro=dict(
+            name="square",
+            size=(200, 200),
+        )
     ))

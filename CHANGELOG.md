@@ -7,6 +7,7 @@
 ### Features
 - `SizeValidator` is now deprecated in favor of `MaxSizeValidator`.
 - Allow `str` and `Path` as the parameter of `attach()` method.
+- Allow overriding variation name with option `name`.
 
 ## [0.8.0rc2](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc2) - 2021-02-01
 ### Features

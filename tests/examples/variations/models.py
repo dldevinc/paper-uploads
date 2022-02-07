@@ -27,12 +27,10 @@ class Page(models.Model):
         blank=True,
         variations=dict(
             desktop=dict(
-                name="desktop",
                 size=(800, 0),
                 clip=False
             ),
             mobile=dict(
-                name="mobile",
                 size=(0, 600),
                 clip=False
             ),

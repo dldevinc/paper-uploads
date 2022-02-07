@@ -1083,8 +1083,8 @@ class TestVersatileImageResource(TestImageFieldResource):
 
     def test_get_variations(self, storage):
         variations = storage.resource.get_variations()
-        assert len(variations) == 2
-        assert set(variations.keys()) == {"desktop", "mobile"}
+        assert len(variations) == 3
+        assert set(variations.keys()) == {"desktop", "mobile", "square"}
         assert all(isinstance(v, PaperVariation) for v in variations.values()) is True
 
     def test_get_variation_file(self, storage):
@@ -1106,6 +1106,7 @@ class TestVersatileImageResource(TestImageFieldResource):
         assert dict(storage.resource.variation_files()) == {
             "desktop": storage.resource.desktop,
             "mobile": storage.resource.mobile,
+            "square": storage.resource.square,
         }
 
     def test_variation_attribute(self, storage):
@@ -1294,6 +1295,7 @@ class TestImageResourceVariations:
         assert resource._variation_files_cache == {
             "desktop": resource.desktop,
             "mobile": resource.mobile,
+            "square": resource.square,
         }
 
         os.remove(resource.file.path)
@@ -1304,6 +1306,7 @@ class TestImageResourceVariations:
         assert resource._variation_files_cache == {
             "desktop": resource.desktop,
             "mobile": resource.mobile,
+            "square": resource.square,
         }
 
         resource.delete_file()
@@ -1377,10 +1380,11 @@ class TestImageResourceVariations:
 
         resource.save()
 
-        assert signal_fired_times == 2
+        assert signal_fired_times == 3
         assert signals_fired == {
             "desktop": True,
             "mobile": True,
+            "square": True,
         }
 
         resource.delete_file()
