@@ -37,27 +37,20 @@
 ## Table of Contents
 
 - [Installation](#Installation)
-- [Usage](#Usage)
-  - [FileField](#FileField)
-  - [Validators](#Validators) 
-
-
-
-- [Installation](#Installation)
 - [FileField](#FileField)
-  - [UploadedFile](#UploadedFile)
+- [Validators](#Validators) 
+- [UploadedFile](#UploadedFile)
+- [Programmatically upload files](#Programmatically-upload-files)
 - [ImageField](#ImageField)
-  - [UploadedImage](#UploadedImage)
+- [UploadedImage](#UploadedImage)
   - [Variations](#Variations)
-  - [Manually creating variation files](#Manually-creating-variation-files)
-  - [Using Redis Queue for variation update](#Using-Redis-Queue-for-variation-update)
-  - [Variation versions](#Variation-versions)
+  - [Versions](#Versions)
+  - [Redis Queue](#Redis Queue)
 - [Collections](#Collections)
   - [Collection items](#Collection-items)
   - [ImageCollection](#ImageCollection)
   - [Custom collection item classes](#Custom-collection-item-classes)
   - [HTML Template Example](#HTML-Template-Example)
-- [Programmatically upload files](#Programmatically-upload-files)
 - [Management Commands](#Management-Commands)
 - [Cloudinary](#Cloudinary)
   - [Installation](#Installation-1)
@@ -105,6 +98,7 @@ PAPER_LOCALE_PACKAGES = [
 ```
 
 ## FileField
+
 Поле для загрузки файла. В большинстве случаев это поле можно использовать
 вместо одноименного поля Django.
 
@@ -230,6 +224,7 @@ page = Page.objects.create(
 так и файловый объект.
 
 ## ImageField
+
 Поле для загрузки изображений. Может хранить ссылку как на единственное изображение 
 (подобно стандартному полю `ImageField`), так и на группу изображений,
 полученных из исходного с помощью библиотеки [variations][variations]. 
@@ -295,21 +290,21 @@ class Page(models.Model):
      alt="{{ page.image_group.description }}">
 ```
 
-## Manually creating variation files
+### Variations
 
-Нарезка изображения на вариации происходит при его загрузке.
-Объявление новых вариаций (равно как изменение существующих) для поля, 
-в которое уже загружен файл, не приведёт к созданию новых файлов.
+Вариация - это изображение, полученное из исходного по *заранее* объявленным правилам.
 
-Для того, чтобы создать файлы для новых вариаций (либо перезаписать 
-существующие вариации, в которые были внесены изменения) можно
-поступить одним из ниже описанных способов.
+Создание файлов вариаций происходит в момент загрузки изображения на сервер. Поэтому изменение
+настроек вариаций не окажет никакого эффекта на уже загруженные изображения.
+
+Для того, чтобы создать файлы для новых вариаций (либо перезаписать существующие файлы 
+вариаций, в которые были внесены изменения) можно поступить одним из ниже описанных способов.
 
 1. Вызвать метод `recut()` (либо `recut_async()`) из экземпляра 
    `UploadedImage`:
 
    ```python
-   page.image.recut()
+   page.image_group.recut()
    ```
    
    При вызове этого метода все файлы вариаций для указанного экземпляра 
@@ -318,46 +313,19 @@ class Page(models.Model):
    <br>
    Можно явно указать имена вариаций, которые необходимо перезаписать:
    ```python
-   page.image.recut(["desktop", "mobile"]) 
+   page.image_group.recut(["desktop", "mobile"]) 
    ```
 
 2. Выполнить management-команду `recreate_variations`:
    ```shell
-   python3 manage.py recreate_variations app.page --field=report
+   python3 manage.py recreate_variations app.page \ 
+           --field image_group
+           --variations desktop mobile
    ```
 
    Эта команда сгенерирует вариации для всех экземпляров указанной модели.
 
-## Using Redis Queue for variation update 
-
-Если загрузка изображений происходит достаточно часто и количество вариаций
-для каждого изображения велико, то процесс создания вариаций может занимать 
-значительное время. Это может оказать негативное влияние на производительность 
-веб-сервера и даже послужить зоной для DoS-атаки.
-
-Для того, чтобы стабилизировать процесс загрузки изображений, рекомендуется
-создавать вариации асинхронно, в отдельном процессе, с помощью 
-[django-rq][django-rq].
-
-```shell
-pip install django-rq
-```
-
-```python
-# settings.py
-PAPER_UPLOADS = {
-    # ...
-    "RQ_ENABLED": True,
-    "RQ_QUEUE_NAME": "default"
-}
-```
-
-Теперь при загрузке изображения вместо метода `recut()` будет вызываться 
-метод `recut_async()`. При его использовании, превью для админки генерируется 
-синхронно, а все остальные вариации - через отложенную задачу, которая
-помещается в очередь, указанную в опции `RQ_QUEUE_NAME`. 
-
-## Variation versions
+#### Versions
 
 Допустим, у нас есть изображение, которое нужно отобразить в трех
 вариантах: `desktop`, `tablet` и `mobile`. Если мы хотим поддерживать
@@ -428,14 +396,36 @@ class Page(models.Model):
     )
 ```
 
-## Collections
-Коллекция — это модель, группирующая экземпляры других моделей
-(элементов коллекции). В частности, с помощью коллекции можно
-создать фото-галерею или список файлов.
+### Redis Queue
 
-Для создания коллекции необходимо объявить класс, унаследованный
-от `Collection` и указать модели элементов, которые могут входить
-в коллекцию с помощью псевдо-поля `CollectionItem`:
+При загрузке большого количества изображений процесс создания вариаций может занимать 
+значительное время. Эту работу можно вынести в отдельный процесс с помощью 
+[django-rq][django-rq]:
+
+```shell
+pip install django-rq
+```
+
+```python
+# settings.py
+PAPER_UPLOADS = {
+    "RQ_ENABLED": True,
+    "RQ_QUEUE_NAME": "default",
+    # ...
+}
+```
+
+Теперь при загрузке изображений, в очередь под именем `default` будет добавляться
+задача, которая создаст все необходимые вариации.
+
+## Collections
+
+Коллекция — это модель, группирующая экземпляры других моделей (элементов коллекции). 
+В частности, с помощью коллекции можно создать фото-галерею или список файлов.
+
+Для создания коллекции необходимо объявить класс, унаследованный от `Collection` 
+и указать модели элементов, которые могут входить в коллекцию с помощью псевдо-поля 
+`CollectionItem`:
 
 ```python
 from django.db import models
@@ -452,21 +442,17 @@ class PageFiles(Collection):
 # Target model
 class Page(models.Model):
     files = CollectionField(PageFiles)
-
 ```
 
-Класс `Collection` обладает особенным свойством: *любой дочерний
-класс, унаследованный от `Collection`, является proxy-моделью для
-`Collection`*.
+Класс `Collection` обладает особенным свойством: *любой дочерний класс, унаследованный 
+от `Collection`, является proxy-моделью для `Collection`*.
 
-В большинстве случаев коллекции отличаются друг от друга только 
-набором элементов, которые могут входить в коллекцию. Использование
-proxy-моделей предотвращает создание множества одинаковых таблиц 
-в БД.
+В большинстве случаев коллекции отличаются друг от друга только набором элементов, 
+которые могут входить в коллекцию. Использование proxy-моделей предотвращает создание 
+множества одинаковых таблиц в БД.
 
-Если же для коллекции необходима отдельная таблица (например,
-если вы решили добавить в неё новое поле), то необходимо
-явно установить свойтво `Meta.proxy` в значение `False`:
+Если же для коллекции необходима отдельная таблица (например, если вы решили добавить 
+в неё новое поле), то необходимо явно установить свойство `Meta.proxy` в значение `False`:
 
 ```python
 from django.db import models
@@ -474,9 +460,9 @@ from paper_uploads.models import *
 
 
 class CustomCollection(Collection):
-    file = CollectionItem(FileItem)
-
     name = models.CharField("name", max_length=128, blank=True)
+
+    file = CollectionItem(FileItem)
 
     class Meta:
         proxy = False
@@ -484,10 +470,7 @@ class CustomCollection(Collection):
 
 ### Collection items
 
-Псевдо-поле `CollectionItem` регистрирует модель элемента коллекции 
-под заданным именем. При добавлении в коллекцию нового элемента,
-это имя помещается в поле `type` элемента коллекции. Это поле можно
-использовать для получения элементов коллекции определённого типа.
+Псевдо-поле `CollectionItem` регистрирует модель элемента коллекции под заданным именем. 
 
 ```python
 from paper_uploads.models import *
@@ -499,32 +482,25 @@ class PageFiles(Collection):
     file = CollectionItem(FileItem)
 ```
 
-В приведённом примере, коллекция `PageFiles` может содержать элементы 
-трех классов: `SVGItem`, `ImageItem` и `FileItem`. Порядок объявления 
-элементов коллекции имеет значение: первый класс, чей метод `accept()`
-вернет `True`, определит модель загруженного файла. По этой причине 
-`FileItem` должен указываться последним, т.к. он принимает любые файлы.
+В приведённом примере, коллекция `PageFiles` может включать элементы трех моделей: 
+`SVGItem`, `ImageItem` и `FileItem`. 
 
-Вместе с моделью элемента, в поле `CollectionItem` можно указать
-[валидаторы](#Validators):
+Порядок объявления элементов коллекции важен: первый класс модели, чей метод `accept()` 
+вернет `True`, определит модель загруженного файла. По этой причине *`FileItem` должен 
+указываться последним*, т.к. он принимает любые файлы.
 
+Получить элементы определённого типа можно с помощью метода `get_items()`:
 ```python
-from paper_uploads.models import *
-from paper_uploads.validators import MaxSizeValidator
-
-
-class FileCollection(Collection):
-    file = CollectionItem(FileItem, validators=[
-        MaxSizeValidator(2 * 1000 * 1000)
-    ])
+for item in page.files.get_items("image"):
+    # ...
 ```
 
 ---
 
-В состав библиотеки входят следующие классы элементов:
+В состав библиотеки входят следующие модели элементов:
 * `ImageItem`<br>
-  Для хранения изображения с возможностью нарезки на вариации. 
-  Позволяет хранить любые файлы, которые можно открыть с помощью [Pillow](https://pillow.readthedocs.io/en/stable/). 
+  Для хранения изображения с возможностью нарезки на [вариации](#Variations). 
+  Допускются тоьлко те файлы, которые можно открыть с помощью [Pillow](https://pillow.readthedocs.io/en/stable/). 
 
 * `SVGItem`<br>
   Для хранения SVG иконок.
@@ -589,7 +565,7 @@ class PageGallery(ImageCollection):
             clip=False,
         ),
         mobile=dict(
-            size=(640, 0),
+            size=(640, 800),
         )
     )
 ```
@@ -597,15 +573,15 @@ class PageGallery(ImageCollection):
 ### Custom collection item classes
 
 В простейших случаях, вместо создания собственного класса элемента коллекции с нуля,
-можно использовать прокси-модели на основе существующих классов. 
-Например, для того, чтобы хранить файлы определённой галереи в отдельной папке, 
-можно создать прокси модель к `ImageItem`:
+можно использовать прокси-модели на основе существующих классов. Например, для того, 
+чтобы хранить файлы определённой галереи в отдельной папке, можно создать прокси 
+модель к `ImageItem`:
 
 ```python
 from paper_uploads.models import *
 
 
-class ProxyImageItem(ImageItem):
+class CustomImageItem(ImageItem):
     class Meta:
         proxy = True
         
@@ -613,21 +589,21 @@ class ProxyImageItem(ImageItem):
         return "custom-images/%Y"
 
 
-class CustomCollection(Collection):
-    image = CollectionItem(ProxyImageItem)
+class Gallery(Collection):
+    image = CollectionItem(CustomImageItem)
 ```
 
 Для более сложных случаев (когда требуется отдельная таблица в БД) необходимо 
 использовать прямое наследование. Но уже не от конкретных моделей (`FileItem`, 
-`ImageItem` и т.п.), а от абстрактных. Таких как `FileItemBase`, `ImageItemBase` 
-или более общих `CollectionItemBase` и `CollectionFileItemBase`.
+`ImageItem` и т.п.), а от абстрактных &mdash; `FileItemBase`, `ImageItemBase`, 
+`SVGItemBase`. Или ещё более общих: `CollectionItemBase` и `CollectionFileItemBase`.
 
 ```python
 from django.db import models
 from paper_uploads.models import *
 
 
-class CustomImageItem(ImageItemBase):  # не ImageItem!
+class CustomImageItem(ImageItemBase):  # наследование не от ImageItem!
     caption = models.TextField("caption", blank=True)
 
 
@@ -663,9 +639,7 @@ class CustomCollection(Collection):
 {% endif %}
 ```
 
-## Programmatically upload files
-
-Такие же поля есть в коллекциях:
+### Programmatically create collection item
 
 ```python
 from django.db import models
@@ -685,15 +659,9 @@ gallery.set_owner_field(Page, "gallery")
 gallery.save()
 
 item = ImageItem()
+item.attach("/tmp/image.jpg")
 item.attach_to(gallery)
-with open("image.jpg", "rb") as fp:
-    item.attach(fp)
 item.save()
-
-
-page = Page.objects.create(
-    gallery=gallery
-)
 ```
 
 ## Management Commands

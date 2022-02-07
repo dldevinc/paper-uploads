@@ -313,11 +313,10 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=Coll
         return 0 if max_order is None else max_order + 1
 
     def save(self, *args, **kwargs):
-        if not self.pk:
-            # Попытка решить проблему того, что при создании коллекции,
-            # элементы отсортированы в порядке загрузки, а не в порядке
-            # добавления. Код ниже не решает проблему полностью,
-            # но уменьшает её влияние.
+        if not self.pk and self.collection_id:
+            # Попытка решить проблему того, что при создании коллекции элементы
+            # отсортированы в порядке загрузки, а не в порядке добавления.
+            # Код ниже не решает проблему полностью, но уменьшает её влияние.
             if self.order is None or self.collection.items.filter(order=self.order).exists():
                 self.order = self.get_order()
         super().save(*args, **kwargs)
