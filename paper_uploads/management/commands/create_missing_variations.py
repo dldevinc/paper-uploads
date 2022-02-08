@@ -16,15 +16,14 @@ class Command(BaseCommand):
             help="Nominates the database to use. Defaults to the 'default' database.",
         )
         parser.add_argument(
-            "--threshold",
-            type=int,
-            default=24 * 3600,
-            help="Minimum instance age in seconds to look for",
+            "--async",
+            action="store_true",
+            help="Use django-rq to create variation files",
         )
 
     def handle(self, *args, **options):
-        helpers.remove_empty_collections(
-            threshold=options["threshold"],
+        helpers.create_missing_variations(
+            async_=options["async"],
             database=options["database"],
             verbosity=logging.DEBUG
         )

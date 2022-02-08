@@ -13,9 +13,6 @@ from ...models.mixins import BacklinkModelMixin
 class Command(BaseCommand):
     help = """
     Проверка экземпляров файловых моделей.
-    
-    Если указан параметр `--fix-missing-variations`, недостающие файлы вариаций
-    создаются из исходного изображения.
     """
     options = None
     verbosity = None
@@ -42,19 +39,13 @@ class Command(BaseCommand):
             help="Check file existence.",
         )
         parser.add_argument(
-            "-i", "--check-variations",
-            action="store_true",
-            default=False,
-            help="Check variation existence.",
-        )
-        parser.add_argument(
             "-t", "--check-item-types",
             action="store_true",
             default=False,
             help="Check item `type` values.",
         )
         parser.add_argument(
-            "--fix-missing-variations",
+            "-r", "--fix-missing-variations",
             action="store_true",
             default=False,
             help="Recreate all missing variation files from a source image.",
@@ -165,50 +156,6 @@ class Command(BaseCommand):
 
             self._check_file_existence(model)
 
-    def _check_variation_existence(self, model: Type[VersatileImageResourceMixin]):
-        for instance in model.objects.using(self.database).iterator():
-            invalid = False
-            message = "The following errors were found in '{}.{}' (ID: {instance.pk}):".format(
-                type(instance)._meta.app_label,
-                type(instance).__name__,
-                instance=instance
-            )
-
-            missing_variations = []
-            for vname, vfile in instance.variation_files():
-                if vfile is not None and not vfile.exists():
-                    missing_variations.append(vname)
-
-            if missing_variations:
-                invalid = True
-                recreatable = self.options["fix_missing_variations"] and instance.file_exists()
-                for vname in missing_variations:
-                    message += "\n  Not found variation '{}'".format(vname)
-                    if recreatable:
-                        message += self.style.SUCCESS(" (recreated)")
-
-                if recreatable:
-                    instance.recut(names=missing_variations)
-
-            if invalid:
-                self.stdout.write(self.style.ERROR(message))
-
-    def check_variation_existence(self):
-        """
-        Проверяет, что для всех вариаций всех экземпляров загруженных изображений
-        существуют соответсвующие файлы.
-        """
-        if self.verbosity >= 2:
-            self.stdout.write(self.style.SUCCESS("Checking image variation existence..."))
-
-        for node in helpers.get_resource_model_trees(include_proxy=True):
-            model = node.model
-
-            if not issubclass(model, VersatileImageResourceMixin):
-                continue
-
-            self._check_variation_existence(model)
-
     def check_item_types(self):
         """
         Проверяет, что элементы коллекций
@@ -257,13 +204,11 @@ class Command(BaseCommand):
 
         check_ownership = options["check_ownership"]
         check_files = options["check_files"]
-        check_variations = options["check_variations"]
         check_item_types = options["check_item_types"]
 
         check_all = not any([
             check_ownership,
             check_files,
-            check_variations,
             check_item_types,
         ])
 
@@ -272,9 +217,6 @@ class Command(BaseCommand):
 
         if check_all or check_files:
             self.check_file_existence()
-
-        if check_all or check_variations:
-            self.check_variation_existence()
 
         if check_all or check_item_types:
             self.check_item_types()

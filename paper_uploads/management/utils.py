@@ -1,32 +1,22 @@
-from typing import List, Type, Union
+from typing import List, Type
 
 from django.db import models
 from django.db.models.fields import Field
 
-from ...helpers import build_variations
-from ...models.base import VersatileImageResourceMixin
-from ...models.collection import CollectionBase
-from ...models.fields.collection import CollectionItem
+from ..helpers import build_variations
+from ..models.base import VersatileImageResourceMixin
+from ..models.collection import CollectionBase
+from ..models.fields.collection import CollectionItem
 
 
-def is_versatile_field(field: Field) -> bool:
+def is_variations_allowed(model: Type[models.Model]) -> bool:
     """
-    Возвращает True, если поле ссылается на класс изображения с вариациями.
+    Возвращает True, если модель представляет из себя класс изображения с вариациями.
     """
-    return field.is_relation and issubclass(
-        field.related_model, VersatileImageResourceMixin
-    )
+    return issubclass(model, VersatileImageResourceMixin)
 
 
-def is_versatile_item(field: CollectionItem) -> bool:
-    """
-    Возвращает True, если поле коллекции подключает класс элемента
-    изображения с вариациями.
-    """
-    return issubclass(field.model, VersatileImageResourceMixin)
-
-
-def is_collection(model: Type[Union[models.Model, CollectionBase]]) -> bool:
+def is_collection(model: Type[models.Model]) -> bool:
     """
     Возвращает True, если model - коллекция.
     """

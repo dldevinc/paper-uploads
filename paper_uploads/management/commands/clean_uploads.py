@@ -17,14 +17,13 @@ from ...models.mixins import BacklinkModelMixin
 class Command(BaseCommand):
     help = """
     Поиск и удаление экземпляров файловых моделей с утерянными файлами.
-    Также удаляются экземпляров файловых моделей, на которые нет ссылок.
+    Также удаляются экземпляры файловых моделей, на которые нет ссылок.
     
-    Создание экземпляра файловой модели и загрузка в неё файла - это 
-    две отдельные операции. Между ними может пройти какое-то время.
-    Для того, чтобы сохранить экземпляры, в которые ещё не загрузились файлы,
-    эта команда пропускает те экземпляры, которые созданы раньше, чем
-    `--min-age` минут назад. Значение параметра `--min-age` по умолчанию 
-    установлено в 60 минут.
+    Создание экземпляра файловой модели и загрузка в неё файла - это  две отдельные 
+    операции. Между ними может пройти какое-то время, особенно при использовании 
+    django-rq. Для того, чтобы сохранить экземпляры, в которые ещё не загрузились файлы,
+    эта команда пропускает те экземпляры, которые созданы недавно.  Временной интервал 
+    задаётся через параметр `--threshold` и по умолчанию составляет 24 часа.
     """
     verbosity = None
     database = DEFAULT_DB_ALIAS
@@ -58,14 +57,14 @@ class Command(BaseCommand):
             help="Do NOT prompt the user for input of any kind.",
         )
         parser.add_argument(
-            "--min-age",
+            "--threshold",
             type=int,
-            default=3600,
+            default=24 * 3600,
             help="Minimum instance age in seconds to look for",
         )
 
     def _get_start_time(self) -> datetime.datetime:
-        return now() - timedelta(seconds=self.options["min_age"])
+        return now() - timedelta(seconds=self.options["threshold"])
 
     def _clean_objects_with_invalid_ownership(self, model: Type[BacklinkModelMixin]):
         grouped_invalid_objects = defaultdict(list)

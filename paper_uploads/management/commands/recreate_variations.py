@@ -39,7 +39,7 @@ class Command(BaseCommand):
             "--item-type",
             nargs="?",
             help="Only look for variations in the specified CollectionItem. "
-                 "Use this argument only for Collection models.",
+                 "Use this argument for Collection models only.",
         )
         parser.add_argument(
             "--variations",
@@ -65,7 +65,7 @@ class Command(BaseCommand):
         self.database = options["database"]
         self.interactive = options["interactive"]
 
-        model = apps.get_model(self.options["model"])
+        model = apps.get_model(options["model"])
         if utils.is_collection(model):
             self.process_collection(model)
         else:
@@ -80,7 +80,7 @@ class Command(BaseCommand):
             raise RuntimeError("Unsupported collection item type: %s" % item_type)
 
         item_type_field = model.item_types[item_type]
-        if not utils.is_versatile_item(item_type_field):
+        if not utils.is_variations_allowed(item_type_field.model):
             raise RuntimeError("Specified collection item type has no variations: %s" % item_type)
 
         variations = self.options["variations"]
@@ -127,7 +127,7 @@ class Command(BaseCommand):
             raise RuntimeError("The argument 'field' is required")
 
         field = model._meta.get_field(fieldname)
-        if not utils.is_versatile_field(field):
+        if field.is_relation and not utils.is_variations_allowed(field.related_model):
             raise RuntimeError("Specified field has no variations: %s" % fieldname)
 
         variations = self.options["variations"]

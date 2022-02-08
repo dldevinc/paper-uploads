@@ -80,7 +80,7 @@ class Command(BaseCommand):
             raise RuntimeError("Unsupported collection item type: %s" % item_type)
 
         item_type_field = model.item_types[item_type]
-        if not utils.is_versatile_item(item_type_field):
+        if not utils.is_variations_allowed(item_type_field.model):
             raise RuntimeError("Specified collection item type has no variations: %s" % item_type)
 
         variations = self.options["variations"]
@@ -121,7 +121,7 @@ class Command(BaseCommand):
             raise RuntimeError("The argument 'field' is required")
 
         field = model._meta.get_field(fieldname)
-        if not utils.is_versatile_field(field):
+        if field.is_relation and not utils.is_variations_allowed(field.related_model):
             raise RuntimeError("Specified field has no variations: %s" % fieldname)
 
         variations = self.options["variations"]
