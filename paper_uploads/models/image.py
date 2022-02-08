@@ -4,6 +4,7 @@ from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
 
 from ..conf import settings
+from ..helpers import build_variations
 from ..storage import upload_storage
 from ..utils import filesizeformat
 from ..variations import PaperVariation
@@ -55,7 +56,8 @@ class UploadedImageBase(VersatileImageResourceMixin, BacklinkModelMixin, Editabl
         if not hasattr(self, "_variations_cache"):
             owner_field = self.get_owner_field()
             if owner_field is not None:
-                self._variations_cache = getattr(owner_field, "variations", {}).copy()
+                variation_config = getattr(owner_field, "variations", {}).copy()
+                self._variations_cache = build_variations(variation_config)
             else:
                 return {}
         return self._variations_cache

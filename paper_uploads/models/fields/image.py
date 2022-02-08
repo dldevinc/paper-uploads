@@ -10,7 +10,6 @@ from django.utils.crypto import get_random_string
 from filelock import FileLock, Timeout
 
 from ... import forms
-from ...helpers import build_variations
 from ...typing import VariationConfig
 from .base import FileResourceFieldBase
 
@@ -90,7 +89,7 @@ class VariationalFileField(models.FileField):
 class ImageField(FileResourceFieldBase):
     def __init__(self, *args, variations: VariationConfig = None, **kwargs):
         kwargs.setdefault("to", "paper_uploads.UploadedImage")
-        self.variations = build_variations(variations or {})
+        self.variations = variations or {}
         super().__init__(*args, **kwargs)
 
     def check(self, **kwargs):
