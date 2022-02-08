@@ -155,7 +155,7 @@ def iterate_variation_names(options: Dict[str, VariationConfig]) -> Iterator[str
 @lru_cache()
 def get_resource_model_trees(include_proxy=True) -> Tuple[Node]:
     """
-    Возвращает иерархии класов ресурсов в виде anytree.Node.
+    Возвращает иерархии классов ресурсов в виде anytree.Node.
     """
     from .models.base import Resource
 
@@ -196,8 +196,65 @@ def get_resource_model_trees(include_proxy=True) -> Tuple[Node]:
             return node
 
     # Перебор цепочек классов от самых длинных к самым коротким гарантирует,
-    # что родительские классы появятся в дереве раньше дочерних.
+    # что родительские классы появятся в дереве раньше дочерних. Это
+    # позволит использовать упрощенный алгоритм построения дерева.
     for model, bases in ordered_resource_bases:
+        base_parent = None
+        for base in reversed(bases):
+            base_parent = _get_or_create_node(base, base_parent)
+
+        _get_or_create_node(model, base_parent)
+
+    return tuple(trees)
+
+
+@lru_cache()
+def get_collection_trees(include_proxy=False) -> Tuple[Node]:
+    """
+    Возвращает иерархии классов коллекций в виде anytree.Node.
+    """
+    from .models.collection import Collection
+
+    collection_models = [
+        model
+        for model in apps.get_models()
+        if issubclass(model, Collection) and (include_proxy is True or model._meta.proxy is False)
+    ]
+
+    collection_bases = {
+        model: [
+            base
+            for base in model.__mro__[1:]
+            if base in collection_models
+        ]
+        for model in collection_models
+    }
+
+    # Иерархии коллекций, отсортированные по длине
+    ordered_collection_bases = sorted(collection_bases.items(), key=lambda p: len(p[1]), reverse=True)
+
+    # Ссылки на все узлы всех деревьев
+    node_map = {}
+
+    # Список корневых узлов деревьев
+    trees = []  # type: list[Node]
+
+    def _get_or_create_node(model, parent=None):
+        if model in node_map:
+            return node_map[model]
+        else:
+            node = Node(model.__name__, model=model, parent=parent)
+            node_map[model] = node
+
+            if parent is None:
+                trees.append(node)
+
+            return node
+
+    # Перебор цепочек классов от самых длинных к самым коротким гарантирует,
+    # что родительские классы появятся в дереве раньше дочерних. Это
+    # позволит использовать упрощенный алгоритм построения дерева.
+    for model, bases in ordered_collection_bases:
         base_parent = None
         for base in reversed(bases):
             base_parent = _get_or_create_node(base, base_parent)
