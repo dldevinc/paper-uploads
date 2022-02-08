@@ -14,6 +14,10 @@ class CustomUploadedFile(UploadedFileBase):
         blank=True
     )
 
+    def get_file_folder(self) -> str:
+        # change output folder
+        return "custom-files/%Y-%m-%d"
+
 
 class CustomUploadedImage(UploadedImageBase):
     change_form_class = "examples.custom_files.dialogs.ChangeCustomUploadedImageDialog"
@@ -25,6 +29,10 @@ class CustomUploadedImage(UploadedImageBase):
         blank=True
     )
 
+    def get_file_folder(self) -> str:
+        # change output folder
+        return "custom-images/%Y-%m-%d"
+
 
 class Page(models.Model):
     file = FileField(
@@ -35,7 +43,17 @@ class Page(models.Model):
     image = ImageField(
         _("image"),
         to=CustomUploadedImage,
-        blank=True
+        blank=True,
+        variations=dict(
+            desktop=dict(
+                size=(800, 0),
+                clip=False
+            ),
+            mobile=dict(
+                size=(0, 600),
+                clip=False
+            ),
+        )
     )
 
     class Meta:

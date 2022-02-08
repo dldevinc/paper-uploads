@@ -32,6 +32,16 @@ class Page(models.Model):
         _("image"),
         to=UploadedImageProxy,
         blank=True,
+        variations=dict(
+            desktop=dict(
+                size=(800, 0),
+                clip=False
+            ),
+            mobile=dict(
+                size=(0, 600),
+                clip=False
+            ),
+        )
     )
 
     class Meta:
