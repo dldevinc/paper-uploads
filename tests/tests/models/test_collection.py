@@ -207,15 +207,15 @@ class TestCollection:
         assert file1.get_collection_class() is FilesOnlyCollection
         assert file2.get_collection_class() is MixedCollection
 
-    def test_get_itemtype_field(self, storage):
+    def test_get_item_type_field(self, storage):
         image_item1 = storage.image_collection.get_items("image").first()
-        assert image_item1.get_itemtype_field() is ImagesOnlyCollection.item_types["image"]
+        assert image_item1.get_item_type_field() is ImagesOnlyCollection.item_types["image"]
 
         image_item2 = storage.global_collection.get_items("image").first()
-        assert image_item2.get_itemtype_field() is MixedCollection.item_types["image"]
+        assert image_item2.get_item_type_field() is MixedCollection.item_types["image"]
 
         svg_item = storage.global_collection.get_items("svg").first()
-        assert svg_item.get_itemtype_field() is MixedCollection.item_types["svg"]
+        assert svg_item.get_item_type_field() is MixedCollection.item_types["svg"]
 
     def test_attach_to_file_collection(self, storage):
         file_item = FileItem()

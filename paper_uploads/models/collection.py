@@ -341,12 +341,20 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=Coll
     def get_collection_class(self) -> Type[CollectionBase]:
         return self.collection_content_type.model_class()
 
-    def get_itemtype_field(self) -> Optional[CollectionItem]:
+    def get_item_type_field(self) -> Optional[CollectionItem]:
         collection_cls = self.get_collection_class()
         for name, field in collection_cls.item_types.items():
             if field.model is type(self):
                 return field
         return None
+
+    def get_itemtype_field(self) -> Optional[CollectionItem]:
+        warnings.warn(
+            "'get_itemtype_field' is deprecated in favor of 'get_item_type_field'",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self.get_item_type_field()
 
     def attach_to(self, collection: CollectionBase):
         """
@@ -579,7 +587,7 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         """
         if not hasattr(self, "_variations_cache"):
             collection_cls = self.get_collection_class()
-            itemtype_field = self.get_itemtype_field()
+            itemtype_field = self.get_item_type_field()
             variation_config = self.get_variation_config(collection_cls, itemtype_field)
             self._variations_cache = build_variations(variation_config)
         return self._variations_cache
