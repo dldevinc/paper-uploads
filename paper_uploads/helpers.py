@@ -153,7 +153,7 @@ def iterate_variation_names(options: Dict[str, VariationConfig]) -> Iterator[str
 
 
 @lru_cache()
-def get_resource_model_trees(include_proxy=True) -> Tuple[Node]:
+def get_resource_model_trees(include_proxy=False) -> Tuple[Node]:
     """
     Возвращает иерархии классов ресурсов в виде anytree.Node.
     """
