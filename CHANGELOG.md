@@ -5,6 +5,8 @@
 - Add an ability to specify `storage` and `upload_to` for particular fields.
 - Management commands rewritten.
 - Added `create_missing_variations` management command.
+### Bug Fixes
+- Fix a not creation variations with non-filesystem storages.
 
 ## [0.8.0rc3](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc3) - 2021-02-02
 ### ⚠ BREAKING CHANGES

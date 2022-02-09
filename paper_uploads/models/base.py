@@ -1,10 +1,11 @@
+import io
 import os
 import warnings
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Tuple, Union
 
 from django.core.files import File
-from django.core.files.storage import Storage
+from django.core.files.storage import FileSystemStorage, Storage
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
@@ -642,8 +643,17 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         Запись изображения в файловое хранилище
         """
         variation_file = self.get_variation_file(name)
-        with variation_file.open("wb") as fp:
-            variation.save(image, fp)
+
+        if isinstance(variation_file.storage, FileSystemStorage):
+            with variation_file.open("wb") as fp:
+                variation.save(image, fp)
+        else:
+            # Не все Storage-классы позволяют записывать контент с помощью вызовов
+            # `open()` и `write()`. Для них нужно использовать метод `save()`.
+            with io.BytesIO() as buffer:
+                variation.save(image, buffer)
+                content = File(buffer, name=variation_file.name)
+                variation_file.storage._save(variation_file.name, content)
 
     def recut(self, names: Iterable[str] = ()):
         """

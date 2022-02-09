@@ -69,10 +69,9 @@ class VariationalFileField(DynamicStorageFileField):
         именем, но разными расширением загружаются одновременно
         в разных процессах / потоках.
         """
-        buffer = File(io.BytesIO(b"dummy"))
         for variation in instance.get_variations().values():
             variation_filename = variation.get_output_filename(name)
-            storage.save(variation_filename, buffer)
+            storage.save(variation_filename, File(io.BytesIO(b"dummy")))
 
     def generate_filename(self, instance, filename):
         name = super().generate_filename(instance, filename)
