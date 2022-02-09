@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Tuple, Union
 
 from django.core.files import File
+from django.core.files.storage import Storage
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
@@ -438,7 +439,10 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
         Возвращает путь к папке, в которую будет сохранен файл.
         Результат вызова используется в параметре `upload_to` в случае Django storage.
         """
-        return ""
+        raise NotImplementedError
+
+    def get_file_storage(self) -> Storage:
+        raise NotImplementedError
 
     def get_file(self) -> FieldFile:
         raise NotImplementedError

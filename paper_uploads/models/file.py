@@ -1,25 +1,24 @@
 from typing import Any, Dict
 
+from django.core.files.storage import Storage
 from django.db import models
 from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
 
 from ..conf import settings
-from ..storage import upload_storage
+from ..storage import default_storage
 from ..utils import filesizeformat
 from .base import FileFieldResource
+from .fields.base import DynamicStorageFileField
 from .mixins import BacklinkModelMixin, EditableResourceMixin
-from .utils import generate_filename
 
 
 class UploadedFileBase(BacklinkModelMixin, EditableResourceMixin, FileFieldResource):
     change_form_class = "paper_uploads.forms.dialogs.file.ChangeUploadedFileDialog"
 
-    file = models.FileField(
+    file = DynamicStorageFileField(
         _("file"),
         max_length=255,
-        storage=upload_storage,
-        upload_to=generate_filename,
     )
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
@@ -34,7 +33,15 @@ class UploadedFileBase(BacklinkModelMixin, EditableResourceMixin, FileFieldResou
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
-        return settings.FILES_UPLOAD_TO
+        owner_field = self.get_owner_field()
+        return getattr(owner_field, "upload_to", "") or settings.FILES_UPLOAD_TO
+
+    def get_file_storage(self) -> Storage:
+        owner_field = self.get_owner_field()
+        storage = getattr(owner_field, "storage", None) or default_storage
+        if callable(storage):
+            storage = storage()
+        return storage
 
     def get_file(self) -> FieldFile:
         return self.file

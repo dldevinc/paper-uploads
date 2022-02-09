@@ -3,6 +3,7 @@ from typing import Dict
 from urllib.parse import quote
 
 from django.core.files import File
+from django.core.files.storage import Storage
 from django.db import models
 from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
@@ -10,7 +11,9 @@ from django.utils.translation import gettext_lazy as _
 from paper_uploads import helpers
 from paper_uploads.helpers import build_variations
 from paper_uploads.models.base import *
+from paper_uploads.models.fields.base import DynamicStorageFileField
 from paper_uploads.models.mixins import BacklinkModelMixin
+from paper_uploads.storage import default_storage
 from paper_uploads.variations import PaperVariation
 
 __all__ = [
@@ -84,7 +87,7 @@ class DummyFileResource(FileResource):
 
 
 class DummyFileFieldResource(FileFieldResource):
-    file = models.FileField(_("file"), upload_to="file_field")
+    file = DynamicStorageFileField(_("file"))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -96,15 +99,27 @@ class DummyFileFieldResource(FileFieldResource):
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field("file")
 
+    def get_file_folder(self) -> str:
+        return "file_field"
+
+    def get_file_storage(self) -> Storage:
+        return default_storage
+
 
 class DummyImageFieldResource(ImageFileResourceMixin, FileFieldResource):
-    image = models.FileField(_("file"), upload_to="image_field")
+    image = DynamicStorageFileField(_("file"))
 
     def get_file(self) -> FieldFile:
         return self.image
 
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field("image")
+
+    def get_file_folder(self) -> str:
+        return "image_field"
+
+    def get_file_storage(self) -> Storage:
+        return default_storage
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         variations = getattr(self, "_variations", None)
@@ -120,13 +135,19 @@ class DummyImageFieldResource(ImageFileResourceMixin, FileFieldResource):
 
 
 class DummyVersatileImageResource(VersatileImageResourceMixin, FileFieldResource):
-    file = models.FileField(_("file"), upload_to="versatile_image")
+    file = DynamicStorageFileField(_("file"))
 
     def get_file(self) -> FieldFile:
         return self.file
 
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field("file")
+
+    def get_file_folder(self) -> str:
+        return "versatile_image"
+
+    def get_file_storage(self) -> Storage:
+        return default_storage
 
     def get_variations(self) -> Dict[str, PaperVariation]:
         return build_variations({

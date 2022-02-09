@@ -1,17 +1,17 @@
 from typing import Any, Dict
 
+from django.core.files.storage import Storage
 from django.db.models.fields.files import FieldFile
 from django.utils.translation import gettext_lazy as _
 
 from ..conf import settings
 from ..helpers import build_variations
-from ..storage import upload_storage
+from ..storage import default_storage
 from ..utils import filesizeformat
 from ..variations import PaperVariation
 from .base import FileFieldResource, VersatileImageResourceMixin
 from .fields import VariationalFileField
 from .mixins import BacklinkModelMixin, EditableResourceMixin
-from .utils import generate_filename
 
 
 class UploadedImageBase(VersatileImageResourceMixin, BacklinkModelMixin, EditableResourceMixin, FileFieldResource):
@@ -20,8 +20,6 @@ class UploadedImageBase(VersatileImageResourceMixin, BacklinkModelMixin, Editabl
     file = VariationalFileField(
         _("file"),
         max_length=255,
-        storage=upload_storage,
-        upload_to=generate_filename,
     )
 
     class Meta(FileFieldResource.Meta):
@@ -30,7 +28,15 @@ class UploadedImageBase(VersatileImageResourceMixin, BacklinkModelMixin, Editabl
         verbose_name_plural = _("images")
 
     def get_file_folder(self) -> str:
-        return settings.IMAGES_UPLOAD_TO
+        owner_field = self.get_owner_field()
+        return getattr(owner_field, "upload_to", "") or settings.IMAGES_UPLOAD_TO
+
+    def get_file_storage(self) -> Storage:
+        owner_field = self.get_owner_field()
+        storage = getattr(owner_field, "storage", None) or default_storage
+        if callable(storage):
+            storage = storage()
+        return storage
 
     def get_file(self) -> FieldFile:
         return self.file

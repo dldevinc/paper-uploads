@@ -1,7 +1,11 @@
+import datetime
+import posixpath
 from typing import Any, Dict
 
 from django.core import checks
+from django.core.files.utils import validate_file_name
 from django.db import models
+from django.db.models.fields.files import FieldFile
 from django.db.models.signals import post_delete
 
 from ... import validators
@@ -94,6 +98,16 @@ class FileResourceFieldBase(ResourceFieldBase):
     """
     Базовый класс для полей, которые загружают файлы.
     """
+    def __init__(self, *args, upload_to="", storage=None, **kwargs):
+        self.storage = storage
+        self.upload_to = upload_to
+        super().__init__(*args, **kwargs)
+
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+        kwargs["storage"] = self.storage
+        kwargs["upload_to"] = self.upload_to
+        return name, path, args, kwargs
 
     def formfield(self, **kwargs):
         return super().formfield(**{"configuration": self.get_configuration(), **kwargs})
@@ -119,3 +133,50 @@ class FileResourceFieldBase(ResourceFieldBase):
                 config["maxImageWidth"] = v.width_limit
                 config["maxImageHeight"] = v.height_limit
         return config
+
+
+class DynamicStorageFieldFile(FieldFile):
+    def __init__(self, instance, field, name):
+        super(FieldFile, self).__init__(None, name)
+        self.instance = instance
+        self.field = field
+        self.storage = instance.get_file_storage()
+        self._committed = True
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.storage = self.instance.get_file_storage()
+
+
+class DynamicStorageFileField(models.FileField):
+    """
+    FileField, который получает значения `storage` и `upload_to`, вызывая методы
+    `get_file_storage()` и `get_file_folder()` экземпляра соответственно.
+    """
+    attr_class = DynamicStorageFieldFile
+
+    def __init__(self, verbose_name=None, name=None, upload_to='', storage=None, **kwargs):
+        self._primary_key_set_explicitly = "primary_key" in kwargs
+        kwargs.setdefault("max_length", 255)
+        super(models.FileField, self).__init__(verbose_name, name, **kwargs)
+
+    def check(self, **kwargs):
+        return [
+            *super(models.FileField, self).check(**kwargs),
+            *self._check_primary_key(),
+        ]
+
+    def deconstruct(self):
+        name, path, args, kwargs = super(models.FileField, self).deconstruct()
+        if kwargs.get("max_length") == 255:
+            del kwargs["max_length"]
+        return name, path, args, kwargs
+
+    def generate_filename(self, instance, filename):
+        storage = instance.get_file_storage()
+        upload_to = instance.get_file_folder()
+
+        dirname = datetime.datetime.now().strftime(upload_to)
+        filename = posixpath.join(dirname, filename)
+        filename = validate_file_name(filename, allow_relative_path=True)
+        return storage.generate_filename(filename)

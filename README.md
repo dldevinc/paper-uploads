@@ -44,8 +44,8 @@
 - [ImageField](#ImageField)
 - [UploadedImage](#UploadedImage)
   - [Variations](#Variations)
-  - [Versions](#Versions)
-  - [Redis Queue](#Redis Queue)
+    - [Versions](#Versions)
+    - [Redis Queue](#Redis Queue)
 - [Collections](#Collections)
   - [Collection items](#Collection-items)
   - [ImageCollection](#ImageCollection)
@@ -155,6 +155,28 @@ class Page(models.Model):
 
 Ограничения, наложенные этими валидаторами, отображаются в виджете: 
 ![image](https://user-images.githubusercontent.com/6928240/152322863-33108ef9-061c-4af5-8d0c-aeb5b467e04b.png)
+
+## Storage
+
+По умолчанию, все поля `paper-uploads` используют класс хранилища, указанный
+в параметре `PAPER_UPLOADS["STORAGE"]` в `settings.py`. Но вы можете указать 
+отдельный экземпляр хранилища для конкретного поля.
+
+```python
+from django.db import models
+from django.core.files.storage import FileSystemStorage
+from django.utils.translation import gettext_lazy as _
+from paper_uploads.models import FileField
+
+
+class Page(models.Model):
+    report = FileField(
+        _("file"), 
+        blank=True,
+        storage=FileSystemStorage(location="uploads/"),
+        upload_to="files/%Y-%m-%d"
+    )
+```
 
 ## UploadedFile
 
@@ -396,7 +418,7 @@ class Page(models.Model):
     )
 ```
 
-### Redis Queue
+#### Redis Queue
 
 При загрузке большого количества изображений процесс создания вариаций может занимать 
 значительное время. Эту работу можно вынести в отдельный процесс с помощью 

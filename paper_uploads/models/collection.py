@@ -10,6 +10,7 @@ from django.contrib.staticfiles.finders import find
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core import checks
 from django.core.files import File
+from django.core.files.storage import Storage
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
@@ -28,7 +29,7 @@ from ..helpers import (
     build_variations,
     iterate_variation_names,
 )
-from ..storage import upload_storage
+from ..storage import default_storage
 from ..variations import PaperVariation
 from .base import (
     FileFieldResource,
@@ -37,10 +38,10 @@ from .base import (
     VersatileImageResourceMixin,
 )
 from .fields import CollectionItem
+from .fields.base import DynamicStorageFileField
 from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
 from .mixins import BacklinkModelMixin, EditableResourceMixin
-from .utils import generate_filename
 
 __all__ = [
     "CollectionItemBase",
@@ -396,6 +397,13 @@ class CollectionFileItemBase(CollectionItemBase, FileFieldResource):
     def accept(cls, file: File) -> bool:
         raise NotImplementedError
 
+    def get_file_storage(self) -> Storage:
+        item_type_field = self.get_item_type_field()
+        storage = item_type_field.options.get("storage") or default_storage
+        if callable(storage):
+            storage = storage()
+        return storage
+
     @classmethod
     def file_supported(cls, file: File) -> bool:
         warnings.warn(
@@ -437,11 +445,9 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
     template_name = "paper_uploads/items/file.html"
     preview_template_name = "paper_uploads/items/preview/file.html"
 
-    file = models.FileField(
+    file = DynamicStorageFileField(
         _("file"),
         max_length=255,
-        storage=upload_storage,
-        upload_to=generate_filename,
     )
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
@@ -456,7 +462,8 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
-        return settings.COLLECTION_FILES_UPLOAD_TO
+        item_type_field = self.get_item_type_field()
+        return item_type_field.options.get("upload_to") or settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
         return self.file
@@ -483,11 +490,9 @@ class SVGItemBase(CollectionFileItemBase):
     template_name = "paper_uploads/items/svg.html"
     preview_template_name = "paper_uploads/items/preview/svg.html"
 
-    file = models.FileField(
+    file = DynamicStorageFileField(
         _("file"),
         max_length=255,
-        storage=upload_storage,
-        upload_to=generate_filename,
     )
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
@@ -502,7 +507,8 @@ class SVGItemBase(CollectionFileItemBase):
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
-        return settings.COLLECTION_FILES_UPLOAD_TO
+        item_type_field = self.get_item_type_field()
+        return item_type_field.options.get("upload_to") or settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
         return self.file
@@ -534,8 +540,6 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
     file = VariationalFileField(
         _("file"),
         max_length=255,
-        storage=upload_storage,
-        upload_to=generate_filename,
     )
 
     class Meta(CollectionItemBase.Meta):
@@ -553,7 +557,8 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         super()._setup_variation_files()
 
     def get_file_folder(self) -> str:
-        return settings.COLLECTION_IMAGES_UPLOAD_TO
+        item_type_field = self.get_item_type_field()
+        return item_type_field.options.get("upload_to") or settings.COLLECTION_IMAGES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
         return self.file
@@ -587,8 +592,8 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         """
         if not hasattr(self, "_variations_cache"):
             collection_cls = self.get_collection_class()
-            itemtype_field = self.get_item_type_field()
-            variation_config = self.get_variation_config(collection_cls, itemtype_field)
+            item_type_field = self.get_item_type_field()
+            variation_config = self.get_variation_config(collection_cls, item_type_field)
             self._variations_cache = build_variations(variation_config)
         return self._variations_cache
 
