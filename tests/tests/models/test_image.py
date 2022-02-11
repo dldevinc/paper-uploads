@@ -21,8 +21,6 @@ class TestUploadedImage(BacklinkModelMixin, TestVersatileImageResource):
     resource_extension = "jpg"
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    owner_app_label = "app"
-    owner_model_name = "imageexample"
     owner_fieldname = "image"
     owner_model = ImageExample
     file_field_name = "file"
@@ -32,12 +30,9 @@ class TestUploadedImage(BacklinkModelMixin, TestVersatileImageResource):
         storage.resource = UploadedImage(
             title="Calliphora",
             description="Calliphora is a genus of blow flies, also known as bottle flies",
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
         )
-        with open(NATURE_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp)
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(NATURE_FILEPATH)
         storage.resource.save()
 
         yield
@@ -78,20 +73,14 @@ class TestUploadedImageAttach(TestImageAttach):
 class TestUploadedImageRename(BacklinkModelMixin, TestImageRename):
     resource_class = UploadedImage
     resource_location = "images/%Y-%m-%d"
-    owner_app_label = "app"
-    owner_model_name = "imageexample"
     owner_fieldname = "image"
     owner_model = ImageExample
 
     @classmethod
     def init_class(cls, storage):
-        storage.resource = cls.resource_class(
-            owner_app_label="app",
-            owner_model_name="imageexample",
-            owner_fieldname="image"
-        )
-        with open(NATURE_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp, name="old_name.jpg")
+        storage.resource = cls.resource_class()
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(NATURE_FILEPATH, name="old_name.jpg")
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -119,20 +108,14 @@ class TestUploadedImageRename(BacklinkModelMixin, TestImageRename):
 class TestUploadedImageDelete(BacklinkModelMixin, TestImageDelete):
     resource_class = UploadedImage
     resource_location = "images/%Y-%m-%d"
-    owner_app_label = "app"
-    owner_model_name = "imageexample"
     owner_fieldname = "image"
     owner_model = ImageExample
 
     @classmethod
     def init_class(cls, storage):
-        storage.resource = cls.resource_class(
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
-        )
-        with open(NATURE_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp, name="old_name.jpg")
+        storage.resource = cls.resource_class()
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(NATURE_FILEPATH, name="old_name.jpg")
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -156,20 +139,14 @@ class TestUploadedImageEmpty(TestImageEmpty):
 
 
 class TestUploadedImageExists(BacklinkModelMixin):
-    owner_app_label = "app"
-    owner_model_name = "imageexample"
     owner_fieldname = "image"
     owner_model = ImageExample
 
     @classmethod
     def init_class(cls, storage):
-        storage.resource = UploadedImage(
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
-        )
-        with open(NATURE_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp)
+        storage.resource = UploadedImage()
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(NATURE_FILEPATH)
         storage.resource.save()
 
         yield

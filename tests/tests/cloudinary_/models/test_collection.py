@@ -261,8 +261,6 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
     resource_extension = 'mp3'
     resource_size = 2113939
     resource_checksum = '4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d'
-    owner_app_label = ''
-    owner_model_name = ''
     owner_fieldname = ''
     owner_model = None
     file_field_name = 'file'
@@ -601,8 +599,6 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
     resource_extension = 'jpg'
     resource_size = 672759
     resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
-    owner_app_label = ''
-    owner_model_name = ''
     owner_fieldname = ''
     owner_model = None
     file_field_name = 'file'

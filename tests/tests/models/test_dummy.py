@@ -20,8 +20,6 @@ from ..dummy import *
 
 
 class BacklinkModelMixin:
-    owner_app_label = "app"
-    owner_model_name = "model"
     owner_fieldname = "field"
     owner_model = None
 
@@ -30,10 +28,10 @@ class BacklinkModelMixin:
         pass
 
     def test_owner_app_label(self, storage):
-        assert storage.resource.owner_app_label == self.owner_app_label
+        assert storage.resource.owner_app_label == self.owner_model._meta.app_label
 
     def test_owner_model_name(self, storage):
-        assert storage.resource.owner_model_name == self.owner_model_name
+        assert storage.resource.owner_model_name == self.owner_model_name._meta.model_name
 
     def test_owner_fieldname(self, storage):
         assert storage.resource.owner_fieldname == self.owner_fieldname

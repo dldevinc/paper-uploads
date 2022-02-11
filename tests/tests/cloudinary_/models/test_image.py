@@ -28,8 +28,6 @@ class TestCloudinaryImage(CloudinaryFileResource):
     resource_extension = 'jpg'
     resource_size = 672759
     resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinaryimageexample'
     owner_fieldname = 'image'
     owner_model = CloudinaryImageExample
     file_field_name = 'file'
@@ -39,12 +37,9 @@ class TestCloudinaryImage(CloudinaryFileResource):
         storage.resource = CloudinaryImage(
             title='Calliphora',
             description='Calliphora is a genus of blow flies, also known as bottle flies',
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
         )
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp)
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(NATURE_FILEPATH)
         storage.resource.save()
         yield
         storage.resource.delete_file()
@@ -100,17 +95,13 @@ class TestCloudinaryImageAttach(TestImageFieldResourceAttach):
     resource_class = CloudinaryImage
     resource_size = 9711423
     resource_checksum = '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinaryimageexample'
     owner_fieldname = 'image'
+    owner_model = CloudinaryImageExample
 
     @contextmanager
     def get_resource(self):
-        resource = self.resource_class(
-            owner_app_label=self.owner_app_label,
-            owner_model_name=self.owner_model_name,
-            owner_fieldname=self.owner_fieldname
-        )
+        resource = self.resource_class()
+        resource.set_owner_field(self.owner_model, self.owner_fieldname)
         try:
             yield resource
         finally:
@@ -126,20 +117,15 @@ class TestCloudinaryImageAttach(TestImageFieldResourceAttach):
 class TestCloudinaryImageRename(TestImageFieldResourceRename):
     resource_class = CloudinaryImage
     resource_location = 'images/%Y-%m-%d'
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinaryimageexample'
     owner_fieldname = 'image'
+    owner_model = CloudinaryImageExample
 
     @classmethod
     def init_class(cls, storage):
         storage.uid = get_random_string(5)
-        storage.resource = cls.resource_class(
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
-        )
-        with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp, name='old_image_name_{}.jpg'.format(storage.uid))
+        storage.resource = cls.resource_class()
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(CALLIPHORA_FILEPATH, name='old_image_name_{}.jpg'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -194,19 +180,14 @@ class TestCloudinaryImageRename(TestImageFieldResourceRename):
 class TestCloudinaryImageDelete(TestImageFieldResourceDelete):
     resource_class = CloudinaryImage
     resource_location = 'images/%Y-%m-%d'
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinaryimageexample'
     owner_fieldname = 'image'
+    owner_model = CloudinaryImageExample
 
     @classmethod
     def init_class(cls, storage):
-        storage.resource = cls.resource_class(
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
-        )
-        with open(CALLIPHORA_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp, name='old_name.jpg')
+        storage.resource = cls.resource_class()
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(CALLIPHORA_FILEPATH, name='old_name.jpg')
         storage.resource.save()
 
         file = storage.resource.get_file()

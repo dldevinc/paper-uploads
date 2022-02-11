@@ -31,21 +31,15 @@ class TestCloudinaryMedia(BacklinkModelMixin, CloudinaryFileResource):
     resource_extension = 'mp3'
     resource_size = 2113939
     resource_checksum = '4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d'
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinarymediaexample'
     owner_fieldname = 'media'
     owner_model = CloudinaryMediaExample
     file_field_name = 'file'
 
     @classmethod
     def init_class(cls, storage):
-        storage.resource = CloudinaryMedia(
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
-        )
-        with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp)
+        storage.resource = CloudinaryMedia()
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(AUDIO_FILEPATH)
         storage.resource.save()
         yield
         storage.resource.delete_file()
@@ -223,21 +217,15 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
 class TestCloudinaryMediaRename(BacklinkModelMixin, TestFileFieldResourceRename):
     resource_class = CloudinaryMedia
     resource_location = 'files/%Y-%m-%d'
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinarymediaexample'
     owner_fieldname = 'media'
     owner_model = CloudinaryMediaExample
 
     @classmethod
     def init_class(cls, storage):
         storage.uid = get_random_string(5)
-        storage.resource = cls.resource_class(
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
-        )
-        with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp, name='old_media_name_{}.mp3'.format(storage.uid))
+        storage.resource = cls.resource_class()
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(AUDIO_FILEPATH, name='old_media_name_{}.mp3'.format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -293,20 +281,14 @@ class TestCloudinaryMediaRename(BacklinkModelMixin, TestFileFieldResourceRename)
 class TestCloudinaryMediaDelete(BacklinkModelMixin, TestFileFieldResourceDelete):
     resource_class = CloudinaryMedia
     resource_location = 'files/%Y-%m-%d'
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinarymediaexample'
     owner_fieldname = 'media'
     owner_model = CloudinaryMediaExample
 
     @classmethod
     def init_class(cls, storage):
-        storage.resource = cls.resource_class(
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
-        )
-        with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp, name='old_name.mp3')
+        storage.resource = cls.resource_class()
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(AUDIO_FILEPATH, name='old_name.mp3')
         storage.resource.save()
 
         file = storage.resource.get_file()
