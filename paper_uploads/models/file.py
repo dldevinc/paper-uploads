@@ -46,9 +46,6 @@ class UploadedFileBase(BacklinkModelMixin, EditableResourceMixin, FileFieldResou
     def get_file(self) -> FieldFile:
         return self.file
 
-    def set_file(self, value):
-        self.file = value
-
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field("file")
 

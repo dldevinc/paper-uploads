@@ -229,14 +229,6 @@ class FileResource(FileProxyMixin, Resource):
     def get_file(self) -> File:
         raise NotImplementedError
 
-    def set_file(self, value):
-        """
-        Обновление файла в текущей модели при переименовании / удалении.
-        Применяется в Cloudinary, т.к. файловые storage устанавливают
-        значения поля самостоятельно.
-        """
-        raise NotImplementedError
-
     def get_file_field(self):
         """
         Получение файлового поля модели.
