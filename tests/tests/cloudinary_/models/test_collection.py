@@ -40,7 +40,7 @@ from .test_base import CloudinaryFileResource
 class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
     resource_url = '/media/collections/files/%Y-%m-%d'
     resource_location = 'collections/files/%Y-%m-%d'
-    resource_name = 'table'
+    resource_basename = 'table'
     resource_extension = 'xls'
     resource_size = 8704
     resource_checksum = 'c9c8ad905aa5142731b1e8ab34d5862f871627fa7ad8005264494c2489d2061e'
@@ -67,7 +67,7 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
         assert storage.resource.get_file_folder() == self.resource_location
 
     def test_display_name(self, storage):
-        assert storage.resource.display_name == self.resource_name
+        assert storage.resource.display_name == self.resource_basename
 
     def test_item_type(self, storage):
         assert storage.resource.type == 'file'
@@ -96,10 +96,10 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
             'id': 1,
             'collectionId': 1,
             'itemType': 'file',
-            'name': self.resource_name,
+            'name': self.resource_basename,
             'extension': self.resource_extension,
             'caption': '{}.{}'.format(
-                self.resource_name,
+                self.resource_basename,
                 self.resource_extension
             ),
             'size': self.resource_size,
@@ -257,7 +257,7 @@ class TestFileItemEmpty(TestFileFieldResourceEmpty):
 class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
     resource_url = '/media/collections/files/%Y-%m-%d'
     resource_location = 'collections/files/%Y-%m-%d'
-    resource_name = 'audio'
+    resource_basename = 'audio'
     resource_extension = 'mp3'
     resource_size = 2113939
     resource_checksum = '4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d'
@@ -288,7 +288,7 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
         assert storage.resource.get_file_folder() == self.resource_location
 
     def test_display_name(self, storage):
-        assert storage.resource.display_name == self.resource_name
+        assert storage.resource.display_name == self.resource_basename
 
     def test_item_type(self, storage):
         assert storage.resource.type == 'media'
@@ -317,10 +317,10 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
             'id': 1,
             'collectionId': 1,
             'itemType': 'media',
-            'name': self.resource_name,
+            'name': self.resource_basename,
             'extension': self.resource_extension,
             'caption': '{}.{}'.format(
-                self.resource_name,
+                self.resource_basename,
                 self.resource_extension
             ),
             'size': self.resource_size,
@@ -597,7 +597,7 @@ class TestMediaItemEmpty(TestFileFieldResourceEmpty):
 class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
     resource_url = 'collections/images/%Y-%m-%d'
     resource_location = 'collections/images/%Y-%m-%d'
-    resource_name = 'Nature Tree'
+    resource_basename = 'Nature Tree'
     resource_extension = 'jpg'
     resource_size = 672759
     resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
@@ -650,10 +650,10 @@ class TestImageItem(CollectionItemMixin, CloudinaryFileResource):
             'id': 1,
             'collectionId': 1,
             'itemType': 'image',
-            'name': self.resource_name,
+            'name': self.resource_basename,
             'extension': self.resource_extension,
             'caption': '{}.{}'.format(
-                self.resource_name,
+                self.resource_basename,
                 self.resource_extension
             ),
             'size': self.resource_size,

@@ -24,7 +24,7 @@ from .test_base import CloudinaryFileResource
 class TestCloudinaryImage(CloudinaryFileResource):
     resource_url = '/media/images/%Y-%m-%d'
     resource_location = 'images/%Y-%m-%d'
-    resource_name = 'Nature Tree'
+    resource_basename = 'Nature Tree'
     resource_extension = 'jpg'
     resource_size = 672759
     resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
@@ -71,10 +71,10 @@ class TestCloudinaryImage(CloudinaryFileResource):
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             'id': 1,
-            'name': self.resource_name,
+            'name': self.resource_basename,
             'extension': self.resource_extension,
             'caption': '{}.{}'.format(
-                self.resource_name,
+                self.resource_basename,
                 self.resource_extension
             ),
             'size': self.resource_size,

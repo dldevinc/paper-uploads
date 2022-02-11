@@ -27,7 +27,7 @@ from .test_base import CloudinaryFileResource
 class TestCloudinaryMedia(BacklinkModelMixin, CloudinaryFileResource):
     resource_url = '/media/files/%Y-%m-%d'
     resource_location = 'files/%Y-%m-%d'
-    resource_name = 'audio'
+    resource_basename = 'audio'
     resource_extension = 'mp3'
     resource_size = 2113939
     resource_checksum = '4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d'
@@ -55,7 +55,7 @@ class TestCloudinaryMedia(BacklinkModelMixin, CloudinaryFileResource):
         assert storage.resource.get_file_folder() == self.resource_location
 
     def test_display_name(self, storage):
-        assert storage.resource.display_name == self.resource_name
+        assert storage.resource.display_name == self.resource_basename
 
     def test_type(self, storage):
         file_field = storage.resource.get_file_field()
@@ -75,10 +75,10 @@ class TestCloudinaryMedia(BacklinkModelMixin, CloudinaryFileResource):
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             'id': 1,
-            'name': self.resource_name,
+            'name': self.resource_basename,
             'extension': self.resource_extension,
             'caption': '{}.{}'.format(
-                self.resource_name,
+                self.resource_basename,
                 self.resource_extension
             ),
             'size': self.resource_size,

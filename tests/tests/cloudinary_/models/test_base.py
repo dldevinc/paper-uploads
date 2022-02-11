@@ -14,7 +14,7 @@ class TestCloudinaryFieldFile:
     resource_type = 'raw'
 
     upload_file = EXCEL_FILEPATH
-    resource_name = 'table'
+    resource_basename = 'table'
     resource_ext = '.xls'
     resource_size = 8704
     resource_checksum = 'c9c8ad905aa5142731b1e8ab34d5862f871627fa7ad8005264494c2489d2061e'
@@ -42,13 +42,13 @@ class TestCloudinaryFieldFile:
 
     def test_public_id(self, storage):
         assert storage.resource.public_id == utils.get_target_filepath(
-            'data/now/{name}{{suffix}}{ext}'.format(name=self.resource_name, ext=self.resource_ext),
+            'data/now/{name}{{suffix}}{ext}'.format(name=self.resource_basename, ext=self.resource_ext),
             storage.resource.public_id
         )
 
     def test_name(self, storage):
         assert storage.file.name == utils.get_target_filepath(
-            'data/now/{name}{{suffix}}{ext}'.format(name=self.resource_name, ext=self.resource_ext),
+            'data/now/{name}{{suffix}}{ext}'.format(name=self.resource_basename, ext=self.resource_ext),
             storage.resource.public_id
         )
 
@@ -96,7 +96,7 @@ class TestCloudinaryFieldFile:
             ext = '.' + storage.file.metadata['format']
 
         assert storage.file.url.endswith(utils.get_target_filepath(
-            '/data/now/{name}{{suffix}}{ext}'.format(name=self.resource_name, ext=ext),
+            '/data/now/{name}{{suffix}}{ext}'.format(name=self.resource_basename, ext=ext),
             storage.resource.public_id
         ))
 
@@ -142,7 +142,7 @@ class TestCloudinaryFieldFile:
 class TestCloudinaryImage(TestCloudinaryFieldFile):
     resource_type = 'image'
     upload_file = NATURE_FILEPATH
-    resource_name = 'Nature_Tree'
+    resource_basename = 'Nature_Tree'
     resource_ext = ''  # no extension for image
     resource_size = 672759
     resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
@@ -167,7 +167,7 @@ class TestCloudinaryImage(TestCloudinaryFieldFile):
 class TestCloudinaryMedia(TestCloudinaryFieldFile):
     resource_type = 'video'
     upload_file = AUDIO_FILEPATH
-    resource_name = 'audio'
+    resource_basename = 'audio'
     resource_ext = ''  # no extension for media
     resource_size = 2113939
     resource_checksum = '4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d'

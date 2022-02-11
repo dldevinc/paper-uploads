@@ -24,7 +24,7 @@ from .test_base import CloudinaryFileResource
 class TestCloudinaryFile(BacklinkModelMixin, CloudinaryFileResource):
     resource_url = '/media/files/%Y-%m-%d'
     resource_location = 'files/%Y-%m-%d'
-    resource_name = 'Nature Tree'
+    resource_basename = 'Nature Tree'
     resource_extension = 'Jpeg'
     resource_size = 672759
     resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
@@ -52,7 +52,7 @@ class TestCloudinaryFile(BacklinkModelMixin, CloudinaryFileResource):
         assert storage.resource.get_file_folder() == self.resource_location
 
     def test_display_name(self, storage):
-        assert storage.resource.display_name == self.resource_name
+        assert storage.resource.display_name == self.resource_basename
 
     def test_type(self, storage):
         file_field = storage.resource.get_file_field()
@@ -72,10 +72,10 @@ class TestCloudinaryFile(BacklinkModelMixin, CloudinaryFileResource):
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             'id': 1,
-            'name': self.resource_name,
+            'name': self.resource_basename,
             'extension': self.resource_extension,
             'caption': '{}.{}'.format(
-                self.resource_name,
+                self.resource_basename,
                 self.resource_extension
             ),
             'size': self.resource_size,

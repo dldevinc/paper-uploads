@@ -327,7 +327,7 @@ class CollectionItemMixin:
 
     def test_get_caption(self, storage):
         assert storage.resource.get_caption() == "{}.{}".format(
-            self.resource_name,  # noqa: F821
+            self.resource_basename,  # noqa: F821
             self.resource_extension  # noqa: F821
         )
 
@@ -350,7 +350,7 @@ class TestAttachWrongItemClassToCollection:
 class TestFileItem(CollectionItemMixin, TestFileFieldResource):
     resource_url = "/media/collections/files/%Y-%m-%d"
     resource_location = "collections/files/%Y-%m-%d"
-    resource_name = "Nature Tree"
+    resource_basename = "Nature Tree"
     resource_extension = "Jpeg"
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
@@ -377,7 +377,7 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
         assert storage.resource.get_file_folder() == self.resource_location
 
     def test_display_name(self, storage):
-        assert storage.resource.display_name == self.resource_name
+        assert storage.resource.display_name == self.resource_basename
 
     def test_item_type(self, storage):
         assert storage.resource.type == "file"
@@ -390,10 +390,10 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
             "id": 1,
             "collectionId": 1,
             "itemType": "file",
-            "name": self.resource_name,
+            "name": self.resource_basename,
             "extension": self.resource_extension,
             "caption": "{}.{}".format(
-                self.resource_name,
+                self.resource_basename,
                 self.resource_extension
             ),
             "size": self.resource_size,
@@ -534,7 +534,7 @@ class TestFileItemExists:
 class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
     resource_url = "/media/collections/files/%Y-%m-%d"
     resource_location = "collections/files/%Y-%m-%d"
-    resource_name = "Meditation"
+    resource_basename = "Meditation"
     resource_extension = "svg"
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
@@ -588,10 +588,10 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
             "id": 1,
             "collectionId": 1,
             "itemType": "svg",
-            "name": self.resource_name,
+            "name": self.resource_basename,
             "extension": self.resource_extension,
             "caption": "{}.{}".format(
-                self.resource_name,
+                self.resource_basename,
                 self.resource_extension
             ),
             "size": self.resource_size,
@@ -736,7 +736,7 @@ class TestSVGItemExists:
 class TestImageItem(CollectionItemMixin, TestFileFieldResource):
     resource_url = "/media/collections/images/%Y-%m-%d"
     resource_location = "collections/images/%Y-%m-%d"
-    resource_name = "Nature Tree"
+    resource_basename = "Nature Tree"
     resource_extension = "jpg"
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
@@ -790,10 +790,10 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
             "id": 1,
             "collectionId": 1,
             "itemType": "image",
-            "name": self.resource_name,
+            "name": self.resource_basename,
             "extension": self.resource_extension,
             "caption": "{}.{}".format(
-                self.resource_name,
+                self.resource_basename,
                 self.resource_extension
             ),
             "size": self.resource_size,

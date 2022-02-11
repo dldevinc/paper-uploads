@@ -133,7 +133,7 @@ class TestResource:
 
 
 class TestFileResource(TestResource):
-    resource_name = "Nature Tree"
+    resource_basename = "Nature Tree"
     resource_extension = "Jpeg"
     resource_size = 28
     resource_checksum = "5d8ec227d0d8794d4d99dfbbdb9ad3b479c16952ad4ef69252644d9c404543a5"
@@ -141,7 +141,7 @@ class TestFileResource(TestResource):
     @classmethod
     def init_class(cls, storage):
         storage.resource = DummyFileResource.objects.create(
-            basename=cls.resource_name,
+            basename=cls.resource_basename,
             extension=cls.resource_extension,
             size=cls.resource_size,
         )
@@ -151,12 +151,12 @@ class TestFileResource(TestResource):
 
     def test_name(self, storage):
         assert storage.resource.name == "{}.{}".format(
-            self.resource_name,
+            self.resource_basename,
             self.resource_extension
         )
 
     def test_basename(self, storage):
-        assert storage.resource.basename == self.resource_name
+        assert storage.resource.basename == self.resource_basename
 
     def test_extension(self, storage):
         assert storage.resource.extension == self.resource_extension
@@ -183,10 +183,10 @@ class TestFileResource(TestResource):
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             "id": 1,
-            "name": self.resource_name,
+            "name": self.resource_basename,
             "extension": self.resource_extension,
             "caption": "{}.{}".format(
-                self.resource_name,
+                self.resource_basename,
                 self.resource_extension
             ),
             "size": self.resource_size,
@@ -207,7 +207,7 @@ class TestFileResource(TestResource):
 
     def test_get_caption(self, storage):
         assert storage.resource.get_caption() == "{}.{}".format(
-            self.resource_name,
+            self.resource_basename,
             self.resource_extension
         )
 
@@ -546,7 +546,7 @@ class TestFileResourceSignals:
 class TestFileFieldResource(TestFileResource):
     resource_url = "/media/file_field"
     resource_location = "file_field"
-    resource_name = "Nature Tree"
+    resource_basename = "Nature Tree"
     resource_extension = "Jpeg"
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
@@ -656,10 +656,10 @@ class TestFileFieldResource(TestFileResource):
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             "id": 1,
-            "name": self.resource_name,
+            "name": self.resource_basename,
             "extension": self.resource_extension,
             "caption": "{}.{}".format(
-                self.resource_name,
+                self.resource_basename,
                 self.resource_extension
             ),
             "size": self.resource_size,
@@ -933,7 +933,7 @@ class TestFileFieldResourceEmpty:
 class TestImageFieldResource(TestFileFieldResource):
     resource_url = "/media/image_field"
     resource_location = "image_field"
-    resource_name = "Nature Tree"
+    resource_basename = "Nature Tree"
     resource_extension = "jpg"
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
@@ -981,10 +981,10 @@ class TestImageFieldResource(TestFileFieldResource):
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             "id": 1,
-            "name": self.resource_name,
+            "name": self.resource_basename,
             "extension": self.resource_extension,
             "caption": "{}.{}".format(
-                self.resource_name,
+                self.resource_basename,
                 self.resource_extension
             ),
             "size": self.resource_size,
@@ -1044,7 +1044,7 @@ class TestImageFieldResourceEmpty(TestFileFieldResourceEmpty):
 class TestVersatileImageResource(TestImageFieldResource):
     resource_url = "/media/versatile_image"
     resource_location = "versatile_image"
-    resource_name = "Nature Tree"
+    resource_basename = "Nature Tree"
     resource_extension = "jpg"
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
@@ -1067,10 +1067,10 @@ class TestVersatileImageResource(TestImageFieldResource):
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             "id": 1,
-            "name": self.resource_name,
+            "name": self.resource_basename,
             "extension": self.resource_extension,
             "caption": "{}.{}".format(
-                self.resource_name,
+                self.resource_basename,
                 self.resource_extension
             ),
             "size": self.resource_size,
