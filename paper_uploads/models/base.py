@@ -205,7 +205,7 @@ class FileResource(FileProxyMixin, Resource):
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
-            "name": self.basename,
+            "name": self.basename,   # TODO: rename to basename
             "extension": self.extension,
             "caption": self.get_caption(),
             "size": self.size,
@@ -232,6 +232,8 @@ class FileResource(FileProxyMixin, Resource):
     def get_file_field(self):
         """
         Получение файлового поля модели.
+
+        TODO: перенести метод ниже по иерархии
         """
         raise NotImplementedError
 
