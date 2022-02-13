@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from django.core.files import File
 
-from app.models.dummy import *
+from app.models import *
 from paper_uploads import helpers, signals
 from paper_uploads.exceptions import UnsupportedResource
 from paper_uploads.files import VariationFile
@@ -728,6 +728,23 @@ class TestFileFieldResourceAttach(TestFileResourceAttach):
 class TestFileFieldResourceRename(TestFileResourceRename):
     resource_class = DummyFileFieldResource
 
+    @classmethod
+    def init_class(cls, storage):
+        storage.resource = cls.resource_class()
+        storage.resource.attach(cls.resource_attachment, name=cls.old_name)
+        storage.resource.save()
+
+        storage.old_modified_at = storage.resource.modified_at
+        storage.old_resource_name = storage.resource.name
+        storage.old_resource_path = storage.resource.path
+
+        storage.resource.rename(cls.new_name)
+        yield
+
+        os.unlink(storage.old_resource_path)
+        storage.resource.delete_file()
+        storage.resource.delete()
+
     def test_old_file_existence(self, storage):
         file_storage = storage.resource.get_file_storage()
         assert file_storage.exists(storage.old_resource_name) is True
@@ -1011,6 +1028,29 @@ class TestVersatileImageAttach(TestImageFieldResourceAttach):
 
 class TestVersatileImageRename(TestImageFieldResourceRename):
     resource_class = DummyVersatileImageResource
+
+    @classmethod
+    def init_class(cls, storage):
+        storage.resource = cls.resource_class()
+        storage.resource.attach(cls.resource_attachment, name=cls.old_name)
+        storage.resource.save()
+
+        storage.old_modified_at = storage.resource.modified_at
+        storage.old_resource_name = storage.resource.name
+        storage.old_resource_path = storage.resource.path
+        storage.old_resource_desktop_path = storage.resource.desktop.path
+        storage.old_resource_mobile_path = storage.resource.mobile.path
+        storage.old_resource_square_path = storage.resource.square.path
+
+        storage.resource.rename(cls.new_name)
+        yield
+
+        os.unlink(storage.old_resource_path)
+        os.unlink(storage.old_resource_desktop_path)
+        os.unlink(storage.old_resource_mobile_path)
+        os.unlink(storage.old_resource_square_path)
+        storage.resource.delete_file()
+        storage.resource.delete()
 
 
 class TestVersatileImageDelete(TestImageFieldResourceDelete):

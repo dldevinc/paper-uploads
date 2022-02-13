@@ -33,6 +33,7 @@ class DummyFileResource(FileResource):
     """
     Сохраняет файлы в папку /tmp/
     """
+
     @property
     def name(self) -> str:
         if not self.basename:

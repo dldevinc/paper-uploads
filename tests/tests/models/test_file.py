@@ -1,3 +1,5 @@
+import os
+
 from examples.fields.standard.models import Page
 
 from paper_uploads.models import UploadedFile
@@ -82,10 +84,12 @@ class TestUploadedFileRename(BacklinkModelTestMixin, TestFileFieldResourceRename
 
         storage.old_modified_at = storage.resource.modified_at
         storage.old_resource_name = storage.resource.name
+        storage.old_resource_path = storage.resource.path
 
         storage.resource.rename(cls.new_name)
         yield
 
+        os.unlink(storage.old_resource_path)
         storage.resource.delete_file()
         storage.resource.delete()
 
