@@ -334,7 +334,8 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=Coll
         return {
             **super().as_dict(),
             "collectionId": self.collection_id,
-            "itemType": self.type,
+            "itemType": self.type,  # deprecated
+            "type": self.type,
             "order": self.order,
             "preview": self.render_preview(),
         }
