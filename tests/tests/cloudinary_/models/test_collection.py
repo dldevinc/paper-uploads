@@ -38,13 +38,13 @@ from .test_base import CloudinaryFileResource
 
 
 class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
-    resource_url = '/media/collections/files/%Y-%m-%d'
-    resource_location = 'collections/files/%Y-%m-%d'
-    resource_basename = 'table'
-    resource_extension = 'xls'
+    resource_url = "/media/collections/files/%Y-%m-%d"
+    resource_location = "collections/files/%Y-%m-%d"
+    resource_basename = "table"
+    resource_extension = "xls"
     resource_size = 8704
-    resource_checksum = 'c9c8ad905aa5142731b1e8ab34d5862f871627fa7ad8005264494c2489d2061e'
-    file_field_name = 'file'
+    resource_checksum = "c9c8ad905aa5142731b1e8ab34d5862f871627fa7ad8005264494c2489d2061e"
+    file_field_name = "file"
     collection_class = CloudinaryCompleteCollection
 
     @classmethod
@@ -53,7 +53,7 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
 
         storage.resource = CloudinaryFileItem()
         storage.resource.attach_to(storage.collection)
-        with open(EXCEL_FILEPATH, 'rb') as fp:
+        with open(EXCEL_FILEPATH, "rb") as fp:
             storage.resource.attach(fp)
         storage.resource.save()
 
@@ -70,21 +70,21 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
         assert storage.resource.display_name == self.resource_basename
 
     def test_item_type(self, storage):
-        assert storage.resource.type == 'file'
+        assert storage.resource.type == "file"
 
     def test_type(self, storage):
         file_field = storage.resource.get_file_field()
-        assert file_field.type == 'private'
-        assert file_field.resource_type == 'raw'
+        assert file_field.type == "private"
+        assert file_field.resource_type == "raw"
 
     def test_public_id(self, storage):
         public_id = storage.resource.get_file().public_id
-        pattern = posixpath.join(self.resource_location, 'table{suffix}.xls')
+        pattern = posixpath.join(self.resource_location, "table{suffix}.xls")
         assert public_id == utils.get_target_filepath(pattern, public_id)
 
     def test_name(self, storage):
         file_name = storage.resource.name
-        pattern = posixpath.join(self.resource_location, 'table{suffix}.xls')
+        pattern = posixpath.join(self.resource_location, "table{suffix}.xls")
         assert file_name == utils.get_target_filepath(pattern, file_name)
 
     def test_read(self, storage):
@@ -93,38 +93,38 @@ class TestFileItem(CollectionItemMixin, CloudinaryFileResource):
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
-            'id': 1,
-            'collectionId': 1,
-            'itemType': 'file',
-            'name': self.resource_basename,
-            'extension': self.resource_extension,
-            'caption': '{}.{}'.format(
+            "id": 1,
+            "collectionId": 1,
+            "itemType": "file",
+            "name": self.resource_basename,
+            "extension": self.resource_extension,
+            "caption": "{}.{}".format(
                 self.resource_basename,
                 self.resource_extension
             ),
-            'size': self.resource_size,
-            'order': 0,
-            'preview': render_to_string(
-                'paper_uploads/items/preview/file.html',
+            "size": self.resource_size,
+            "order": 0,
+            "preview": render_to_string(
+                "paper_uploads/items/preview/file.html",
                 storage.resource.get_preview_context()
             ),
-            'url': storage.resource.get_file_url(),
-            'created': storage.resource.created_at.isoformat(),
-            'modified': storage.resource.modified_at.isoformat(),
-            'uploaded': storage.resource.uploaded_at.isoformat(),
+            "url": storage.resource.get_file_url(),
+            "created": storage.resource.created_at.isoformat(),
+            "modified": storage.resource.modified_at.isoformat(),
+            "uploaded": storage.resource.uploaded_at.isoformat(),
         }
 
     def test_accept(self, storage):
-        with open(EXCEL_FILEPATH, 'rb') as fp:
+        with open(EXCEL_FILEPATH, "rb") as fp:
             assert storage.resource.accept(File(fp)) is True
 
-        with open(NATURE_FILEPATH, 'rb') as fp:
+        with open(NATURE_FILEPATH, "rb") as fp:
             assert storage.resource.accept(File(fp)) is True
 
-        with open(MEDITATION_FILEPATH, 'rb') as fp:
+        with open(MEDITATION_FILEPATH, "rb") as fp:
             assert storage.resource.accept(File(fp)) is True
 
-        with open(AUDIO_FILEPATH, 'rb') as fp:
+        with open(AUDIO_FILEPATH, "rb") as fp:
             assert storage.resource.accept(File(fp)) is True
 
 
@@ -147,7 +147,7 @@ class TestFileItemAttach(TestFileFieldResourceAttach):
 
 class TestFileItemRename(TestFileFieldResourceRename):
     resource_class = CloudinaryFileItem
-    resource_location = 'collections/files/%Y-%m-%d'
+    resource_location = "collections/files/%Y-%m-%d"
     collection_class = CloudinaryFileCollection
 
     @classmethod
@@ -156,13 +156,13 @@ class TestFileItemRename(TestFileFieldResourceRename):
         storage.uid = get_random_string(5)
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp, name='old_cfile_name_{}.jpg'.format(storage.uid))
+        with open(NATURE_FILEPATH, "rb") as fp:
+            storage.resource.attach(fp, name="old_cfile_name_{}.jpg".format(storage.uid))
         storage.resource.save()
 
         file = storage.resource.get_file()
         storage.old_source_name = file.name
-        storage.resource.rename('new_cfile_name_{}.png'.format(storage.uid))
+        storage.resource.rename("new_cfile_name_{}.png".format(storage.uid))
 
         yield
 
@@ -188,27 +188,27 @@ class TestFileItemRename(TestFileFieldResourceRename):
 
     def test_old_file_name(self, storage):
         assert storage.old_source_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_cfile_name_{}{{suffix}}.jpg'.format(storage.uid)),
+            posixpath.join(self.resource_location, "old_cfile_name_{}{{suffix}}.jpg".format(storage.uid)),
             storage.old_source_name
         )
 
     def test_new_file_name(self, storage):
         file = storage.resource.get_file()
         assert file.name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'new_cfile_name_{}{{suffix}}.png'.format(storage.uid)),
+            posixpath.join(self.resource_location, "new_cfile_name_{}{{suffix}}.png".format(storage.uid)),
             file.name
         )
 
     def test_basename(self, storage):
         assert storage.resource.basename == utils.get_target_filepath(
-            'new_cfile_name_{}{{suffix}}'.format(storage.uid),
+            "new_cfile_name_{}{{suffix}}".format(storage.uid),
             storage.resource.basename
         )
 
 
 class TestFileItemDelete(TestFileFieldResourceDelete):
     resource_class = CloudinaryFileItem
-    resource_location = 'collections/files/%Y-%m-%d'
+    resource_location = "collections/files/%Y-%m-%d"
     collection_class = CloudinaryFileCollection
 
     @classmethod
@@ -216,8 +216,8 @@ class TestFileItemDelete(TestFileFieldResourceDelete):
         storage.collection = cls.collection_class.objects.create()
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp, name='old_name.jpg')
+        with open(NATURE_FILEPATH, "rb") as fp:
+            storage.resource.attach(fp, name="old_name.jpg")
         storage.resource.save()
 
         file = storage.resource.get_file()
@@ -255,15 +255,15 @@ class TestFileItemEmpty(TestFileFieldResourceEmpty):
 
 
 class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
-    resource_url = '/media/collections/files/%Y-%m-%d'
-    resource_location = 'collections/files/%Y-%m-%d'
-    resource_basename = 'audio'
-    resource_extension = 'mp3'
+    resource_url = "/media/collections/files/%Y-%m-%d"
+    resource_location = "collections/files/%Y-%m-%d"
+    resource_basename = "audio"
+    resource_extension = "mp3"
     resource_size = 2113939
-    resource_checksum = '4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d'
-    owner_fieldname = ''
+    resource_checksum = "4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d"
+    owner_fieldname = ""
     owner_model = None
-    file_field_name = 'file'
+    file_field_name = "file"
     collection_class = CloudinaryCompleteCollection
 
     @classmethod
@@ -272,7 +272,7 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
 
         storage.resource = CloudinaryMediaItem()
         storage.resource.attach_to(storage.collection)
-        with open(AUDIO_FILEPATH, 'rb') as fp:
+        with open(AUDIO_FILEPATH, "rb") as fp:
             storage.resource.attach(fp)
         storage.resource.save()
 
@@ -289,21 +289,21 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
         assert storage.resource.display_name == self.resource_basename
 
     def test_item_type(self, storage):
-        assert storage.resource.type == 'media'
+        assert storage.resource.type == "media"
 
     def test_type(self, storage):
         file_field = storage.resource.get_file_field()
-        assert file_field.type == 'private'
-        assert file_field.resource_type == 'video'
+        assert file_field.type == "private"
+        assert file_field.resource_type == "video"
 
     def test_public_id(self, storage):
         public_id = storage.resource.get_file().public_id
-        pattern = posixpath.join(self.resource_location, 'audio{suffix}')
+        pattern = posixpath.join(self.resource_location, "audio{suffix}")
         assert public_id == utils.get_target_filepath(pattern, public_id)
 
     def test_name(self, storage):
         file_name = storage.resource.name
-        pattern = posixpath.join(self.resource_location, 'audio{suffix}')
+        pattern = posixpath.join(self.resource_location, "audio{suffix}")
         assert file_name == utils.get_target_filepath(pattern, file_name)
 
     def test_read(self, storage):
@@ -312,38 +312,38 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
-            'id': 1,
-            'collectionId': 1,
-            'itemType': 'media',
-            'name': self.resource_basename,
-            'extension': self.resource_extension,
-            'caption': '{}.{}'.format(
+            "id": 1,
+            "collectionId": 1,
+            "itemType": "media",
+            "name": self.resource_basename,
+            "extension": self.resource_extension,
+            "caption": "{}.{}".format(
                 self.resource_basename,
                 self.resource_extension
             ),
-            'size': self.resource_size,
-            'order': 0,
-            'preview': render_to_string(
-                'paper_uploads/items/preview/file.html',
+            "size": self.resource_size,
+            "order": 0,
+            "preview": render_to_string(
+                "paper_uploads/items/preview/file.html",
                 storage.resource.get_preview_context()
             ),
-            'url': storage.resource.get_file_url(),
-            'created': storage.resource.created_at.isoformat(),
-            'modified': storage.resource.modified_at.isoformat(),
-            'uploaded': storage.resource.uploaded_at.isoformat(),
+            "url": storage.resource.get_file_url(),
+            "created": storage.resource.created_at.isoformat(),
+            "modified": storage.resource.modified_at.isoformat(),
+            "uploaded": storage.resource.uploaded_at.isoformat(),
         }
 
     def test_accept(self, storage):
-        with open(EXCEL_FILEPATH, 'rb') as fp:
+        with open(EXCEL_FILEPATH, "rb") as fp:
             assert storage.resource.accept(File(fp)) is False
 
-        with open(NATURE_FILEPATH, 'rb') as fp:
+        with open(NATURE_FILEPATH, "rb") as fp:
             assert storage.resource.accept(File(fp)) is False
 
-        with open(MEDITATION_FILEPATH, 'rb') as fp:
+        with open(MEDITATION_FILEPATH, "rb") as fp:
             assert storage.resource.accept(File(fp)) is False
 
-        with open(AUDIO_FILEPATH, 'rb') as fp:
+        with open(AUDIO_FILEPATH, "rb") as fp:
             assert storage.resource.accept(File(fp)) is True
 
 
@@ -351,7 +351,7 @@ class TestMediaItem(CollectionItemMixin, CloudinaryFileResource):
 class TestMediaItemAttach(TestFileFieldResourceAttach):
     resource_class = CloudinaryMediaItem
     resource_size = 2113939
-    resource_checksum = '4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d'
+    resource_checksum = "4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d"
     collection_class = CloudinaryMediaCollection
 
     @contextmanager
@@ -365,7 +365,7 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
             resource.delete_file()
             collection.delete()
 
-    def test_file_as_string(self):
+    def test_string(self):
         with self.get_resource() as resource:
             resource.attach(AUDIO_FILEPATH)
 
@@ -374,7 +374,7 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
 
-    def test_file_as_path(self):
+    def test_pathlib(self):
         with self.get_resource() as resource:
             resource.attach(Path(AUDIO_FILEPATH))
 
@@ -385,11 +385,11 @@ class TestMediaItemAttach(TestFileFieldResourceAttach):
 
     def test_file(self):
         with self.get_resource() as resource:
-            with open(AUDIO_FILEPATH, 'rb') as fp:
+            with open(AUDIO_FILEPATH, "rb") as fp:
                 resource.attach(fp)
 
-            assert resource.basename == 'audio'
-            assert resource.extension == 'mp3'
+            assert resource.basename == "audio"
+            assert resource.extension == "mp3"
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
 

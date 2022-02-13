@@ -152,7 +152,7 @@ class TestImageMinSizeValidator:
         with pytest.raises(ValidationError, match="is closed"):
             validator(tfile)
 
-        os.unlink(tfile.name)
+        os.remove(tfile.name)
 
     def test_fail(self):
         validator = validators.ImageMinSizeValidator(40, 60)
@@ -219,7 +219,7 @@ class TestImageMaxSizeValidator:
         with pytest.raises(ValidationError, match="is closed"):
             validator(tfile)
 
-        os.unlink(tfile.name)
+        os.remove(tfile.name)
 
     def test_fail(self):
         validator = validators.ImageMaxSizeValidator(40, 60)

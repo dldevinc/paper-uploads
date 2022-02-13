@@ -4,8 +4,8 @@ from app.models import ImageExample
 from paper_uploads.models import UploadedImage
 
 from ..dummy import *
+from ..mixins import BacklinkModelTestMixin
 from .test_dummy import (
-    BacklinkModelMixin,
     TestImageAttach,
     TestImageDelete,
     TestImageEmpty,
@@ -14,7 +14,7 @@ from .test_dummy import (
 )
 
 
-class TestUploadedImage(BacklinkModelMixin, TestVersatileImageResource):
+class TestUploadedImage(BacklinkModelTestMixin, TestVersatileImageResource):
     resource_url = "/media/images/%Y-%m-%d"
     resource_location = "images/%Y-%m-%d"
     resource_basename = "Nature Tree"
@@ -70,7 +70,7 @@ class TestUploadedImageAttach(TestImageAttach):
     resource_class = UploadedImage
 
 
-class TestUploadedImageRename(BacklinkModelMixin, TestImageRename):
+class TestUploadedImageRename(BacklinkModelTestMixin, TestImageRename):
     resource_class = UploadedImage
     resource_location = "images/%Y-%m-%d"
     owner_fieldname = "image"
@@ -105,7 +105,7 @@ class TestUploadedImageRename(BacklinkModelMixin, TestImageRename):
         storage.resource.delete()
 
 
-class TestUploadedImageDelete(BacklinkModelMixin, TestImageDelete):
+class TestUploadedImageDelete(BacklinkModelTestMixin, TestImageDelete):
     resource_class = UploadedImage
     resource_location = "images/%Y-%m-%d"
     owner_fieldname = "image"
@@ -138,7 +138,7 @@ class TestUploadedImageEmpty(TestImageEmpty):
     recource_class = UploadedImage
 
 
-class TestUploadedImageExists(BacklinkModelMixin):
+class TestUploadedImageExists(BacklinkModelTestMixin):
     owner_fieldname = "image"
     owner_model = ImageExample
 

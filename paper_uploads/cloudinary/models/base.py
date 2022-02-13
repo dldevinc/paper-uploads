@@ -182,10 +182,6 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         self._require_file()
         return self.get_file().size
 
-    def get_file_url(self) -> str:
-        self._require_file()
-        return self.get_file().url
-
     def file_exists(self) -> bool:
         file = self.get_file()
         if not file:

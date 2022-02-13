@@ -1,6 +1,7 @@
-import io
+import os
+import shutil
+import tempfile
 from typing import Dict
-from urllib.parse import quote
 
 from django.core.files import File
 from django.core.files.storage import Storage
@@ -12,13 +13,11 @@ from paper_uploads import helpers
 from paper_uploads.helpers import build_variations
 from paper_uploads.models.base import *
 from paper_uploads.models.fields.base import DynamicStorageFileField
-from paper_uploads.models.mixins import BacklinkModelMixin
 from paper_uploads.storage import default_storage
 from paper_uploads.variations import PaperVariation
 
 __all__ = [
     "DummyResource",
-    "DummyBacklinkResource",
     "DummyFileResource",
     "DummyFileFieldResource",
     "DummyImageFieldResource",
@@ -30,68 +29,71 @@ class DummyResource(Resource):
     pass
 
 
-class DummyBacklinkResource(BacklinkModelMixin, Resource):
-    pass
-
-
 class DummyFileResource(FileResource):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.__filename = '{}.{}'.format(self.basename, self.extension)
-
-    def get_file(self) -> File:
-        file = getattr(self, '_file_cache', None)
-        if file is None:
-            buffer = io.BytesIO()
-            buffer.write(b'This is example file content')
-            buffer.seek(0)
-            file = self._file_cache = File(buffer, name=self.basename)
-        return file
-
+    """
+    Сохраняет файлы в папку /tmp/
+    """
     @property
     def name(self) -> str:
-        return self.__filename
+        if not self.basename:
+            return ""
 
-    def get_file_field(self) -> models.FileField:
-        return models.Field(name='file')
+        return os.path.join(
+            tempfile.gettempdir(),
+            "{}.{}".format(
+                self.basename,
+                self.extension
+            )
+        )
+
+    def _require_file(self):
+        if not self.file_exists():
+            raise FileNotFoundError(self.name)
+
+    def get_file(self) -> File:
+        return File(None, name=self.name)
 
     def get_file_size(self) -> int:
-        return 28
-
-    def get_file_url(self):
-        return 'http://example.com/{}'.format(quote(self.get_caption()))
+        return os.path.getsize(self.name) if self.name else 0
 
     def file_exists(self) -> bool:
-        return True
+        return os.path.exists(self.name) if self.name else False
 
     def _attach(self, file: File, **options):
-        self.__filename = file.name
         self.basename = helpers.get_filename(file.name)
         self.extension = helpers.get_extension(file.name)
+
+        with open(self.name, "wb") as fdst:
+            shutil.copyfileobj(file, fdst)
+
         return {
-            'success': True,
+            "success": True,
         }
 
     def _rename(self, new_name: str, **options):
-        self.__filename = new_name
+        new_path = os.path.join(
+            tempfile.gettempdir(),
+            new_name
+        )
+        os.rename(self.name, new_path)
+
         self.basename = helpers.get_filename(new_name)
         self.extension = helpers.get_extension(new_name)
+
         return {
-            'success': True,
+            "success": True,
         }
 
     def _delete_file(self, **options):
+        os.unlink(self.name)
+
         return {
-            'success': True,
+            "success": True,
         }
 
 
 class DummyFileFieldResource(FileFieldResource):
     file = DynamicStorageFileField(_("file"))
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.__name = "File_ABCD.jpg"
 
     def get_file(self) -> FieldFile:
         return self.file
@@ -121,30 +123,18 @@ class DummyImageFieldResource(ImageFileResourceMixin, FileFieldResource):
     def get_file_storage(self) -> Storage:
         return default_storage
 
-    def get_variations(self) -> Dict[str, PaperVariation]:
-        variations = getattr(self, "_variations", None)
-        if variations is None:
-            variations = self._variations = {
-                "desktop": PaperVariation(
-                    name="desktop",
-                    size=(800, 0),
-                    clip=False
-                ),
-            }
-        return variations
-
 
 class DummyVersatileImageResource(VersatileImageResourceMixin, FileFieldResource):
-    file = DynamicStorageFileField(_("file"))
+    image = DynamicStorageFileField(_("file"))
 
     def get_file(self) -> FieldFile:
-        return self.file
+        return self.image
 
     def get_file_field(self) -> models.FileField:
-        return self._meta.get_field("file")
+        return self._meta.get_field("image")
 
     def get_file_folder(self) -> str:
-        return "versatile_image"
+        return "versatile_image_field"
 
     def get_file_storage(self) -> Storage:
         return default_storage

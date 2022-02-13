@@ -474,20 +474,6 @@ class Migration(migrations.Migration):
             field=paper_uploads.models.fields.collection.CollectionField(on_delete=django.db.models.deletion.SET_NULL, storage=None, to='app.customcloudinarygallery', upload_to=''),
         ),
         migrations.CreateModel(
-            name='DummyBacklinkResource',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('owner_app_label', models.CharField(editable=False, max_length=100)),
-                ('owner_model_name', models.CharField(editable=False, max_length=100)),
-                ('owner_fieldname', models.CharField(editable=False, max_length=255)),
-                ('created_at', models.DateTimeField(default=django.utils.timezone.now, editable=False, verbose_name='created at')),
-                ('modified_at', models.DateTimeField(auto_now=True, verbose_name='changed at')),
-            ],
-            options={
-                'default_permissions': (),
-            },
-        ),
-        migrations.CreateModel(
             name='CustomCloudinaryImageItem',
             fields=[
                 ('collectionitembase_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='paper_uploads.collectionitembase')),

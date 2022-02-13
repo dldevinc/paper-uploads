@@ -15,16 +15,16 @@ from paper_uploads.cloudinary.models import CloudinaryMedia
 from ... import utils
 from ...dummy import *
 from ...models.test_dummy import (
-    BacklinkModelMixin,
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
     TestFileFieldResourceEmpty,
     TestFileFieldResourceRename,
 )
+from ...mixins import BacklinkModelTestMixin
 from .test_base import CloudinaryFileResource
 
 
-class TestCloudinaryMedia(BacklinkModelMixin, CloudinaryFileResource):
+class TestCloudinaryMedia(BacklinkModelTestMixin, CloudinaryFileResource):
     resource_url = '/media/files/%Y-%m-%d'
     resource_location = 'files/%Y-%m-%d'
     resource_basename = 'audio'
@@ -106,7 +106,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
         finally:
             resource.delete_file()
 
-    def test_file_as_string(self):
+    def test_string(self):
         with self.get_resource() as resource:
             resource.attach(AUDIO_FILEPATH)
 
@@ -115,7 +115,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
 
-    def test_file_as_path(self):
+    def test_pathlib(self):
         with self.get_resource() as resource:
             resource.attach(Path(AUDIO_FILEPATH))
 
@@ -214,7 +214,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
                     resource.attach(fp)
 
 
-class TestCloudinaryMediaRename(BacklinkModelMixin, TestFileFieldResourceRename):
+class TestCloudinaryMediaRename(BacklinkModelTestMixin, TestFileFieldResourceRename):
     resource_class = CloudinaryMedia
     resource_location = 'files/%Y-%m-%d'
     owner_fieldname = 'media'
@@ -278,7 +278,7 @@ class TestCloudinaryMediaRename(BacklinkModelMixin, TestFileFieldResourceRename)
         assert storage.resource.extension == 'mp3'
 
 
-class TestCloudinaryMediaDelete(BacklinkModelMixin, TestFileFieldResourceDelete):
+class TestCloudinaryMediaDelete(BacklinkModelTestMixin, TestFileFieldResourceDelete):
     resource_class = CloudinaryMedia
     resource_location = 'files/%Y-%m-%d'
     owner_fieldname = 'media'

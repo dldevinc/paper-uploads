@@ -11,8 +11,8 @@ from paper_uploads.cloudinary.models import CloudinaryFile
 
 from ... import utils
 from ...dummy import *
+from ...mixins import BacklinkModelTestMixin
 from ...models.test_dummy import (
-    BacklinkModelMixin,
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
     TestFileFieldResourceEmpty,
@@ -21,7 +21,7 @@ from ...models.test_dummy import (
 from .test_base import CloudinaryFileResource
 
 
-class TestCloudinaryFile(BacklinkModelMixin, CloudinaryFileResource):
+class TestCloudinaryFile(BacklinkModelTestMixin, CloudinaryFileResource):
     resource_url = '/media/files/%Y-%m-%d'
     resource_location = 'files/%Y-%m-%d'
     resource_basename = 'Nature Tree'
@@ -93,7 +93,7 @@ class TestCloudinaryFileAttach(TestFileFieldResourceAttach):
             resource.delete_file()
 
 
-class TestCloudinaryFileRename(BacklinkModelMixin, TestFileFieldResourceRename):
+class TestCloudinaryFileRename(BacklinkModelTestMixin, TestFileFieldResourceRename):
     resource_class = CloudinaryFile
     resource_location = 'files/%Y-%m-%d'
     owner_fieldname = 'file'
@@ -154,7 +154,7 @@ class TestCloudinaryFileRename(BacklinkModelMixin, TestFileFieldResourceRename):
         )
 
 
-class TestCloudinaryFileDelete(BacklinkModelMixin, TestFileFieldResourceDelete):
+class TestCloudinaryFileDelete(BacklinkModelTestMixin, TestFileFieldResourceDelete):
     resource_class = CloudinaryFile
     resource_location = 'files/%Y-%m-%d'
     owner_fieldname = 'file'

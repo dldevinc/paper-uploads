@@ -4,8 +4,8 @@ from app.models import FileExample
 from paper_uploads.models import UploadedFile
 
 from ..dummy import *
+from ..mixins import BacklinkModelTestMixin
 from .test_dummy import (
-    BacklinkModelMixin,
     TestFileFieldResource,
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
@@ -14,7 +14,7 @@ from .test_dummy import (
 )
 
 
-class TestUploadedFile(BacklinkModelMixin, TestFileFieldResource):
+class TestUploadedFile(BacklinkModelTestMixin, TestFileFieldResource):
     resource_url = "/media/files/%Y-%m-%d"
     resource_location = "files/%Y-%m-%d"
     resource_basename = "Nature Tree"
@@ -65,7 +65,7 @@ class TestUploadedFileAttach(TestFileFieldResourceAttach):
     resource_class = UploadedFile
 
 
-class TestUploadedFileRename(BacklinkModelMixin, TestFileFieldResourceRename):
+class TestUploadedFileRename(BacklinkModelTestMixin, TestFileFieldResourceRename):
     resource_class = UploadedFile
     resource_location = "files/%Y-%m-%d"
     owner_fieldname = "file"
@@ -92,7 +92,7 @@ class TestUploadedFileRename(BacklinkModelMixin, TestFileFieldResourceRename):
         storage.resource.delete()
 
 
-class TestUploadedFileDelete(BacklinkModelMixin, TestFileFieldResourceDelete):
+class TestUploadedFileDelete(BacklinkModelTestMixin, TestFileFieldResourceDelete):
     resource_class = UploadedFile
     resource_location = "files/%Y-%m-%d"
     owner_fieldname = "file"
@@ -119,7 +119,7 @@ class TestUploadedFileEmpty(TestFileFieldResourceEmpty):
     recource_class = UploadedFile
 
 
-class TestUploadedFileExists(BacklinkModelMixin):
+class TestUploadedFileExists(BacklinkModelTestMixin):
     owner_fieldname = "file"
     owner_model = FileExample
 
