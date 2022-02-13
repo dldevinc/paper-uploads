@@ -1,20 +1,18 @@
 import os
-import posixpath
 from contextlib import contextmanager
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.core.files import File
 from django.template.loader import render_to_string
-from examples.custom_collection.models import CustomCollection, CustomSubCollection
-from examples.custom_collection_item.models import CustomImageCollection, CustomImageItem
-from examples.standard_collection.models import (
+from examples.collections.custom_models.models import CustomCollection
+from examples.collections.custom_models.models import ImageItem as CustomImageItem
+from examples.collections.standard.models import (
     FilesOnlyCollection,
     ImagesOnlyCollection,
     MixedCollection,
     Page,
 )
-from examples.variations.models import PhotoCollection
 
 from paper_uploads import exceptions
 from paper_uploads.conf import IMAGE_ITEM_VARIATIONS
@@ -29,10 +27,10 @@ from .test_dummy import (
     TestFileFieldResourceDelete,
     TestFileFieldResourceEmpty,
     TestFileFieldResourceRename,
-    TestImageAttach,
-    TestImageDelete,
-    TestImageEmpty,
-    TestImageRename,
+    TestVersatileImageAttach,
+    TestVersatileImageDelete,
+    TestVersatileImageEmpty,
+    TestVersatileImageRename,
 )
 
 
@@ -49,10 +47,6 @@ class TestCollectionMetaclass:
 
     def test_explicit_non_proxy(self):
         assert CustomCollection._meta.proxy is False
-
-    def test_child_collection_proxy_state(self):
-        assert CustomSubCollection._meta.proxy is True
-        assert CustomSubCollection._meta.proxy_for_model is CustomCollection
 
     def test_declared_item_types(self):
         """
@@ -74,9 +68,6 @@ class TestCollectionMetaclass:
         custom_collection_types = _get_item_types(CustomCollection)
         assert list(custom_collection_types.keys()) == ["image"]
 
-        custom_subcollection_types = _get_item_types(CustomSubCollection)
-        assert list(custom_subcollection_types.keys()) == ["svg"]
-
         mixed_collection_types = _get_item_types(MixedCollection)
         assert list(mixed_collection_types.keys()) == ["svg", "image", "file"]
 
@@ -86,7 +77,6 @@ class TestCollectionMetaclass:
         assert list(ImagesOnlyCollection.item_types.keys()) == ["image"]
         assert list(FilesOnlyCollection.item_types.keys()) == ["file"]
         assert list(CustomCollection.item_types.keys()) == ["image"]
-        assert list(CustomSubCollection.item_types.keys()) == ["image", "svg"]
         assert list(MixedCollection.item_types.keys()) == ["svg", "image", "file"]
 
 
@@ -100,36 +90,31 @@ class TestCollection:
         storage.image_collection = ImagesOnlyCollection.objects.create()
 
         # collection #3 (all types allowed)
-        storage.global_collection = MixedCollection.objects.create()
+        storage.mixed_collection = MixedCollection.objects.create()
 
         file_item = FileItem()
         file_item.attach_to(storage.file_collection)
-        with open(DOCUMENT_FILEPATH, "rb") as fp:
-            file_item.attach(fp, name="file_c1.pdf")
+        file_item.attach(DOCUMENT_FILEPATH, name="file_c1.pdf")
         file_item.save()
 
         image_item = ImageItem()
         image_item.attach_to(storage.image_collection)
-        with open(NATURE_FILEPATH, "rb") as fp:
-            image_item.attach(fp, name="image_c2.jpg")
+        image_item.attach(NATURE_FILEPATH, name="image_c2.jpg")
         image_item.save()
 
         file_item = FileItem()
-        file_item.attach_to(storage.global_collection)
-        with open(CALLIPHORA_FILEPATH, "rb") as fp:
-            file_item.attach(fp, name="file_c3.jpg")
+        file_item.attach_to(storage.mixed_collection)
+        file_item.attach(CALLIPHORA_FILEPATH, name="file_c3.jpg")
         file_item.save()
 
         image_item = ImageItem()
-        image_item.attach_to(storage.global_collection)
-        with open(NASA_FILEPATH, "rb") as fp:
-            image_item.attach(fp, name="image_c3.jpg")
+        image_item.attach_to(storage.mixed_collection)
+        image_item.attach(NASA_FILEPATH, name="image_c3.jpg")
         image_item.save()
 
         svg_item = SVGItem()
-        svg_item.attach_to(storage.global_collection)
-        with open(MEDITATION_FILEPATH, "rb") as fp:
-            svg_item.attach(fp, name="svg_c3.svg")
+        svg_item.attach_to(storage.mixed_collection)
+        svg_item.attach(MEDITATION_FILEPATH, name="svg_c3.svg")
         svg_item.save()
 
         yield
@@ -137,42 +122,44 @@ class TestCollection:
         for collection in {
             storage.file_collection,
             storage.image_collection,
-            storage.global_collection
+            storage.mixed_collection
         }:
             for c_item in collection.items.all():
                 c_item.delete_file()
-                c_item.delete()
             collection.delete()
 
-    def test_items(self, storage):
+    def test_created_at(self, storage):
+        assert utils.is_equal_dates(storage.file_collection.created_at, storage.now)
+
+    def test_item_count(self, storage):
         assert storage.file_collection.items.count() == 1
         assert storage.image_collection.items.count() == 1
-        assert storage.global_collection.items.count() == 3
+        assert storage.mixed_collection.items.count() == 3
 
-    def test_order(self, storage):
-        order_values = storage.global_collection.items.values_list("order", flat=True)
+    def test_order_values(self, storage):
+        order_values = storage.mixed_collection.items.values_list("order", flat=True)
         assert sorted(order_values) == [0, 1, 2]
 
     def test_get_order(self, storage):
-        image_item = storage.global_collection.get_items("image").first()
+        image_item = storage.mixed_collection.get_items("image").first()
         assert image_item.get_order() == 3
 
     def test_get_items(self, storage):
         assert storage.file_collection.get_items("file").count() == 1
-        assert storage.global_collection.get_items("file").count() == 1
+        assert storage.mixed_collection.get_items("file").count() == 1
 
         assert storage.image_collection.get_items("image").count() == 1
-        assert storage.global_collection.get_items("image").count() == 1
+        assert storage.mixed_collection.get_items("image").count() == 1
 
-        assert storage.global_collection.get_items("svg").count() == 1
+        assert storage.mixed_collection.get_items("svg").count() == 1
 
     def test_iter(self, storage):
-        iterator = iter(storage.global_collection)
-        
+        iterator = iter(storage.mixed_collection)
+
         assert isinstance(next(iterator), FileItem)
         assert isinstance(next(iterator), ImageItem)
         assert isinstance(next(iterator), SVGItem)
-        
+
         with pytest.raises(StopIteration):
             next(iterator)
 
@@ -184,7 +171,7 @@ class TestCollection:
             storage.image_collection.get_items("file")
 
         with pytest.raises(exceptions.InvalidItemType):
-            storage.global_collection.get_items("nothing")
+            storage.mixed_collection.get_items("nothing")
 
     def test_collection_id(self, storage):
         for item1 in storage.file_collection.get_items():
@@ -193,7 +180,7 @@ class TestCollection:
         for item2 in storage.image_collection.get_items():
             assert item2.collection_id == 2
 
-        for item3 in storage.global_collection.get_items():
+        for item3 in storage.mixed_collection.get_items():
             assert item3.collection_id == 3
 
     def test_manager(self, storage):
@@ -211,10 +198,10 @@ class TestCollection:
         image_item1 = storage.image_collection.get_items("image").first()
         assert image_item1.get_item_type_field() is ImagesOnlyCollection.item_types["image"]
 
-        image_item2 = storage.global_collection.get_items("image").first()
+        image_item2 = storage.mixed_collection.get_items("image").first()
         assert image_item2.get_item_type_field() is MixedCollection.item_types["image"]
 
-        svg_item = storage.global_collection.get_items("svg").first()
+        svg_item = storage.mixed_collection.get_items("svg").first()
         assert svg_item.get_item_type_field() is MixedCollection.item_types["svg"]
 
     def test_attach_to_file_collection(self, storage):
@@ -226,11 +213,11 @@ class TestCollection:
             FilesOnlyCollection, for_concrete_model=False)
         assert file_item.type == "file"
 
-    def test_attach_to_global_collection(self, storage):
+    def test_attach_to_mixed_collection(self, storage):
         file_item = FileItem()
-        file_item.attach_to(storage.global_collection)
+        file_item.attach_to(storage.mixed_collection)
 
-        assert file_item.collection_id == storage.global_collection.pk
+        assert file_item.collection_id == storage.mixed_collection.pk
         assert file_item.collection_content_type == ContentType.objects.get_for_model(
             MixedCollection, for_concrete_model=False)
         assert file_item.type == "file"
@@ -253,29 +240,28 @@ class TestCollection:
 
     def test_set_owner_field(self, storage):
         storage.file_collection.set_owner_field(Page, "file_collection")
-        assert storage.file_collection.owner_app_label == "standard_collection"
+        assert storage.file_collection.owner_app_label == "standard_collections"
         assert storage.file_collection.owner_model_name == "page"
         assert storage.file_collection.owner_fieldname == "file_collection"
         assert storage.file_collection.get_owner_model() is Page
         assert storage.file_collection.get_owner_field() is Page._meta.get_field("file_collection")
 
     def test_get_item_model(self, storage):
-        assert storage.global_collection.get_item_model("svg") is SVGItem
-        assert storage.global_collection.get_item_model("image") is ImageItem
-        assert storage.global_collection.get_item_model("file") is FileItem
+        assert storage.mixed_collection.get_item_model("svg") is SVGItem
+        assert storage.mixed_collection.get_item_model("image") is ImageItem
+        assert storage.mixed_collection.get_item_model("file") is FileItem
         with pytest.raises(exceptions.InvalidItemType):
-            storage.global_collection.get_item_model("video")
+            storage.mixed_collection.get_item_model("video")
 
 
 @pytest.mark.django_db
 class TestDeleteCustomImageCollection:
     def _create_collection(self):
-        collection = CustomImageCollection.objects.create()
+        collection = CustomCollection.objects.create()
 
         image_item = CustomImageItem()
         image_item.attach_to(collection)
-        with open(NASA_FILEPATH, "rb") as fp:
-            image_item.attach(fp, name="image_del.jpg")
+        image_item.attach(NASA_FILEPATH, name="image_del.jpg")
         image_item.save()
 
         return collection
@@ -348,23 +334,23 @@ class TestAttachWrongItemClassToCollection:
 
 
 class TestFileItem(CollectionItemMixin, TestFileFieldResource):
-    resource_url = "/media/collections/files/%Y-%m-%d"
-    resource_location = "collections/files/%Y-%m-%d"
+    collection_class = FilesOnlyCollection
+    resource_class = FileItem
+    resource_attachment = NATURE_FILEPATH
     resource_basename = "Nature Tree"
     resource_extension = "Jpeg"
+    resource_name = "collections/files/%Y-%m-%d/Nature_Tree.Jpeg"
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    file_field_name = "file"
-    collection_class = FilesOnlyCollection
+    resource_folder = "collections/files/%Y-%m-%d"
 
     @classmethod
     def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
 
-        storage.resource = FileItem()
+        storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp)
+        storage.resource.attach(cls.resource_attachment)
         storage.resource.save()
 
         yield
@@ -373,23 +359,15 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
         storage.resource.delete()
         storage.collection.delete()
 
-    def test_get_file_folder(self, storage):
-        assert storage.resource.get_file_folder() == self.resource_location
-
-    def test_display_name(self, storage):
-        assert storage.resource.display_name == self.resource_basename
-
     def test_item_type(self, storage):
         assert storage.resource.type == "file"
-
-    def test_get_preview_url(self, storage):
-        assert storage.resource.get_preview_url() == "/static/paper_uploads/dist/assets/jpg.svg"
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             "id": 1,
             "collectionId": 1,
-            "itemType": "file",
+            "itemType": "file",  # TODO: deprecated
+            "type": "file",
             "name": self.resource_basename,
             "extension": self.resource_extension,
             "caption": "{}.{}".format(
@@ -397,12 +375,12 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
                 self.resource_extension
             ),
             "size": self.resource_size,
+            "url": storage.resource.url,
             "order": 0,
             "preview": render_to_string(
                 "paper_uploads/items/preview/file.html",
                 storage.resource.get_preview_context()
             ),
-            "url": storage.resource.get_file_url(),
             "created": storage.resource.created_at.isoformat(),
             "modified": storage.resource.modified_at.isoformat(),
             "uploaded": storage.resource.uploaded_at.isoformat(),
@@ -424,8 +402,13 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
 
 @pytest.mark.django_db
 class TestFileItemAttach(TestFileFieldResourceAttach):
-    resource_class = FileItem
     collection_class = MixedCollection
+    resource_class = FileItem
+    resource_attachment = DOCUMENT_FILEPATH
+    resource_basename = "document"
+    resource_extension = "pdf"
+    resource_size = 3028
+    resource_checksum = "93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e"
 
     @contextmanager
     def get_resource(self):
@@ -440,115 +423,76 @@ class TestFileItemAttach(TestFileFieldResourceAttach):
 
 
 class TestFileItemRename(TestFileFieldResourceRename):
-    resource_class = FileItem
-    resource_location = "collections/files/%Y-%m-%d"
     collection_class = FilesOnlyCollection
+    resource_class = FileItem
 
     @classmethod
     def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
+
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp, name="old_name.jpg")
+        storage.resource.attach(cls.resource_attachment, name=cls.old_name)
         storage.resource.save()
 
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
-        storage.old_source_path = file.path
-        storage.resource.rename("new_name.png")
-        storage.resource.save()
+        storage.old_modified_at = storage.resource.modified_at
+        storage.old_resource_name = storage.resource.name
+        storage.old_resource_path = storage.resource.path
 
+        storage.resource.rename(cls.new_name)
         yield
 
-        os.remove(storage.old_source_path)
+        os.unlink(storage.old_resource_path)
         storage.resource.delete_file()
         storage.resource.delete()
+        storage.collection.delete()
 
 
 class TestFileItemDelete(TestFileFieldResourceDelete):
-    resource_class = FileItem
-    resource_location = "collections/files/%Y-%m-%d"
     collection_class = FilesOnlyCollection
+    resource_class = FileItem
+    resource_attachment = EXCEL_FILEPATH
 
     @classmethod
     def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
+
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp, name="old_name.jpg")
+        storage.resource.attach(cls.resource_attachment)
         storage.resource.save()
 
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
-        storage.old_source_path = file.path
-        storage.resource.delete_file()
+        storage.old_resource_name = storage.resource.name
 
+        storage.resource.delete_file()
         yield
 
         storage.resource.delete()
+        storage.collection.delete()
 
 
 class TestFileItemEmpty(TestFileFieldResourceEmpty):
     recource_class = FileItem
-    collection_class = FilesOnlyCollection
-
-    @classmethod
-    def init_class(cls, storage):
-        collection = cls.collection_class.objects.create()
-        storage.resource = cls.recource_class()
-        storage.resource.attach_to(collection)
-        yield
-        collection.delete()
-
-
-class TestFileItemExists:
-    @staticmethod
-    def init_class(storage):
-        storage.collection = FilesOnlyCollection.objects.create()
-
-        storage.resource = FileItem()
-        storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp)
-        storage.resource.save()
-
-        yield
-
-        try:
-            storage.resource.delete_file()
-        except ValueError:
-            pass
-
-        storage.resource.delete()
-        storage.collection.delete()
-
-    def test_files(self, storage):
-        source_path = storage.resource.path
-        assert os.path.exists(source_path) is True
-        storage.resource.delete_file()
-        assert os.path.exists(source_path) is False
 
 
 class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
-    resource_url = "/media/collections/files/%Y-%m-%d"
-    resource_location = "collections/files/%Y-%m-%d"
+    collection_class = MixedCollection
+    resource_class = SVGItem
+    resource_attachment = MEDITATION_FILEPATH
     resource_basename = "Meditation"
     resource_extension = "svg"
+    resource_name = "collections/files/%Y-%m-%d/Meditation.svg"
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
-    file_field_name = "file"
-    collection_class = MixedCollection
+    resource_folder = "collections/files/%Y-%m-%d"
 
     @classmethod
     def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
 
-        storage.resource = SVGItem()
+        storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
-        with open(MEDITATION_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp)
+        storage.resource.attach(cls.resource_attachment)
         storage.resource.save()
 
         yield
@@ -557,37 +501,21 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
         storage.resource.delete()
         storage.collection.delete()
 
-    def test_get_file_folder(self, storage):
-        assert storage.resource.get_file_folder() == self.resource_location
+    def test_name(self, storage):
+        assert utils.match_path(
+            storage.resource.name,
+            "{}/Meditation{{suffix}}.svg".format(self.resource_folder),
+        )
 
     def test_item_type(self, storage):
         assert storage.resource.type == "svg"
-
-    def test_name(self, storage):
-        file_name = storage.resource.name
-        pattern = posixpath.join(self.resource_location, "Meditation{suffix}.svg")
-        assert file_name == utils.get_target_filepath(pattern, file_name)
-
-    def test_get_file_url(self, storage):
-        file_url = storage.resource.get_file_url()
-        pattern = posixpath.join(self.resource_url, "Meditation{suffix}.svg")
-        assert file_url == utils.get_target_filepath(pattern, file_url)
-
-    def test_path(self, storage):
-        path = storage.resource.path
-        pattern = posixpath.join("media", self.resource_location, "Meditation{suffix}.svg")
-        assert path.endswith(utils.get_target_filepath(pattern, path))
-
-    def test_url(self, storage):
-        url = storage.resource.url
-        pattern = posixpath.join(self.resource_url, "Meditation{suffix}.svg")
-        assert url == utils.get_target_filepath(pattern, url)
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             "id": 1,
             "collectionId": 1,
-            "itemType": "svg",
+            "itemType": "svg",  # TODO: deprecated
+            "type": "svg",
             "name": self.resource_basename,
             "extension": self.resource_extension,
             "caption": "{}.{}".format(
@@ -595,16 +523,28 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
                 self.resource_extension
             ),
             "size": self.resource_size,
+            "url": storage.resource.url,
             "order": 0,
             "preview": render_to_string(
                 "paper_uploads/items/preview/svg.html",
                 storage.resource.get_preview_context()
             ),
-            "url": storage.resource.get_file_url(),
             "created": storage.resource.created_at.isoformat(),
             "modified": storage.resource.modified_at.isoformat(),
             "uploaded": storage.resource.uploaded_at.isoformat(),
         }
+
+    def test_path(self, storage):
+        assert utils.match_path(
+            storage.resource.path,
+            "/media/{}/Meditation{{suffix}}.svg".format(self.resource_folder),
+        )
+
+    def test_url(self, storage):
+        assert utils.match_path(
+            storage.resource.url,
+            "/media/{}/Meditation{{suffix}}.svg".format(self.resource_folder),
+        )
 
     def test_read(self, storage):
         with storage.resource.open() as fp:
@@ -626,8 +566,13 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
 
 @pytest.mark.django_db
 class TestSVGItemAttach(TestFileFieldResourceAttach):
-    resource_class = SVGItem
     collection_class = MixedCollection
+    resource_class = SVGItem
+    resource_attachment = MEDITATION_FILEPATH
+    resource_basename = "Meditation"
+    resource_extension = "svg"
+    resource_size = 47193
+    resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
 
     @contextmanager
     def get_resource(self):
@@ -640,117 +585,88 @@ class TestSVGItemAttach(TestFileFieldResourceAttach):
             resource.delete_file()
             collection.delete()
 
+    def test_unsupported_file(self):
+        resource = self.resource_class()
+        with pytest.raises(exceptions.UnsupportedResource):
+            resource.attach(AUDIO_FILEPATH)
+
 
 class TestSVGItemRename(TestFileFieldResourceRename):
-    resource_class = SVGItem
-    resource_location = "collections/files/%Y-%m-%d"
     collection_class = MixedCollection
+    resource_class = SVGItem
+    resource_attachment = MEDITATION_FILEPATH
+    resource_size = 47193
+    resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
+    old_name = "old_name.svg"
+    new_name = "new_name.svg"
 
     @classmethod
     def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
+
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
-        with open(MEDITATION_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp, name="old_name.jpg")
+        storage.resource.attach(cls.resource_attachment, name=cls.old_name)
         storage.resource.save()
 
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
-        storage.old_source_path = file.path
-        storage.resource.rename("new_name.png")
-        storage.resource.save()
+        storage.old_modified_at = storage.resource.modified_at
+        storage.old_resource_name = storage.resource.name
+        storage.old_resource_path = storage.resource.path
 
+        storage.resource.rename(cls.new_name)
         yield
 
-        os.remove(storage.old_source_path)
+        os.unlink(storage.old_resource_path)
         storage.resource.delete_file()
         storage.resource.delete()
+        storage.collection.delete()
 
 
 class TestSVGItemDelete(TestFileFieldResourceDelete):
-    resource_class = SVGItem
-    resource_location = "collections/files/%Y-%m-%d"
     collection_class = MixedCollection
+    resource_class = SVGItem
+    resource_attachment = MEDITATION_FILEPATH
 
     @classmethod
     def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
+
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
-        with open(MEDITATION_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp, name="old_name.jpg")
+        storage.resource.attach(cls.resource_attachment)
         storage.resource.save()
 
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
-        storage.old_source_path = file.path
-        storage.resource.delete_file()
+        storage.old_resource_name = storage.resource.name
 
+        storage.resource.delete_file()
         yield
 
         storage.resource.delete()
+        storage.collection.delete()
 
 
 class TestSVGItemEmpty(TestFileFieldResourceEmpty):
     recource_class = SVGItem
-    collection_class = MixedCollection
-
-    @classmethod
-    def init_class(cls, storage):
-        collection = cls.collection_class.objects.create()
-        storage.resource = cls.recource_class()
-        storage.resource.attach_to(collection)
-        yield
-        collection.delete()
-
-
-class TestSVGItemExists:
-    @classmethod
-    def init_class(cls, storage):
-        storage.collection = MixedCollection.objects.create()
-
-        storage.resource = SVGItem()
-        storage.resource.attach_to(storage.collection)
-        with open(MEDITATION_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp)
-        storage.resource.save()
-
-        yield
-
-        try:
-            storage.resource.delete_file()
-        except ValueError:
-            pass
-
-        storage.resource.delete()
-        storage.collection.delete()
-
-    def test_files(self, storage):
-        source_path = storage.resource.path
-        assert os.path.exists(source_path) is True
-        storage.resource.delete_file()
-        assert os.path.exists(source_path) is False
 
 
 class TestImageItem(CollectionItemMixin, TestFileFieldResource):
-    resource_url = "/media/collections/images/%Y-%m-%d"
-    resource_location = "collections/images/%Y-%m-%d"
+    collection_class = ImagesOnlyCollection
+    resource_class = ImageItem
+    resource_attachment = NATURE_FILEPATH
     resource_basename = "Nature Tree"
     resource_extension = "jpg"
+    resource_name = "collections/images/%Y-%m-%d/Nature_Tree.jpg"
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    file_field_name = "file"
-    collection_class = PhotoCollection
+    resource_folder = "collections/images/%Y-%m-%d"
 
     @classmethod
     def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
 
-        storage.resource = ImageItem()
+        storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp)
+        storage.resource.attach(cls.resource_attachment)
         storage.resource.save()
 
         yield
@@ -759,37 +675,37 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
         storage.resource.delete()
         storage.collection.delete()
 
-    def test_get_file_folder(self, storage):
-        assert storage.resource.get_file_folder() == self.resource_location
+    def test_name(self, storage):
+        assert utils.match_path(
+            storage.resource.name,
+            "{}/Nature_Tree{{suffix}}.jpg".format(self.resource_folder),
+        )
 
     def test_item_type(self, storage):
         assert storage.resource.type == "image"
 
-    def test_name(self, storage):
-        file_name = storage.resource.name
-        pattern = posixpath.join(self.resource_location, "Nature_Tree{suffix}.jpg")
-        assert file_name == utils.get_target_filepath(pattern, file_name)
-
-    def test_get_file_url(self, storage):
-        file_url = storage.resource.get_file_url()
-        pattern = posixpath.join(self.resource_url, "Nature_Tree{suffix}.jpg")
-        assert file_url == utils.get_target_filepath(pattern, file_url)
-
     def test_path(self, storage):
-        path = storage.resource.path
-        pattern = posixpath.join("media", self.resource_location, "Nature_Tree{suffix}.jpg")
-        assert path.endswith(utils.get_target_filepath(pattern, path))
+        assert utils.match_path(
+            storage.resource.path,
+            "/media/{}/Nature_Tree{{suffix}}.jpg".format(self.resource_folder),
+        )
 
     def test_url(self, storage):
-        url = storage.resource.url
-        pattern = posixpath.join(self.resource_url, "Nature_Tree{suffix}.jpg")
-        assert url == utils.get_target_filepath(pattern, url)
+        assert utils.match_path(
+            storage.resource.url,
+            "/media/{}/Nature_Tree{{suffix}}.jpg".format(self.resource_folder),
+        )
+
+    def test_read(self, storage):
+        with storage.resource.open() as fp:
+            assert fp.read(5) == b'\xff\xd8\xff\xe0\x00'
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
             "id": 1,
             "collectionId": 1,
-            "itemType": "image",
+            "itemType": "image",  # TODO: deprecated
+            "type": "image",
             "name": self.resource_basename,
             "extension": self.resource_extension,
             "caption": "{}.{}".format(
@@ -817,15 +733,16 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
         variations = storage.resource.get_variations()
 
         assert "desktop" in variations
-        assert "mobile" in variations
         assert "admin_preview" in variations
+        assert "admin_preview_webp" in variations
+        assert "admin_preview_webp_2x" in variations
 
         assert variations["desktop"].size == (800, 0)
         assert variations["mobile"].size == (0, 600)
 
         # admin variation overriden
-        assert variations["admin_preview"].size == (216, 162)
-        assert variations["admin_preview"].format == "AUTO"
+        assert variations["admin_preview"].size == (180, 135)
+        assert variations["admin_preview"].format == "JPEG"
 
         # ensure that setting has not changed
         assert ImageItem.PREVIEW_VARIATIONS["admin_preview"]["size"] == (180, 135)
@@ -853,9 +770,9 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
 
 
 @pytest.mark.django_db
-class TestImageItemAttach(TestImageAttach):
+class TestImageItemAttach(TestVersatileImageAttach):
+    collection_class = ImagesOnlyCollection
     resource_class = ImageItem
-    collection_class = PhotoCollection
 
     @contextmanager
     def get_resource(self):
@@ -871,159 +788,74 @@ class TestImageItemAttach(TestImageAttach):
     def test_unsupported_file(self):
         resource = self.resource_class()
         with pytest.raises(exceptions.UnsupportedResource):
-            with open(AUDIO_FILEPATH, "rb") as fp:
-                resource.attach(fp)
+            resource.attach(AUDIO_FILEPATH)
 
 
-class TestImageItemRename(TestImageRename):
+class TestImageItemRename(TestVersatileImageRename):
+    collection_class = ImagesOnlyCollection
     resource_class = ImageItem
-    resource_location = "collections/images/%Y-%m-%d"
-    collection_class = PhotoCollection
+    resource_attachment = NATURE_FILEPATH
+    resource_size = 672759
+    resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
+    old_name = "old_name.svg"
+    new_name = "new_name.svg"
 
     @classmethod
     def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
+
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp, name="old_name.jpg")
+        storage.resource.attach(cls.resource_attachment, name=cls.old_name)
         storage.resource.save()
 
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
-        storage.old_desktop_name = storage.resource.desktop.name
-        storage.old_mobile_name = storage.resource.mobile.name
-        storage.old_admin_preview_name = storage.resource.admin_preview.name
+        storage.old_modified_at = storage.resource.modified_at
+        storage.old_resource_name = storage.resource.name
+        storage.old_resource_path = storage.resource.path
+        storage.old_resource_desktop_path = storage.resource.desktop.path
+        storage.old_resource_mobile_path = storage.resource.mobile.path
+        storage.old_resource_mobile_path = storage.resource.mobile.path
+        storage.old_resource_admin_preview_path = storage.resource.admin_preview.path
+        storage.old_resource_admin_preview_2x_path = storage.resource.admin_preview_2x.path
+        storage.old_resource_admin_preview_webp_path = storage.resource.admin_preview_webp.path
+        storage.old_resource_admin_preview_webp_2x_path = storage.resource.admin_preview_webp_2x.path
 
-        storage.old_source_path = file.path
-        storage.old_desktop_path = storage.resource.desktop.path
-        storage.old_mobile_path = storage.resource.mobile.path
-        storage.old_admin_preview_path = storage.resource.admin_preview.path
-
-        storage.resource.rename("new_name.png")
-        assert storage.resource.need_recut is True
-        storage.resource.save()
-
+        storage.resource.rename(cls.new_name)
         yield
 
-        os.remove(storage.old_source_path)
-        os.remove(storage.old_desktop_path)
-        os.remove(storage.old_mobile_path)
-        os.remove(storage.old_admin_preview_path)
+        os.unlink(storage.old_resource_path)
+        os.unlink(storage.old_resource_desktop_path)
+        os.unlink(storage.old_resource_mobile_path)
+        os.unlink(storage.old_resource_admin_preview_path)
+        os.unlink(storage.old_resource_admin_preview_2x_path)
+        os.unlink(storage.old_resource_admin_preview_webp_path)
+        os.unlink(storage.old_resource_admin_preview_webp_2x_path)
         storage.resource.delete_file()
         storage.resource.delete()
-
-    def test_old_file_name(self, storage):
-        super().test_old_file_name(storage)
-        assert storage.old_admin_preview_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, "old_name{suffix}.admin_preview.jpg"),
-            storage.old_source_name
-        )
-
-    def test_new_file_name(self, storage):
-        super().test_new_file_name(storage)
-        assert storage.resource.admin_preview.name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, "new_name{suffix}.admin_preview.png"),
-            storage.resource.file.name
-        )
-
-    def test_old_file_exists(self, storage):
-        super().test_old_file_exists(storage)
-        assert os.path.exists(storage.old_admin_preview_path) is True
-
-    def test_new_file_exists(self, storage):
-        super().test_old_file_exists(storage)
-        assert os.path.exists(storage.resource.admin_preview.path) is True
+        storage.collection.delete()
 
 
-class TestImageItemDelete(TestImageDelete):
+class TestImageItemDelete(TestVersatileImageDelete):
+    collection_class = ImagesOnlyCollection
     resource_class = ImageItem
-    resource_location = "collections/images/%Y-%m-%d"
-    collection_class = PhotoCollection
 
     @classmethod
     def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
+
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp, name="old_name.jpg")
+        storage.resource.attach(cls.resource_attachment)
         storage.resource.save()
 
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
-        storage.old_desktop_name = storage.resource.desktop.name
-        storage.old_mobile_name = storage.resource.mobile.name
-        storage.old_admin_preview_name = storage.resource.admin_preview.name
-
-        storage.old_source_path = file.path
-        storage.old_desktop_path = storage.resource.desktop.path
-        storage.old_mobile_path = storage.resource.mobile.path
-        storage.old_admin_preview_path = storage.resource.admin_preview.path
+        storage.old_resource_name = storage.resource.name
 
         storage.resource.delete_file()
-
         yield
-
-        storage.resource.delete()
-
-    def test_file_name(self, storage):
-        super().test_file_name(storage)
-        assert storage.old_admin_preview_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, "old_name{suffix}.admin_preview.jpg"),
-            storage.old_source_name
-        )
-
-    def test_file_not_exists(self, storage):
-        super().test_file_not_exists(storage)
-        assert os.path.exists(storage.old_admin_preview_path) is False
-
-
-class TestImageItemEmpty(TestImageEmpty):
-    recource_class = ImageItem
-    collection_class = PhotoCollection
-
-    @classmethod
-    def init_class(cls, storage):
-        collection = cls.collection_class.objects.create()
-        storage.resource = cls.recource_class()
-        storage.resource.attach_to(collection)
-        yield
-        collection.delete()
-
-
-class TestImageItemExists:
-    @classmethod
-    def init_class(cls, storage):
-        storage.collection = PhotoCollection.objects.create()
-
-        storage.resource = ImageItem()
-        storage.resource.attach_to(storage.collection)
-        with open(NASA_FILEPATH, "rb") as fp:
-            storage.resource.attach(fp)
-        storage.resource.save()
-
-        yield
-
-        try:
-            storage.resource.delete_file()
-        except ValueError:
-            pass
 
         storage.resource.delete()
         storage.collection.delete()
 
-    def test_files(self, storage):
-        source_path = storage.resource.path
-        desktop_path = storage.resource.desktop.path
-        mobile_path = storage.resource.mobile.path
 
-        assert os.path.exists(source_path) is True
-        assert os.path.exists(desktop_path) is True
-        assert os.path.exists(mobile_path) is True
-
-        storage.resource.delete_file()
-
-        assert os.path.exists(source_path) is False
-        assert os.path.exists(desktop_path) is False
-        assert os.path.exists(mobile_path) is False
+class TestImageItemEmpty(TestVersatileImageEmpty):
+    recource_class = ImageItem
