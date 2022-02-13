@@ -58,7 +58,7 @@ class UploadedFileBase(BacklinkModelMixin, EditableResourceMixin, FileFieldResou
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
-            "name": self.display_name,
+            "name": self.display_name or self.basename,
             "file_info": "({ext}, {size})".format(
                 ext=self.extension, size=filesizeformat(self.size)
             ),
