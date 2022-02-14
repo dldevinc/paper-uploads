@@ -21,8 +21,9 @@ class TestUploadedImage(BacklinkModelTestMixin, TestVersatileImageResource):
     resource_attachment = CALLIPHORA_FILEPATH
     resource_basename = "calliphora"
     resource_extension = "jpg"
-    resource_name = "images/%Y-%m-%d/calliphora.jpg"
+    resource_name = "images/%Y-%m-%d/calliphora{suffix}.jpg"
     resource_folder = "images/%Y-%m-%d"
+    resource_field_name = "file"
     owner_fieldname = "image_group"
     owner_model = Page
 
@@ -86,6 +87,11 @@ class TestUploadedImage(BacklinkModelTestMixin, TestVersatileImageResource):
 
 class TestUploadedImageAttach(TestVersatileImageAttach):
     resource_class = UploadedImage
+    resource_attachment = NASA_FILEPATH
+    resource_basename = "milky-way-nasa"
+    resource_extension = "jpg"
+    resource_size = 9711423
+    resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
 
 
 class TestUploadedImageRename(BacklinkModelTestMixin, TestVersatileImageRename):
@@ -95,6 +101,8 @@ class TestUploadedImageRename(BacklinkModelTestMixin, TestVersatileImageRename):
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
     owner_fieldname = "image_group"
     owner_model = Page
+    old_name = "old_file_NU6o.txt"
+    new_name = "new_file_R8SW.log"
 
     @classmethod
     def init_class(cls, storage):

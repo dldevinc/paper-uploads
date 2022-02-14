@@ -1,152 +1,201 @@
-import posixpath
-from contextlib import contextmanager
+import datetime
 
 import cloudinary.exceptions
 import pytest
 from cloudinary import uploader
-from django.utils.crypto import get_random_string
+from examples.cloudinary.standard.models import Page
 
-from app.models import CloudinaryImageExample
 from paper_uploads import exceptions
 from paper_uploads.cloudinary.models import CloudinaryImage
+from paper_uploads.cloudinary.models.base import CloudinaryFieldFile
 
 from ... import utils
 from ...dummy import *
+from ...mixins import BacklinkModelTestMixin
 from ...models.test_dummy import (
+    TestImageFieldResource,
     TestImageFieldResourceAttach,
     TestImageFieldResourceDelete,
     TestImageFieldResourceEmpty,
     TestImageFieldResourceRename,
 )
-from .test_base import CloudinaryFileResource
 
 
-class TestCloudinaryImage(CloudinaryFileResource):
-    resource_url = '/media/images/%Y-%m-%d'
-    resource_location = 'images/%Y-%m-%d'
-    resource_basename = 'Nature Tree'
-    resource_extension = 'jpg'
-    resource_size = 672759
-    resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
-    owner_fieldname = 'image'
-    owner_model = CloudinaryImageExample
-    file_field_name = 'file'
+class TestCloudinaryImage(BacklinkModelTestMixin, TestImageFieldResource):
+    resource_class = CloudinaryImage
+    resource_attachment = CALLIPHORA_FILEPATH
+    resource_basename = "calliphora"
+    resource_extension = "jpg"
+    resource_name = "images/%Y-%m-%d/calliphora{suffix}"
+    resource_size = 254766
+    resource_checksum = "d4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386"
+    resource_folder = "images/%Y-%m-%d"
+    resource_field_name = "file"
+    owner_fieldname = "image"
+    owner_model = Page
 
     @classmethod
     def init_class(cls, storage):
-        storage.resource = CloudinaryImage(
-            title='Calliphora',
-            description='Calliphora is a genus of blow flies, also known as bottle flies',
+        storage.resource = cls.resource_class(
+            title="Nasa",
+            description="Calliphora is a genus of blow flies, also known as bottle flies",
         )
         storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
-        storage.resource.attach(NATURE_FILEPATH)
+        storage.resource.attach(cls.resource_attachment)
         storage.resource.save()
         yield
         storage.resource.delete_file()
         storage.resource.delete()
 
+    def test_get_file_storage(self, storage):
+        pass
+
+    def test_path(self, storage):
+        pass
+
     def test_type(self, storage):
         file_field = storage.resource.get_file_field()
-        assert file_field.type == 'private'
-        assert file_field.resource_type == 'image'
+        assert file_field.type == "private"
+        assert file_field.resource_type == "image"
+
+    def test_get_file(self, storage):
+        assert isinstance(storage.resource.get_file(), CloudinaryFieldFile)
+
+    def test_repr(self, storage):
+        assert utils.match_path(
+            repr(storage.resource),
+            "{}('{}')".format(
+                type(storage.resource).__name__,
+                datetime.datetime.now().strftime(self.resource_name)
+            ),
+            source=storage.resource.name
+        )
 
     def test_public_id(self, storage):
+        # no extension
         public_id = storage.resource.get_file().public_id
-        pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}')
-        assert public_id == utils.get_target_filepath(pattern, public_id)
+        assert utils.match_path(
+            public_id,
+            "{}/calliphora{{suffix}}".format(self.resource_folder),
+        )
 
     def test_name(self, storage):
-        file_name = storage.resource.name
-        pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}')
-        assert file_name == utils.get_target_filepath(pattern, file_name)
+        # no extension
+        assert utils.match_path(
+            storage.resource.name,
+            "{}/calliphora{{suffix}}".format(self.resource_folder),
+        )
 
-    def test_get_file_folder(self, storage):
-        assert storage.resource.get_file_folder() == self.resource_location
+    def test_url(self, storage):
+        assert storage.resource.url.startswith("https://res.cloudinary.com/")
+        assert utils.match_path(
+            storage.resource.url,
+            "{}/calliphora{{suffix}}.jpg".format(self.resource_folder),
+            source=storage.resource.name
+        )
+
+    def test_title(self, storage):
+        assert storage.resource.title == "Nasa"
+
+    def test_description(self, storage):
+        assert storage.resource.description == "Calliphora is a genus of blow flies, " \
+                                               "also known as bottle flies"
+
+    def test_width(self, storage):
+        assert storage.resource.width == 804
+
+    def test_height(self, storage):
+        assert storage.resource.height == 1198
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
-            'id': 1,
-            'name': self.resource_basename,
-            'extension': self.resource_extension,
-            'caption': '{}.{}'.format(
+            "id": 1,
+            "name": self.resource_basename,
+            "extension": self.resource_extension,
+            "caption": "{}.{}".format(
                 self.resource_basename,
                 self.resource_extension
             ),
-            'size': self.resource_size,
-            'width': 1534,
-            'height': 2301,
-            'cropregion': '',
-            'title': 'Calliphora',
-            'description': 'Calliphora is a genus of blow flies, also known as bottle flies',
-            'file_info': '(jpg, 1534x2301, 672.8\xa0KB)',
-            'url': storage.resource.get_file_url(),
-            'created': storage.resource.created_at.isoformat(),
-            'modified': storage.resource.modified_at.isoformat(),
-            'uploaded': storage.resource.uploaded_at.isoformat(),
+            "size": self.resource_size,
+            "width": 804,
+            "height": 1198,
+            "cropregion": "",
+            "title": "Nasa",
+            "description": "Calliphora is a genus of blow flies, also known as bottle flies",
+            "url": storage.resource.url,
+            "file_info": "(jpg, 804x1198, 254.8\xa0KB)",
+            "created": storage.resource.created_at.isoformat(),
+            "modified": storage.resource.modified_at.isoformat(),
+            "uploaded": storage.resource.uploaded_at.isoformat(),
+        }
+
+    def test_get_cloudinary_options(self, storage):
+        options = storage.resource.get_cloudinary_options()
+        assert options == {
+            "use_filename": True,
+            "unique_filename": True,
+            "overwrite": True,
+            "invalidate": True,
+            "folder": datetime.datetime.now().strftime(self.resource_folder)
         }
 
     def test_build_url(self, storage):
         url = storage.resource.build_url(width=100)
-        assert url.startswith('https://res.cloudinary.com/')
+        assert url.startswith("https://res.cloudinary.com/")
         assert "/w_100/" in url
 
 
 class TestCloudinaryImageAttach(TestImageFieldResourceAttach):
     resource_class = CloudinaryImage
-    resource_size = 9711423
-    resource_checksum = '485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0'
-    owner_fieldname = 'image'
-    owner_model = CloudinaryImageExample
-
-    @contextmanager
-    def get_resource(self):
-        resource = self.resource_class()
-        resource.set_owner_field(self.owner_model, self.owner_fieldname)
-        try:
-            yield resource
-        finally:
-            resource.delete_file()
+    resource_attachment = CALLIPHORA_FILEPATH
+    resource_basename = "calliphora"
+    resource_extension = "jpg"
+    resource_size = 254766
+    resource_checksum = "d4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386"
 
     def test_unsupported_file(self):
         with self.get_resource() as resource:
-            with open(DOCUMENT_FILEPATH, 'rb') as fp:
+            with open(DOCUMENT_FILEPATH, "rb") as fp:
                 with pytest.raises(exceptions.UnsupportedResource):
                     resource.attach(fp)
 
 
 class TestCloudinaryImageRename(TestImageFieldResourceRename):
     resource_class = CloudinaryImage
-    resource_location = 'images/%Y-%m-%d'
-    owner_fieldname = 'image'
-    owner_model = CloudinaryImageExample
+    resource_attachment = NASA_FILEPATH
+    resource_size = 9711423
+    resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
+    owner_fieldname = "image"
+    owner_model = Page
+    old_name = "old_file_4Qft.txt"
+    new_name = "new_file_bCGr.log"
 
     @classmethod
     def init_class(cls, storage):
-        storage.uid = get_random_string(5)
         storage.resource = cls.resource_class()
         storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
-        storage.resource.attach(CALLIPHORA_FILEPATH, name='old_image_name_{}.jpg'.format(storage.uid))
+        storage.resource.attach(cls.resource_attachment, name=cls.old_name)
         storage.resource.save()
 
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
-        storage.resource.rename('new_image_name_{}.png'.format(storage.uid))
+        storage.old_modified_at = storage.resource.modified_at
+        storage.old_resource_name = storage.resource.name
 
+        storage.resource.rename(cls.new_name)
         yield
 
         storage.resource.delete_file()
         storage.resource.delete()
 
-    def test_old_file_exists(self, storage):
+    def test_old_file_existence(self, storage):
         file = storage.resource.get_file()
         with pytest.raises(cloudinary.exceptions.Error):
             uploader.explicit(
-                storage.old_source_name,
+                storage.old_resource_name,
                 type=file.resource.type,
                 resource_type=file.resource.resource_type
             )
 
-    def test_new_file_exists(self, storage):
+    def test_new_file_existence(self, storage):
         file = storage.resource.get_file()
         uploader.explicit(
             file.name,
@@ -154,69 +203,42 @@ class TestCloudinaryImageRename(TestImageFieldResourceRename):
             resource_type=file.resource.resource_type
         )
 
-    def test_old_file_name(self, storage):
-        assert storage.old_source_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_image_name_{}{{suffix}}'.format(storage.uid)),
-            storage.old_source_name
-        )
-
-    def test_new_file_name(self, storage):
-        file = storage.resource.get_file()
-        assert file.name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'new_image_name_{}{{suffix}}'.format(storage.uid)),
-            file.name
-        )
-
-    def test_basename(self, storage):
-        assert storage.resource.basename == utils.get_target_filepath(
-            'new_image_name_{}{{suffix}}'.format(storage.uid),
-            storage.resource.basename
-        )
-
     def test_extension(self, storage):
-        assert storage.resource.extension == 'jpg'
+        assert storage.resource.extension == "jpg"
 
 
 class TestCloudinaryImageDelete(TestImageFieldResourceDelete):
     resource_class = CloudinaryImage
-    resource_location = 'images/%Y-%m-%d'
-    owner_fieldname = 'image'
-    owner_model = CloudinaryImageExample
+    resource_attachment = NATURE_FILEPATH
+    owner_fieldname = "image"
+    owner_model = Page
 
     @classmethod
     def init_class(cls, storage):
         storage.resource = cls.resource_class()
         storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
-        storage.resource.attach(CALLIPHORA_FILEPATH, name='old_name.jpg')
+        storage.resource.attach(cls.resource_attachment)
         storage.resource.save()
 
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
+        storage.old_resource_name = storage.resource.name
 
         storage.resource.delete_file()
-
         yield
 
         storage.resource.delete()
 
-    def test_file_name(self, storage):
-        assert storage.old_source_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_name{suffix}'),
-            storage.old_source_name
-        )
-
-    def test_file_not_exists(self, storage):
+    def test_file_existence(self, storage):
         file_field = storage.resource.get_file_field()
         with pytest.raises(cloudinary.exceptions.Error):
             uploader.explicit(
-                storage.old_source_name,
+                storage.old_resource_name,
                 type=file_field.type,
                 resource_type=file_field.resource_type
             )
 
+    def test_file_field_empty(self, storage):
+        assert storage.resource.get_file() is None
+
 
 class TestCloudinaryFileEmpty(TestImageFieldResourceEmpty):
     recource_class = CloudinaryImage
-
-    def test_path(self, storage):
-        pass

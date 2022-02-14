@@ -15,18 +15,6 @@ def get_file_suffix(filepath: str) -> str:
     return ""
 
 
-def get_target_filepath(pattern: str, filepath: str) -> str:
-    """
-    Build filepath, similar to FileSystemStorage
-    """
-    value = datetime.datetime.now().strftime(pattern)
-    suffix = get_file_suffix(filepath)
-    value = value.format(
-        suffix=suffix or ''
-    )
-    return value
-
-
 def match_path(target: str, pattern: str, *, source: str = None):
     """
     Проверка соответствия пути target паттерну pattern.

@@ -27,8 +27,6 @@ from .test_dummy import (
     TestFileFieldResourceDelete,
     TestFileFieldResourceEmpty,
     TestFileFieldResourceRename,
-    TestVersatileImageAttach,
-    TestVersatileImageDelete,
     TestVersatileImageEmpty,
     TestVersatileImageRename,
 )
@@ -287,6 +285,18 @@ class TestDeleteCustomImageCollection:
             vfile.delete()
 
 
+@pytest.mark.django_db
+class TestAttachWrongItemClassToCollection:
+    def test_attach(self):
+        collection = ImagesOnlyCollection.objects.create()
+        resource = FileItem()
+
+        with pytest.raises(TypeError):
+            resource.attach_to(collection)
+
+        collection.delete()
+
+
 class CollectionItemMixin:
     collection_class = None
 
@@ -317,33 +327,20 @@ class CollectionItemMixin:
             self.resource_extension  # noqa: F821
         )
 
+    def test_file_not_exists(self):
+        collection = self.collection_class.objects.create()
+        resource = self.resource_class()
+        resource.attach_to(collection)
+        resource.basename = "non-existent-file"
+        resource.extension = self.resource_extension
+        assert resource.file_exists() is False
+        collection.delete()
+
     def test_accept(self, storage):
         raise NotImplementedError
 
 
-@pytest.mark.django_db
-class TestAttachWrongItemClassToCollection:
-    def test_attach(self):
-        collection = ImagesOnlyCollection.objects.create()
-        resource = FileItem()
-
-        with pytest.raises(TypeError):
-            resource.attach_to(collection)
-
-        collection.delete()
-
-
-class TestFileItem(CollectionItemMixin, TestFileFieldResource):
-    collection_class = FilesOnlyCollection
-    resource_class = FileItem
-    resource_attachment = NATURE_FILEPATH
-    resource_basename = "Nature Tree"
-    resource_extension = "Jpeg"
-    resource_name = "collections/files/%Y-%m-%d/Nature_Tree.Jpeg"
-    resource_size = 672759
-    resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    resource_folder = "collections/files/%Y-%m-%d"
-
+class CollectionItemTestBase(CollectionItemMixin, TestFileFieldResource):
     @classmethod
     def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
@@ -358,6 +355,54 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
         storage.resource.delete_file()
         storage.resource.delete()
         storage.collection.delete()
+
+
+class CollectionItemAttachTestBase(TestFileFieldResourceAttach):
+    @contextmanager
+    def get_resource(self):
+        collection = self.collection_class.objects.create()
+        resource = self.resource_class()
+        resource.attach_to(collection)
+        try:
+            yield resource
+        finally:
+            resource.delete_file()
+            collection.delete()
+
+
+class CollectionItemDeleteTestBase(TestFileFieldResourceDelete):
+    @classmethod
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+
+        storage.resource = cls.resource_class()
+        storage.resource.attach_to(storage.collection)
+        storage.resource.attach(cls.resource_attachment)
+        storage.resource.save()
+
+        storage.old_resource_name = storage.resource.name
+
+        storage.resource.delete_file()
+        yield
+
+        storage.resource.delete()
+        storage.collection.delete()
+
+
+# ======================================================================================
+
+
+class TestFileItem(CollectionItemTestBase):
+    collection_class = FilesOnlyCollection
+    resource_class = FileItem
+    resource_attachment = NATURE_FILEPATH
+    resource_basename = "Nature Tree"
+    resource_extension = "Jpeg"
+    resource_name = "collections/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg"
+    resource_size = 672759
+    resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
+    resource_folder = "collections/files/%Y-%m-%d"
+    resource_field_name = "file"
 
     def test_item_type(self, storage):
         assert storage.resource.type == "file"
@@ -401,7 +446,7 @@ class TestFileItem(CollectionItemMixin, TestFileFieldResource):
 
 
 @pytest.mark.django_db
-class TestFileItemAttach(TestFileFieldResourceAttach):
+class TestFileItemAttach(CollectionItemAttachTestBase):
     collection_class = MixedCollection
     resource_class = FileItem
     resource_attachment = DOCUMENT_FILEPATH
@@ -410,21 +455,15 @@ class TestFileItemAttach(TestFileFieldResourceAttach):
     resource_size = 3028
     resource_checksum = "93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e"
 
-    @contextmanager
-    def get_resource(self):
-        collection = self.collection_class.objects.create()
-        resource = self.resource_class()
-        resource.attach_to(collection)
-        try:
-            yield resource
-        finally:
-            resource.delete_file()
-            collection.delete()
-
 
 class TestFileItemRename(TestFileFieldResourceRename):
     collection_class = FilesOnlyCollection
     resource_class = FileItem
+    resource_attachment = NATURE_FILEPATH
+    resource_size = 672759
+    resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
+    old_name = "old_file_yFwy.txt"
+    new_name = "new_file_SRgz.log"
 
     @classmethod
     def init_class(cls, storage):
@@ -448,58 +487,27 @@ class TestFileItemRename(TestFileFieldResourceRename):
         storage.collection.delete()
 
 
-class TestFileItemDelete(TestFileFieldResourceDelete):
+class TestFileItemDelete(CollectionItemDeleteTestBase):
     collection_class = FilesOnlyCollection
     resource_class = FileItem
     resource_attachment = EXCEL_FILEPATH
-
-    @classmethod
-    def init_class(cls, storage):
-        storage.collection = cls.collection_class.objects.create()
-
-        storage.resource = cls.resource_class()
-        storage.resource.attach_to(storage.collection)
-        storage.resource.attach(cls.resource_attachment)
-        storage.resource.save()
-
-        storage.old_resource_name = storage.resource.name
-
-        storage.resource.delete_file()
-        yield
-
-        storage.resource.delete()
-        storage.collection.delete()
 
 
 class TestFileItemEmpty(TestFileFieldResourceEmpty):
     recource_class = FileItem
 
 
-class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
+class TestSVGItem(CollectionItemTestBase):
     collection_class = MixedCollection
     resource_class = SVGItem
     resource_attachment = MEDITATION_FILEPATH
     resource_basename = "Meditation"
     resource_extension = "svg"
-    resource_name = "collections/files/%Y-%m-%d/Meditation.svg"
+    resource_name = "collections/files/%Y-%m-%d/Meditation{suffix}.svg"
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
     resource_folder = "collections/files/%Y-%m-%d"
-
-    @classmethod
-    def init_class(cls, storage):
-        storage.collection = cls.collection_class.objects.create()
-
-        storage.resource = cls.resource_class()
-        storage.resource.attach_to(storage.collection)
-        storage.resource.attach(cls.resource_attachment)
-        storage.resource.save()
-
-        yield
-
-        storage.resource.delete_file()
-        storage.resource.delete()
-        storage.collection.delete()
+    resource_field_name = "file"
 
     def test_name(self, storage):
         assert utils.match_path(
@@ -565,7 +573,7 @@ class TestSVGItem(CollectionItemMixin, TestFileFieldResource):
 
 
 @pytest.mark.django_db
-class TestSVGItemAttach(TestFileFieldResourceAttach):
+class TestSVGItemAttach(CollectionItemAttachTestBase):
     collection_class = MixedCollection
     resource_class = SVGItem
     resource_attachment = MEDITATION_FILEPATH
@@ -573,17 +581,6 @@ class TestSVGItemAttach(TestFileFieldResourceAttach):
     resource_extension = "svg"
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
-
-    @contextmanager
-    def get_resource(self):
-        collection = self.collection_class.objects.create()
-        resource = self.resource_class()
-        resource.attach_to(collection)
-        try:
-            yield resource
-        finally:
-            resource.delete_file()
-            collection.delete()
 
     def test_unsupported_file(self):
         resource = self.resource_class()
@@ -597,8 +594,8 @@ class TestSVGItemRename(TestFileFieldResourceRename):
     resource_attachment = MEDITATION_FILEPATH
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
-    old_name = "old_name.svg"
-    new_name = "new_name.svg"
+    old_name = "old_file_xeNc.svg"
+    new_name = "new_file_u9s9.svg"
 
     @classmethod
     def init_class(cls, storage):
@@ -622,58 +619,27 @@ class TestSVGItemRename(TestFileFieldResourceRename):
         storage.collection.delete()
 
 
-class TestSVGItemDelete(TestFileFieldResourceDelete):
+class TestSVGItemDelete(CollectionItemDeleteTestBase):
     collection_class = MixedCollection
     resource_class = SVGItem
     resource_attachment = MEDITATION_FILEPATH
-
-    @classmethod
-    def init_class(cls, storage):
-        storage.collection = cls.collection_class.objects.create()
-
-        storage.resource = cls.resource_class()
-        storage.resource.attach_to(storage.collection)
-        storage.resource.attach(cls.resource_attachment)
-        storage.resource.save()
-
-        storage.old_resource_name = storage.resource.name
-
-        storage.resource.delete_file()
-        yield
-
-        storage.resource.delete()
-        storage.collection.delete()
 
 
 class TestSVGItemEmpty(TestFileFieldResourceEmpty):
     recource_class = SVGItem
 
 
-class TestImageItem(CollectionItemMixin, TestFileFieldResource):
+class TestImageItem(CollectionItemTestBase):
     collection_class = ImagesOnlyCollection
     resource_class = ImageItem
     resource_attachment = NATURE_FILEPATH
     resource_basename = "Nature Tree"
     resource_extension = "jpg"
-    resource_name = "collections/images/%Y-%m-%d/Nature_Tree.jpg"
+    resource_name = "collections/images/%Y-%m-%d/Nature_Tree{suffix}.jpg"
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
     resource_folder = "collections/images/%Y-%m-%d"
-
-    @classmethod
-    def init_class(cls, storage):
-        storage.collection = cls.collection_class.objects.create()
-
-        storage.resource = cls.resource_class()
-        storage.resource.attach_to(storage.collection)
-        storage.resource.attach(cls.resource_attachment)
-        storage.resource.save()
-
-        yield
-
-        storage.resource.delete_file()
-        storage.resource.delete()
-        storage.collection.delete()
+    resource_field_name = "file"
 
     def test_name(self, storage):
         assert utils.match_path(
@@ -770,20 +736,21 @@ class TestImageItem(CollectionItemMixin, TestFileFieldResource):
 
 
 @pytest.mark.django_db
-class TestImageItemAttach(TestVersatileImageAttach):
+class TestImageItemAttach(CollectionItemAttachTestBase):
     collection_class = ImagesOnlyCollection
     resource_class = ImageItem
+    resource_attachment = NASA_FILEPATH
+    resource_basename = "milky-way-nasa"
+    resource_extension = "jpg"
+    resource_size = 9711423
+    resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
 
-    @contextmanager
-    def get_resource(self):
-        collection = self.collection_class.objects.create()
-        resource = self.resource_class()
-        resource.attach_to(collection)
-        try:
-            yield resource
-        finally:
-            resource.delete_file()
-            collection.delete()
+    def test_wrong_extension(self):
+        with self.get_resource() as resource:
+            resource.attach(self.resource_attachment, name="overwritten.gif")
+
+            assert resource.basename == "overwritten"
+            assert resource.extension == "jpg"
 
     def test_unsupported_file(self):
         resource = self.resource_class()
@@ -797,8 +764,8 @@ class TestImageItemRename(TestVersatileImageRename):
     resource_attachment = NATURE_FILEPATH
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    old_name = "old_name.svg"
-    new_name = "new_name.svg"
+    old_name = "old_file_fp1t.txt"
+    new_name = "new_file_jhXU.log"
 
     @classmethod
     def init_class(cls, storage):
@@ -835,26 +802,10 @@ class TestImageItemRename(TestVersatileImageRename):
         storage.collection.delete()
 
 
-class TestImageItemDelete(TestVersatileImageDelete):
+class TestImageItemDelete(CollectionItemDeleteTestBase):
     collection_class = ImagesOnlyCollection
     resource_class = ImageItem
-
-    @classmethod
-    def init_class(cls, storage):
-        storage.collection = cls.collection_class.objects.create()
-
-        storage.resource = cls.resource_class()
-        storage.resource.attach_to(storage.collection)
-        storage.resource.attach(cls.resource_attachment)
-        storage.resource.save()
-
-        storage.old_resource_name = storage.resource.name
-
-        storage.resource.delete_file()
-        yield
-
-        storage.resource.delete()
-        storage.collection.delete()
+    resource_attachment = NATURE_FILEPATH
 
 
 class TestImageItemEmpty(TestVersatileImageEmpty):

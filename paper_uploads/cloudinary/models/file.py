@@ -7,10 +7,10 @@ from django.utils.translation import gettext_lazy as _
 from ...conf import settings
 from ...models.mixins import BacklinkModelMixin
 from ...utils import filesizeformat
-from .base import CloudinaryFieldFile, CloudinaryFileResource
+from .base import CloudinaryFieldFile, CloudinaryFileFieldResource
 
 
-class CloudinaryFile(BacklinkModelMixin, CloudinaryFileResource):
+class CloudinaryFile(BacklinkModelMixin, CloudinaryFileFieldResource):
     file = CloudinaryField(
         _("file"),
         type=settings.CLOUDINARY_TYPE,
@@ -18,33 +18,31 @@ class CloudinaryFile(BacklinkModelMixin, CloudinaryFileResource):
     )
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
-    class Meta(CloudinaryFileResource.Meta):
+    class Meta(CloudinaryFileFieldResource.Meta):
         verbose_name = _("file")
         verbose_name_plural = _("files")
-
-    def get_file_folder(self) -> str:
-        return settings.FILES_UPLOAD_TO
-
-    def get_file(self) -> Optional[CloudinaryFieldFile]:
-        if not self.file:
-            return None
-        return CloudinaryFieldFile(self.file, checksum=self.checksum)
-
-    def set_file(self, value):
-        self.file = value
-
-    def get_file_field(self) -> CloudinaryField:
-        return self._meta.get_field("file")
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:
             self.display_name = self.basename
         super().save(*args, **kwargs)
 
+    def get_file(self) -> Optional[CloudinaryFieldFile]:
+        if not self.file:
+            return None
+        return CloudinaryFieldFile(self.file, checksum=self.checksum)
+
+    def get_file_folder(self) -> str:
+        owner_field = self.get_owner_field()
+        return getattr(owner_field, "upload_to", "") or settings.FILES_UPLOAD_TO
+
+    def get_file_field(self) -> CloudinaryField:
+        return self._meta.get_field("file")
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
-            "name": self.display_name,
+            "name": self.display_name or self.basename,
             "file_info": "({ext}, {size})".format(
                 ext=self.extension, size=filesizeformat(self.size)
             ),

@@ -4,6 +4,8 @@ from ...models.mixins import FileProxyMixin
 class ReadonlyCloudinaryFileProxyMixin(FileProxyMixin):
     """
     Проксирование некоторых свойств файла (только для чтения) на уровень модели
+
+    TODO: удалить _require_file?
     """
 
     @property

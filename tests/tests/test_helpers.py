@@ -286,7 +286,7 @@ class TestGetCollectionTrees:
 
     def test_proxy_count(self):
         trees = helpers.get_collection_trees(include_proxy=True)
-        assert len(trees[0].children) == 7
+        assert len(trees[0].children) == 9
 
     def test_concrete_heights(self):
         trees = helpers.get_collection_trees()
@@ -304,7 +304,7 @@ class TestGetCollectionTrees:
             value: len([item for item in tree_heights if item == value])
             for value in set(tree_heights)
         }
-        assert height_map == {0: 6, 1: 1}
+        assert height_map == {0: 7, 1: 2}
 
 
 @pytest.mark.django_db

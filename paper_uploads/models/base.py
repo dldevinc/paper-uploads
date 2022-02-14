@@ -458,6 +458,10 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
     def get_file(self) -> FieldFile:
         raise NotImplementedError
 
+    def set_file(self, value):
+        field = self.get_file_field()
+        setattr(self, field.attname, value)
+
     def get_file_size(self) -> int:
         self._require_file()
         return self.get_file().size

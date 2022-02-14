@@ -151,6 +151,12 @@ class TestFileResource(FileProxyTestMixin, TestResource):
     def test_file_exists(self, storage):
         assert storage.resource.file_exists() is True
 
+    def test_file_not_exists(self):
+        resource = self.resource_class()
+        resource.basename = "non-existent-file"
+        resource.extension = self.resource_extension
+        assert resource.file_exists() is False
+
 
 class TestEmptyFileResource:
     resource_class = DummyFileResource
@@ -656,10 +662,11 @@ class TestFileFieldResource(TestFileResource):
     resource_attachment = NATURE_FILEPATH
     resource_basename = "Nature Tree"
     resource_extension = "Jpeg"
-    resource_name = "file_field/Nature_Tree.Jpeg"
+    resource_name = "file_field/Nature_Tree{suffix}.Jpeg"
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
     resource_folder = "file_field"
+    resource_field_name = "file"
 
     @classmethod
     def init_class(cls, storage):
@@ -671,9 +678,12 @@ class TestFileFieldResource(TestFileResource):
         storage.resource.delete()
 
     def test_repr(self, storage):
-        assert repr(storage.resource) == "{}('{}')".format(
-            type(storage.resource).__name__,
-            datetime.datetime.now().strftime(self.resource_name)
+        assert utils.match_path(
+            repr(storage.resource),
+            "{}('{}')".format(
+                type(storage.resource).__name__,
+                datetime.datetime.now().strftime(self.resource_name)
+            )
         )
 
     def test_name(self, storage):
@@ -685,6 +695,12 @@ class TestFileFieldResource(TestFileResource):
     def test_read(self, storage):
         with storage.resource.open() as fp:
             assert fp.read(5) == b'\xff\xd8\xff\xe0\x00'
+
+    def test_get_file_field(self, storage):
+        assert (
+            storage.resource.get_file_field()
+            is storage.resource._meta.get_field(self.resource_field_name)
+        )
 
     def test_get_file_folder(self, storage):
         assert storage.resource.get_file_folder() == self.resource_folder
@@ -809,10 +825,11 @@ class TestImageFieldResource(TestFileFieldResource):
     resource_attachment = NASA_FILEPATH
     resource_basename = "milky-way-nasa"
     resource_extension = "jpg"
-    resource_name = "image_field/milky-way-nasa.jpg"
+    resource_name = "image_field/milky-way-nasa{suffix}.jpg"
     resource_size = 9711423
     resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
     resource_folder = "image_field"
+    resource_field_name = "image"
 
     @classmethod
     def init_class(cls, storage):
@@ -921,10 +938,11 @@ class TestVersatileImageResource(TestImageFieldResource):
     resource_attachment = CALLIPHORA_FILEPATH
     resource_basename = "calliphora"
     resource_extension = "jpg"
-    resource_name = "versatile_image_field/calliphora.jpg"
+    resource_name = "versatile_image_field/calliphora{suffix}.jpg"
     resource_size = 254766
     resource_checksum = "d4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386"
     resource_folder = "versatile_image_field"
+    resource_field_name = "image"
 
     def test_name(self, storage):
         assert utils.match_path(

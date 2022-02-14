@@ -47,6 +47,9 @@ INSTALLED_APPS = [
     "examples.collections.proxy_models",
     "examples.collections.custom_models",
     "examples.collections.validators",
+    "examples.cloudinary.standard",
+    "examples.cloudinary.custom_storage",
+    "examples.cloudinary.collections",
 ]
 
 MIDDLEWARE = [
@@ -222,6 +225,29 @@ PAPER_MENU = [
                         label=_("Validators"),
                         models=[
                             "validators_collections.Page",
+                        ]
+                    ),
+                ]
+            ),
+            dict(
+                label=_("Cloudinary"),
+                models=[
+                    dict(
+                        label=_("Standard"),
+                        models=[
+                            "standard_cloudinary_fields.Page",
+                        ]
+                    ),
+                    dict(
+                        label=_("Custom destination"),
+                        models=[
+                            "custom_cloudinary_storage.Page",
+                        ]
+                    ),
+                    dict(
+                        label=_("Collections"),
+                        models=[
+                            "cloudinary_collections.Page",
                         ]
                     ),
                 ]
