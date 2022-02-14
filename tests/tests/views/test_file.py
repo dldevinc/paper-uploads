@@ -7,7 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.test import RequestFactory
-from examples.proxy_files.models import Page, UploadedFileProxy
+from examples.fields.proxy_models.models import Page, UploadedFileProxy
 
 from paper_uploads.exceptions import InvalidContentType, InvalidObjectId
 from paper_uploads.forms.dialogs.file import ChangeUploadedFileDialog
@@ -39,7 +39,7 @@ class TestUploadFileView:
     def test_get_instance(self, storage):
         request = RequestFactory().post("/", data={
             "paperContentType": storage.content_type.pk,
-            "paperOwnerAppLabel": "proxy_files",
+            "paperOwnerAppLabel": "proxy_models_fields",
             "paperOwnerModelName": "page",
             "paperOwnerFieldName": "file"
         })
@@ -56,7 +56,7 @@ class TestUploadFileView:
 
         request = RequestFactory().post("/", data={
             "paperContentType": wrong_content_type.pk,
-            "paperOwnerAppLabel": "proxy_files",
+            "paperOwnerAppLabel": "proxy_models_fields",
             "paperOwnerModelName": "page",
             "paperOwnerFieldName": "file"
         })
@@ -69,7 +69,7 @@ class TestUploadFileView:
     def test_validation_errors(self, storage):
         request = RequestFactory().post("/", data={
             "paperContentType": storage.content_type.pk,
-            "paperOwnerAppLabel": "validators",
+            "paperOwnerAppLabel": "validators_fields",
             "paperOwnerModelName": "page",
             "paperOwnerFieldName": "filter_ext"
         })
@@ -82,7 +82,7 @@ class TestUploadFileView:
     def test_success(self, storage):
         request = RequestFactory().post("/", data={
             "paperContentType": storage.content_type.pk,
-            "paperOwnerAppLabel": "proxy_files",
+            "paperOwnerAppLabel": "proxy_models_fields",
             "paperOwnerModelName": "page",
             "paperOwnerFieldName": "file"
         })
