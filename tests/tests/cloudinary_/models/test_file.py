@@ -1,144 +1,167 @@
-import posixpath
-from contextlib import contextmanager
-
 import cloudinary.exceptions
 import pytest
+import datetime
 from cloudinary import uploader
-from django.utils.crypto import get_random_string
+from examples.cloudinary.standard.models import Page
 
-from app.models import CloudinaryFileExample
 from paper_uploads.cloudinary.models import CloudinaryFile
+from paper_uploads.cloudinary.models.base import CloudinaryFieldFile
 
 from ... import utils
 from ...dummy import *
+from ...mixins import BacklinkModelTestMixin
 from ...models.test_dummy import (
-    BacklinkModelMixin,
+    TestFileFieldResource,
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
     TestFileFieldResourceEmpty,
     TestFileFieldResourceRename,
 )
-from .test_base import CloudinaryFileResource
 
 
-class TestCloudinaryFile(BacklinkModelMixin, CloudinaryFileResource):
-    resource_url = '/media/files/%Y-%m-%d'
-    resource_location = 'files/%Y-%m-%d'
-    resource_name = 'Nature Tree'
-    resource_extension = 'Jpeg'
+class TestCloudinaryFile(BacklinkModelTestMixin, TestFileFieldResource):
+    resource_class = CloudinaryFile
+    resource_attachment = NATURE_FILEPATH
+    resource_basename = "Nature Tree"
+    resource_extension = "Jpeg"
+    resource_name = "files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg"
     resource_size = 672759
-    resource_checksum = 'e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1'
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinaryfileexample'
-    owner_fieldname = 'file'
-    owner_model = CloudinaryFileExample
-    file_field_name = 'file'
+    resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
+    resource_folder = "files/%Y-%m-%d"
+    owner_fieldname = "file"
+    owner_model = Page
 
     @classmethod
     def init_class(cls, storage):
-        storage.resource = CloudinaryFile(
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
-        )
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp)
+        storage.resource = cls.resource_class()
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(cls.resource_attachment)
         storage.resource.save()
         yield
         storage.resource.delete_file()
         storage.resource.delete()
 
-    def test_get_file_folder(self, storage):
-        assert storage.resource.get_file_folder() == self.resource_location
+    def test_get_file_storage(self, storage):
+        pass
 
-    def test_display_name(self, storage):
-        assert storage.resource.display_name == self.resource_name
+    def test_path(self, storage):
+        pass
 
     def test_type(self, storage):
         file_field = storage.resource.get_file_field()
-        assert file_field.type == 'private'
-        assert file_field.resource_type == 'raw'
+        assert file_field.type == "private"
+        assert file_field.resource_type == "raw"
+
+    def test_get_file(self, storage):
+        assert isinstance(storage.resource.get_file(), CloudinaryFieldFile)
+
+    def test_repr(self, storage):
+        assert utils.match_path(
+            repr(storage.resource),
+            "{}('{}')".format(
+                type(storage.resource).__name__,
+                datetime.datetime.now().strftime(self.resource_name)
+            ),
+            source=storage.resource.name
+        )
+
+    def test_display_name(self, storage):
+        assert storage.resource.display_name == self.resource_basename
 
     def test_public_id(self, storage):
         public_id = storage.resource.get_file().public_id
-        pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}.Jpeg')
-        assert public_id == utils.get_target_filepath(pattern, public_id)
+        assert utils.match_path(
+            public_id,
+            "{}/Nature_Tree{{suffix}}.Jpeg".format(self.resource_folder),
+        )
 
     def test_name(self, storage):
-        file_name = storage.resource.name
-        pattern = posixpath.join(self.resource_location, 'Nature_Tree{suffix}.Jpeg')
-        assert file_name == utils.get_target_filepath(pattern, file_name)
+        assert utils.match_path(
+            storage.resource.name,
+            "{}/Nature_Tree{{suffix}}.Jpeg".format(self.resource_folder),
+        )
+
+    def test_url(self, storage):
+        assert storage.resource.url.startswith("https://res.cloudinary.com/")
+        assert utils.match_path(
+            storage.resource.url,
+            "{}/Nature_Tree{{suffix}}.Jpeg".format(self.resource_folder),
+            source=storage.resource.name
+        )
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
-            'id': 1,
-            'name': self.resource_name,
-            'extension': self.resource_extension,
-            'caption': '{}.{}'.format(
-                self.resource_name,
+            "id": 1,
+            "name": self.resource_basename,
+            "extension": self.resource_extension,
+            "caption": "{}.{}".format(
+                self.resource_basename,
                 self.resource_extension
             ),
-            'size': self.resource_size,
-            'file_info': '(Jpeg, 672.8\xa0KB)',
-            'url': storage.resource.get_file_url(),
-            'created': storage.resource.created_at.isoformat(),
-            'modified': storage.resource.modified_at.isoformat(),
-            'uploaded': storage.resource.uploaded_at.isoformat(),
+            "size": self.resource_size,
+            "url": storage.resource.url,
+            "file_info": "(Jpeg, 672.8\xa0KB)",
+            "created": storage.resource.created_at.isoformat(),
+            "modified": storage.resource.modified_at.isoformat(),
+            "uploaded": storage.resource.uploaded_at.isoformat(),
         }
+
+    def test_get_cloudinary_options(self, storage):
+        options = storage.resource.get_cloudinary_options()
+        assert options == {
+            "use_filename": True,
+            "unique_filename": True,
+            "overwrite": True,
+            "invalidate": True,
+            "folder": datetime.datetime.now().strftime(self.resource_folder)
+        }
+
+    def test_build_url(self, storage):
+        url = storage.resource.build_url(version="1.0.0")
+        assert url.startswith("https://res.cloudinary.com/")
+        assert "1.0.0" in url
 
 
 class TestCloudinaryFileAttach(TestFileFieldResourceAttach):
     resource_class = CloudinaryFile
 
-    @contextmanager
-    def get_resource(self):
-        resource = self.resource_class()
-        try:
-            yield resource
-        finally:
-            resource.delete_file()
 
-
-class TestCloudinaryFileRename(BacklinkModelMixin, TestFileFieldResourceRename):
+class TestCloudinaryFileRename(BacklinkModelTestMixin, TestFileFieldResourceRename):
     resource_class = CloudinaryFile
-    resource_location = 'files/%Y-%m-%d'
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinaryfileexample'
-    owner_fieldname = 'file'
-    owner_model = CloudinaryFileExample
+    resource_attachment = DOCUMENT_FILEPATH
+    resource_size = 3028
+    resource_checksum = "93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e"
+    owner_fieldname = "file"
+    owner_model = Page
+    old_name = "old_file_D4OZ.txt"
+    new_name = "new_file_S0k6.log"
 
     @classmethod
     def init_class(cls, storage):
-        storage.uid = get_random_string(5)
-        storage.resource = cls.resource_class(
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
-        )
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp, name='old_file_name_{}.jpg'.format(storage.uid))
+        storage.resource = cls.resource_class()
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(cls.resource_attachment, name=cls.old_name)
         storage.resource.save()
 
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
+        storage.old_modified_at = storage.resource.modified_at
+        storage.old_resource_name = storage.resource.name
 
-        storage.resource.rename('new_file_name_{}.png'.format(storage.uid))
-
+        storage.resource.rename(cls.new_name)
         yield
 
         storage.resource.delete_file()
         storage.resource.delete()
 
-    def test_old_file_exists(self, storage):
+    def test_old_file_existence(self, storage):
         file = storage.resource.get_file()
         with pytest.raises(cloudinary.exceptions.Error):
             uploader.explicit(
-                storage.old_source_name,
+                storage.old_resource_name,
                 type=file.resource.type,
                 resource_type=file.resource.resource_type
             )
 
-    def test_new_file_exists(self, storage):
+    def test_new_file_existence(self, storage):
         file = storage.resource.get_file()
         uploader.explicit(
             file.name,
@@ -146,65 +169,39 @@ class TestCloudinaryFileRename(BacklinkModelMixin, TestFileFieldResourceRename):
             resource_type=file.resource.resource_type
         )
 
-    def test_old_file_name(self, storage):
-        assert storage.old_source_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_file_name_{}{{suffix}}.jpg'.format(storage.uid)),
-            storage.old_source_name
-        )
 
-    def test_new_file_name(self, storage):
-        file = storage.resource.get_file()
-        assert file.name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'new_file_name_{}{{suffix}}.png'.format(storage.uid)),
-            file.name
-        )
-
-    def test_basename(self, storage):
-        assert storage.resource.basename == utils.get_target_filepath(
-            'new_file_name_{}{{suffix}}'.format(storage.uid),
-            storage.resource.basename
-        )
-
-
-class TestCloudinaryFileDelete(BacklinkModelMixin, TestFileFieldResourceDelete):
+class TestCloudinaryFileDelete(BacklinkModelTestMixin, TestFileFieldResourceDelete):
     resource_class = CloudinaryFile
-    resource_location = 'files/%Y-%m-%d'
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinaryfileexample'
-    owner_fieldname = 'file'
-    owner_model = CloudinaryFileExample
+    resource_attachment = EXCEL_FILEPATH
+    owner_fieldname = "file"
+    owner_model = Page
 
     @classmethod
     def init_class(cls, storage):
-        storage.resource = cls.resource_class(
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
-        )
-        with open(NATURE_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp, name='old_name.jpg')
+        storage.resource = cls.resource_class()
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(cls.resource_attachment)
         storage.resource.save()
 
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
-        storage.resource.delete_file()
+        storage.old_resource_name = storage.resource.name
 
+        storage.resource.delete_file()
         yield
 
         storage.resource.delete()
 
-    def test_file_not_exists(self, storage):
+    def test_file_existence(self, storage):
         file_field = storage.resource.get_file_field()
         with pytest.raises(cloudinary.exceptions.Error):
             uploader.explicit(
-                storage.old_source_name,
+                storage.old_resource_name,
                 type=file_field.type,
                 resource_type=file_field.resource_type
             )
 
+    def test_file_field_empty(self, storage):
+        assert storage.resource.get_file() is None
+
 
 class TestCloudinaryFileEmpty(TestFileFieldResourceEmpty):
     recource_class = CloudinaryFile
-
-    def test_path(self, storage):
-        pass

@@ -1,7 +1,7 @@
 import posixpath
 import warnings
 from collections import OrderedDict
-from typing import Any, Dict, Iterable, Optional, Type
+from typing import Any, Dict, Iterable, Optional, Type, ClassVar
 
 import magic
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -155,7 +155,10 @@ class CollectionManager(models.Manager):
 
 class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
     collection_content_type = models.ForeignKey(
-        ContentType, null=True, on_delete=models.SET_NULL, editable=False
+        ContentType,
+        null=True,
+        on_delete=models.SET_NULL,
+        editable=False
     )
     items = ContentItemRelation(
         "paper_uploads.CollectionItemBase",
@@ -163,7 +166,11 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         object_id_field="collection_id",
         for_concrete_model=False,
     )
-    created_at = models.DateTimeField(_("created at"), default=now, editable=False)
+    created_at = models.DateTimeField(
+        _("created at"),
+        default=now,
+        editable=False
+    )
 
     default_mgr = models.Manager()  # fix migrations manager
     objects = CollectionManager()
@@ -192,7 +199,7 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         # файле (django/db/models/deletion.py:248) указано следующее:
         #   model = new_objs[0].__class__
         # Это приводит к тому, что все полиморфные модели удаляются через модель
-        # первой модели в спсике.
+        # первого экземпляра в QuerySet.
         for item_type in self.item_types:
             self.get_items(item_type).delete()
 
@@ -220,6 +227,8 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
 
 
 class Collection(CollectionBase):
+    VARIATIONS: ClassVar[dict]
+
     class Meta:
         proxy = False  # явно указываем, что это не прокси-модель
 
@@ -334,7 +343,8 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=Coll
         return {
             **super().as_dict(),
             "collectionId": self.collection_id,
-            "itemType": self.type,
+            "itemType": self.type,  # TODO: deprecated
+            "type": self.type,
             "order": self.order,
             "preview": self.render_preview(),
         }
@@ -468,9 +478,6 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
     def get_file(self) -> FieldFile:
         return self.file
 
-    def set_file(self, value):
-        self.file = value
-
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field("file")
 
@@ -513,9 +520,6 @@ class SVGItemBase(CollectionFileItemBase):
     def get_file(self) -> FieldFile:
         return self.file
 
-    def set_file(self, value):
-        self.file = value
-
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field("file")
 
@@ -529,6 +533,15 @@ class SVGItemBase(CollectionFileItemBase):
     def accept(cls, file: File) -> bool:
         filename, ext = posixpath.splitext(file.name)
         return ext.lower() == ".svg"
+
+    def _prepare_file(self, file: File, **options) -> File:
+        mimetype = magic.from_buffer(file.read(1024), mime=True)
+        file.seek(0)
+        if mimetype != "image/svg+xml":
+            raise exceptions.UnsupportedResource(
+                _("File `%s` is not an svg image") % file.name
+            )
+        return super()._prepare_file(file, **options)
 
 
 class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
@@ -562,9 +575,6 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
 
     def get_file(self) -> FieldFile:
         return self.file
-
-    def set_file(self, value):
-        self.file = value
 
     def get_file_field(self) -> VariationalFileField:
         return self._meta.get_field("file")
@@ -636,7 +646,6 @@ class ImageCollection(Collection):
     """
     Коллекция, позволяющая хранить только изображения.
     """
-
     image = CollectionItem(ImageItem)
 
     @classmethod

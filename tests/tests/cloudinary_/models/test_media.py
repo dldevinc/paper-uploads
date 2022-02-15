@@ -1,265 +1,248 @@
-import posixpath
-from contextlib import contextmanager
-from pathlib import Path
+import datetime
 
 import cloudinary.exceptions
 import pytest
 from cloudinary import uploader
 from django.core.files import File
-from django.utils.crypto import get_random_string
+from examples.cloudinary.standard.models import Page
 
-from app.models import CloudinaryMediaExample
 from paper_uploads import exceptions
 from paper_uploads.cloudinary.models import CloudinaryMedia
+from paper_uploads.cloudinary.models.base import CloudinaryFieldFile
 
 from ... import utils
 from ...dummy import *
+from ...mixins import BacklinkModelTestMixin
 from ...models.test_dummy import (
-    BacklinkModelMixin,
+    TestFileFieldResource,
     TestFileFieldResourceAttach,
     TestFileFieldResourceDelete,
     TestFileFieldResourceEmpty,
     TestFileFieldResourceRename,
 )
-from .test_base import CloudinaryFileResource
 
 
-class TestCloudinaryMedia(BacklinkModelMixin, CloudinaryFileResource):
-    resource_url = '/media/files/%Y-%m-%d'
-    resource_location = 'files/%Y-%m-%d'
-    resource_name = 'audio'
-    resource_extension = 'mp3'
+class TestCloudinaryMedia(BacklinkModelTestMixin, TestFileFieldResource):
+    resource_class = CloudinaryMedia
+    resource_attachment = AUDIO_FILEPATH
+    resource_basename = "audio"
+    resource_extension = "mp3"
+    resource_name = "files/%Y-%m-%d/audio{suffix}"
     resource_size = 2113939
-    resource_checksum = '4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d'
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinarymediaexample'
-    owner_fieldname = 'media'
-    owner_model = CloudinaryMediaExample
-    file_field_name = 'file'
+    resource_checksum = "4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d"
+    resource_folder = "files/%Y-%m-%d"
+    owner_fieldname = "media"
+    owner_model = Page
 
     @classmethod
     def init_class(cls, storage):
-        storage.resource = CloudinaryMedia(
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
-        )
-        with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp)
+        storage.resource = cls.resource_class()
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(cls.resource_attachment)
         storage.resource.save()
         yield
         storage.resource.delete_file()
         storage.resource.delete()
 
-    def test_get_file_folder(self, storage):
-        assert storage.resource.get_file_folder() == self.resource_location
+    def test_get_file_storage(self, storage):
+        pass
 
-    def test_display_name(self, storage):
-        assert storage.resource.display_name == self.resource_name
+    def test_path(self, storage):
+        pass
 
     def test_type(self, storage):
         file_field = storage.resource.get_file_field()
-        assert file_field.type == 'private'
-        assert file_field.resource_type == 'video'
+        assert file_field.type == "private"
+        assert file_field.resource_type == "video"
+
+    def test_get_file(self, storage):
+        assert isinstance(storage.resource.get_file(), CloudinaryFieldFile)
+
+    def test_repr(self, storage):
+        assert utils.match_path(
+            repr(storage.resource),
+            "{}('{}')".format(
+                type(storage.resource).__name__,
+                datetime.datetime.now().strftime(self.resource_name)
+            ),
+            source=storage.resource.name
+        )
+
+    def test_display_name(self, storage):
+        assert storage.resource.display_name == self.resource_basename
 
     def test_public_id(self, storage):
+        # no extension
         public_id = storage.resource.get_file().public_id
-        pattern = posixpath.join(self.resource_location, 'audio{suffix}')
-        assert public_id == utils.get_target_filepath(pattern, public_id)
+        assert utils.match_path(
+            public_id,
+            "{}/audio{{suffix}}".format(self.resource_folder),
+        )
 
     def test_name(self, storage):
-        file_name = storage.resource.name
-        pattern = posixpath.join(self.resource_location, 'audio{suffix}')
-        assert file_name == utils.get_target_filepath(pattern, file_name)
+        # no extension
+        assert utils.match_path(
+            storage.resource.name,
+            "{}/audio{{suffix}}".format(self.resource_folder),
+        )
+
+    def test_url(self, storage):
+        assert storage.resource.url.startswith("https://res.cloudinary.com/")
+        assert utils.match_path(
+            storage.resource.url,
+            "{}/audio{{suffix}}.mp3".format(self.resource_folder),
+            source=storage.resource.name
+        )
 
     def test_as_dict(self, storage):
         assert storage.resource.as_dict() == {
-            'id': 1,
-            'name': self.resource_name,
-            'extension': self.resource_extension,
-            'caption': '{}.{}'.format(
-                self.resource_name,
+            "id": 1,
+            "name": self.resource_basename,
+            "extension": self.resource_extension,
+            "caption": "{}.{}".format(
+                self.resource_basename,
                 self.resource_extension
             ),
-            'size': self.resource_size,
-            'file_info': '(mp3, 2.1\xa0MB)',
-            'url': storage.resource.get_file_url(),
-            'created': storage.resource.created_at.isoformat(),
-            'modified': storage.resource.modified_at.isoformat(),
-            'uploaded': storage.resource.uploaded_at.isoformat(),
+            "size": self.resource_size,
+            "url": storage.resource.url,
+            "file_info": "(mp3, 2.1\xa0MB)",
+            "created": storage.resource.created_at.isoformat(),
+            "modified": storage.resource.modified_at.isoformat(),
+            "uploaded": storage.resource.uploaded_at.isoformat(),
         }
 
     def test_read(self, storage):
         with storage.resource.open() as fp:
-            assert fp.read(4) == b'ID3\x03'
+            assert fp.read(4) == b"ID3\x03"
+
+    def test_get_cloudinary_options(self, storage):
+        options = storage.resource.get_cloudinary_options()
+        assert options == {
+            "use_filename": True,
+            "unique_filename": True,
+            "overwrite": True,
+            "invalidate": True,
+            "folder": datetime.datetime.now().strftime(self.resource_folder)
+        }
 
     def test_build_url(self, storage):
         url = storage.resource.build_url(audio_frequency="44100")
-        assert url.startswith('https://res.cloudinary.com/')
+        assert url.startswith("https://res.cloudinary.com/")
         assert "/af_44100/" in url
 
 
 class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
     resource_class = CloudinaryMedia
-    resource_size = 2113939
-    resource_checksum = '4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d'
-
-    @contextmanager
-    def get_resource(self):
-        resource = self.resource_class()
-        try:
-            yield resource
-        finally:
-            resource.delete_file()
-
-    def test_file_as_string(self):
-        with self.get_resource() as resource:
-            resource.attach(AUDIO_FILEPATH)
-
-            assert resource.basename == "audio"
-            assert resource.extension == "mp3"
-            assert resource.size == self.resource_size
-            assert resource.checksum == self.resource_checksum
-
-    def test_file_as_path(self):
-        with self.get_resource() as resource:
-            resource.attach(Path(AUDIO_FILEPATH))
-
-            assert resource.basename == "audio"
-            assert resource.extension == "mp3"
-            assert resource.size == self.resource_size
-            assert resource.checksum == self.resource_checksum
-
-    def test_file(self):
-        with self.get_resource() as resource:
-            with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach(fp)
-
-            assert resource.basename == 'audio'
-            assert resource.extension == 'mp3'
-            assert resource.size == self.resource_size
-            assert resource.checksum == self.resource_checksum
+    resource_attachment = VIDEO_FILEPATH
+    resource_basename = "video"
+    resource_extension = "avi"
+    resource_size = 1496576
+    resource_checksum = "68f7b2833c52df5ecfcb809509677f499acbe6a93cb1df79508a8ac0e1f7e3d3"
 
     def test_django_file(self):
         with self.get_resource() as resource:
-            with open(AUDIO_FILEPATH, 'rb') as fp:
-                file = File(fp, name='audio.ogg')
+            with open(self.resource_attachment, "rb") as fp:
+                file = File(fp, name="milky-way-nasa.jpg")
                 resource.attach(file)
 
-            assert resource.basename == 'audio'
-            assert resource.extension == 'mp3'
-            assert resource.size == self.resource_size
-            assert resource.checksum == self.resource_checksum
+            assert resource.basename == "milky-way-nasa"
+            assert resource.extension == "avi"
 
     def test_django_file_with_relative_path(self):
         with self.get_resource() as resource:
-            with open(AUDIO_FILEPATH, "rb") as fp:
-                file = File(fp, name="audios/audio.ogg")
+            with open(self.resource_attachment, "rb") as fp:
+                file = File(fp, name="photos/milky-way-nasa.jpg")
                 resource.attach(file)
 
-            assert "/audios/" not in resource.name
-            assert resource.basename == "audio"
-            assert resource.extension == "mp3"
-            assert resource.size == self.resource_size
-            assert resource.checksum == self.resource_checksum
+            assert "/photos/" not in resource.name
+            assert resource.basename == "milky-way-nasa"
+            assert resource.extension == "avi"
 
     def test_override_name(self):
         with self.get_resource() as resource:
-            with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach(fp, name='overwritten.ogg')
+            resource.attach(self.resource_attachment, name="overwritten.jpg")
 
-            assert resource.basename == 'overwritten'
-            assert resource.extension == 'mp3'
+            assert "/photos/" not in resource.name
+            assert resource.basename == "overwritten"
+            assert resource.extension == "avi"
 
     def test_override_name_with_relative_path(self):
         with self.get_resource() as resource:
-            with open(AUDIO_FILEPATH, "rb") as fp:
-                resource.attach(fp, name="audios/overwritten.mp3")
+            resource.attach(self.resource_attachment, name="photos/overwritten.jpg")
 
-            assert "/audios/" not in resource.name
+            assert "/photos/" not in resource.name
             assert resource.basename == "overwritten"
-            assert resource.extension == "mp3"
+            assert resource.extension == "avi"
 
     def test_override_django_name(self):
         with self.get_resource() as resource:
-            with open(AUDIO_FILEPATH, 'rb') as fp:
-                file = File(fp, name='not_used.ogg')
-                resource.attach(file, name='overwritten.mp3')
+            with open(self.resource_attachment, "rb") as fp:
+                file = File(fp, name="not_used.png")
+                resource.attach(file, name="overwritten.jpg")
 
-            assert resource.basename == 'overwritten'
-            assert resource.extension == 'mp3'
+            assert resource.basename == "overwritten"
+            assert resource.extension == "avi"
 
     def test_override_django_name_with_relative_path(self):
         with self.get_resource() as resource:
-            with open(AUDIO_FILEPATH, "rb") as fp:
-                file = File(fp, name="audios/not_used.png")
-                resource.attach(file, name="overwritten.ogg")
+            with open(self.resource_attachment, "rb") as fp:
+                file = File(fp, name="photos/not_used.png")
+                resource.attach(file, name="overwritten.jpg")
 
-            assert "/audios/" not in resource.name
+            assert "/photos/" not in resource.name
             assert resource.basename == "overwritten"
-            assert resource.extension == "mp3"
+            assert resource.extension == "avi"
 
     def test_wrong_extension(self):
         with self.get_resource() as resource:
-            with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach(fp, name='overwritten.gif')
+            resource.attach(self.resource_attachment, name="overwritten.gif")
 
-            assert resource.basename == 'overwritten'
-            assert resource.extension == 'mp3'
-
-    def test_file_position_at_end(self):
-        with self.get_resource() as resource:
-            with open(AUDIO_FILEPATH, 'rb') as fp:
-                resource.attach(fp)
-                assert fp.tell() == self.resource_size
+            assert resource.basename == "overwritten"
+            assert resource.extension == "avi"
 
     def test_unsupported_file(self):
         with self.get_resource() as resource:
-            with open(NASA_FILEPATH, 'rb') as fp:
+            with open(DOCUMENT_FILEPATH, "rb") as fp:
                 with pytest.raises(exceptions.UnsupportedResource):
                     resource.attach(fp)
 
 
-class TestCloudinaryMediaRename(BacklinkModelMixin, TestFileFieldResourceRename):
+class TestCloudinaryMediaRename(BacklinkModelTestMixin, TestFileFieldResourceRename):
     resource_class = CloudinaryMedia
-    resource_location = 'files/%Y-%m-%d'
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinarymediaexample'
-    owner_fieldname = 'media'
-    owner_model = CloudinaryMediaExample
+    resource_attachment = VIDEO_FILEPATH
+    resource_size = 1496576
+    resource_checksum = "68f7b2833c52df5ecfcb809509677f499acbe6a93cb1df79508a8ac0e1f7e3d3"
+    owner_fieldname = "media"
+    owner_model = Page
+    old_name = "old_file_hTQJ.txt"
+    new_name = "new_file_LB3R.log"
 
     @classmethod
     def init_class(cls, storage):
-        storage.uid = get_random_string(5)
-        storage.resource = cls.resource_class(
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
-        )
-        with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp, name='old_media_name_{}.mp3'.format(storage.uid))
+        storage.resource = cls.resource_class()
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(cls.resource_attachment, name=cls.old_name)
         storage.resource.save()
 
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
+        storage.old_modified_at = storage.resource.modified_at
+        storage.old_resource_name = storage.resource.name
 
-        storage.resource.rename('new_media_name_{}.ogg'.format(storage.uid))
-
+        storage.resource.rename(cls.new_name)
         yield
 
         storage.resource.delete_file()
         storage.resource.delete()
 
-    def test_old_file_exists(self, storage):
+    def test_old_file_existence(self, storage):
         file = storage.resource.get_file()
         with pytest.raises(cloudinary.exceptions.Error):
             uploader.explicit(
-                storage.old_source_name,
+                storage.old_resource_name,
                 type=file.resource.type,
                 resource_type=file.resource.resource_type
             )
 
-    def test_new_file_exists(self, storage):
+    def test_new_file_existence(self, storage):
         file = storage.resource.get_file()
         uploader.explicit(
             file.name,
@@ -267,74 +250,42 @@ class TestCloudinaryMediaRename(BacklinkModelMixin, TestFileFieldResourceRename)
             resource_type=file.resource.resource_type
         )
 
-    def test_old_file_name(self, storage):
-        assert storage.old_source_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_media_name_{}{{suffix}}'.format(storage.uid)),
-            storage.old_source_name
-        )
-
-    def test_new_file_name(self, storage):
-        file = storage.resource.get_file()
-        assert file.name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'new_media_name_{}{{suffix}}'.format(storage.uid)),
-            file.name
-        )
-
-    def test_basename(self, storage):
-        assert storage.resource.basename == utils.get_target_filepath(
-            'new_media_name_{}{{suffix}}'.format(storage.uid),
-            storage.resource.basename
-        )
-
     def test_extension(self, storage):
-        assert storage.resource.extension == 'mp3'
+        assert storage.resource.extension == "avi"
 
 
-class TestCloudinaryMediaDelete(BacklinkModelMixin, TestFileFieldResourceDelete):
+class TestCloudinaryMediaDelete(BacklinkModelTestMixin, TestFileFieldResourceDelete):
     resource_class = CloudinaryMedia
-    resource_location = 'files/%Y-%m-%d'
-    owner_app_label = 'app'
-    owner_model_name = 'cloudinarymediaexample'
-    owner_fieldname = 'media'
-    owner_model = CloudinaryMediaExample
+    resource_attachment = AUDIO_FILEPATH
+    owner_fieldname = "media"
+    owner_model = Page
 
     @classmethod
     def init_class(cls, storage):
-        storage.resource = cls.resource_class(
-            owner_app_label=cls.owner_app_label,
-            owner_model_name=cls.owner_model_name,
-            owner_fieldname=cls.owner_fieldname
-        )
-        with open(AUDIO_FILEPATH, 'rb') as fp:
-            storage.resource.attach(fp, name='old_name.mp3')
+        storage.resource = cls.resource_class()
+        storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
+        storage.resource.attach(cls.resource_attachment)
         storage.resource.save()
 
-        file = storage.resource.get_file()
-        storage.old_source_name = file.name
-        storage.resource.delete_file()
+        storage.old_resource_name = storage.resource.name
 
+        storage.resource.delete_file()
         yield
 
         storage.resource.delete()
 
-    def test_file_name(self, storage):
-        assert storage.old_source_name == utils.get_target_filepath(
-            posixpath.join(self.resource_location, 'old_name{suffix}'),
-            storage.old_source_name
-        )
-
-    def test_file_not_exists(self, storage):
+    def test_file_existence(self, storage):
         file_field = storage.resource.get_file_field()
         with pytest.raises(cloudinary.exceptions.Error):
             uploader.explicit(
-                storage.old_source_name,
+                storage.old_resource_name,
                 type=file_field.type,
                 resource_type=file_field.resource_type
             )
 
+    def test_file_field_empty(self, storage):
+        assert storage.resource.get_file() is None
+
 
 class TestCloudinaryFileEmpty(TestFileFieldResourceEmpty):
     recource_class = CloudinaryMedia
-
-    def test_path(self, storage):
-        pass

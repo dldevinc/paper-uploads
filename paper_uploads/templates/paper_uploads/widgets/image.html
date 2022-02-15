@@ -41,7 +41,7 @@
 
     <div class="input-group-append">
       <div class="image-uploader__ready-buttons">
-        <a {% if instance %}href="{{ instance.get_file_url }}"{% endif %}
+        <a {% if instance %}href="{{ instance.url }}"{% endif %}
            target="_blank" tabindex="0"
            class="image-uploader__view-button input-group-text"
            data-toggle="tooltip" data-placement="top" data-trigger="hover"

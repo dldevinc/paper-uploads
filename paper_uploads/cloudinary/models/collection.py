@@ -10,7 +10,7 @@ from ...conf import IMAGE_ITEM_VARIATIONS, settings
 from ...models.base import ImageFileResourceMixin
 from ...models.collection import Collection, CollectionItemBase, FilePreviewMixin
 from ...models.fields import CollectionItem
-from .base import CloudinaryFieldFile, CloudinaryFileResource
+from .base import CloudinaryFieldFile, CloudinaryFileFieldResource
 
 __all__ = [
     "CloudinaryFileItemBase",
@@ -23,17 +23,9 @@ __all__ = [
 ]
 
 
-class CollectionCloudinaryFileItemBase(CollectionItemBase, CloudinaryFileResource):
-    """
-    Базовый класс элемента галереи, содержащего файл.
-    """
-
+class CollectionCloudinaryFileItemBase(CollectionItemBase, CloudinaryFileFieldResource):
     class Meta:
         abstract = True
-
-    @classmethod
-    def accept(cls, file: File) -> bool:
-        raise NotImplementedError
 
 
 class CloudinaryFileItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase):
@@ -59,7 +51,8 @@ class CloudinaryFileItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase)
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
-        return settings.COLLECTION_FILES_UPLOAD_TO
+        item_type_field = self.get_item_type_field()
+        return item_type_field.options.get("upload_to") or settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:
@@ -71,6 +64,12 @@ class CloudinaryFileItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase)
 
     def get_file_field(self) -> CloudinaryField:
         return self._meta.get_field("file")
+
+    def get_caption(self):
+        name = self.display_name or self.basename
+        if self.extension:
+            return "{}.{}".format(name, self.extension)
+        return name
 
     @classmethod
     def accept(cls, file: File) -> bool:
@@ -100,7 +99,8 @@ class CloudinaryMediaItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
-        return settings.COLLECTION_FILES_UPLOAD_TO
+        item_type_field = self.get_item_type_field()
+        return item_type_field.options.get("upload_to") or settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:
@@ -139,7 +139,8 @@ class CloudinaryImageItemBase(ImageFileResourceMixin, CollectionCloudinaryFileIt
         verbose_name_plural = _("Image items")
 
     def get_file_folder(self) -> str:
-        return settings.COLLECTION_IMAGES_UPLOAD_TO
+        item_type_field = self.get_item_type_field()
+        return item_type_field.options.get("upload_to") or settings.COLLECTION_IMAGES_UPLOAD_TO
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:

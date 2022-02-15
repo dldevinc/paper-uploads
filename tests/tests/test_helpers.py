@@ -247,6 +247,67 @@ class TestImplicitVariations:
 
 
 @pytest.mark.django_db
+class TestGetResourceModelTrees:
+    def test_concrete_count(self):
+        trees = helpers.get_resource_model_trees()
+        assert len(trees) == 19
+
+    def test_proxy_count(self):
+        trees = helpers.get_resource_model_trees(include_proxy=True)
+        assert len(trees) == 19
+
+    def test_concrete_heights(self):
+        trees = helpers.get_resource_model_trees()
+        tree_heights = [tree.height for tree in trees]
+        height_map = {
+            value: len([item for item in tree_heights if item == value])
+            for value in set(tree_heights)
+        }
+        assert height_map == {0: 19}
+
+    def test_proxy_heights(self):
+        trees = helpers.get_resource_model_trees(include_proxy=True)
+        tree_heights = [tree.height for tree in trees]
+        height_map = {
+            value: len([item for item in tree_heights if item == value])
+            for value in set(tree_heights)
+        }
+        assert height_map == {0: 16, 1: 3}
+
+
+@pytest.mark.django_db
+class TestGetCollectionTrees:
+    # Дерево всегда начинается с Collection, поэтому тестируются
+    # элементы, начиная со второгь уровня.
+
+    def test_concrete_count(self):
+        trees = helpers.get_collection_trees()
+        assert len(trees[0].children) == 1
+
+    def test_proxy_count(self):
+        trees = helpers.get_collection_trees(include_proxy=True)
+        assert len(trees[0].children) == 9
+
+    def test_concrete_heights(self):
+        trees = helpers.get_collection_trees()
+        tree_heights = [tree.height for tree in trees[0].children]
+        height_map = {
+            value: len([item for item in tree_heights if item == value])
+            for value in set(tree_heights)
+        }
+        assert height_map == {0: 1}
+
+    def test_proxy_heights(self):
+        trees = helpers.get_collection_trees(include_proxy=True)
+        tree_heights = [tree.height for tree in trees[0].children]
+        height_map = {
+            value: len([item for item in tree_heights if item == value])
+            for value in set(tree_heights)
+        }
+        assert height_map == {0: 7, 1: 2}
+
+
+@pytest.mark.django_db
 def test_get_instance():
     resource = DummyResource.objects.create(id=1)
 

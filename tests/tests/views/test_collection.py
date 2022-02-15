@@ -9,10 +9,11 @@ from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import UploadedFile
 from django.http import JsonResponse
 from django.test import RequestFactory
-from examples.custom_collection_item.dialogs import ChangeUploadedCustomImageDialog
-from examples.custom_collection_item.models import CustomImageCollection, CustomImageItem
-from examples.custom_collection_item.models import Page as CustomPage
-from examples.standard_collection.models import (
+from examples.collections.custom_models.dialogs import ChangeUploadedCustomImageDialog
+from examples.collections.custom_models.models import CustomCollection
+from examples.collections.custom_models.models import ImageItem as CustomImageItem
+from examples.collections.custom_models.models import Page as CustomPage
+from examples.collections.standard.models import (
     FilesOnlyCollection,
     ImagesOnlyCollection,
     MixedCollection,
@@ -48,7 +49,7 @@ class TestCreateCollectionView:
     def test_get_instance(self, storage):
         request = RequestFactory().post("/", data={
             "paperCollectionContentType": storage.content_type.pk,
-            "paperOwnerAppLabel": "standard_collection",
+            "paperOwnerAppLabel": "standard_collections",
             "paperOwnerModelName": "page",
             "paperOwnerFieldName": "file_collection"
         })
@@ -65,7 +66,7 @@ class TestCreateCollectionView:
 
         request = RequestFactory().post("/", data={
             "paperCollectionContentType": content_type.pk,
-            "paperOwnerAppLabel": "standard_collection",
+            "paperOwnerAppLabel": "standard_collections",
             "paperOwnerModelName": "page",
             "paperOwnerFieldName": "file_collection"
         })
@@ -78,7 +79,7 @@ class TestCreateCollectionView:
     def test_success(self, storage):
         request = RequestFactory().post("/", data={
             "paperCollectionContentType": storage.content_type.pk,
-            "paperOwnerAppLabel": "standard_collection",
+            "paperOwnerAppLabel": "standard_collections",
             "paperOwnerModelName": "page",
             "paperOwnerFieldName": "file_collection"
         })
@@ -361,7 +362,7 @@ class TestUploadFileView:
 class TestDeleteFileView:
     @staticmethod
     def init_class(storage):
-        storage.content_type = ContentType.objects.get_for_model(CustomImageCollection, for_concrete_model=False)
+        storage.content_type = ContentType.objects.get_for_model(CustomCollection, for_concrete_model=False)
 
         storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
         permission = Permission.objects.get(name="Can upload files")
@@ -370,17 +371,16 @@ class TestDeleteFileView:
         storage.view = DeleteFileView()
 
         # collection
-        storage.collection = CustomImageCollection(
+        storage.collection = CustomCollection(
             pk=9564
         )
-        storage.collection.set_owner_field(CustomPage, "gallery")
+        storage.collection.set_owner_field(CustomPage, "collection")
         storage.collection.save()
 
         # item
         storage.item = CustomImageItem()
         storage.item.attach_to(storage.collection)
-        with open(NASA_FILEPATH, "rb") as fp:
-            storage.item.attach(fp)
+        storage.item.attach(NASA_FILEPATH)
         storage.item.save()
 
         yield
@@ -396,7 +396,7 @@ class TestDeleteFileView:
         storage.view.setup(request)
 
         collection_cls = storage.view.get_collection_model()
-        assert collection_cls is CustomImageCollection
+        assert collection_cls is CustomCollection
 
     def test_invalid_content_type(self, storage):
         content_type = ContentType.objects.get_for_model(Page, for_concrete_model=False)
@@ -471,7 +471,7 @@ class TestDeleteFileView:
 class TestChangeFileView:
     @staticmethod
     def init_class(storage):
-        storage.content_type = ContentType.objects.get_for_model(CustomImageCollection, for_concrete_model=False)
+        storage.content_type = ContentType.objects.get_for_model(CustomCollection, for_concrete_model=False)
 
         storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
         permission = Permission.objects.get(name="Can upload files")
@@ -480,17 +480,16 @@ class TestChangeFileView:
         storage.view = ChangeFileView()
 
         # collection
-        storage.collection = CustomImageCollection(
+        storage.collection = CustomCollection(
             pk=5965
         )
-        storage.collection.set_owner_field(CustomPage, "gallery")
+        storage.collection.set_owner_field(CustomPage, "collection")
         storage.collection.save()
 
         # item
         storage.item = CustomImageItem()
         storage.item.attach_to(storage.collection)
-        with open(NASA_FILEPATH, "rb") as fp:
-            storage.item.attach(fp)
+        storage.item.attach(NASA_FILEPATH)
         storage.item.save()
 
         yield
@@ -517,7 +516,7 @@ class TestChangeFileView:
         storage.view.setup(request)
 
         collection_cls = storage.view.get_collection_model()
-        assert collection_cls is CustomImageCollection
+        assert collection_cls is CustomCollection
 
     def test_invalid_content_type(self, storage):
         content_type = ContentType.objects.get_for_model(Page, for_concrete_model=False)
@@ -607,22 +606,19 @@ class TestSortItemsView:
         # item 1
         storage.itemA = ImageItem()
         storage.itemA.attach_to(storage.collection)
-        with open(NASA_FILEPATH, "rb") as fp:
-            storage.itemA.attach(fp)
+        storage.itemA.attach(NASA_FILEPATH)
         storage.itemA.save()
 
         # item 2
         storage.itemB = ImageItem()
         storage.itemB.attach_to(storage.collection)
-        with open(NATURE_FILEPATH, "rb") as fp:
-            storage.itemB.attach(fp)
+        storage.itemB.attach(NATURE_FILEPATH)
         storage.itemB.save()
 
         # item 3
         storage.itemC = ImageItem()
         storage.itemC.attach_to(storage.collection)
-        with open(CALLIPHORA_FILEPATH, "rb") as fp:
-            storage.itemC.attach(fp)
+        storage.itemC.attach(CALLIPHORA_FILEPATH)
         storage.itemC.save()
 
         yield

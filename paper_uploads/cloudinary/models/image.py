@@ -7,30 +7,28 @@ from ...conf import settings
 from ...models.base import ImageFileResourceMixin
 from ...models.mixins import BacklinkModelMixin
 from ...utils import filesizeformat
-from .base import CloudinaryFieldFile, CloudinaryFileResource
+from .base import CloudinaryFieldFile, CloudinaryFileFieldResource
 
 
-class CloudinaryImage(ImageFileResourceMixin, BacklinkModelMixin, CloudinaryFileResource):
+class CloudinaryImage(ImageFileResourceMixin, BacklinkModelMixin, CloudinaryFileFieldResource):
     file = CloudinaryField(
         _("file"),
         type=settings.CLOUDINARY_TYPE,
         resource_type="image",
     )
 
-    class Meta(CloudinaryFileResource.Meta):
+    class Meta(CloudinaryFileFieldResource.Meta):
         verbose_name = _("image")
         verbose_name_plural = _("images")
-
-    def get_file_folder(self) -> str:
-        return settings.IMAGES_UPLOAD_TO
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:
             return None
         return CloudinaryFieldFile(self.file, checksum=self.checksum)
 
-    def set_file(self, value):
-        self.file = value
+    def get_file_folder(self) -> str:
+        owner_field = self.get_owner_field()
+        return getattr(owner_field, "upload_to", "") or settings.IMAGES_UPLOAD_TO
 
     def get_file_field(self) -> CloudinaryField:
         return self._meta.get_field("file")

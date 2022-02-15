@@ -1,10 +1,11 @@
 # Change Log
 
-## [0.8.0rc4](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc4) - 2021-02-08
+## [0.8.0rc4](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc4) - 2021-02-13
 ### Features
 - Add an ability to specify `storage` and `upload_to` for particular fields.
 - Management commands rewritten.
 - Added `create_missing_variations` management command.
+- Method `get_file_url()` is now deprecated.
 ### Bug Fixes
 - Fix a not creation variations with non-filesystem storages.
 

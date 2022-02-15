@@ -9,7 +9,16 @@ class FilesOnlyCollection(Collection):
 
 
 class ImagesOnlyCollection(ImageCollection):
-    pass
+    VARIATIONS = dict(
+        desktop=dict(
+            size=(800, 0),
+            clip=False,
+        ),
+        mobile=dict(
+            size=(0, 600),
+            clip=False,
+        ),
+    )
 
 
 class MixedCollection(Collection):

@@ -11,6 +11,7 @@ NATURE_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/Nature Tree.Jpe
 DOCUMENT_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/document.pdf")
 MEDITATION_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/Meditation.svg")
 AUDIO_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/audio.mp3")
+VIDEO_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/video.avi")
 EXCEL_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/table.xls")
 
 __all__ = [
@@ -20,6 +21,7 @@ __all__ = [
     "DOCUMENT_FILEPATH",
     "MEDITATION_FILEPATH",
     "AUDIO_FILEPATH",
+    "VIDEO_FILEPATH",
     "EXCEL_FILEPATH",
     "make_dummy_file",
     "make_dummy_image",

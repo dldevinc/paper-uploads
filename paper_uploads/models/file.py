@@ -46,9 +46,6 @@ class UploadedFileBase(BacklinkModelMixin, EditableResourceMixin, FileFieldResou
     def get_file(self) -> FieldFile:
         return self.file
 
-    def set_file(self, value):
-        self.file = value
-
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field("file")
 
@@ -61,7 +58,7 @@ class UploadedFileBase(BacklinkModelMixin, EditableResourceMixin, FileFieldResou
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
-            "name": self.display_name,
+            "name": self.display_name or self.basename,
             "file_info": "({ext}, {size})".format(
                 ext=self.extension, size=filesizeformat(self.size)
             ),
