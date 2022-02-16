@@ -31,10 +31,6 @@ class FileProxyTestMixin:
     def test_writable(self, storage):
         raise NotImplementedError
 
-    def test_open(self, storage):
-        with storage.resource.open() as fp:
-            assert fp is storage.resource
-
     def test_seekable(self, storage):
         with storage.resource.open() as fp:
             assert fp.seekable() is True

@@ -129,35 +129,26 @@ class TestFileProxyMixin(FileProxyTestMixin):
         return super().test_multiple_chunks(storage, chunk_size=4)
 
     def test_close_cleans_private_field(self, storage):
-        with storage.resource.open():
+        with storage.resource:
             assert storage.resource._get_file() is not None
         assert storage.resource._get_file() is None
 
     def test_reopen_uses_same_object(self, storage):
         with storage.resource.open("r") as fp:
-            opened_file = fp._get_file()
-
             with storage.resource.open("r") as fp2:
-                reopened_file = fp2._get_file()
-                assert opened_file is reopened_file
+                assert fp is fp2
 
     @patch("django.core.files.File.seekable", return_value=False)
     def test_reopen_non_seekable(self, mock, storage):
         with storage.resource.open("r") as fp:
-            opened_file = fp._get_file()
-
             with storage.resource.open("r") as fp2:
-                reopened_file = fp2._get_file()
-                assert opened_file is not reopened_file
-                assert opened_file.closed
-                assert reopened_file.closed is False
+                assert fp is not fp2
+                assert fp.closed
+                assert fp2.closed is False
 
     def test_reopen_with_other_mode(self, storage):
         with storage.resource.open("r") as fp:
-            opened_file = fp._get_file()
-
             with storage.resource.open("rb") as fp2:
-                reopened_file = fp2._get_file()
-                assert opened_file is not reopened_file
-                assert opened_file.closed
-                assert reopened_file.closed is False
+                assert fp is not fp2
+                assert fp.closed
+                assert fp2.closed is False

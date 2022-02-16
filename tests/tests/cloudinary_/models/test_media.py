@@ -4,6 +4,7 @@ import cloudinary.exceptions
 import pytest
 from cloudinary import uploader
 from django.core.files import File
+from django.utils.crypto import get_random_string
 from examples.cloudinary.standard.models import Page
 
 from paper_uploads import exceptions
@@ -214,8 +215,8 @@ class TestCloudinaryMediaRename(BacklinkModelTestMixin, TestFileFieldResourceRen
     resource_checksum = "68f7b2833c52df5ecfcb809509677f499acbe6a93cb1df79508a8ac0e1f7e3d3"
     owner_fieldname = "media"
     owner_model = Page
-    old_name = "old_file_hTQJ.txt"
-    new_name = "new_file_LB3R.log"
+    old_name = "old_name_{}.mpeg".format(get_random_string(6))
+    new_name = "new_name_{}.mp4".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):

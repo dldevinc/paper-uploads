@@ -1,5 +1,6 @@
 import os
 
+from django.utils.crypto import get_random_string
 from examples.fields.standard.models import Page
 
 from paper_uploads.models import UploadedImage
@@ -101,8 +102,8 @@ class TestUploadedImageRename(BacklinkModelTestMixin, TestVersatileImageRename):
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
     owner_fieldname = "image_group"
     owner_model = Page
-    old_name = "old_file_NU6o.txt"
-    new_name = "new_file_R8SW.log"
+    old_name = "old_name_{}.tiff".format(get_random_string(6))
+    new_name = "new_name_{}.tif".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):

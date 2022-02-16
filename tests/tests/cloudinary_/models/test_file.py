@@ -1,7 +1,9 @@
+import datetime
+
 import cloudinary.exceptions
 import pytest
-import datetime
 from cloudinary import uploader
+from django.utils.crypto import get_random_string
 from examples.cloudinary.standard.models import Page
 
 from paper_uploads.cloudinary.models import CloudinaryFile
@@ -133,8 +135,8 @@ class TestCloudinaryFileRename(BacklinkModelTestMixin, TestFileFieldResourceRena
     resource_checksum = "93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e"
     owner_fieldname = "file"
     owner_model = Page
-    old_name = "old_file_D4OZ.txt"
-    new_name = "new_file_S0k6.log"
+    old_name = "old_name_{}.txt".format(get_random_string(6))
+    new_name = "new_name_{}.log".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):

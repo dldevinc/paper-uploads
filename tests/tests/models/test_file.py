@@ -1,5 +1,6 @@
 import os
 
+from django.utils.crypto import get_random_string
 from examples.fields.standard.models import Page
 
 from paper_uploads.models import UploadedFile
@@ -75,8 +76,8 @@ class TestUploadedFileRename(BacklinkModelTestMixin, TestFileFieldResourceRename
     resource_checksum = "93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e"
     owner_fieldname = "file"
     owner_model = Page
-    old_name = "old_file_vEwR.txt"
-    new_name = "new_file_qNDo.log"
+    old_name = "old_name_{}.txt".format(get_random_string(6))
+    new_name = "new_name_{}.log".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):

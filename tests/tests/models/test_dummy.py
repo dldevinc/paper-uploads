@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 from django.core.files import File
+from django.utils.crypto import get_random_string
 
 from app.models import *
 from paper_uploads import helpers, signals
@@ -51,9 +52,9 @@ class TestResource:
 
 class TestFileResource(FileProxyTestMixin, TestResource):
     resource_class = DummyFileResource
-    resource_basename = "Nature Tree"
+    resource_basename = "Nature Tree_{}".format(get_random_string(6))
     resource_extension = "Jpeg"
-    resource_name = "/tmp/Nature Tree.Jpeg"
+    resource_name = "/tmp/{}.Jpeg".format(resource_basename)
     resource_size = 13
     resource_checksum = "6246efc88ae4aa025e48c9c7adc723d5c97171a1fa6233623c7251ab8e57602f"
 
@@ -212,10 +213,6 @@ class TestEmptyFileResource:
     def test_closed(self, storage):
         assert storage.resource.closed is True
 
-    def test_read(self, storage):
-        with pytest.raises(FileNotFoundError):
-            storage.resource.read()
-
     def test_rename_file(self, storage):
         with pytest.raises(FileNotFoundError):
             storage.resource.rename("bla-bla.jpg")
@@ -228,7 +225,7 @@ class TestEmptyFileResource:
 class TestFileResourceAttach:
     resource_class = DummyFileResource
     resource_attachment = NASA_FILEPATH
-    resource_basename = "milky-way-nasa"
+    resource_basename = "milky-way-nasa_{}".format(get_random_string(6))
     resource_extension = "jpg"
     resource_size = 9711423
     resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
@@ -342,8 +339,8 @@ class TestFileResourceRename:
     resource_attachment = NATURE_FILEPATH
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    old_name = "old_name.txt"
-    new_name = "new_name.log"
+    old_name = "old_name_{}.txt".format(get_random_string(6))
+    new_name = "new_name_{}.log".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):
@@ -739,10 +736,20 @@ class TestFileFieldResource(TestFileResource):
 
 class TestFileFieldResourceAttach(TestFileResourceAttach):
     resource_class = DummyFileFieldResource
+    resource_attachment = NASA_FILEPATH
+    resource_basename = "milky-way-nasa_{}".format(get_random_string(6))
+    resource_extension = "jpg"
+    resource_size = 9711423
+    resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
 
 
 class TestFileFieldResourceRename(TestFileResourceRename):
     resource_class = DummyFileFieldResource
+    resource_attachment = EXCEL_FILEPATH
+    resource_size = 8704
+    resource_checksum = "c9c8ad905aa5142731b1e8ab34d5862f871627fa7ad8005264494c2489d2061e"
+    old_name = "old_name_{}.txt".format(get_random_string(6))
+    new_name = "new_name_{}.log".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):
@@ -799,10 +806,6 @@ class TestFileFieldResourceEmpty(TestEmptyFileResource):
     def test_open(self, storage):
         with pytest.raises(ValueError):
             storage.resource.open()
-
-    def test_read(self, storage):
-        with pytest.raises(ValueError):
-            storage.resource.read()
 
     def test_rename_file(self, storage):
         with pytest.raises(ValueError):
@@ -923,6 +926,11 @@ class TestImageFieldResourceAttach(TestFileFieldResourceAttach):
 
 class TestImageFieldResourceRename(TestFileFieldResourceRename):
     resource_class = DummyImageFieldResource
+    resource_attachment = CALLIPHORA_FILEPATH
+    resource_size = 254766
+    resource_checksum = "d4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386"
+    old_name = "old_name_{}.txt".format(get_random_string(6))
+    new_name = "new_name_{}.log".format(get_random_string(6))
 
 
 class TestImageFieldResourceDelete(TestFileFieldResourceDelete):
@@ -1046,6 +1054,11 @@ class TestVersatileImageAttach(TestImageFieldResourceAttach):
 
 class TestVersatileImageRename(TestImageFieldResourceRename):
     resource_class = DummyVersatileImageResource
+    resource_attachment = NATURE_FILEPATH
+    resource_size = 672759
+    resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
+    old_name = "old_name_{}.tiff".format(get_random_string(6))
+    new_name = "new_name_{}.tif".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):

@@ -5,6 +5,7 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.core.files import File
 from django.template.loader import render_to_string
+from django.utils.crypto import get_random_string
 from examples.collections.custom_models.models import CustomCollection
 from examples.collections.custom_models.models import ImageItem as CustomImageItem
 from examples.collections.standard.models import (
@@ -462,8 +463,8 @@ class TestFileItemRename(TestFileFieldResourceRename):
     resource_attachment = NATURE_FILEPATH
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    old_name = "old_file_yFwy.txt"
-    new_name = "new_file_SRgz.log"
+    old_name = "old_name_{}.txt".format(get_random_string(6))
+    new_name = "new_name_{}.log".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):
@@ -594,8 +595,8 @@ class TestSVGItemRename(TestFileFieldResourceRename):
     resource_attachment = MEDITATION_FILEPATH
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
-    old_name = "old_file_xeNc.svg"
-    new_name = "new_file_u9s9.svg"
+    old_name = "old_name_{}.svg".format(get_random_string(6))
+    new_name = "new_name_{}.svg".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):
@@ -764,8 +765,8 @@ class TestImageItemRename(TestVersatileImageRename):
     resource_attachment = NATURE_FILEPATH
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    old_name = "old_file_fp1t.txt"
-    new_name = "new_file_jhXU.log"
+    old_name = "old_name_{}.tiff".format(get_random_string(6))
+    new_name = "new_name_{}.tif".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):

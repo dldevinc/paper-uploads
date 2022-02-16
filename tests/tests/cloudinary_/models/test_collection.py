@@ -5,6 +5,7 @@ import pytest
 from cloudinary import uploader
 from django.core.files import File
 from django.template.loader import render_to_string
+from django.utils.crypto import get_random_string
 from examples.cloudinary.collections.models import MixedCollection
 
 from paper_uploads import exceptions
@@ -142,8 +143,8 @@ class TestFileItemRename(TestFileFieldResourceRename):
     resource_attachment = DOCUMENT_FILEPATH
     resource_size = 3028
     resource_checksum = "93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e"
-    old_name = "old_file_m1rv.txt"
-    new_name = "new_file_HmYc.log"
+    old_name = "old_name_{}.txt".format(get_random_string(6))
+    new_name = "new_name_{}.log".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):
@@ -394,8 +395,8 @@ class TestMediaItemRename(TestFileFieldResourceRename):
     resource_attachment = AUDIO_FILEPATH
     resource_size = 2113939
     resource_checksum = "4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d"
-    old_name = "old_file_DegW.txt"
-    new_name = "new_file_v03E.log"
+    old_name = "old_name_{}.mpeg".format(get_random_string(6))
+    new_name = "new_name_{}.mp4".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):
@@ -611,8 +612,8 @@ class TestImageItemRename(TestImageFieldResourceRename):
     resource_attachment = NASA_FILEPATH
     resource_size = 9711423
     resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
-    old_name = "old_file_SkS0.txt"
-    new_name = "new_file_JGrK.log"
+    old_name = "old_name_{}.tiff".format(get_random_string(6))
+    new_name = "new_name_{}.tif".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):

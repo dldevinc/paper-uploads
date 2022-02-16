@@ -3,6 +3,7 @@ import datetime
 import cloudinary.exceptions
 import pytest
 from cloudinary import uploader
+from django.utils.crypto import get_random_string
 from examples.cloudinary.standard.models import Page
 
 from paper_uploads import exceptions
@@ -167,8 +168,8 @@ class TestCloudinaryImageRename(TestImageFieldResourceRename):
     resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
     owner_fieldname = "image"
     owner_model = Page
-    old_name = "old_file_4Qft.txt"
-    new_name = "new_file_bCGr.log"
+    old_name = "old_name_{}.tiff".format(get_random_string(6))
+    new_name = "new_name_{}.tif".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):
