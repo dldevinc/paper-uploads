@@ -225,7 +225,7 @@ class TestEmptyFileResource:
 class TestFileResourceAttach:
     resource_class = DummyFileResource
     resource_attachment = NASA_FILEPATH
-    resource_basename = "milky-way-nasa_{}".format(get_random_string(6))
+    resource_basename = "milky-way-nasa"
     resource_extension = "jpg"
     resource_size = 9711423
     resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
@@ -268,69 +268,69 @@ class TestFileResourceAttach:
 
     def test_django_file(self):
         with self.get_resource() as resource:
+            overriden_name = "milky-way-nasa_{}.gif".format(get_random_string(6))
             with open(self.resource_attachment, "rb") as fp:
-                file = File(fp, name="milky-way-nasa.jpg")
+                file = File(fp, name=overriden_name)
                 resource.attach(file)
 
-            assert resource.resource_name == "milky-way-nasa"
-            assert resource.extension == "jpg"
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == helpers.get_extension(overriden_name)
 
     def test_django_file_with_relative_path(self):
         with self.get_resource() as resource:
+            overriden_name = "photos/milky-way-nasa_{}.gif".format(get_random_string(6))
             with open(self.resource_attachment, "rb") as fp:
-                file = File(fp, name="photos/milky-way-nasa.jpg")
+                file = File(fp, name=overriden_name)
                 resource.attach(file)
 
             assert "/photos/" not in resource.name
-            assert resource.resource_name == "milky-way-nasa"
-            assert resource.extension == "jpg"
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == helpers.get_extension(overriden_name)
 
     def test_override_name(self):
         with self.get_resource() as resource:
-            resource.attach(self.resource_attachment, name="overwritten.jpg")
+            overriden_name = "overwritten_{}.gif".format(get_random_string(6))
+            resource.attach(self.resource_attachment, name=overriden_name)
 
             assert "/photos/" not in resource.name
-            assert resource.resource_name == "overwritten"
-            assert resource.extension == "jpg"
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == helpers.get_extension(overriden_name)
 
     def test_override_name_with_relative_path(self):
         with self.get_resource() as resource:
-            resource.attach(self.resource_attachment, name="photos/overwritten.jpg")
+            overriden_name = "photos/overwritten_{}.gif".format(get_random_string(6))
+            resource.attach(self.resource_attachment, name=overriden_name)
 
             assert "/photos/" not in resource.name
-            assert resource.resource_name == "overwritten"
-            assert resource.extension == "jpg"
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == helpers.get_extension(overriden_name)
 
     def test_override_django_name(self):
         with self.get_resource() as resource:
+            overriden_name = "overwritten_{}.gif".format(get_random_string(6))
             with open(self.resource_attachment, "rb") as fp:
                 file = File(fp, name="not_used.png")
-                resource.attach(file, name="overwritten.jpg")
+                resource.attach(file, name=overriden_name)
 
-            assert resource.resource_name == "overwritten"
-            assert resource.extension == "jpg"
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == helpers.get_extension(overriden_name)
 
     def test_override_django_name_with_relative_path(self):
         with self.get_resource() as resource:
+            overriden_name = "overwritten_{}.gif".format(get_random_string(6))
             with open(self.resource_attachment, "rb") as fp:
                 file = File(fp, name="photos/not_used.png")
-                resource.attach(file, name="overwritten.jpg")
+                resource.attach(file, name=overriden_name)
 
             assert "/photos/" not in resource.name
-            assert resource.resource_name == "overwritten"
-            assert resource.extension == "jpg"
-
-    def test_wrong_extension(self):
-        with self.get_resource() as resource:
-            resource.attach(self.resource_attachment, name="overwritten.gif")
-
-            assert resource.resource_name == "overwritten"
-            assert resource.extension == "gif"
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == helpers.get_extension(overriden_name)
 
     def test_file_position(self):
         with self.get_resource() as resource:
+            overriden_name = "overwritten_{}.jpg".format(get_random_string(6))
             with open(self.resource_attachment, "rb") as fp:
-                resource.attach(fp)
+                resource.attach(fp, name=overriden_name)
                 assert fp.tell() == self.resource_size
 
 
@@ -386,7 +386,10 @@ class TestFileResourceDelete:
     @classmethod
     def init_class(cls, storage):
         storage.resource = cls.resource_class()
-        storage.resource.attach(cls.resource_attachment)
+        storage.resource.attach(
+            cls.resource_attachment,
+            name="file_{}.jpg".format(get_random_string(6))
+        )
         storage.resource.save()
 
         storage.old_resource_name = storage.resource.name
@@ -405,7 +408,7 @@ class TestFileResourceSignals:
 
     def test_update_checksum(self):
         resource = self.resource_class()
-        resource.attach(NATURE_FILEPATH)
+        resource.attach(NATURE_FILEPATH, name="name_{}.jpg".format(get_random_string(6)))
         resource.checksum = ""
         signal_fired = False
 
@@ -454,7 +457,12 @@ class TestFileResourceSignals:
 
         signals.pre_attach_file.connect(signal_handler)
         assert signal_fired is False
-        resource.attach(NASA_FILEPATH, key1="value1", key2="value2")
+        resource.attach(
+            NASA_FILEPATH,
+            name="name_{}.jpg".format(get_random_string(6)),
+            key1="value1",
+            key2="value2"
+        )
         assert signal_fired is True
         signals.pre_attach_file.disconnect(signal_handler)
 
@@ -462,6 +470,7 @@ class TestFileResourceSignals:
 
     def test_post_attach_file(self):
         resource = self.resource_class()
+        filename = "name_{}.jpg".format(get_random_string(6))
         signal_fired = False
 
         def signal_handler(sender, instance, file, options, response, **kwargs):
@@ -471,8 +480,8 @@ class TestFileResourceSignals:
             assert instance is resource
 
             # ensure instance filled
-            assert instance.resource_name == "milky-way-nasa"
-            assert instance.extension == "jpg"
+            assert instance.resource_name == helpers.get_filename(filename)
+            assert instance.extension == helpers.get_extension(filename)
             assert instance.size == 9711423
             assert instance.checksum == "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
 
@@ -492,7 +501,12 @@ class TestFileResourceSignals:
 
         signals.post_attach_file.connect(signal_handler)
         assert signal_fired is False
-        resource.attach(NASA_FILEPATH, key1="value1", key2="value2")
+        resource.attach(
+            NASA_FILEPATH,
+            name=filename,
+            key1="value1",
+            key2="value2"
+        )
         assert signal_fired is True
         signals.post_attach_file.disconnect(signal_handler)
 
@@ -500,6 +514,7 @@ class TestFileResourceSignals:
 
     def test_pre_rename_file(self):
         resource = self.resource_class()
+        filename = "name_{}.jpg".format(get_random_string(6))
         signal_fired = False
 
         def signal_handler(sender, instance, old_name, new_name, options, **kwargs):
@@ -508,12 +523,12 @@ class TestFileResourceSignals:
             assert sender is self.resource_class
             assert instance is resource
 
-            assert old_name == "/tmp/milky-way-nasa.jpg"
+            assert old_name == "/tmp/{}".format(filename)
             assert new_name == "new name.png"
 
             # ensure instance filled
-            assert instance.resource_name == "milky-way-nasa"
-            assert instance.extension == "jpg"
+            assert instance.resource_name == helpers.get_filename(filename)
+            assert instance.extension == helpers.get_extension(filename)
             assert instance.size == 9711423
             assert instance.checksum == "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
 
@@ -523,7 +538,7 @@ class TestFileResourceSignals:
                 "key2": "value2"
             }
 
-        resource.attach(NASA_FILEPATH)
+        resource.attach(NASA_FILEPATH, name=filename)
 
         signals.pre_rename_file.connect(signal_handler)
         assert signal_fired is False
@@ -535,6 +550,7 @@ class TestFileResourceSignals:
 
     def test_post_rename_file(self):
         resource = self.resource_class()
+        filename = "name_{}.jpg".format(get_random_string(6))
         signal_fired = False
 
         def signal_handler(sender, instance, old_name, new_name, options, response, **kwargs):
@@ -543,7 +559,7 @@ class TestFileResourceSignals:
             assert sender is self.resource_class
             assert instance is resource
 
-            assert old_name == "/tmp/milky-way-nasa.jpg"
+            assert old_name == "/tmp/{}".format(filename)
             assert new_name == "new name.png"
 
             # ensure instance filled
@@ -563,7 +579,7 @@ class TestFileResourceSignals:
                 "success": True,
             }
 
-        resource.attach(NASA_FILEPATH)
+        resource.attach(NASA_FILEPATH, name=filename)
 
         signals.post_rename_file.connect(signal_handler)
         assert signal_fired is False
@@ -586,7 +602,7 @@ class TestFileResourceSignals:
             nonlocal post_signal_fired
             post_signal_fired = True
 
-        resource.attach(NASA_FILEPATH)
+        resource.attach(NASA_FILEPATH, name="name_{}.jpg".format(get_random_string(6)))
 
         original_name = resource.name
         original_resource_name = resource.resource_name
@@ -595,7 +611,7 @@ class TestFileResourceSignals:
         signals.post_rename_file.connect(post_signal_handler)
         assert pre_signal_fired is False
         assert post_signal_fired is False
-        resource.rename(os.path.basename(NASA_FILEPATH))
+        resource.rename(os.path.basename(original_name))
         assert pre_signal_fired is True
         assert post_signal_fired is True
         signals.pre_rename_file.disconnect(pre_signal_handler)
@@ -616,7 +632,7 @@ class TestFileResourceSignals:
             assert sender is self.resource_class
             assert instance is resource
 
-        resource.attach(NASA_FILEPATH)
+        resource.attach(NASA_FILEPATH, name="name_{}.jpg".format(get_random_string(6)))
 
         signals.pre_delete_file.connect(signal_handler)
         assert signal_fired is False
@@ -645,7 +661,7 @@ class TestFileResourceSignals:
                 "success": True,
             }
 
-        resource.attach(NASA_FILEPATH)
+        resource.attach(NASA_FILEPATH, name="name_{}.jpg".format(get_random_string(6)))
 
         signals.post_delete_file.connect(signal_handler)
         assert signal_fired is False
@@ -737,7 +753,7 @@ class TestFileFieldResource(TestFileResource):
 class TestFileFieldResourceAttach(TestFileResourceAttach):
     resource_class = DummyFileFieldResource
     resource_attachment = NASA_FILEPATH
-    resource_basename = "milky-way-nasa_{}".format(get_random_string(6))
+    resource_basename = "milky-way-nasa"
     resource_extension = "jpg"
     resource_size = 9711423
     resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
@@ -916,12 +932,65 @@ class TestImageFieldResource(TestFileFieldResource):
 class TestImageFieldResourceAttach(TestFileFieldResourceAttach):
     resource_class = DummyImageFieldResource
 
-    def test_wrong_extension(self):
+    def test_django_file(self):
         with self.get_resource() as resource:
-            resource.attach(self.resource_attachment, name="overwritten.gif")
+            overriden_name = "milky-way-nasa_{}.gif".format(get_random_string(6))
+            with open(self.resource_attachment, "rb") as fp:
+                file = File(fp, name=overriden_name)
+                resource.attach(file)
 
-            assert resource.resource_name == "overwritten"
-            assert resource.extension == "jpg"
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
+
+    def test_django_file_with_relative_path(self):
+        with self.get_resource() as resource:
+            overriden_name = "photos/milky-way-nasa_{}.gif".format(get_random_string(6))
+            with open(self.resource_attachment, "rb") as fp:
+                file = File(fp, name=overriden_name)
+                resource.attach(file)
+
+            assert "/photos/" not in resource.name
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
+
+    def test_override_name(self):
+        with self.get_resource() as resource:
+            overriden_name = "overwritten_{}.gif".format(get_random_string(6))
+            resource.attach(self.resource_attachment, name=overriden_name)
+
+            assert "/photos/" not in resource.name
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
+
+    def test_override_name_with_relative_path(self):
+        with self.get_resource() as resource:
+            overriden_name = "photos/overwritten_{}.gif".format(get_random_string(6))
+            resource.attach(self.resource_attachment, name=overriden_name)
+
+            assert "/photos/" not in resource.name
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
+
+    def test_override_django_name(self):
+        with self.get_resource() as resource:
+            overriden_name = "overwritten_{}.gif".format(get_random_string(6))
+            with open(self.resource_attachment, "rb") as fp:
+                file = File(fp, name="not_used.png")
+                resource.attach(file, name=overriden_name)
+
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
+
+    def test_override_django_name_with_relative_path(self):
+        with self.get_resource() as resource:
+            overriden_name = "overwritten_{}.gif".format(get_random_string(6))
+            with open(self.resource_attachment, "rb") as fp:
+                file = File(fp, name="photos/not_used.png")
+                resource.attach(file, name=overriden_name)
+
+            assert "/photos/" not in resource.name
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
 
 
 class TestImageFieldResourceRename(TestFileFieldResourceRename):

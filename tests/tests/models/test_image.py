@@ -144,7 +144,10 @@ class TestUploadedImageDelete(BacklinkModelTestMixin, TestVersatileImageDelete):
     def init_class(cls, storage):
         storage.resource = cls.resource_class()
         storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
-        storage.resource.attach(cls.resource_attachment)
+        storage.resource.attach(
+            cls.resource_attachment,
+            name="file_{}.jpg".format(get_random_string(6))
+        )
         storage.resource.save()
 
         storage.old_resource_name = storage.resource.name

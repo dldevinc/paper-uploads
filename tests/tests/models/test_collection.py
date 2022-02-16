@@ -15,7 +15,7 @@ from examples.collections.standard.models import (
     Page,
 )
 
-from paper_uploads import exceptions
+from paper_uploads import exceptions, helpers
 from paper_uploads.conf import IMAGE_ITEM_VARIATIONS
 from paper_uploads.helpers import _get_item_types
 from paper_uploads.models import Collection, FileItem, ImageCollection, ImageItem, SVGItem
@@ -378,7 +378,10 @@ class CollectionItemDeleteTestBase(TestFileFieldResourceDelete):
 
         storage.resource = cls.resource_class()
         storage.resource.attach_to(storage.collection)
-        storage.resource.attach(cls.resource_attachment)
+        storage.resource.attach(
+            cls.resource_attachment,
+            name="file_{}.jpg".format(get_random_string(6))
+        )
         storage.resource.save()
 
         storage.old_resource_name = storage.resource.name
@@ -746,12 +749,65 @@ class TestImageItemAttach(CollectionItemAttachTestBase):
     resource_size = 9711423
     resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
 
-    def test_wrong_extension(self):
+    def test_django_file(self):
         with self.get_resource() as resource:
-            resource.attach(self.resource_attachment, name="overwritten.gif")
+            overriden_name = "milky-way-nasa_{}.gif".format(get_random_string(6))
+            with open(self.resource_attachment, "rb") as fp:
+                file = File(fp, name=overriden_name)
+                resource.attach(file)
 
-            assert resource.resource_name == "overwritten"
-            assert resource.extension == "jpg"
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
+
+    def test_django_file_with_relative_path(self):
+        with self.get_resource() as resource:
+            overriden_name = "photos/milky-way-nasa_{}.gif".format(get_random_string(6))
+            with open(self.resource_attachment, "rb") as fp:
+                file = File(fp, name=overriden_name)
+                resource.attach(file)
+
+            assert "/photos/" not in resource.name
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
+
+    def test_override_name(self):
+        with self.get_resource() as resource:
+            overriden_name = "overwritten_{}.gif".format(get_random_string(6))
+            resource.attach(self.resource_attachment, name=overriden_name)
+
+            assert "/photos/" not in resource.name
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
+
+    def test_override_name_with_relative_path(self):
+        with self.get_resource() as resource:
+            overriden_name = "photos/overwritten_{}.gif".format(get_random_string(6))
+            resource.attach(self.resource_attachment, name=overriden_name)
+
+            assert "/photos/" not in resource.name
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
+
+    def test_override_django_name(self):
+        with self.get_resource() as resource:
+            overriden_name = "overwritten_{}.gif".format(get_random_string(6))
+            with open(self.resource_attachment, "rb") as fp:
+                file = File(fp, name="not_used.png")
+                resource.attach(file, name=overriden_name)
+
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
+
+    def test_override_django_name_with_relative_path(self):
+        with self.get_resource() as resource:
+            overriden_name = "overwritten_{}.gif".format(get_random_string(6))
+            with open(self.resource_attachment, "rb") as fp:
+                file = File(fp, name="photos/not_used.png")
+                resource.attach(file, name=overriden_name)
+
+            assert "/photos/" not in resource.name
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
 
     def test_unsupported_file(self):
         resource = self.resource_class()

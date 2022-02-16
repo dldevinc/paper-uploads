@@ -7,7 +7,7 @@ from django.core.files import File
 from django.utils.crypto import get_random_string
 from examples.cloudinary.standard.models import Page
 
-from paper_uploads import exceptions
+from paper_uploads import exceptions, helpers
 from paper_uploads.cloudinary.models import CloudinaryMedia
 from paper_uploads.cloudinary.models.base import CloudinaryFieldFile
 
@@ -142,64 +142,63 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
 
     def test_django_file(self):
         with self.get_resource() as resource:
+            overriden_name = "milky-way-nasa_{}.mp4".format(get_random_string(6))
             with open(self.resource_attachment, "rb") as fp:
-                file = File(fp, name="milky-way-nasa.jpg")
+                file = File(fp, name=overriden_name)
                 resource.attach(file)
 
-            assert resource.resource_name == "milky-way-nasa"
-            assert resource.extension == "avi"
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
 
     def test_django_file_with_relative_path(self):
         with self.get_resource() as resource:
+            overriden_name = "photos/milky-way-nasa_{}.mp4".format(get_random_string(6))
             with open(self.resource_attachment, "rb") as fp:
-                file = File(fp, name="photos/milky-way-nasa.jpg")
+                file = File(fp, name=overriden_name)
                 resource.attach(file)
 
             assert "/photos/" not in resource.name
-            assert resource.resource_name == "milky-way-nasa"
-            assert resource.extension == "avi"
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
 
     def test_override_name(self):
         with self.get_resource() as resource:
-            resource.attach(self.resource_attachment, name="overwritten.jpg")
+            overriden_name = "overwritten_{}.mp4".format(get_random_string(6))
+            resource.attach(self.resource_attachment, name=overriden_name)
 
             assert "/photos/" not in resource.name
-            assert resource.resource_name == "overwritten"
-            assert resource.extension == "avi"
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
 
     def test_override_name_with_relative_path(self):
         with self.get_resource() as resource:
-            resource.attach(self.resource_attachment, name="photos/overwritten.jpg")
+            overriden_name = "photos/overwritten_{}.mp4".format(get_random_string(6))
+            resource.attach(self.resource_attachment, name=overriden_name)
 
             assert "/photos/" not in resource.name
-            assert resource.resource_name == "overwritten"
-            assert resource.extension == "avi"
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
 
     def test_override_django_name(self):
         with self.get_resource() as resource:
+            overriden_name = "overwritten_{}.mp4".format(get_random_string(6))
             with open(self.resource_attachment, "rb") as fp:
                 file = File(fp, name="not_used.png")
-                resource.attach(file, name="overwritten.jpg")
+                resource.attach(file, name=overriden_name)
 
-            assert resource.resource_name == "overwritten"
-            assert resource.extension == "avi"
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
 
     def test_override_django_name_with_relative_path(self):
         with self.get_resource() as resource:
+            overriden_name = "overwritten_{}.mp4".format(get_random_string(6))
             with open(self.resource_attachment, "rb") as fp:
                 file = File(fp, name="photos/not_used.png")
-                resource.attach(file, name="overwritten.jpg")
+                resource.attach(file, name=overriden_name)
 
             assert "/photos/" not in resource.name
-            assert resource.resource_name == "overwritten"
-            assert resource.extension == "avi"
-
-    def test_wrong_extension(self):
-        with self.get_resource() as resource:
-            resource.attach(self.resource_attachment, name="overwritten.gif")
-
-            assert resource.resource_name == "overwritten"
-            assert resource.extension == "avi"
+            assert resource.resource_name == helpers.get_filename(overriden_name)
+            assert resource.extension == self.resource_extension
 
     def test_unsupported_file(self):
         with self.get_resource() as resource:
@@ -265,7 +264,10 @@ class TestCloudinaryMediaDelete(BacklinkModelTestMixin, TestFileFieldResourceDel
     def init_class(cls, storage):
         storage.resource = cls.resource_class()
         storage.resource.set_owner_field(cls.owner_model, cls.owner_fieldname)
-        storage.resource.attach(cls.resource_attachment)
+        storage.resource.attach(
+            cls.resource_attachment,
+            name="file_{}.jpg".format(get_random_string(6))
+        )
         storage.resource.save()
 
         storage.old_resource_name = storage.resource.name
