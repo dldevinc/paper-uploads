@@ -146,7 +146,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
                 file = File(fp, name="milky-way-nasa.jpg")
                 resource.attach(file)
 
-            assert resource.basename == "milky-way-nasa"
+            assert resource.resource_name == "milky-way-nasa"
             assert resource.extension == "avi"
 
     def test_django_file_with_relative_path(self):
@@ -156,7 +156,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
                 resource.attach(file)
 
             assert "/photos/" not in resource.name
-            assert resource.basename == "milky-way-nasa"
+            assert resource.resource_name == "milky-way-nasa"
             assert resource.extension == "avi"
 
     def test_override_name(self):
@@ -164,7 +164,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
             resource.attach(self.resource_attachment, name="overwritten.jpg")
 
             assert "/photos/" not in resource.name
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "avi"
 
     def test_override_name_with_relative_path(self):
@@ -172,7 +172,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
             resource.attach(self.resource_attachment, name="photos/overwritten.jpg")
 
             assert "/photos/" not in resource.name
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "avi"
 
     def test_override_django_name(self):
@@ -181,7 +181,7 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
                 file = File(fp, name="not_used.png")
                 resource.attach(file, name="overwritten.jpg")
 
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "avi"
 
     def test_override_django_name_with_relative_path(self):
@@ -191,14 +191,14 @@ class TestCloudinaryMediaAttach(TestFileFieldResourceAttach):
                 resource.attach(file, name="overwritten.jpg")
 
             assert "/photos/" not in resource.name
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "avi"
 
     def test_wrong_extension(self):
         with self.get_resource() as resource:
             resource.attach(self.resource_attachment, name="overwritten.gif")
 
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "avi"
 
     def test_unsupported_file(self):

@@ -68,8 +68,8 @@ class TestFileResource(FileProxyTestMixin, TestResource):
         storage.resource.delete_file()
         storage.resource.delete()
 
-    def test_basename(self, storage):
-        assert storage.resource.basename == self.resource_basename
+    def test_resource_name(self, storage):
+        assert storage.resource.resource_name == self.resource_basename
 
     def test_extension(self, storage):
         assert storage.resource.extension == self.resource_extension
@@ -154,7 +154,7 @@ class TestFileResource(FileProxyTestMixin, TestResource):
 
     def test_file_not_exists(self):
         resource = self.resource_class()
-        resource.basename = "non-existent-file"
+        resource.resource_name = "non-existent-file"
         resource.extension = self.resource_extension
         assert resource.file_exists() is False
 
@@ -167,8 +167,8 @@ class TestEmptyFileResource:
         storage.resource = cls.resource_class()
         yield
 
-    def test_basename(self, storage):
-        assert storage.resource.basename == ""
+    def test_resource_name(self, storage):
+        assert storage.resource.resource_name == ""
 
     def test_extension(self, storage):
         assert storage.resource.extension == ""
@@ -242,7 +242,7 @@ class TestFileResourceAttach:
         with self.get_resource() as resource:
             resource.attach(self.resource_attachment)
 
-            assert resource.basename == self.resource_basename
+            assert resource.resource_name == self.resource_basename
             assert resource.extension == self.resource_extension
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
@@ -251,7 +251,7 @@ class TestFileResourceAttach:
         with self.get_resource() as resource:
             resource.attach(Path(self.resource_attachment))
 
-            assert resource.basename == self.resource_basename
+            assert resource.resource_name == self.resource_basename
             assert resource.extension == self.resource_extension
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
@@ -261,7 +261,7 @@ class TestFileResourceAttach:
             with open(self.resource_attachment, "rb") as fp:
                 resource.attach(fp)
 
-            assert resource.basename == self.resource_basename
+            assert resource.resource_name == self.resource_basename
             assert resource.extension == self.resource_extension
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
@@ -272,7 +272,7 @@ class TestFileResourceAttach:
                 file = File(fp, name="milky-way-nasa.jpg")
                 resource.attach(file)
 
-            assert resource.basename == "milky-way-nasa"
+            assert resource.resource_name == "milky-way-nasa"
             assert resource.extension == "jpg"
 
     def test_django_file_with_relative_path(self):
@@ -282,7 +282,7 @@ class TestFileResourceAttach:
                 resource.attach(file)
 
             assert "/photos/" not in resource.name
-            assert resource.basename == "milky-way-nasa"
+            assert resource.resource_name == "milky-way-nasa"
             assert resource.extension == "jpg"
 
     def test_override_name(self):
@@ -290,7 +290,7 @@ class TestFileResourceAttach:
             resource.attach(self.resource_attachment, name="overwritten.jpg")
 
             assert "/photos/" not in resource.name
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "jpg"
 
     def test_override_name_with_relative_path(self):
@@ -298,7 +298,7 @@ class TestFileResourceAttach:
             resource.attach(self.resource_attachment, name="photos/overwritten.jpg")
 
             assert "/photos/" not in resource.name
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "jpg"
 
     def test_override_django_name(self):
@@ -307,7 +307,7 @@ class TestFileResourceAttach:
                 file = File(fp, name="not_used.png")
                 resource.attach(file, name="overwritten.jpg")
 
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "jpg"
 
     def test_override_django_name_with_relative_path(self):
@@ -317,14 +317,14 @@ class TestFileResourceAttach:
                 resource.attach(file, name="overwritten.jpg")
 
             assert "/photos/" not in resource.name
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "jpg"
 
     def test_wrong_extension(self):
         with self.get_resource() as resource:
             resource.attach(self.resource_attachment, name="overwritten.gif")
 
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "gif"
 
     def test_file_position(self):
@@ -363,8 +363,8 @@ class TestFileResourceRename:
     def test_new_file_existence(self, storage):
         assert os.path.exists(storage.resource.name) is True
 
-    def test_basename(self, storage):
-        assert storage.resource.basename == helpers.get_filename(self.new_name)
+    def test_resource_name(self, storage):
+        assert storage.resource.resource_name == helpers.get_filename(self.new_name)
 
     def test_extension(self, storage):
         assert storage.resource.extension == helpers.get_extension(self.new_name)
@@ -435,7 +435,7 @@ class TestFileResourceSignals:
             assert instance is resource
 
             # ensure instance not filled yet
-            assert instance.basename == ""
+            assert instance.resource_name == ""
             assert instance.extension == ""
             assert instance.size == 0
             assert instance.checksum == ""
@@ -471,7 +471,7 @@ class TestFileResourceSignals:
             assert instance is resource
 
             # ensure instance filled
-            assert instance.basename == "milky-way-nasa"
+            assert instance.resource_name == "milky-way-nasa"
             assert instance.extension == "jpg"
             assert instance.size == 9711423
             assert instance.checksum == "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
@@ -512,7 +512,7 @@ class TestFileResourceSignals:
             assert new_name == "new name.png"
 
             # ensure instance filled
-            assert instance.basename == "milky-way-nasa"
+            assert instance.resource_name == "milky-way-nasa"
             assert instance.extension == "jpg"
             assert instance.size == 9711423
             assert instance.checksum == "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
@@ -547,7 +547,7 @@ class TestFileResourceSignals:
             assert new_name == "new name.png"
 
             # ensure instance filled
-            assert instance.basename == "new name"
+            assert instance.resource_name == "new name"
             assert instance.extension == "png"
             assert instance.size == 9711423
             assert instance.checksum == "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
@@ -589,7 +589,7 @@ class TestFileResourceSignals:
         resource.attach(NASA_FILEPATH)
 
         original_name = resource.name
-        original_basename = resource.basename
+        original_resource_name = resource.resource_name
 
         signals.pre_rename_file.connect(pre_signal_handler)
         signals.post_rename_file.connect(post_signal_handler)
@@ -602,7 +602,7 @@ class TestFileResourceSignals:
         signals.post_rename_file.disconnect(post_signal_handler)
 
         assert original_name == resource.name
-        assert original_basename == resource.basename
+        assert original_resource_name == resource.resource_name
 
         resource.delete_file()
 
@@ -920,7 +920,7 @@ class TestImageFieldResourceAttach(TestFileFieldResourceAttach):
         with self.get_resource() as resource:
             resource.attach(self.resource_attachment, name="overwritten.gif")
 
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "jpg"
 
 

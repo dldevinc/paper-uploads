@@ -332,7 +332,7 @@ class CollectionItemMixin:
         collection = self.collection_class.objects.create()
         resource = self.resource_class()
         resource.attach_to(collection)
-        resource.basename = "non-existent-file"
+        resource.resource_name = "non-existent-file"
         resource.extension = self.resource_extension
         assert resource.file_exists() is False
         collection.delete()
@@ -750,7 +750,7 @@ class TestImageItemAttach(CollectionItemAttachTestBase):
         with self.get_resource() as resource:
             resource.attach(self.resource_attachment, name="overwritten.gif")
 
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "jpg"
 
     def test_unsupported_file(self):

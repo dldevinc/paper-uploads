@@ -254,7 +254,7 @@ class CloudinaryFileFieldResource(ReadonlyCloudinaryFileProxyMixin, FileFieldRes
 
         self.set_file(resource)
 
-        self.basename = helpers.get_filename(file.name)
+        self.resource_name = helpers.get_filename(file.name)
         self.extension = file_format or ""
         return result
 
@@ -303,7 +303,7 @@ class CloudinaryFileFieldResource(ReadonlyCloudinaryFileProxyMixin, FileFieldRes
         )
         self.set_file(resource)
 
-        self.basename = helpers.get_filename(new_name)
+        self.resource_name = helpers.get_filename(new_name)
         self.extension = file_format or ""
         return result
 

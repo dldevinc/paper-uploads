@@ -47,7 +47,7 @@ class CloudinaryFileItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase)
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:
-            self.display_name = self.basename
+            self.display_name = self.resource_name
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
@@ -66,7 +66,7 @@ class CloudinaryFileItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase)
         return self._meta.get_field("file")
 
     def get_caption(self):
-        name = self.display_name or self.basename
+        name = self.display_name or self.resource_name
         if self.extension:
             return "{}.{}".format(name, self.extension)
         return name
@@ -95,7 +95,7 @@ class CloudinaryMediaItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:
-            self.display_name = self.basename
+            self.display_name = self.resource_name
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:

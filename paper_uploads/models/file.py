@@ -29,7 +29,7 @@ class UploadedFileBase(BacklinkModelMixin, EditableResourceMixin, FileFieldResou
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:
-            self.display_name = self.basename
+            self.display_name = self.resource_name
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
@@ -50,7 +50,7 @@ class UploadedFileBase(BacklinkModelMixin, EditableResourceMixin, FileFieldResou
         return self._meta.get_field("file")
 
     def get_caption(self) -> str:
-        name = self.display_name or self.basename
+        name = self.display_name or self.resource_name
         if self.extension:
             return "{}.{}".format(name, self.extension)
         return name
@@ -58,7 +58,7 @@ class UploadedFileBase(BacklinkModelMixin, EditableResourceMixin, FileFieldResou
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
-            "name": self.display_name or self.basename,
+            "name": self.display_name or self.resource_name,
             "file_info": "({ext}, {size})".format(
                 ext=self.extension, size=filesizeformat(self.size)
             ),

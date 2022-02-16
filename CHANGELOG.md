@@ -3,6 +3,7 @@
 ## [0.8.0rc4](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc4) - 2021-02-15
 ### Features
 - Add an ability to specify `storage` and `upload_to` for particular fields.
+- The `basename` field has been renamed to `resource_name`.
 - Management commands rewritten.
 - Added `create_missing_variations` management command.
 - Method `get_file_url()` is now deprecated.

@@ -327,7 +327,7 @@ class TestMediaItemAttach(CollectionItemAttachTestBase):
                 file = File(fp, name="milky-way-nasa.jpg")
                 resource.attach(file)
 
-            assert resource.basename == "milky-way-nasa"
+            assert resource.resource_name == "milky-way-nasa"
             assert resource.extension == "mp3"
 
     def test_django_file_with_relative_path(self):
@@ -337,7 +337,7 @@ class TestMediaItemAttach(CollectionItemAttachTestBase):
                 resource.attach(file)
 
             assert "/photos/" not in resource.name
-            assert resource.basename == "milky-way-nasa"
+            assert resource.resource_name == "milky-way-nasa"
             assert resource.extension == "mp3"
 
     def test_override_name(self):
@@ -345,7 +345,7 @@ class TestMediaItemAttach(CollectionItemAttachTestBase):
             resource.attach(self.resource_attachment, name="overwritten.jpg")
 
             assert "/photos/" not in resource.name
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "mp3"
 
     def test_override_name_with_relative_path(self):
@@ -353,7 +353,7 @@ class TestMediaItemAttach(CollectionItemAttachTestBase):
             resource.attach(self.resource_attachment, name="photos/overwritten.jpg")
 
             assert "/photos/" not in resource.name
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "mp3"
 
     def test_override_django_name(self):
@@ -362,7 +362,7 @@ class TestMediaItemAttach(CollectionItemAttachTestBase):
                 file = File(fp, name="not_used.png")
                 resource.attach(file, name="overwritten.jpg")
 
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "mp3"
 
     def test_override_django_name_with_relative_path(self):
@@ -372,14 +372,14 @@ class TestMediaItemAttach(CollectionItemAttachTestBase):
                 resource.attach(file, name="overwritten.jpg")
 
             assert "/photos/" not in resource.name
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "mp3"
 
     def test_wrong_extension(self):
         with self.get_resource() as resource:
             resource.attach(self.resource_attachment, name="overwritten.gif")
 
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "mp3"
 
     def test_unsupported_file(self):
@@ -596,7 +596,7 @@ class TestImageItemAttach(CollectionItemAttachTestBase):
         with self.get_resource() as resource:
             resource.attach(self.resource_attachment, name="overwritten.gif")
 
-            assert resource.basename == "overwritten"
+            assert resource.resource_name == "overwritten"
             assert resource.extension == "jpg"
 
     def test_unsupported_file(self):

@@ -152,8 +152,8 @@ class FileResource(FileProxyMixin, Resource):
     Подкласс ресурса, представляющего файл.
     """
 
-    basename = models.CharField(
-        _("basename"),
+    resource_name = models.CharField(
+        _("resource name"),
         max_length=255,
         editable=False,
         help_text=_("Human-readable resource name"),
@@ -190,11 +190,28 @@ class FileResource(FileProxyMixin, Resource):
         return "{}('{}')".format(type(self).__name__, self.name)
 
     @property
+    def basename(self):
+        warnings.warn(
+            "'basename' is deprecated in favor of 'resource_name'",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self.resource_name
+
+    @basename.setter
+    def basename(self, value):
+        warnings.warn(
+            "'basename' is deprecated in favor of 'resource_name'",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        self.resource_name = value
+
+    @property
     def name(self) -> str:
         """
         Полное имя загруженного файла.
-        В отличие от `self.basename` это имя включает относительный путь,
-        суффикс и расширение.
+        Это имя включает относительный путь, суффикс и расширение.
         """
         raise NotImplementedError
 
@@ -204,8 +221,8 @@ class FileResource(FileProxyMixin, Resource):
         Не содержит суффикса, которое может быть добавлено файловым хранилищем.
         """
         if self.extension:
-            return "{}.{}".format(self.basename, self.extension)
-        return self.basename
+            return "{}.{}".format(self.resource_name, self.extension)
+        return self.resource_name
 
     def get_file_size(self) -> int:
         """
@@ -222,7 +239,7 @@ class FileResource(FileProxyMixin, Resource):
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
-            "name": self.basename,
+            "name": self.resource_name,
             "extension": self.extension,
             "caption": self.get_caption(),
             "size": self.size,
@@ -419,7 +436,7 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
 
     def _attach(self, file: File, **options):
         self.get_file().save(file.name, file, save=False)
-        self.basename = helpers.get_filename(file.name)
+        self.resource_name = helpers.get_filename(file.name)
         self.extension = helpers.get_extension(self.name)
 
     def _rename(self, new_name: str, **options):
@@ -428,7 +445,7 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
         with file.open() as fp:
             file.save(new_name, fp, save=False)
 
-        self.basename = helpers.get_filename(new_name)
+        self.resource_name = helpers.get_filename(new_name)
         self.extension = helpers.get_extension(self.name)
 
     def _delete_file(self, **options):

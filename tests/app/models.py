@@ -36,13 +36,13 @@ class DummyFileResource(FileResource):
 
     @property
     def name(self) -> str:
-        if not self.basename:
+        if not self.resource_name:
             return ""
 
         return os.path.join(
             tempfile.gettempdir(),
             "{}.{}".format(
-                self.basename,
+                self.resource_name,
                 self.extension
             )
         )
@@ -61,7 +61,7 @@ class DummyFileResource(FileResource):
         return os.path.exists(self.name) if self.name else False
 
     def _attach(self, file: File, **options):
-        self.basename = helpers.get_filename(file.name)
+        self.resource_name = helpers.get_filename(file.name)
         self.extension = helpers.get_extension(file.name)
 
         with open(self.name, "wb") as fdst:
@@ -78,7 +78,7 @@ class DummyFileResource(FileResource):
         )
         os.rename(self.name, new_path)
 
-        self.basename = helpers.get_filename(new_name)
+        self.resource_name = helpers.get_filename(new_name)
         self.extension = helpers.get_extension(new_name)
 
         return {

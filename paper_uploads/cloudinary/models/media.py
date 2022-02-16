@@ -24,7 +24,7 @@ class CloudinaryMedia(BacklinkModelMixin, CloudinaryFileFieldResource):
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:
-            self.display_name = self.basename
+            self.display_name = self.resource_name
         super().save(*args, **kwargs)
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
