@@ -2,6 +2,7 @@
 
 ## [0.8.0rc4](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc4) - 2021-02-15
 ### Features
+- Added new method `Collection.get_last_modified()`.
 - Add an ability to specify `storage` and `upload_to` for particular fields.
 - The `basename` field has been renamed to `resource_name`.
 - Management commands rewritten.

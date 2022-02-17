@@ -1,7 +1,8 @@
+import datetime
 import posixpath
 import warnings
 from collections import OrderedDict
-from typing import Any, Dict, Iterable, Optional, Type, ClassVar
+from typing import Any, ClassVar, Dict, Iterable, Optional, Type
 
 import magic
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -34,6 +35,7 @@ from ..variations import PaperVariation
 from .base import (
     FileFieldResource,
     NoPermissionsMetaBase,
+    Resource,
     ResourceBaseMeta,
     VersatileImageResourceMixin,
 )
@@ -171,6 +173,11 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         default=now,
         editable=False
     )
+    modified_at = models.DateTimeField(
+        _("changed at"),
+        default=now,
+        editable=False
+    )
 
     default_mgr = models.Manager()  # fix migrations manager
     objects = CollectionManager()
@@ -225,6 +232,20 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
             raise exceptions.InvalidItemType(item_type)
         return self.items.filter(type=item_type).order_by("order")
 
+    def get_last_modified(self) -> datetime.datetime:
+        """
+        Получение даты модификации коллекции с учётом её элементов.
+        """
+        dates = [self.created_at, self.modified_at]
+        item_date = self.items.aggregate(
+            date=models.Max("modified_at")
+        )["date"]
+
+        if item_date is not None:
+            dates.append(item_date)
+
+        return max(*dates)
+
 
 class Collection(CollectionBase):
     VARIATIONS: ClassVar[dict]
@@ -240,7 +261,7 @@ class CollectionItemMetaBase(PolymorphicModelBase, ResourceBaseMeta):
     pass
 
 
-class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=CollectionItemMetaBase):
+class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, metaclass=CollectionItemMetaBase):
     """
     Базовый класс элемента коллекции.
     """

@@ -254,6 +254,46 @@ class TestCollection:
 
 
 @pytest.mark.django_db
+def test_get_last_modified():
+    collection = CustomCollection.objects.create()
+    date1 = collection.get_last_modified()
+
+    # add item
+    image_item = CustomImageItem()
+    image_item.attach_to(collection)
+    image_item.attach(NASA_FILEPATH, name="image_{}.jpg".format(get_random_string(6)))
+    image_item.save()
+
+    date2 = collection.get_last_modified()
+    assert date2 > date1
+
+    # modify item
+    image_item.title = "Nasa"
+    image_item.save()
+
+    date3 = collection.get_last_modified()
+    assert date3 > date2
+
+    # add more items
+    image_item = CustomImageItem()
+    image_item.attach_to(collection)
+    image_item.attach(CALLIPHORA_FILEPATH, name="image_{}.jpg".format(get_random_string(6)))
+    image_item.save()
+
+    date4 = collection.get_last_modified()
+    assert date4 > date3
+
+    # delete items
+    collection.get_items().delete()
+
+    collection.refresh_from_db()
+    date5 = collection.get_last_modified()
+    assert date5 > date4
+
+    collection.delete()
+
+
+@pytest.mark.django_db
 class TestDeleteCustomImageCollection:
     def _create_collection(self):
         collection = CustomCollection.objects.create()
