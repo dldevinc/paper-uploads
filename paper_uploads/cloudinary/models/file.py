@@ -5,12 +5,13 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from ...conf import settings
+from ...models.base import FileFieldResource
 from ...models.mixins import BacklinkModelMixin
 from ...utils import filesizeformat
-from .base import CloudinaryFieldFile, CloudinaryFileFieldResource
+from .base import CloudinaryFieldFile, CloudinaryFileFieldResourceMixin
 
 
-class CloudinaryFile(BacklinkModelMixin, CloudinaryFileFieldResource):
+class CloudinaryFile(BacklinkModelMixin, CloudinaryFileFieldResourceMixin, FileFieldResource):
     file = CloudinaryField(
         _("file"),
         type=settings.CLOUDINARY_TYPE,
@@ -18,7 +19,7 @@ class CloudinaryFile(BacklinkModelMixin, CloudinaryFileFieldResource):
     )
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
-    class Meta(CloudinaryFileFieldResource.Meta):
+    class Meta(FileFieldResource.Meta):
         verbose_name = _("file")
         verbose_name_plural = _("files")
 

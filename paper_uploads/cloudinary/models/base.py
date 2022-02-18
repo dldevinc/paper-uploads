@@ -159,8 +159,8 @@ class CloudinaryFieldFile(FileProxyMixin):
             yield data
 
 
-class CloudinaryFileFieldResource(ReadonlyCloudinaryFileProxyMixin, FileFieldResource):
-    class Meta(FileFieldResource.Meta):
+class CloudinaryFileFieldResourceMixin(ReadonlyCloudinaryFileProxyMixin):
+    class Meta:
         abstract = True
 
     def file_exists(self) -> bool:

@@ -7,10 +7,10 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from ...conf import IMAGE_ITEM_VARIATIONS, settings
-from ...models.base import ImageFileResourceMixin
+from ...models.base import FileFieldResource, ImageFileResourceMixin
 from ...models.collection import Collection, CollectionFileItemBase, FilePreviewMixin
 from ...models.fields import CollectionItem
-from .base import CloudinaryFieldFile, CloudinaryFileFieldResource
+from .base import CloudinaryFieldFile, CloudinaryFileFieldResourceMixin
 
 __all__ = [
     "CloudinaryFileItemBase",
@@ -23,7 +23,7 @@ __all__ = [
 ]
 
 
-class CollectionCloudinaryFileItemBase(CollectionFileItemBase, CloudinaryFileFieldResource):
+class CollectionCloudinaryFileItemBase(CloudinaryFileFieldResourceMixin, CollectionFileItemBase):
     class Meta:
         abstract = True
 
