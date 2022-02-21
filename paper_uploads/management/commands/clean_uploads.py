@@ -16,8 +16,10 @@ from ...models.mixins import BacklinkModelMixin
 
 class Command(BaseCommand):
     help = """
-    Поиск и удаление экземпляров файловых моделей с утерянными файлами.
-    Также удаляются экземпляры файловых моделей, на которые нет ссылок.
+    Находит некорректные экземпляры файловых моделей и предлагает их удалить.
+    
+    Некорректными считаются экземпляры, у которых утерян загруженный файл,
+    а также экземпляры, на которые нет ссылки.
     
     Создание экземпляра файловой модели и загрузка в неё файла - это  две отдельные 
     операции. Между ними может пройти какое-то время, особенно при использовании 
@@ -169,8 +171,8 @@ class Command(BaseCommand):
         queryset = model.objects.using(self.database).filter(created_at__lte=self._get_start_time())
         for instance in queryset.iterator():
             if not instance.file_exists():
-                model = type(instance)
-                grouped_invalid_objects[model].append(instance)
+                actual_model = type(instance)  # support polymophic models
+                grouped_invalid_objects[model].append(actual_model)
 
         if not grouped_invalid_objects:
             return

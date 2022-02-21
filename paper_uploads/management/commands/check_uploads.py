@@ -5,14 +5,14 @@ from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 
 from ... import helpers
-from ...models.base import FileResource, VersatileImageResourceMixin
+from ...models.base import FileResource
 from ...models.collection import CollectionBase, CollectionItemBase
 from ...models.mixins import BacklinkModelMixin
 
 
 class Command(BaseCommand):
     help = """
-    Проверка экземпляров файловых моделей.
+    Проверка целостности экземпляров файловых моделей.
     """
     options = None
     verbosity = None
@@ -43,12 +43,6 @@ class Command(BaseCommand):
             action="store_true",
             default=False,
             help="Check item `type` values.",
-        )
-        parser.add_argument(
-            "-r", "--fix-missing-variations",
-            action="store_true",
-            default=False,
-            help="Recreate all missing variation files from a source image.",
         )
 
     def _check_model_owners(self, model: Type[BacklinkModelMixin]):

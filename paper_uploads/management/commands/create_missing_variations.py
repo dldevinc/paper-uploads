@@ -7,6 +7,10 @@ from .. import helpers
 
 
 class Command(BaseCommand):
+    help = """
+    Создаёт отсутствующие файлы вариаций.
+    """
+
     def add_arguments(self, parser):
         parser.add_argument(
             "--database",

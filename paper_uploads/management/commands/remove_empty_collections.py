@@ -7,6 +7,10 @@ from .. import helpers
 
 
 class Command(BaseCommand):
+    help = """
+    Удаление экземпляров коллекций, в которых нет ни одного элемента.
+    """
+
     def add_arguments(self, parser):
         parser.add_argument(
             "--database",

@@ -14,8 +14,10 @@ class Command(BaseCommand):
     help = """
     Удаление вариаций для всех экземпляров указанной модели.
     
-    Примеры:
+    Пример для обычной модели:
         python3 manage.py remove_variations blog.post --field=hero
+    
+    Пример для коллекции:
         python3 manage.py remove_variations blog.gallery --item-type=image
     """
     options = None
