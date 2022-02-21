@@ -37,26 +37,29 @@
 ## Table of Contents
 
 - [Installation](#Installation)
-- [FileField](#FileField)
-- [Validators](#Validators) 
-- [UploadedFile](#UploadedFile)
-- [Programmatically upload files](#Programmatically-upload-files)
-- [ImageField](#ImageField)
-- [UploadedImage](#UploadedImage)
-  - [Variations](#Variations)
-    - [Versions](#Versions)
+- [Описание](#Описание)
+- [FileField и ImageField](#FileField-и-ImageField)
+  - [Поля моделей загруженных файлов](#Поля-моделей-загруженных-файлов)
+  - [Storage](#Storage)
+  - [Каталог загрузки файла](#Каталог-загрузки-файла)
+  - [Валидаторы](#Валидаторы)
+  - [Программная загрузка файлов](#Программная-загрузка-файлов)
+  - [Вариации](#Вариации)
+    - [Версии вариаций](#Версии-вариаций)
     - [Redis Queue](#Redis Queue)
-- [Collections](#Collections)
-  - [Collection items](#Collection-items)
-  - [ImageCollection](#ImageCollection)
-  - [Custom collection item classes](#Custom-collection-item-classes)
+- [Коллекции](#Коллекции)
+  - [Элементы коллекции](#Элементы-коллекции)
+    - [Storage и каталог загрузки файлов](#Storage-и-каталог-загрузки-файлов)
+    - [Валидаторы](#Валидаторы-2)
+    - [Программное создание элемента коллекции](#Программное-создание-элемента-коллекции)
+    - [Вариации](#Вариации-2)
   - [HTML Template Example](#HTML-Template-Example)
-- [Management Commands](#Management-Commands)
+- [Management команды](#Management-команды)
 - [Cloudinary](#Cloudinary)
-  - [Installation](#Installation-1)
-  - [Model fields](#Model-fields)
-  - [Collections](#Collections-1)
-  - [Usage](#Usage)
+  - [Installation](#Installation)
+  - [Файловые поля](#Файловые-поля)
+  - [Коллекции](#Коллекции-2)
+  - [paper_cloudinary_url](#paper_cloudinary_url)
 - [Settings](#Settings)
 
 ## Installation
@@ -97,10 +100,143 @@ PAPER_LOCALE_PACKAGES = [
 ]
 ```
 
-## FileField
+## Описание
+В состав библиотеки входит два поля &mdash; `FileField` и `ImageField` &mdash;
+и модель `Collection`, предназначенная для группировки загруженных файлов
+с целью создания, к примеру, фотогалерей.
 
-Поле для загрузки файла. В большинстве случаев это поле можно использовать
-вместо одноименного поля Django.
+С примерами использования библиотеки вы можете ознакомиться 
+[здесь](https://github.com/dldevinc/paper-uploads/tree/master/tests/examples).
+
+## FileField и ImageField
+
+```python
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from paper_uploads.models import FileField, ImageField
+
+
+class Page(models.Model):
+    file = FileField(
+        _("file"),
+        blank=True
+    )
+    image = ImageField(
+        _("image"),
+        blank=True
+    )
+```
+
+![image](https://user-images.githubusercontent.com/6928240/154901303-be8a6a26-c0c1-4bb1-a9cc-ece14f5b04d2.png)
+
+Эти поля используются для тех же целей, что и одноимённые стандартные поля Django
+&mdash; для загрузки файлов и изображений &mdash; но имеют ряд существенных отличий. 
+
+Главное отличие заключается в том, что поля `FileField` и `ImageField` являются 
+производными от стандартного `OneToOneField`. Соответственно, загруженные файлы
+представлены экземплярами полноценных моделей. 
+
+### Поля моделей загруженных файлов
+
+Файлы, загруженные с помощью полей `FileField` и `ImageField`, хранятся в
+экземплярах моделей `UploadedFile` и `UploadedImage` соответственно.
+
+В следующих таблицах перечислены общие поля и свойства обеих моделей:
+
+| Поле | Описание |
+|------|----------|
+| resource_name | Имя файла без пути, суффикса и расширения.<br>Пример: `report2020`. |
+| extension | Расширение файла в нижнем регистре без точки.<br>Пример: `pdf`. |
+| size | Размер файла в байтах. |
+| checksum | Контрольная сумма содержимого файла.<br>Используется для отслеживания изменений файла. |
+| uploaded_at | Дата и время загрузки файла. |
+| created_at | Дата и время создания экземпляра модели. |
+| modified_at | Дата и время изменения экземпляра модели. |
+
+
+| Свойство | Описание |
+|------|----------|
+| name | Полное имя файла.<br>Пример: `files/report2020_19sc2Kj.pdf`. |
+| url | URL-адрес файла.<br>Пример: `/media/files/report2020_19sc2Kj.pdf`. |
+| path | Абсолютный путь к файлу.<br>Пример: `/home/www/django/media/files/report2020_19sc2Kj.pdf`. |
+
+Ниже перечислены поля и свойства, специфичные для каждой модели.
+
+Специфичные поля `UploadedFile`:
+
+| Поле | Описание |
+|------|----------|
+| display_name | Удобочитаемое название файла для вывода на сайте.<br>Заполняется в диалоговом окне редактирования файла.<br>Пример: `Annual report 2020`. |
+
+Специфичные поля `UploadedImage`:
+
+| Поле | Описание |
+|------|----------|
+| title | Название изображения, которое можно вставить в атрибут `title` тэга `<img>`. |
+| description | Описание изображения, которое можно вставить в атрибут `alt` тэга `<img>`. |
+| width | Ширина загруженного изображения. |
+| height | Высота загруженного изображения. |
+
+
+Большинство полей заполняются автоматически при загрузке файла и предназначены
+только для чтения. Но такие поля, как `display_name` или `title`, заполняются
+пользователем в диалоговом окне редактирования файла:
+
+![image](https://user-images.githubusercontent.com/6928240/154904780-5d365952-ce75-4491-952e-6b2992e35309.png)
+![image](https://user-images.githubusercontent.com/6928240/154910567-991bc27c-e7c6-40e7-883e-f3120897c197.png)
+
+### Storage
+
+По умолчанию все поля `paper-uploads` используют единый экземпляр хранилища,
+определяемый настройками `STORAGE` и `STORAGE_OPTIONS`:
+
+```python
+# settings.py
+
+PAPER_UPLOADS = {
+    "STORAGE": "django.core.files.storage.FileSystemStorage",
+    "STORAGE_OPTIONS": {},
+    # ...
+}
+```
+
+Вы можете указать экземпляр хранилища для конкретного поля:
+
+```python
+from django.db import models
+from django.core.files.storage import FileSystemStorage
+from django.utils.translation import gettext_lazy as _
+from paper_uploads.models import FileField
+
+
+class Page(models.Model):
+    report = FileField(
+        _("report"), 
+        blank=True,
+        storage=FileSystemStorage(location="uploads/"),
+        upload_to="reports/%Y/%m"
+    )
+```
+
+### Каталог загрузки файла
+
+Все поля используют единые значения, указанные в настройках 
+`FILES_UPLOAD_TO` и `IMAGES_UPLOAD_TO`:
+
+```python
+# settings.py
+
+PAPER_UPLOADS = {
+    # ...
+    "FILES_UPLOAD_TO": "files/%Y/%m/%d",
+    "IMAGES_UPLOAD_TO": "images/%Y/%m/%d",
+    # ...
+}
+```
+
+Для конкретного поля каталог сохранения можно указать в параметре поля `upload_to`. 
+Параметр поддерживает форматирование `strftime()`, которое будет заменено на 
+дату/время загруженного файла (и загружаемые файлы не заполнят один каталог).   
 
 ```python
 from django.db import models
@@ -110,17 +246,49 @@ from paper_uploads.models import FileField
 
 class Page(models.Model):
     report = FileField(
-        _("file"), 
-        blank=True
+        _("report"), 
+        blank=True,
+        upload_to="pdf/reports/%Y"
     )
 ```
 
-Результат с загруженным файлом:
-![image](https://user-images.githubusercontent.com/6928240/152319447-5d7e9a60-5362-4019-bddc-2f2672a6c9cf.png)
+Обратите внимание, что в параметр `upload_to` *нельзя передать вызываемый объект*.
+
+Если вам требуется динамическое определение каталога или имени загруженного файла,
+создайте proxy-модель и переопрелите метод `generate_filename()`:
+
+```python
+import os
+import datetime
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from paper_uploads.models import FileField, UploadedFile
+
+
+class UploadedFileProxy(UploadedFile):
+    class Meta:
+        proxy = True
+
+    def generate_filename(self, filename: str) -> str:
+        _, ext = os.path.splitext(filename)
+        filename = "proxy-files/file-%Y-%m-%d_%H%M%S{}".format(ext)
+        filename = datetime.datetime.now().strftime(filename)
+
+        storage = self.get_file_storage()
+        return storage.generate_filename(filename)
+
+
+class Page(models.Model):
+    file = FileField(
+        _("file"),
+        to=UploadedFileProxy,
+        blank=True,
+    )
+```
+
+### Валидаторы
 
 На загружаемые файлы можно наложить ограничения с помощью валидаторов.
-
-## Validators
 
 Модуль `paper-uploads.validators` предоставляет следующие классы для валидации файлов:
 
@@ -156,73 +324,7 @@ class Page(models.Model):
 Ограничения, наложенные этими валидаторами, отображаются в виджете: 
 ![image](https://user-images.githubusercontent.com/6928240/152322863-33108ef9-061c-4af5-8d0c-aeb5b467e04b.png)
 
-## Storage
-
-По умолчанию, все поля `paper-uploads` используют класс хранилища, указанный
-в параметре `PAPER_UPLOADS["STORAGE"]` в `settings.py`. Но вы можете указать 
-отдельный экземпляр хранилища для конкретного поля.
-
-```python
-from django.db import models
-from django.core.files.storage import FileSystemStorage
-from django.utils.translation import gettext_lazy as _
-from paper_uploads.models import FileField
-
-
-class Page(models.Model):
-    report = FileField(
-        _("file"), 
-        blank=True,
-        storage=FileSystemStorage(location="uploads/"),
-        upload_to="files/%Y-%m-%d"
-    )
-```
-
-## UploadedFile
-
-Файл, загруженный в поле `FileField`, будет представлен экземпляром модели `UploadedFile`.
-Помимо ссылки на файл, эта модель включает множество дополнительных полей:
-
-| Поле | Описание |
-|------|----------|
-| display_name | Удобочитаемое название файла для вывода на сайте.<br>Заполняется в диалоговом окне редактирования файла.<br>Пример: `Annual report 2020`. |
-| basename | Имя файла без пути, суффикса и расширения.<br>Пример: `report2020`. |
-| extension | Расширение файла в нижнем регистре без точки.<br>Пример: `pdf`. |
-| name | Полное имя файла, хранящееся в БД.<br>Пример: `files/report2020_19sc2Kj.pdf`. |
-| size | Размер файла в байтах. |
-| checksum | Контрольная сумма файла.<br>Используется для отслеживания изменений файла. |
-| uploaded_at | Дата и время загрузки файла. |
-| created_at | Дата и время создания экземпляра модели. |
-| modified_at | Дата и время изменения экземпляра модели. |
-
-Большинство этих полей заполняется автоматически при загрузке файла.
-Поле `display_name` можно заполнить в диалоговом окне редактирования файла.
-
-![image](https://user-images.githubusercontent.com/6928240/152342756-9ccf2579-7c47-4627-9504-8e6fc7b4eecf.png)
-
-Несмотря на то, что фактическая ссылка на файл расположена в поле `Page.report.file`,
-для непосредственной работы с файлом на диске во многих случаях можно использовать `Page.report`,
-поскольку многие методы и свойства стандартного класса `FieldFile` проксированы на уровень модели. 
-В их числе:
-* `url`
-* `path`
-* `open`
-* `close`
-* `closed`
-* `read`
-* `seek`
-* `tell`
-* `chunks`
-
-Поддерживается протокол контекстного менеджера:
-```python
-page = Page.objects.first()
-
-with page.report.open() as fp:
-    print(fp.read(10))
-```
-
-## Programmatically upload files
+### Программная загрузка файлов
 
 ```python
 from paper_uploads.models import *
@@ -237,19 +339,20 @@ page = Page.objects.create(
 )
 ```
 
-В метод `set_owner_field()` передаётся модель и имя поля этой модели, в которое
-будет сохранен экземпляр модели файла. Эти данные необходимы для выявления
-файлов, которые нигде не используются.
+В метод `set_owner_field()` передаётся модель и имя поля модели, в которое будет 
+сохранен экземпляр модели файла. Эти данные необходимы для выявления файлов, которые 
+нигде не используются.
 
-Метод `attach()` произодит непосредственное сохранение файла и заполняет объект
-дополнительными данными о файле. В метод можно передать как путь к файлу, 
-так и файловый объект.
+Метод `attach()` производит непосредственное сохранение файла и заполняет экземпляр 
+дополнительными данными. В метод можно передать как путь к локальному файлу, так 
+и файловый объект.
 
-## ImageField
+### Вариации
 
-Поле для загрузки изображений. Может хранить ссылку как на единственное изображение 
-(подобно стандартному полю `ImageField`), так и на группу изображений,
-полученных из исходного с помощью библиотеки [variations][variations]. 
+`ImageField` позволяет создавать вариации для загруженного изображения.
+Вариация - это изображение, полученное из исходного по *заранее* объявленным правилам.
+
+Для создания вариаций используется библиотека [variations][variations].
 
 ```python
 from django.db import models
@@ -259,77 +362,41 @@ from paper_uploads.models import *
 
 class Page(models.Model):
     image = ImageField(
-        _("single image"), 
-        blank=True
-    )
-    image_group = ImageField(
-        _("image group"), 
+        _("image"), 
         blank=True,
         variations=dict(
             desktop=dict(
-                size=(1200, 0),
-                clip=False
+                size=(800, 0),
+                clip=False,
             ),
             mobile=dict(
                 size=(600, 0),
-                clip=False
+                clip=False,
             ),
         )
     )
 ```
 
-При загрузке изображения создается экземпляр модели `UploadedImage`.
-
-## UploadedImage
-
-Модель изображения `UploadedImage` отличается от модели файла `UploadedFile` тем, 
-что в ней отстутсвует поле `display_name`, но присутствует несколько специфических полей:
-
-| Поле | Описание |
-|------|----------|
-| title | Название изображения, которое можно вставить в атрибут `title` тэга `<img>`. |
-| description | Описание изображения, которое можно вставить в атрибут `alt` тэга `<img>`. |
-| width | Ширина загруженного изображения. |
-| height | Высота загруженного изображения. |
-| basename | Имя файла без пути, суффикса и расширения.<br>Пример: `photo`. |
-| extension | Расширение файла в нижнем регистре без точки.<br>Пример: `jpg`. |
-| name | Полное имя файла, хранящееся в БД.<br>Пример: `images/photo_19sc2Kj.jpg`. |
-| size | Размер файла в байтах. |
-| checksum | Контрольная сумма файла.<br>Используется для отслеживания изменений файла. |
-| uploaded_at | Дата и время загрузки файла. |
-| created_at | Дата и время создания экземпляра модели. |
-| modified_at | Дата и время изменения экземпляра модели. |
-
-Если для изображения заданы вариации, доступ к ним можно получить через экземпляр 
-`UploadedImage`, используя имена вариаций: 
-
-```html
-<img src="{{ page.image_group.url }}"
-     srcset="{{ page.image_group.desktop.url }} 1200w, {{ page.image_group.mobile.url }} 600px"
-     sizes="100vw"
-     width="{{ page.image_group.width }}"
-     height="{{ page.image_group.height }}"
-     alt="{{ page.image_group.description }}">
+К файлам вариаций можно обратиться через модель `UploadedImage` используя их имена:
+```python
+print(page.image.desktop.url)
+# /media/images/2022/02/21/sample.desktop.jpg
 ```
 
-### Variations
-
-Вариация - это изображение, полученное из исходного по *заранее* объявленным правилам.
-
-Создание файлов вариаций происходит в момент загрузки изображения на сервер. Поэтому изменение
-настроек вариаций не окажет никакого эффекта на уже загруженные изображения.
+Создание файлов вариаций происходит в момент загрузки изображения на сервер. 
+Поэтому изменение настроек вариаций не окажет никакого эффекта на уже загруженные 
+изображения.
 
 Для того, чтобы создать файлы для новых вариаций (либо перезаписать существующие файлы 
-вариаций, в которые были внесены изменения) можно поступить одним из ниже описанных способов.
+вариаций) можно поступить одним из ниже описанных способов.
 
-1. Вызвать метод `recut()` (либо `recut_async()`) из экземпляра 
-   `UploadedImage`:
+1. Вызвать метод `recut()`:
 
    ```python
-   page.image_group.recut()
+   page.image.recut()
    ```
    
-   При вызове этого метода все файлы вариаций для указанного экземпляра 
+   При вызове этого метода все файлы вариаций для текущего экземпляра 
    создаются заново.
    <br>
    <br>
@@ -341,13 +408,13 @@ class Page(models.Model):
 2. Выполнить management-команду `recreate_variations`:
    ```shell
    python3 manage.py recreate_variations app.page \ 
-           --field image_group
+           --field image
            --variations desktop mobile
    ```
 
    Эта команда сгенерирует вариации для всех экземпляров указанной модели.
 
-#### Versions
+#### Версии вариаций
 
 Допустим, у нас есть изображение, которое нужно отобразить в трех
 вариантах: `desktop`, `tablet` и `mobile`. Если мы хотим поддерживать
@@ -371,11 +438,13 @@ from paper_uploads.models import *
 
 
 class Page(models.Model):
-    image = ImageField(_('image'), blank=True,
+    image = ImageField(
+        _("image"), 
+        blank=True,
         variations=dict(
             desktop=dict(
                 # ...
-                versions={'webp', '2x', '3x'}
+                versions={"webp", "2x", "3x"}
             )
         )
     )
@@ -402,7 +471,9 @@ from paper_uploads.models import *
 
 
 class Page(models.Model):
-    image = ImageField(_('image'), blank=True,
+    image = ImageField(
+        _('image'), 
+        blank=True,
         variations=dict(
             desktop=dict(
                 size=(800, 600),
@@ -440,10 +511,10 @@ PAPER_UPLOADS = {
 Теперь при загрузке изображений, в очередь под именем `default` будет добавляться
 задача, которая создаст все необходимые вариации.
 
-## Collections
+## Коллекции
 
 Коллекция — это модель, группирующая экземпляры других моделей (элементов коллекции). 
-В частности, с помощью коллекции можно создать фото-галерею или список файлов.
+В частности, с помощью коллекции можно создать фотогалерею или список файлов.
 
 Для создания коллекции необходимо объявить класс, унаследованный от `Collection` 
 и указать модели элементов, которые могут входить в коллекцию с помощью псевдо-поля 
@@ -461,7 +532,6 @@ class PageFiles(Collection):
     file = CollectionItem(FileItem)
 
 
-# Target model
 class Page(models.Model):
     files = CollectionField(PageFiles)
 ```
@@ -490,7 +560,7 @@ class CustomCollection(Collection):
         proxy = False
 ```
 
-### Collection items
+### Элементы коллекции
 
 Псевдо-поле `CollectionItem` регистрирует модель элемента коллекции под заданным именем. 
 
@@ -521,17 +591,138 @@ for item in page.files.get_items("image"):
 
 В состав библиотеки входят следующие модели элементов:
 * `ImageItem`<br>
-  Для хранения изображения с возможностью нарезки на [вариации](#Variations). 
-  Допускются тоьлко те файлы, которые можно открыть с помощью [Pillow](https://pillow.readthedocs.io/en/stable/). 
+  Для хранения изображения с возможностью нарезки на [вариации](#Вариации). 
+  Допускются только те файлы, которые можно открыть с помощью [Pillow](https://pillow.readthedocs.io/en/stable/). 
 
 * `SVGItem`<br>
   Для хранения SVG иконок.
 
 * `FileItem`<br>
   Может хранить любой файл.
-  
-Вариации для изображений коллекции можно указать двумя способами:
-1) В дополнительных параметрах поля `CollectionItem` по ключу `variations`:
+
+#### Storage и каталог загрузки файлов
+
+По умолчанию элементы коллекции используют тот же экземпляр хранилища,
+что используется полями `FileField` и `ImageField`. 
+
+Каталоги загрузки файлов для элементов коллекций указываются в настройках 
+`COLLECTION_FILES_UPLOAD_TO` и `COLLECTION_IMAGES_UPLOAD_TO`:
+
+```python
+# settings.py
+
+PAPER_UPLOADS = {
+    # ...
+    "COLLECTION_FILES_UPLOAD_TO": "collections/files/%Y/%m/%d",
+    "COLLECTION_IMAGES_UPLOAD_TO": "collections/images/%Y/%m/%d",
+    # ...
+}
+```
+
+Для отдельно взятого элемента коллекции экземпляр хранилища и каталог загрузки  
+можно указать в параметре `options` псевдо-поля `CollectionItem`:
+
+```python
+from django.core.files.storage import FileSystemStorage
+from paper_uploads.models import *
+
+
+class PageFiles(Collection):
+    image = CollectionItem(ImageItem, options={
+        "storage": FileSystemStorage(location="uploads/"),
+        "upload_to": "gallery",
+    })
+```
+
+Как в случае с `FileField` и `ImageField`, значением `upload_to` не может выступать 
+вызываемый объект. 
+
+Если вам требуется динамическое определение каталога или имени загруженного файла, 
+создайте proxy-модель и переопрелите метод `generate_filename()`:
+
+```python
+import os
+import datetime
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from paper_uploads.models import *
+
+
+class ProxyImageItem(ImageItem):
+    class Meta:
+        proxy = True
+
+    def generate_filename(self, filename: str) -> str:
+        _, ext = os.path.splitext(filename)
+        filename = "gallery/image-%Y-%m-%d_%H%M%S{}".format(ext)
+        filename = datetime.datetime.now().strftime(filename)
+
+        storage = self.get_file_storage()
+        return storage.generate_filename(filename)
+
+
+class PageGallery(Collection):
+    image = CollectionItem(ProxyImageItem)
+
+
+class Page(models.Model):
+    gallery = CollectionField(
+        PageGallery,
+        verbose_name=_("gallery")
+    )
+```
+
+#### <a id="Валидаторы-2" />Валидаторы
+
+На загружаемые в коллекции файлы можно наложить ограничения с помощью валидаторов: 
+
+```python
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from paper_uploads.models import *
+from paper_uploads.validators import ImageMaxSizeValidator, ImageMinSizeValidator
+
+
+class PageGallery(Collection):
+    image = CollectionItem(ImageItem, validators=[
+        ImageMinSizeValidator(640, 480),
+        ImageMaxSizeValidator(4000, 3000)
+    ])
+
+
+class Page(models.Model):
+    gallery = CollectionField(
+        PageGallery,
+        verbose_name=_("gallery")
+    )
+```
+
+#### Программное создание элемента коллекции
+
+Элементы коллекций создаются почти также, как `UploadedFile` и `UploadedImage`.
+Разница лишь в том, что вместо вызова метода `set_owner_field()` необходимо
+вызвать метод `attach_to()` для присоединения элемента к коллекции:
+
+```python
+from paper_uploads.models import *
+
+collection = PageGallery.objects.create()
+
+item = ImageItem()
+item.attach_to(collection)
+item.attach("/tmp/image.jpg")
+item.save()
+
+page = Page.objects.create(
+    gallery=collection
+)
+```
+
+#### <a id="Вариации-2" />Вариации
+
+Вариации для изображений коллекции можно указать одним из двух способов:
+
+1) Параметр `options` псевдо-поля `CollectionItem`:
 
     ```python
     from paper_uploads.models import *
@@ -546,92 +737,21 @@ for item in page.files.get_items("image"):
             )
         })
     ```
-2) В атрибуте класса коллекции `VARIATIONS`:
+2) Атрибут класса коллекции `VARIATIONS`:
 
     ```python
     from paper_uploads.models import *
 
     class PageGallery(Collection):
-        image = CollectionItem(ImageItem)
-        
         VARIATIONS = dict(
             mobile=dict(
                 size=(640, 0),
                 clip=False
             )
         )
+   
+        image = CollectionItem(ImageItem)
     ```
-
-### ImageCollection
-
-Для коллекций, предназначенных исключительно для изображений, из коробки
-доступна модель для наследования `ImageCollection`. К ней уже подключен 
-класс элементов-изображений.
-
-```python
-from paper_uploads.models import *
-
-
-class PageGallery(ImageCollection):
-    VARIATIONS = dict(
-        wide=dict(
-            size=(1600, 0),
-            clip=False,
-        ),
-        desktop=dict(
-            size=(1280, 0),
-            clip=False,
-        ),
-        tablet=dict(
-            size=(960, 0),
-            clip=False,
-        ),
-        mobile=dict(
-            size=(640, 800),
-        )
-    )
-```
-
-### Custom collection item classes
-
-В простейших случаях, вместо создания собственного класса элемента коллекции с нуля,
-можно использовать прокси-модели на основе существующих классов. Например, для того, 
-чтобы хранить файлы определённой галереи в отдельной папке, можно создать прокси 
-модель к `ImageItem`:
-
-```python
-from paper_uploads.models import *
-
-
-class CustomImageItem(ImageItem):
-    class Meta:
-        proxy = True
-        
-    def get_file_folder(self) -> str:
-        return "custom-images/%Y"
-
-
-class Gallery(Collection):
-    image = CollectionItem(CustomImageItem)
-```
-
-Для более сложных случаев (когда требуется отдельная таблица в БД) необходимо 
-использовать прямое наследование. Но уже не от конкретных моделей (`FileItem`, 
-`ImageItem` и т.п.), а от абстрактных &mdash; `FileItemBase`, `ImageItemBase`, 
-`SVGItemBase`. Или ещё более общих: `CollectionItemBase` и `CollectionFileItemBase`.
-
-```python
-from django.db import models
-from paper_uploads.models import *
-
-
-class CustomImageItem(ImageItemBase):  # наследование не от ImageItem!
-    caption = models.TextField("caption", blank=True)
-
-
-class CustomCollection(Collection):
-    image = CollectionItem(CustomImageItem)
-```
 
 ### HTML Template Example
 
@@ -661,101 +781,99 @@ class CustomCollection(Collection):
 {% endif %}
 ```
 
-### Programmatically create collection item
+## Management команды
 
-```python
-from django.db import models
-from paper_uploads.models import *
+### check_uploads
 
-
-class PageGallery(ImageCollection):
-    pass
-
-
-class Page(models.Model):
-    gallery = CollectionField(PageGallery)
-
-
-gallery = PageGallery()
-gallery.set_owner_field(Page, "gallery")
-gallery.save()
-
-item = ImageItem()
-item.attach("/tmp/image.jpg")
-item.attach_to(gallery)
-item.save()
-```
-
-## Management Commands
-
-#### check_uploads
 Запускает комплексную проверку загруженных файлов
 и выводит результат.
 
 Список производимых тестов:
-* загруженный файл существует в файловой системе
-* для изображений существуют все файлы вариаций
+* загруженный файл существует
 * модель-владелец (указанная в `owner_app_label`
 и `owner_model_name`) существует
-* в модели-владельце существует поле `owner_fieldname`
-* существует единственный экземпляр модели-владельца
-со ссылкой на файл
-* у элементов коллекций указано корректное значение а поле `type`
+* в модели-владельце существует поле, указанное в `owner_fieldname`
+* существует единственный экземпляр модели-владельца,
+ссылающийся на текущий
+* у элементов коллекций указано корректное значение в поле `type`
 * модель элемента коллекции идентична модели, указанной в классе коллекции
 
-При указании ключа `--fix-missing-variations` все отсутствующие
-вариации изображений будут автоматически перенарезаны
-из исходников.
-
 ```shell
-python3 manage.py check_uploads --fix-missing-variations
+python3 manage.py check_uploads
 ```
 
-#### clean_uploads
-Находит мусорные записи в БД (например те, у которых
-нет владельца) и предлагает их удалить.
+### clean_uploads
+
+Находит мусорные записи в БД (например те, у которых нет владельца) 
+и предлагает их удалить.
 
 Владелец загруженного файла устанавливается в момент сохранения страницы
-в админке. Это происходит позже фактической загрузки файла на сервер. 
-Как следствие, в течение некоторого времени файл будет являться "сиротой". 
+в интерфейсе администратора. Это происходит позже фактической загрузки файла 
+на сервер. В промежутке времени между этими событиями файл будет являться "сиротой". 
 Для того, чтобы такие файлы не удалялись, команда `clean_uploads` игнорирует
-файлы, загруженные за последние 60 минут. Изменить интервал фильтрации
-можно через ключ `--min-age`.
+файлы, загруженные в течение последнего часа.
 
 ```shell
-python3 manage.py clean_uploads --min-age=1800
+python3 manage.py clean_uploads
 ```
 
-#### recreate_variations
-Перенарезает вариации для указанных моделей.
+### remove_empty_collections
+
+Удаление экземпляров коллекций, в которых нет ни одного элемента.
+
+```shell
+python3 manage.py clean_uploads
+```
+
+### create_missing_variations
+
+Создаёт отсутствующие файлы вариаций.
+
+```shell
+python3 manage.py create_missing_variations
+```
+
+### recreate_variations
+
+Создание/перезапись вариаций для всех экземпляров указанной модели.
 Модель указывается в формате `app_label.model_name`.
 
 Если модель является коллекцией, необходимо указать параметр `--item-type`:
+
 ```shell
-python3 manage.py recreate_variations 'app.Photos' --item-type='image'
+python3 manage.py recreate_variations "app.Photos" \
+        --item-type="image"
 ```
 
 Для обычных моделей необходимо указать параметр `--field`:
+
 ```shell
-python3 manage.py recreate_variations 'app.Page' --field='image'
+python3 manage.py recreate_variations "app.Page" \
+        --field="image"
 ```
 
 По умолчанию перенарезаются все возможные вариации для каждого
 экземпляра указанной модели. Можно указать конкретные вариации,
 которые нужно перенарезать:
+
 ```shell
-python3 manage.py recreate_variations 'app.Page' --field='image' --variations big small
+python3 manage.py recreate_variations "app.Page" \
+        --field="image" \
+        --variations desktop mobile
 ```
 
-#### remove_variations
+### remove_variations
+
 Удаление файлов вариаций.
+Удаляются только файлы объявленных вариаций.
 Параметры аналогичны параметрам `recreate_variations`.
 
 ```shell
-python3 manage.py remove_variations 'app.Page' --field='image'
+python3 manage.py remove_variations "app.Page" --field="image"
 ```
 
 ## Cloudinary
+
 Во встроенном модуле `paper_uploads.cloudinary` находятся поля и классы,
 позволяющие загружать файлы и картинки в облачный сервис Cloudinary.
 
@@ -784,7 +902,7 @@ API для трансформации [изображений](https://cloudinar
 Чтобы предотвратить генерацию трасформаций конечными пользователями, рекомендуется
 включить в вашем аккаунте Cloudinary [Strict transformations](https://cloudinary.com/documentation/control_access_to_media#strict_transformations).
 
-### Model fields
+### Файловые поля
 
 Вместо `FileField` и `ImageField` используются поля `CloudinaryFileField`,
 `CloudinaryImageField` и `CloudinaryMediaField`.
@@ -812,7 +930,7 @@ class Page(models.Model):
     })
 ```
 
-### Collections
+### <a id="Коллекции-2" />Коллекции
 
 Для коллекций используется тот же класс `Collection`, что используется
 при локальном хранении файлов. Отличаются только классы элементов коллекций.
@@ -853,7 +971,7 @@ class Page(models.Model):
     gallery = CollectionField(PageGallery)
 ```
 
-### Usage
+### paper_cloudinary_url
 
 Для вывода ссылки на файл, загруженный в Cloudinary, библиотека содержит 
 шаблонный тэг `paper_cloudinary_url`:
@@ -875,19 +993,27 @@ class Page(models.Model):
 ```
 
 ## Settings
+
 Все настройки указываются в словаре `PAPER_UPLOADS`.
 
 ```python
 PAPER_UPLOADS = {
-    'STORAGE': 'django.core.files.storage.FileSystemStorage',
-    'STORAGE_OPTIONS': {},
-    'RQ_ENABLED': True,
-    'VARIATION_DEFAULTS': {
-        'jpeg': dict(
+    "STORAGE": "django.core.files.storage.FileSystemStorage",
+    "STORAGE_OPTIONS": {},
+    "FILES_UPLOAD_TO": "files/%Y/%m/%d",
+    "IMAGES_UPLOAD_TO": "images/%Y/%m/%d",
+    "COLLECTION_FILES_UPLOAD_TO": "collections/files/%Y/%m/%d",
+    "COLLECTION_IMAGES_UPLOAD_TO": "collections/images/%Y/%m/%d",
+    
+    "RQ_ENABLED": True,
+    "RQ_QUEUE_NAME": "default",
+    
+    "VARIATION_DEFAULTS": {
+        "jpeg": dict(
             quality=80,
             progressive=True,
         ),
-        'webp': dict(
+        "webp": dict(
             quality=75,
         )
     }
@@ -908,22 +1034,22 @@ PAPER_UPLOADS = {
 Путь к папке, в которую загружаются файлы из FileField.
 Может содержать параметры для даты и времени (см. [upload_to](https://docs.djangoproject.com/en/2.2/ref/models/fields/#django.db.models.FileField.upload_to)).
 
-Значение по умолчанию: `files/%Y-%m-%d`
+Значение по умолчанию: `files/%Y/%m/%d`
 
 ### `IMAGES_UPLOAD_TO`
 Путь к папке, в которую загружаются файлы из ImageField.
 
-Значение по умолчанию: `images/%Y-%m-%d`
+Значение по умолчанию: `images/%Y/%m/%d`
 
 ### `COLLECTION_FILES_UPLOAD_TO`
 Путь к папке, в которую загружаются файлы коллекций.
 
-Значение по умолчанию: `collections/files/%Y-%m-%d`
+Значение по умолчанию: `collections/files/%Y/%m/%d`
 
 ### `COLLECTION_IMAGES_UPLOAD_TO`
 Путь к папке, в которую загружаются изображения коллекций.
 
-Значение по умолчанию: `collections/images/%Y-%m-%d`
+Значение по умолчанию: `collections/images/%Y/%m/%d`
 
 ### `COLLECTION_ITEM_PREVIEW_WIDTH`, `COLLECTION_ITEM_PREVIEW_HEIGHT`
 Размеры превью элементов коллекций в админке.
@@ -951,7 +1077,7 @@ PAPER_UPLOADS = {
 Параметры вариаций по умолчанию.
 
 Параметры, указанные в этом словаре, будут применены к каждой
-вариации, если только вариация их явно не переопределяет.
+вариации &mdash; если только вариация их явно не переопределяет.
 
 Значение по умолчанию: `None`
 
@@ -961,9 +1087,7 @@ PAPER_UPLOADS = {
 
 ### `CLOUDINARY_TEMP_DIR`
 Папка в разделе `/tmp/`, в которую скачиваются файлы из Cloudinary
-при чтении их содержимого. Доступ к содержимому большого количества 
-файлов из Cloudinary может привести к скачиванию больших объемов данных 
-и захламлению временной папки.
+при чтении их содержимого.
 
 ### `CLOUDINARY_UPLOADER_OPTIONS`
 Словарь, задающий глобальные [параметры загрузки](https://cloudinary.com/documentation/image_upload_api_reference#required_parameters)
