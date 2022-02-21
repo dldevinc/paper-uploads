@@ -376,7 +376,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
     def get_item_type_field(self) -> Optional[CollectionItem]:
         collection_cls = self.get_collection_class()
         for name, field in collection_cls.item_types.items():
-            if field.model is type(self):
+            if field.model is type(self) or (field.model._meta.proxy and field.model._meta.concrete_model is type(self)):
                 return field
         return None
 
