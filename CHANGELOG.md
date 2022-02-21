@@ -1,6 +1,14 @@
 # Change Log
 
-## [0.8.0rc4](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc4) - 2021-02-15
+## [0.8.0rc5](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc5) - 2021-02-21
+### ⚠ BREAKING CHANGES
+- Changed default values `FILES_UPLOAD_TO`, `IMAGES_UPLOAD_TO`, 
+  `COLLECTION_FILES_UPLOAD_TO` and `COLLECTION_IMAGES_UPLOAD_TO` settings.
+### Features
+- Added field checks for `upload_to` parameter.
+- Added new `FileFieldResource.generate_filename()` method.
+
+## [0.8.0rc4](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc4) - 2021-02-21
 ### Features
 - Added new method `Collection.get_last_modified()`.
 - Add an ability to specify `storage` and `upload_to` for particular fields.
