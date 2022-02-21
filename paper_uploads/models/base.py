@@ -1,9 +1,13 @@
+import datetime
 import io
 import os
+import pathlib
+import posixpath
 import warnings
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Tuple, Union
 
+from django.core.exceptions import SuspiciousFileOperation
 from django.core.files import File
 from django.core.files.storage import FileSystemStorage, Storage
 from django.db import models
@@ -22,6 +26,27 @@ from ..files import VariationFile
 from ..typing import FileLike
 from ..variations import PaperVariation
 from .mixins import FileFieldProxyMixin, FileProxyMixin
+
+try:
+    from django.core.files.utils import validate_file_name
+except ImportError:
+    # new in Django 3.1.10
+    def validate_file_name(name, allow_relative_path=False):
+        if os.path.basename(name) in {'', '.', '..'}:
+            raise SuspiciousFileOperation("Could not derive file name from '%s'" % name)
+
+        if allow_relative_path:
+            # Use PurePosixPath() because this branch is checked only in
+            # FileField.generate_filename() where all file paths are expected to be
+            # Unix style (with forward slashes).
+            path = pathlib.PurePosixPath(name)
+            if path.is_absolute() or '..' in path.parts:
+                raise SuspiciousFileOperation(
+                    "Detected path traversal attempt in '%s'" % name
+                )
+        elif name != os.path.basename(name):
+            raise SuspiciousFileOperation("File name '%s' includes path elements" % name)
+        return name
 
 __all__ = [
     "NoPermissionsMetaBase",
@@ -465,12 +490,23 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
     def get_file_folder(self) -> str:
         """
         Возвращает путь к папке, в которую будет сохранен файл.
-        Результат вызова используется в параметре `upload_to` в случае Django storage.
         """
         raise NotImplementedError
 
     def get_file_storage(self) -> Storage:
         raise NotImplementedError
+
+    def generate_filename(self, filename: str) -> str:
+        """
+        Формирование каталога и имени файла при сохранении.
+        """
+        dirname = self.get_file_folder()
+        dirname = datetime.datetime.now().strftime(dirname)
+        filename = posixpath.join(dirname, filename)
+        filename = validate_file_name(filename, allow_relative_path=True)
+
+        storage = self.get_file_storage()
+        return storage.generate_filename(filename)
 
     def get_file(self) -> FieldFile:
         raise NotImplementedError
