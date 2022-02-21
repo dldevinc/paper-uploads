@@ -47,7 +47,10 @@ class ResourceFieldBase(models.OneToOneField):
         super().__init__(**kwargs)
 
     def check(self, **kwargs):
-        return [*super().check(**kwargs), *self._check_relation()]
+        return [
+            *super().check(**kwargs),
+            *self._check_relation()
+        ]
 
     def _check_relation(self):
         from ...models.base import Resource
@@ -70,7 +73,12 @@ class ResourceFieldBase(models.OneToOneField):
         )
 
         if not issubclass(self.remote_field.model, base):
-            return [checks.Error(error_message % model_name, obj=self)]
+            return [
+                checks.Error(
+                    error_message % model_name,
+                    obj=self
+                )
+            ]
         return []
 
     def deconstruct(self):
@@ -125,6 +133,33 @@ class FileResourceFieldBase(ResourceFieldBase):
         self.storage = storage
         self.upload_to = upload_to
         super().__init__(*args, **kwargs)
+
+    def check(self, **kwargs):
+        return [
+            *super().check(**kwargs),
+            *self._check_upload_to(),
+        ]
+
+    def _check_upload_to(self):
+        if callable(self.upload_to):
+            return [
+                checks.Error(
+                    "%s's 'upload_to' argument must be a string, not a callable." % self.__class__.__name__,
+                    obj=self,
+                )
+            ]
+        elif isinstance(self.upload_to, str) and self.upload_to.startswith('/'):
+            return [
+                checks.Error(
+                    "%s's 'upload_to' argument must be a relative path, not an "
+                    "absolute path." % self.__class__.__name__,
+                    obj=self,
+                    id="fields.E202",
+                    hint="Remove the leading slash.",
+                )
+            ]
+        else:
+            return []
 
     def deconstruct(self):
         name, path, args, kwargs = super().deconstruct()
