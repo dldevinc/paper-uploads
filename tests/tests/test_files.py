@@ -13,16 +13,19 @@ from .dummy import *
 
 
 class TestVariationFile:
-    @staticmethod
-    def init_class(storage):
-        storage.resource = DummyVersatileImageResource()
-        with open(NASA_FILEPATH, 'rb') as fp:
+    resource_class = DummyVersatileImageResource
+    resource_folder = "versatile_image_field"
+
+    @classmethod
+    def init_class(cls, storage):
+        storage.resource = cls.resource_class()
+        with open(NASA_FILEPATH, "rb") as fp:
             storage.resource.attach(fp)
 
         assert storage.resource.need_recut is True
         storage.resource.save()
 
-        storage.file = VariationFile(storage.resource, 'desktop')
+        storage.file = VariationFile(storage.resource, "desktop")
 
         yield
 
@@ -30,36 +33,36 @@ class TestVariationFile:
         storage.resource.delete()
 
     def test_name(self, storage):
-        assert storage.file.name == utils.get_target_filepath(
-            'versatile_image/milky-way-nasa{suffix}.desktop.jpg',
-            storage.resource.name
+        assert utils.match_path(
+            storage.resource.name,
+            "{}/milky-way-nasa{{suffix}}.jpg".format(self.resource_folder),
         )
 
     def test_instance(self, storage):
-        assert isinstance(storage.file.instance, DummyVersatileImageResource)
+        assert isinstance(storage.file.instance, self.resource_class)
         assert storage.file.instance is storage.resource
 
     def test_variation_name(self, storage):
-        assert storage.file.variation_name == 'desktop'
+        assert storage.file.variation_name == "desktop"
 
     def test_size(self, storage):
         # разный размер - зависит от версии Pillow
-        assert storage.file.size in {115559, 112734}
+        assert storage.file.size in {115559, 112734, 129255, 126361}
 
     def test_variation(self, storage):
         assert isinstance(storage.file.variation, PaperVariation)
-        assert storage.file.variation.name == 'desktop'
+        assert storage.file.variation.name == "desktop"
 
     def test_path(self, storage):
-        assert storage.resource.path.endswith(utils.get_target_filepath(
-            '/media/versatile_image/milky-way-nasa{suffix}.jpg',
-            storage.resource.get_file_url()
-        ))
+        assert utils.match_path(
+            storage.resource.path,
+            "/media/{}/milky-way-nasa{{suffix}}.jpg".format(self.resource_folder),
+        )
 
     def test_url(self, storage):
-        assert storage.resource.url == utils.get_target_filepath(
-            '/media/versatile_image/milky-way-nasa{suffix}.jpg',
-            storage.resource.get_file_url()
+        assert utils.match_path(
+            storage.resource.url,
+            "/media/{}/milky-way-nasa{{suffix}}.jpg".format(self.resource_folder),
         )
 
     def test_exists(self, storage):
@@ -80,7 +83,7 @@ class TestVariationFile:
     def test_delete(self, storage):
         source_name = storage.file.name
         source_file = storage.file.path
-        backup_file = os.path.join(settings.BASE_DIR, 'media/versatile_image/nasa.bak.jpg')
+        backup_file = os.path.join(settings.BASE_DIR, "media", self.resource_folder, "nasa.bak.jpg")
         shutil.copyfile(source_file, backup_file)
 
         storage.file.delete()
@@ -106,7 +109,7 @@ class TestVariationFile:
     def test_delete_unexisted(self, storage):
         source_name = storage.file.name
         source_file = storage.file.path
-        backup_file = os.path.join(settings.BASE_DIR, 'media/versatile_image/nasa.bak.jpg')
+        backup_file = os.path.join(settings.BASE_DIR, "media", self.resource_folder, "nasa.bak.jpg")
         shutil.copyfile(source_file, backup_file)
 
         storage.file.delete()

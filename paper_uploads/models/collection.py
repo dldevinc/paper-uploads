@@ -1,7 +1,8 @@
+import datetime
 import posixpath
 import warnings
 from collections import OrderedDict
-from typing import Any, Dict, Iterable, Optional, Type
+from typing import Any, ClassVar, Dict, Iterable, Optional, Type
 
 import magic
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -10,11 +11,11 @@ from django.contrib.staticfiles.finders import find
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core import checks
 from django.core.files import File
+from django.core.files.storage import Storage
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
 from django.db.models.functions import Coalesce
-from django.db.models.utils import make_model_tuple
 from django.template import loader
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
@@ -29,19 +30,20 @@ from ..helpers import (
     build_variations,
     iterate_variation_names,
 )
-from ..storage import upload_storage
+from ..storage import default_storage
 from ..variations import PaperVariation
 from .base import (
     FileFieldResource,
     NoPermissionsMetaBase,
+    Resource,
     ResourceBaseMeta,
     VersatileImageResourceMixin,
 )
 from .fields import CollectionItem
+from .fields.base import DynamicStorageFileField
 from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
 from .mixins import BacklinkModelMixin, EditableResourceMixin
-from .utils import generate_filename
 
 __all__ = [
     "CollectionItemBase",
@@ -155,7 +157,10 @@ class CollectionManager(models.Manager):
 
 class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
     collection_content_type = models.ForeignKey(
-        ContentType, null=True, on_delete=models.SET_NULL, editable=False
+        ContentType,
+        null=True,
+        on_delete=models.SET_NULL,
+        editable=False
     )
     items = ContentItemRelation(
         "paper_uploads.CollectionItemBase",
@@ -163,7 +168,16 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         object_id_field="collection_id",
         for_concrete_model=False,
     )
-    created_at = models.DateTimeField(_("created at"), default=now, editable=False)
+    created_at = models.DateTimeField(
+        _("created at"),
+        default=now,
+        editable=False
+    )
+    modified_at = models.DateTimeField(
+        _("changed at"),
+        default=now,
+        editable=False
+    )
 
     default_mgr = models.Manager()  # fix migrations manager
     objects = CollectionManager()
@@ -192,7 +206,7 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         # файле (django/db/models/deletion.py:248) указано следующее:
         #   model = new_objs[0].__class__
         # Это приводит к тому, что все полиморфные модели удаляются через модель
-        # первой модели в спсике.
+        # первого экземпляра в QuerySet.
         for item_type in self.item_types:
             self.get_items(item_type).delete()
 
@@ -211,10 +225,6 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
             raise exceptions.InvalidItemType(item_type)
         return cls.item_types[item_type].model
 
-    def set_owner_from(self, field: models.Field):
-        self.owner_app_label, self.owner_model_name = make_model_tuple(field.model)
-        self.owner_fieldname = field.name
-
     def get_items(self, item_type: str = None) -> 'models.QuerySet[CollectionItemBase]':
         if item_type is None:
             return self.items.order_by("order")
@@ -222,8 +232,24 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
             raise exceptions.InvalidItemType(item_type)
         return self.items.filter(type=item_type).order_by("order")
 
+    def get_last_modified(self) -> datetime.datetime:
+        """
+        Получение даты модификации коллекции с учётом её элементов.
+        """
+        dates = [self.created_at, self.modified_at]
+        item_date = self.items.aggregate(
+            date=models.Max("modified_at")
+        )["date"]
+
+        if item_date is not None:
+            dates.append(item_date)
+
+        return max(*dates)
+
 
 class Collection(CollectionBase):
+    VARIATIONS: ClassVar[dict]
+
     class Meta:
         proxy = False  # явно указываем, что это не прокси-модель
 
@@ -235,7 +261,7 @@ class CollectionItemMetaBase(PolymorphicModelBase, ResourceBaseMeta):
     pass
 
 
-class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=CollectionItemMetaBase):
+class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, metaclass=CollectionItemMetaBase):
     """
     Базовый класс элемента коллекции.
     """
@@ -318,11 +344,10 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=Coll
         return 0 if max_order is None else max_order + 1
 
     def save(self, *args, **kwargs):
-        if not self.pk:
-            # Попытка решить проблему того, что при создании коллекции,
-            # элементы отсортированы в порядке загрузки, а не в порядке
-            # добавления. Код ниже не решает проблему полностью,
-            # но уменьшает её влияние.
+        if not self.pk and self.collection_id:
+            # Попытка решить проблему того, что при создании коллекции элементы
+            # отсортированы в порядке загрузки, а не в порядке добавления.
+            # Код ниже не решает проблему полностью, но уменьшает её влияние.
             if self.order is None or self.collection.items.filter(order=self.order).exists():
                 self.order = self.get_order()
         super().save(*args, **kwargs)
@@ -339,7 +364,8 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=Coll
         return {
             **super().as_dict(),
             "collectionId": self.collection_id,
-            "itemType": self.type,
+            "itemType": self.type,  # TODO: deprecated
+            "type": self.type,
             "order": self.order,
             "preview": self.render_preview(),
         }
@@ -347,12 +373,20 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, metaclass=Coll
     def get_collection_class(self) -> Type[CollectionBase]:
         return self.collection_content_type.model_class()
 
-    def get_itemtype_field(self) -> Optional[CollectionItem]:
+    def get_item_type_field(self) -> Optional[CollectionItem]:
         collection_cls = self.get_collection_class()
         for name, field in collection_cls.item_types.items():
-            if field.model is type(self):
+            if field.model is type(self) or (field.model._meta.proxy and field.model._meta.concrete_model is type(self)):
                 return field
         return None
+
+    def get_itemtype_field(self) -> Optional[CollectionItem]:
+        warnings.warn(
+            "'get_itemtype_field' is deprecated in favor of 'get_item_type_field'",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self.get_item_type_field()
 
     def attach_to(self, collection: CollectionBase):
         """
@@ -393,6 +427,13 @@ class CollectionFileItemBase(CollectionItemBase, FileFieldResource):
     @classmethod
     def accept(cls, file: File) -> bool:
         raise NotImplementedError
+
+    def get_file_storage(self) -> Storage:
+        item_type_field = self.get_item_type_field()
+        storage = item_type_field.options.get("storage") or default_storage
+        if callable(storage):
+            storage = storage()
+        return storage
 
     @classmethod
     def file_supported(cls, file: File) -> bool:
@@ -435,11 +476,9 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
     template_name = "paper_uploads/items/file.html"
     preview_template_name = "paper_uploads/items/preview/file.html"
 
-    file = models.FileField(
+    file = DynamicStorageFileField(
         _("file"),
         max_length=255,
-        storage=upload_storage,
-        upload_to=generate_filename,
     )
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
@@ -454,13 +493,11 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
-        return settings.COLLECTION_FILES_UPLOAD_TO
+        item_type_field = self.get_item_type_field()
+        return item_type_field.options.get("upload_to") or settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
         return self.file
-
-    def set_file(self, value):
-        self.file = value
 
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field("file")
@@ -481,11 +518,9 @@ class SVGItemBase(CollectionFileItemBase):
     template_name = "paper_uploads/items/svg.html"
     preview_template_name = "paper_uploads/items/preview/svg.html"
 
-    file = models.FileField(
+    file = DynamicStorageFileField(
         _("file"),
         max_length=255,
-        storage=upload_storage,
-        upload_to=generate_filename,
     )
     display_name = models.CharField(_("display name"), max_length=255, blank=True)
 
@@ -500,13 +535,11 @@ class SVGItemBase(CollectionFileItemBase):
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
-        return settings.COLLECTION_FILES_UPLOAD_TO
+        item_type_field = self.get_item_type_field()
+        return item_type_field.options.get("upload_to") or settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
         return self.file
-
-    def set_file(self, value):
-        self.file = value
 
     def get_file_field(self) -> models.FileField:
         return self._meta.get_field("file")
@@ -522,6 +555,15 @@ class SVGItemBase(CollectionFileItemBase):
         filename, ext = posixpath.splitext(file.name)
         return ext.lower() == ".svg"
 
+    def _prepare_file(self, file: File, **options) -> File:
+        mimetype = magic.from_buffer(file.read(1024), mime=True)
+        file.seek(0)
+        if mimetype != "image/svg+xml":
+            raise exceptions.UnsupportedResource(
+                _("File `%s` is not an svg image") % file.name
+            )
+        return super()._prepare_file(file, **options)
+
 
 class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
     PREVIEW_VARIATIONS = IMAGE_ITEM_VARIATIONS
@@ -532,8 +574,6 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
     file = VariationalFileField(
         _("file"),
         max_length=255,
-        storage=upload_storage,
-        upload_to=generate_filename,
     )
 
     class Meta(CollectionItemBase.Meta):
@@ -551,13 +591,11 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         super()._setup_variation_files()
 
     def get_file_folder(self) -> str:
-        return settings.COLLECTION_IMAGES_UPLOAD_TO
+        item_type_field = self.get_item_type_field()
+        return item_type_field.options.get("upload_to") or settings.COLLECTION_IMAGES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
         return self.file
-
-    def set_file(self, value):
-        self.file = value
 
     def get_file_field(self) -> VariationalFileField:
         return self._meta.get_field("file")
@@ -585,8 +623,8 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         """
         if not hasattr(self, "_variations_cache"):
             collection_cls = self.get_collection_class()
-            itemtype_field = self.get_itemtype_field()
-            variation_config = self.get_variation_config(itemtype_field, collection_cls)
+            item_type_field = self.get_item_type_field()
+            variation_config = self.get_variation_config(collection_cls, item_type_field)
             self._variations_cache = build_variations(variation_config)
         return self._variations_cache
 
@@ -599,10 +637,10 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
 
     @classmethod
     def get_variation_config(
-        cls, rel: Optional[CollectionItem], collection_cls: Type[CollectionBase]
+        cls, collection_cls: Type[CollectionBase], item_type_field: Optional[CollectionItem],
     ) -> Dict[str, Any]:
-        if rel is not None and "variations" in rel.options:
-            variations = rel.options["variations"]
+        if item_type_field is not None and "variations" in item_type_field.options:
+            variations = item_type_field.options["variations"]
         else:
             variations = getattr(collection_cls, "VARIATIONS", None)
         variations = variations or {}
@@ -629,7 +667,6 @@ class ImageCollection(Collection):
     """
     Коллекция, позволяющая хранить только изображения.
     """
-
     image = CollectionItem(ImageItem)
 
     @classmethod

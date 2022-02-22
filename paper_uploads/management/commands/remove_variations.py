@@ -1,59 +1,23 @@
 import sys
-from typing import List, Type, Union
+from typing import Iterable, Type
 
 from django.apps import apps
 from django.core.management import BaseCommand
-from django.db import DEFAULT_DB_ALIAS, models
-from django.db.models.fields import Field
+from django.db import DEFAULT_DB_ALIAS
 
-from paper_uploads.models import CollectionItem
-
-from ...models.base import Resource, VersatileImageResourceMixin
+from ...models.base import Resource
 from ...models.collection import CollectionBase
-
-
-def is_image(field: Field) -> bool:
-    """
-    Возвращает True, если поле ссылается на класс изображения с вариациями.
-    """
-    return field.is_relation and issubclass(
-        field.related_model, VersatileImageResourceMixin
-    )
-
-
-def is_image_item(field: CollectionItem) -> bool:
-    """
-    Возвращает True, если поле коллекции подключает класс элемента
-    изображения с вариациями.
-    """
-    return issubclass(field.model, VersatileImageResourceMixin)
-
-
-def is_collection(model: Type[Union[models.Model, CollectionBase]]) -> bool:
-    """
-    Возвращает True, если model - коллекция.
-    """
-    return issubclass(model, CollectionBase)
-
-
-def get_collection_variations(model: Type[CollectionBase], item_type_class: CollectionItem) -> List[str]:
-    return list(
-        item_type_class.model.get_variation_config(item_type_class, model).keys()
-    )
-
-
-def get_field_variations(field: Field) -> List[str]:
-    return list(
-        field.variations.keys()
-    )
+from .. import utils
 
 
 class Command(BaseCommand):
     help = """
     Удаление вариаций для всех экземпляров указанной модели.
     
-    Примеры:
+    Пример для обычной модели:
         python3 manage.py remove_variations blog.post --field=hero
+    
+    Пример для коллекции:
         python3 manage.py remove_variations blog.gallery --item-type=image
     """
     options = None
@@ -97,20 +61,50 @@ class Command(BaseCommand):
             help="Nominates the database to use. Defaults to the 'default' database.",
         )
 
-    def get_model(self):
-        return apps.get_model(self.options["model"])
+    def handle(self, *args, **options):
+        self.options = options
+        self.verbosity = options["verbosity"]
+        self.database = options["database"]
+        self.interactive = options["interactive"]
 
-    def _process_collection(self, model: Type[CollectionBase], item_type, variations):
-        collection_model = model.collection_content_type.model_class()
-        queryset = collection_model.objects.using(self.database)
+        model = apps.get_model(self.options["model"])
+        if utils.is_collection(model):
+            self.process_collection(model)
+        else:
+            self.process_resource(model)
+
+    def process_collection(self, model: Type[CollectionBase]):
+        item_type = self.options["item_type"]
+        if not item_type:
+            raise RuntimeError("The argument 'item-type' is required")
+
+        if item_type not in model.item_types:
+            raise RuntimeError("Unsupported collection item type: %s" % item_type)
+
+        item_type_field = model.item_types[item_type]
+        if not utils.is_variations_allowed(item_type_field.model):
+            raise RuntimeError("Specified collection item type has no variations: %s" % item_type)
+
+        variations = self.options["variations"]
+        if not variations:
+            if self.interactive:
+                variations = self.variations_dialog(model, item_type_field)
+
+        if not variations:
+            variations = set(utils.get_collection_variations(model, item_type_field))
+
+        self._process_collection(model, item_type, variations)
+
+    def _process_collection(self, model: Type[CollectionBase], item_type: str, variations: Iterable[str]):
+        queryset = model.objects.using(self.database)
 
         total = queryset.count()
         for index, collection in enumerate(queryset.iterator(), start=1):
             if self.verbosity >= 1:
                 self.stdout.write(
                     "Remove variations for \033[92m'{}.{}'\033[0m (ID: {}) ({}/{}) ... ".format(
-                        collection_model._meta.app_label,
-                        collection_model.__name__,
+                        model._meta.app_label,
+                        model.__name__,
                         collection.pk,
                         index,
                         total
@@ -123,29 +117,26 @@ class Command(BaseCommand):
                         variation_file = item.get_variation_file(variation_name)
                         variation_file.delete()
 
-    def process_collection(self, model: Type[CollectionBase]):
-        item_type = self.options["item_type"]
-        if not item_type:
-            raise RuntimeError("The argument 'item-type' is required")
+    def process_resource(self, model: Type[Resource]):
+        fieldname = self.options["field"]
+        if not fieldname:
+            raise RuntimeError("The argument 'field' is required")
 
-        if item_type not in model.item_types:
-            raise RuntimeError("Unsupported collection item type: %s" % item_type)
-
-        item_type_field = model.item_types[item_type]
-        if not is_image_item(item_type_field):
-            raise RuntimeError("Specified collection item type has no variations: %s" % item_type)
+        field = model._meta.get_field(fieldname)
+        if field.is_relation and not utils.is_variations_allowed(field.related_model):
+            raise RuntimeError("Specified field has no variations: %s" % fieldname)
 
         variations = self.options["variations"]
         if not variations:
-            if self.options["interactive"]:
-                variations = self.variations_dialog(model, item_type_field)
+            if self.interactive:
+                variations = self.variations_dialog(model, field)
 
         if not variations:
-            variations = set(get_collection_variations(model, item_type_field))
+            variations = set(utils.get_field_variations(field))
 
-        self._process_collection(model, item_type, variations)
+        self._process_resource(model, fieldname, variations)
 
-    def _process_resource(self, model: Type[Resource], fieldname, variations):
+    def _process_resource(self, model: Type[Resource], fieldname: str, variations: Iterable[str]):
         queryset = model.objects.using(self.database).exclude((fieldname, None))
 
         total = queryset.count()
@@ -167,42 +158,11 @@ class Command(BaseCommand):
                     variation_file = field.get_variation_file(variation_name)
                     variation_file.delete()
 
-    def process_resource(self, model: Type[Resource]):
-        fieldname = self.options["field"]
-        if not fieldname:
-            raise RuntimeError("The argument 'field' is required")
-
-        field = model._meta.get_field(fieldname)
-        if not is_image(field):
-            raise RuntimeError("Specified field has no variations: %s" % fieldname)
-
-        variations = self.options["variations"]
-        if not variations:
-            if self.options["interactive"]:
-                variations = self.variations_dialog(model, field)
-
-        if not variations:
-            variations = set(get_field_variations(field))
-
-        self._process_resource(model, fieldname, variations)
-
-    def handle(self, *args, **options):
-        self.options = options
-        self.verbosity = options["verbosity"]
-        self.database = options["database"]
-        self.interactive = options["interactive"]
-
-        model = self.get_model()
-        if is_collection(model):
-            self.process_collection(model)
-        else:
-            self.process_resource(model)
-
     def variations_dialog(self, model, field):
-        if is_collection(model):
-            allowed_variations = get_collection_variations(model, field)
+        if utils.is_collection(model):
+            allowed_variations = utils.get_collection_variations(model, field)
         else:
-            allowed_variations = get_field_variations(field)
+            allowed_variations = utils.get_field_variations(field)
 
         while True:
             self.stdout.write(

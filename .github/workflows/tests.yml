@@ -1,7 +1,16 @@
 name: Tests
 
 on:
-  push
+  push:
+    branches:
+      - master
+      - dev
+
+env:
+  CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
+  DROPBOX_OAUTH2_TOKEN: ${{ secrets.DROPBOX_OAUTH2_TOKEN }}
+  DROPBOX_ROOT_PATH: /uploads/
+  DROPBOX_WRITE_MODE: overwrite
 
 jobs:
   tests:
@@ -16,8 +25,6 @@ jobs:
           - 3.8
           - 3.9
           - '3.10'
-    env:
-      CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2

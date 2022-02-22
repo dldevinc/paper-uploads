@@ -2,6 +2,7 @@ from typing import Any, Dict
 
 from django.core import checks
 from django.db import models
+from django.db.models.fields.files import FieldFile
 from django.db.models.signals import post_delete
 
 from ... import validators
@@ -20,7 +21,10 @@ class ResourceFieldBase(models.OneToOneField):
         super().__init__(**kwargs)
 
     def check(self, **kwargs):
-        return [*super().check(**kwargs), *self._check_relation()]
+        return [
+            *super().check(**kwargs),
+            *self._check_relation()
+        ]
 
     def _check_relation(self):
         from ...models.base import Resource
@@ -43,7 +47,12 @@ class ResourceFieldBase(models.OneToOneField):
         )
 
         if not issubclass(self.remote_field.model, base):
-            return [checks.Error(error_message % model_name, obj=self)]
+            return [
+                checks.Error(
+                    error_message % model_name,
+                    obj=self
+                )
+            ]
         return []
 
     def deconstruct(self):
@@ -94,6 +103,43 @@ class FileResourceFieldBase(ResourceFieldBase):
     """
     Базовый класс для полей, которые загружают файлы.
     """
+    def __init__(self, *args, upload_to="", storage=None, **kwargs):
+        self.storage = storage
+        self.upload_to = upload_to
+        super().__init__(*args, **kwargs)
+
+    def check(self, **kwargs):
+        return [
+            *super().check(**kwargs),
+            *self._check_upload_to(),
+        ]
+
+    def _check_upload_to(self):
+        if callable(self.upload_to):
+            return [
+                checks.Error(
+                    "%s's 'upload_to' argument must be a string, not a callable." % self.__class__.__name__,
+                    obj=self,
+                )
+            ]
+        elif isinstance(self.upload_to, str) and self.upload_to.startswith('/'):
+            return [
+                checks.Error(
+                    "%s's 'upload_to' argument must be a relative path, not an "
+                    "absolute path." % self.__class__.__name__,
+                    obj=self,
+                    id="fields.E202",
+                    hint="Remove the leading slash.",
+                )
+            ]
+        else:
+            return []
+
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+        kwargs["storage"] = self.storage
+        kwargs["upload_to"] = self.upload_to
+        return name, path, args, kwargs
 
     def formfield(self, **kwargs):
         return super().formfield(**{"configuration": self.get_configuration(), **kwargs})
@@ -110,7 +156,7 @@ class FileResourceFieldBase(ResourceFieldBase):
                 config["acceptFiles"] = v.allowed
             elif isinstance(v, validators.ExtensionValidator):
                 config["allowedExtensions"] = v.allowed
-            elif isinstance(v, validators.SizeValidator):
+            elif isinstance(v, validators.MaxSizeValidator):
                 config["sizeLimit"] = v.limit_value
             elif isinstance(v, validators.ImageMinSizeValidator):
                 config["minImageWidth"] = v.width_limit
@@ -119,3 +165,44 @@ class FileResourceFieldBase(ResourceFieldBase):
                 config["maxImageWidth"] = v.width_limit
                 config["maxImageHeight"] = v.height_limit
         return config
+
+
+class DynamicStorageFieldFile(FieldFile):
+    def __init__(self, instance, field, name):
+        super(FieldFile, self).__init__(None, name)
+        self.instance = instance
+        self.field = field
+        self.storage = instance.get_file_storage()
+        self._committed = True
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.storage = self.instance.get_file_storage()
+
+
+class DynamicStorageFileField(models.FileField):
+    """
+    FileField, который проксирует вызов метода `generate_filename()` на модель,
+    в которой определено данное поле.
+    """
+    attr_class = DynamicStorageFieldFile
+
+    def __init__(self, verbose_name=None, name=None, upload_to='', storage=None, **kwargs):
+        self._primary_key_set_explicitly = "primary_key" in kwargs
+        kwargs.setdefault("max_length", 255)
+        super(models.FileField, self).__init__(verbose_name, name, **kwargs)
+
+    def check(self, **kwargs):
+        return [
+            *super(models.FileField, self).check(**kwargs),
+            *self._check_primary_key(),
+        ]
+
+    def deconstruct(self):
+        name, path, args, kwargs = super(models.FileField, self).deconstruct()
+        if kwargs.get("max_length") == 255:
+            del kwargs["max_length"]
+        return name, path, args, kwargs
+
+    def generate_filename(self, instance, filename):
+        return instance.generate_filename(filename)

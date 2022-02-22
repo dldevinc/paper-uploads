@@ -1,8 +1,15 @@
+import datetime
+import io
 import os
+import pathlib
+import posixpath
 import warnings
-from typing import Any, Dict, Iterable, Optional, Tuple
+from pathlib import Path
+from typing import Any, Dict, Iterable, Optional, Tuple, Union
 
+from django.core.exceptions import SuspiciousFileOperation
 from django.core.files import File
+from django.core.files.storage import FileSystemStorage, Storage
 from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
@@ -19,6 +26,27 @@ from ..files import VariationFile
 from ..typing import FileLike
 from ..variations import PaperVariation
 from .mixins import FileFieldProxyMixin, FileProxyMixin
+
+try:
+    from django.core.files.utils import validate_file_name
+except ImportError:
+    # new in Django 3.1.10
+    def validate_file_name(name, allow_relative_path=False):
+        if os.path.basename(name) in {'', '.', '..'}:
+            raise SuspiciousFileOperation("Could not derive file name from '%s'" % name)
+
+        if allow_relative_path:
+            # Use PurePosixPath() because this branch is checked only in
+            # FileField.generate_filename() where all file paths are expected to be
+            # Unix style (with forward slashes).
+            path = pathlib.PurePosixPath(name)
+            if path.is_absolute() or '..' in path.parts:
+                raise SuspiciousFileOperation(
+                    "Detected path traversal attempt in '%s'" % name
+                )
+        elif name != os.path.basename(name):
+            raise SuspiciousFileOperation("File name '%s' includes path elements" % name)
+        return name
 
 __all__ = [
     "NoPermissionsMetaBase",
@@ -79,7 +107,7 @@ class ResourceBaseMeta(NoPermissionsMetaBase, models.base.ModelBase):
         parent_links = {}
         for base in reversed(parents):
             # Conceptually equivalent to `if base is Model`.
-            if not hasattr(base, '_meta'):
+            if not hasattr(base, "_meta"):
                 continue
 
             # Locate OneToOneField instances.
@@ -104,8 +132,16 @@ class ResourceBase(models.Model, metaclass=ResourceBaseMeta):
     """
     Базовый класс ресурса.
     """
-    created_at = models.DateTimeField(_("created at"), default=now, editable=False)
-    modified_at = models.DateTimeField(_("changed at"), auto_now=True, editable=False)
+    created_at = models.DateTimeField(
+        _("created at"),
+        default=now,
+        editable=False
+    )
+    modified_at = models.DateTimeField(
+        _("changed at"),
+        auto_now=True,
+        editable=False
+    )
 
     class Meta:
         abstract = True
@@ -120,8 +156,8 @@ class ResourceBase(models.Model, metaclass=ResourceBaseMeta):
         """
         return {
             "id": self.pk,
-            "created": self.created_at.isoformat(),
-            "modified": self.modified_at.isoformat(),
+            "created": self.created_at.isoformat() if self.created_at else None,
+            "modified": self.modified_at.isoformat() if self.modified_at else None,
         }
 
 
@@ -141,8 +177,8 @@ class FileResource(FileProxyMixin, Resource):
     Подкласс ресурса, представляющего файл.
     """
 
-    basename = models.CharField(
-        _("basename"),
+    resource_name = models.CharField(
+        _("resource name"),
         max_length=255,
         editable=False,
         help_text=_("Human-readable resource name"),
@@ -153,13 +189,21 @@ class FileResource(FileProxyMixin, Resource):
         editable=False,
         help_text=_("Lowercase, without leading dot"),
     )
-    size = models.PositiveIntegerField(_("size"), default=0, editable=False)
+    size = models.PositiveIntegerField(
+        _("size"),
+        default=0,
+        editable=False
+    )
     checksum = models.CharField(
         _("checksum"),
         max_length=64,
         editable=False,
     )
-    uploaded_at = models.DateTimeField(_("uploaded at"), default=now, editable=False)
+    uploaded_at = models.DateTimeField(
+        _("uploaded at"),
+        default=now,
+        editable=False
+    )
 
     class Meta(Resource.Meta):
         abstract = True
@@ -168,14 +212,31 @@ class FileResource(FileProxyMixin, Resource):
         return self.get_caption()
 
     def __repr__(self):
-        return "{}('{}')".format(type(self).__name__, self.get_caption())
+        return "{}('{}')".format(type(self).__name__, self.name)
+
+    @property
+    def basename(self):
+        warnings.warn(
+            "'basename' is deprecated in favor of 'resource_name'",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self.resource_name
+
+    @basename.setter
+    def basename(self, value):
+        warnings.warn(
+            "'basename' is deprecated in favor of 'resource_name'",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        self.resource_name = value
 
     @property
     def name(self) -> str:
         """
         Полное имя загруженного файла.
-        В отличие от `self.basename` это имя включает относительный путь,
-        суффикс и расширение.
+        Это имя включает относительный путь, суффикс и расширение.
         """
         raise NotImplementedError
 
@@ -185,29 +246,29 @@ class FileResource(FileProxyMixin, Resource):
         Не содержит суффикса, которое может быть добавлено файловым хранилищем.
         """
         if self.extension:
-            return "{}.{}".format(self.basename, self.extension)
-        return self.basename
+            return "{}.{}".format(self.resource_name, self.extension)
+        return self.resource_name
 
-    def _require_file(self):
+    def get_file_size(self) -> int:
         """
-        Требование наличия непустой ссылки на файл.
-        Физическое существование файла не гарантируется и должно проверяться
-        методом `.file_exists()`.
+        Получение размера загруженного файла.
         """
-        file = self.get_file()
-        if not file:
-            file_field = self.get_file_field()
-            raise ValueError(_("The '%s' attribute has no file associated with it.") % file_field.name)
+        raise NotImplementedError
+
+    def file_exists(self) -> bool:
+        """
+        Проверка существования файла.
+        """
+        raise NotImplementedError
 
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),
-            "name": self.basename,
+            "name": self.resource_name,
             "extension": self.extension,
             "caption": self.get_caption(),
             "size": self.size,
-            "url": self.get_file_url(),
-            "uploaded": self.uploaded_at.isoformat()
+            "uploaded": self.uploaded_at.isoformat() if self.uploaded_at else None
         }
 
     def update_checksum(self, file: FileLike = None) -> bool:
@@ -223,58 +284,37 @@ class FileResource(FileProxyMixin, Resource):
             self.checksum = new_checksum
         return old_checksum != new_checksum
 
-    def get_file(self) -> File:
-        raise NotImplementedError
-
-    def set_file(self, value):
-        """
-        Обновление файла в текущей модели при переименовании / удалении.
-        Применяется в Cloudinary, т.к. файловые storage устанавливают
-        значения поля самостоятельно.
-        """
-        raise NotImplementedError
-
-    def get_file_field(self):
-        """
-        Получение файлового поля модели.
-        """
-        raise NotImplementedError
-
-    def get_file_size(self) -> int:
-        """
-        Получение размера загруженного файла.
-        """
-        raise NotImplementedError
-
-    def get_file_url(self) -> str:
-        """
-        Получение ссылки на загруженный файл.
-        """
-        raise NotImplementedError
-
-    def file_exists(self) -> bool:
-        """
-        Проверка существования файла.
-        """
-        raise NotImplementedError
-
-    def attach(self, file: FileLike, name: str = None, **options):
+    def attach(self, file: Union[str, Path, FileLike], name: str = None, **options):
         """
         Присоединение файла к экземпляру ресурса.
-        В действительности, сохранение файла происходит в методе `_attach`.
-        Не переопределяйте этот метод, если не уверены в том, что вы делаете.
+        Этот метод является обёрткой. Фактическое сохранение файла
+        происходит в методе `_attach()`.
 
         Если на данном этапе обнаруживается, что переданный файл не может
         быть представлен этой моделью, необходимо вызвать исключение
         UnsupportedResource.
         """
-        if not isinstance(file, File):
-            name = name or getattr(file, "name", None)
-            if name:
-                name = os.path.basename(name)
-            file = File(file, name=name)
-        elif name:
+        if not name:
+            if isinstance(file, str):
+                name = file
+            elif isinstance(file, Path):
+                name = str(file)
+            else:
+                name = getattr(file, "name", None)
+
+        # prevent path traversal
+        if name:
+            name = os.path.basename(name)
+
+        # convert to `django.core.files.File` instance
+        need_to_close = False
+        if isinstance(file, (str, Path)):
+            need_to_close = True
+            file = File(open(file, "rb"), name=name)
+        elif isinstance(file, File):
             file.name = name
+        else:
+            file = File(file, name=name)
 
         prepared_file = self._prepare_file(file, **options)
 
@@ -309,6 +349,10 @@ class FileResource(FileProxyMixin, Resource):
             response=attach_result,
         )
 
+        if need_to_close:
+            if not file.closed:
+                file.close()
+
     def attach_file(self, *args, **kwargs):
         warnings.warn(
             "attach_file() is deprecated in favor of attach()",
@@ -337,8 +381,8 @@ class FileResource(FileProxyMixin, Resource):
     def rename(self, new_name: str, **options):
         """
         Переименование файла.
-        В действительности, переименование файла происходит в методе `_rename`.
-        Не переопределяйте этот метод, если не уверены в том, что вы делаете.
+        Этот метод является обёрткой. Фактическое переименование файла
+        происходит в методе `_rename()`.
         """
         self._require_file()
 
@@ -390,8 +434,8 @@ class FileResource(FileProxyMixin, Resource):
     def delete_file(self, **options):
         """
         Удаление файла.
-        В действительности, удаление файла происходит в методе `_delete_file`.
-        Не переопределяйте этот метод, если не уверены в том, что вы делаете.
+        Этот метод является обёрткой. Фактическое удаление файла
+        происходит в методе `_delete_file()`.
         """
         signals.pre_delete_file.send(sender=type(self), instance=self, options=options)
         response = self._delete_file(**options)
@@ -409,28 +453,79 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
     class Meta(FileResource.Meta):
         abstract = True
 
+    def _require_file(self):
+        file = self.get_file()
+        if not file:
+            file_field = self.get_file_field()
+            raise ValueError(_("The '%s' attribute has no file associated with it.") % file_field.name)
+
+    def _attach(self, file: File, **options):
+        self.get_file().save(file.name, file, save=False)
+        self.resource_name = helpers.get_filename(file.name)
+        self.extension = helpers.get_extension(self.name)
+
+    def _rename(self, new_name: str, **options):
+        # копирование файла, чтобы не вредить кэшированию
+        file = self.get_file()
+        with file.open() as fp:
+            file.save(new_name, fp, save=False)
+
+        self.resource_name = helpers.get_filename(new_name)
+        self.extension = helpers.get_extension(self.name)
+
+    def _delete_file(self, **options):
+        self.get_file().delete(save=False)
+
     @property
     def name(self) -> str:
         self._require_file()
         return self.get_file().name
 
+    def get_file_field(self):
+        """
+        Получение файлового поля модели.
+        """
+        raise NotImplementedError
+
     def get_file_folder(self) -> str:
         """
         Возвращает путь к папке, в которую будет сохранен файл.
-        Результат вызова используется в параметре `upload_to` в случае Django storage.
         """
-        return ""
+        raise NotImplementedError
+
+    def get_file_storage(self) -> Storage:
+        raise NotImplementedError
+
+    def generate_filename(self, filename: str) -> str:
+        """
+        Формирование каталога и имени файла при сохранении.
+        """
+        dirname = self.get_file_folder()
+        dirname = datetime.datetime.now().strftime(dirname)
+        filename = posixpath.join(dirname, filename)
+        filename = validate_file_name(filename, allow_relative_path=True)
+
+        storage = self.get_file_storage()
+        return storage.generate_filename(filename)
 
     def get_file(self) -> FieldFile:
         raise NotImplementedError
+
+    def set_file(self, value):
+        field = self.get_file_field()
+        setattr(self, field.attname, value)
 
     def get_file_size(self) -> int:
         self._require_file()
         return self.get_file().size
 
     def get_file_url(self) -> str:
-        self._require_file()
-        return self.get_file().url
+        warnings.warn(
+            "get_file_url() is deprecated in favor of 'url' property",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self.url
 
     def file_exists(self) -> bool:
         file = self.get_file()
@@ -438,22 +533,11 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
             return False
         return file.storage.exists(file.name)
 
-    def _attach(self, file: File, **options):
-        self.get_file().save(file.name, file, save=False)
-
-        self.basename = helpers.get_filename(file.name)
-        self.extension = helpers.get_extension(self.name)
-
-    def _rename(self, new_name: str, **options):
-        file = self.get_file()
-        with file.open() as fp:
-            file.save(new_name, fp, save=False)
-
-        self.basename = helpers.get_filename(new_name)
-        self.extension = helpers.get_extension(self.name)
-
-    def _delete_file(self, **options):
-        self.get_file().delete(save=False)
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            **super().as_dict(),
+            "url": self.url,
+        }
 
 
 class ImageFileResourceMixin(models.Model):
@@ -585,7 +669,6 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
     def delete_variations(self):
         for vname, vfile in self.variation_files():
             vfile.delete()
-        self._reset_variation_files()
 
     def variation_files(self) -> Iterable[Tuple[str, VariationFile]]:
         if not self._variation_files_cache:
@@ -619,8 +702,17 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         Запись изображения в файловое хранилище
         """
         variation_file = self.get_variation_file(name)
-        with variation_file.open("wb") as fp:
-            variation.save(image, fp)
+
+        if isinstance(variation_file.storage, FileSystemStorage):
+            with variation_file.open("wb") as fp:
+                variation.save(image, fp)
+        else:
+            # Не все Storage-классы позволяют записывать контент с помощью вызовов
+            # `open()` и `write()`. Для них нужно использовать метод `_save()`.
+            with io.BytesIO() as buffer:
+                variation.save(image, buffer)
+                content = File(buffer, name=variation_file.name)
+                variation_file.storage._save(variation_file.name, content)
 
     def recut(self, names: Iterable[str] = ()):
         """
@@ -643,8 +735,12 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
                 image = variation.process(img)
                 self._save_variation(name, variation, image)
 
+                vfile = self.get_variation_file(name)
+                self.__dict__[name] = vfile
+                self._variation_files_cache[name] = vfile
+
                 signals.variation_created.send(
-                    sender=type(self), instance=self, file=self.get_variation_file(name)
+                    sender=type(self), instance=self, file=vfile
                 )
 
     def recut_async(self, names: Iterable[str] = ()):

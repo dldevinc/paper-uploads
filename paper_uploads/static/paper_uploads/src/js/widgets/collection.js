@@ -229,7 +229,7 @@ class PreloaderItem extends CollectionItemBase {
 
         this.on("complete", (file, response) => {
             const onComplete = response => {
-                const itemType = response.itemType;
+                const itemType = response.type;
 
                 // замена прелоадера перманентным элементом
                 const itemHTML = this.collection.createItem(itemType, response);

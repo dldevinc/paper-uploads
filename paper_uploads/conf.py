@@ -4,10 +4,10 @@ from django.utils.module_loading import import_string
 DEFAULTS = {
     "STORAGE": "django.core.files.storage.FileSystemStorage",
     "STORAGE_OPTIONS": {},
-    "FILES_UPLOAD_TO": "files/%Y-%m-%d",
-    "IMAGES_UPLOAD_TO": "images/%Y-%m-%d",
-    "COLLECTION_FILES_UPLOAD_TO": "collections/files/%Y-%m-%d",
-    "COLLECTION_IMAGES_UPLOAD_TO": "collections/images/%Y-%m-%d",
+    "FILES_UPLOAD_TO": "files/%Y/%m/%d",
+    "IMAGES_UPLOAD_TO": "images/%Y/%m/%d",
+    "COLLECTION_FILES_UPLOAD_TO": "collections/files/%Y/%m/%d",
+    "COLLECTION_IMAGES_UPLOAD_TO": "collections/images/%Y/%m/%d",
     "COLLECTION_ITEM_PREVIEW_WIDTH": 180,
     "COLLECTION_ITEM_PREVIEW_HEIGHT": 135,
 

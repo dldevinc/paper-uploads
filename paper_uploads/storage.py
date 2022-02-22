@@ -10,4 +10,5 @@ class UploadStorage(LazyObject):
         self._wrapped = settings.STORAGE(**options)
 
 
-upload_storage = UploadStorage()
+default_storage = UploadStorage()
+upload_storage = default_storage  # deprecated

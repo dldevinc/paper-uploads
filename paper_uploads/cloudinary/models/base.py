@@ -19,7 +19,7 @@ from filelock import FileLock
 from ... import exceptions, helpers, utils
 from ...conf import settings
 from ...logging import logger
-from ...models.base import FileResource
+from ...models.base import FileFieldResource
 from ...models.mixins import BacklinkModelMixin
 from .mixins import ReadonlyCloudinaryFileProxyMixin
 
@@ -159,32 +159,9 @@ class CloudinaryFieldFile(FileProxyMixin):
             yield data
 
 
-class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
-    class Meta(FileResource.Meta):
+class CloudinaryFileFieldResourceMixin(ReadonlyCloudinaryFileProxyMixin):
+    class Meta:
         abstract = True
-
-    @property
-    def name(self) -> str:
-        self._require_file()
-        return self.get_file().name
-
-    def get_file_folder(self) -> str:
-        """
-        Возвращает путь к папке, в которую будет сохранен файл.
-        Результат вызова используется в параметре `folder` для Cloudinary.
-        """
-        return ""
-
-    def get_file(self) -> CloudinaryFieldFile:
-        raise NotImplementedError
-
-    def get_file_size(self) -> int:
-        self._require_file()
-        return self.get_file().size
-
-    def get_file_url(self) -> str:
-        self._require_file()
-        return self.get_file().url
 
     def file_exists(self) -> bool:
         file = self.get_file()
@@ -250,9 +227,9 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
                 **cloudinary_options,
             )
         except cloudinary.exceptions.Error as e:
-            if e.args and "Unsupported file type" in e.args[0]:
+            if e.args and "Unsupported" in e.args[0]:
                 raise exceptions.UnsupportedResource(
-                    _("File `%s` is not an image") % file.name
+                    _("File `%s` may be corrupt, or in an unsupported format.") % file.name
                 )
             else:
                 raise ValidationError(*e.args)
@@ -277,7 +254,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
 
         self.set_file(resource)
 
-        self.basename = helpers.get_filename(file.name)
+        self.resource_name = helpers.get_filename(file.name)
         self.extension = file_format or ""
         return result
 
@@ -326,7 +303,7 @@ class CloudinaryFileResource(ReadonlyCloudinaryFileProxyMixin, FileResource):
         )
         self.set_file(resource)
 
-        self.basename = helpers.get_filename(new_name)
+        self.resource_name = helpers.get_filename(new_name)
         self.extension = file_format or ""
         return result
 

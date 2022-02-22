@@ -7,7 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.test import RequestFactory
-from examples.proxy_files.models import Page, UploadedImageProxy
+from examples.fields.proxy_models.models import Page, UploadedImageProxy
 
 from paper_uploads.exceptions import InvalidContentType, InvalidObjectId
 from paper_uploads.forms.dialogs.image import ChangeUploadedImageDialog
@@ -41,7 +41,7 @@ class TestUploadFileView:
     def test_get_instance(self, storage):
         request = RequestFactory().post("/", data={
             "paperContentType": storage.content_type.pk,
-            "paperOwnerAppLabel": "proxy_files",
+            "paperOwnerAppLabel": "proxy_models_fields",
             "paperOwnerModelName": "page",
             "paperOwnerFieldName": "image"
         })
@@ -58,7 +58,7 @@ class TestUploadFileView:
 
         request = RequestFactory().post("/", data={
             "paperContentType": content_type.pk,
-            "paperOwnerAppLabel": "proxy_files",
+            "paperOwnerAppLabel": "proxy_models_fields",
             "paperOwnerModelName": "page",
             "paperOwnerFieldName": "image"
         })
@@ -71,7 +71,7 @@ class TestUploadFileView:
     def test_validation_errors(self, storage):
         request = RequestFactory().post("/", data={
             "paperContentType": storage.content_type.pk,
-            "paperOwnerAppLabel": "validators",
+            "paperOwnerAppLabel": "validators_fields",
             "paperOwnerModelName": "page",
             "paperOwnerFieldName": "filter_image_ext"
         })
@@ -85,7 +85,7 @@ class TestUploadFileView:
     def test_success(self, storage):
         request = RequestFactory().post("/", data={
             "paperContentType": storage.content_type.pk,
-            "paperOwnerAppLabel": "proxy_files",
+            "paperOwnerAppLabel": "proxy_models_fields",
             "paperOwnerModelName": "page",
             "paperOwnerFieldName": "image"
         })
@@ -176,7 +176,7 @@ class TestDeleteFileView:
         file = UploadedImageProxy(
             pk=5472
         )
-        file.set_owner_from(Page._meta.get_field("image"))
+        file.set_owner_field(Page, "image")
         file.save()
 
         request = RequestFactory().post("/", data={
@@ -207,7 +207,7 @@ class TestChangeFileView:
         storage.object = UploadedImageProxy(
             pk=5479
         )
-        storage.object.set_owner_from(Page._meta.get_field("image"))
+        storage.object.set_owner_field(Page, "image")
         storage.object.save()
 
         storage.view = ChangeFileView()

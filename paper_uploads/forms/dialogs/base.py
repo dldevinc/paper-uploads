@@ -17,10 +17,10 @@ class ChangeFileResourceDialogBase(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance:
-            self.fields["new_name"].initial = self.instance.basename
+            self.fields["new_name"].initial = self.instance.resource_name
 
     def save(self, commit=True):
-        old_name = self.instance.basename
+        old_name = self.instance.resource_name
         new_name = self.cleaned_data["new_name"]
         if old_name != new_name:
             if self.instance.extension:

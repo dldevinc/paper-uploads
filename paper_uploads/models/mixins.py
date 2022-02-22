@@ -3,6 +3,7 @@ from typing import Optional, Type
 from django.apps import apps
 from django.core import checks
 from django.core.exceptions import FieldDoesNotExist
+from django.core.files import File
 from django.db import models
 from django.db.models.utils import make_model_tuple
 from django.utils.module_loading import import_string
@@ -26,8 +27,11 @@ class BacklinkModelMixin(models.Model):
     class Meta:
         abstract = True
 
-    def set_owner_from(self, field: models.Field):
-        self.owner_app_label, self.owner_model_name = make_model_tuple(field.model)
+    def set_owner_field(self, model: Type[models.Model], field_name: str):
+        # check field exists
+        field = model._meta.get_field(field_name)
+
+        self.owner_app_label, self.owner_model_name = make_model_tuple(model)
         self.owner_fieldname = field.name
 
     def get_owner_model(self) -> Optional[Type[models.Model]]:
@@ -60,10 +64,8 @@ class BacklinkModelMixin(models.Model):
 
 class FileProxyMixin:
     """
-    Проксирование некоторых свойств файла на уровень модели.
-
-    Открытый файл сохраняется в поле `__file`, чтобы предотвратить
-    повторное скачивание файла при повторном открытии файла.
+    Миксин, проксирующий некоторые свойства объекта, возвращаемого методом `get_file()`
+    на уровень класса, к которому применен миксин.
     """
 
     def __init__(self, *args, **kwargs):
@@ -71,104 +73,59 @@ class FileProxyMixin:
         super().__init__(*args, **kwargs)
 
     def __enter__(self):
-        return self
+        return self.open()
 
     def __exit__(self, exc_type, exc_value, tb):
         self.close()
 
+    def _require_file(self):
+        """
+        Требование наличия непустой ссылки на файл.
+        Физическое существование файла не гарантируется.
+        """
+        raise NotImplementedError
+
     def _get_file(self):
-        return getattr(self, "_FileProxyMixin__file", None)
+        return self.__file
 
     def _open_file(self, mode):
-        self.__file = self.get_file().open(mode)  # noqa: F821
+        self.__file = self.get_file().open(mode)
+        return self.__file
 
-    def _close_file(self):
+    def get_file(self) -> File:
+        raise NotImplementedError
+
+    def open(self, mode="rb"):
+        """
+        Открытие файла.
+
+        Если файл уже открыт, перемещает курсор в начало файла.
+        Если файл не допускает перемещение курсора - файл закрывается и открывается
+        заново.
+        """
+        self._require_file()
+
         file = self._get_file()
-        if file is not None:
-            file.close()
-        self.__file = None
+        if file is None:
+            return self._open_file(mode)
+
+        if file.seekable() and (not hasattr(file.file, "mode") or file.file.mode == mode):
+            file.seek(0)
+            return file
+
+        # current file is not seekable - reopen it
+        file.close()
+        return self._open_file(mode)
+    open.alters_data = True
 
     @property
     def closed(self):
-        file = self._get_file()
-        if file is None:
-            file = self.get_file()  # noqa: F821
-        return not file or file.closed
-
-    def open(self, mode="rb"):
-        self._require_file()  # noqa: F821
-
-        file = self._get_file()
-        if file is None:
-            self._open_file(mode)
-        elif file.seekable():
-            file.seek(0)
-        else:
-            # current file is not seekable - reopen it
-            file.close()
-            self._open_file(mode)
-        return self
-    open.alters_data = True  # noqa: F821
-
-    def read(self, size=None):
-        self._require_file()  # noqa: F821
-
-        file = self._get_file()
-        if file is None:
-            file = self.get_file()  # noqa: F821
-
-        return file.read(size)  # noqa: F821
+        return self.__file is None or self.__file.closed
 
     def close(self):
-        self._close_file()
-
-    def readable(self):
-        file = self._get_file()
-        if file is None:
-            file = self.get_file()  # noqa: F821
-        if hasattr(file, "readable"):
-            return file.readable()
-        return True
-
-    def writable(self):
-        file = self._get_file()
-        if file is None:
-            file = self.get_file()  # noqa: F821
-        if hasattr(file, "writable"):
-            return file.writable()
-        return "w" in getattr(file, "mode", "")
-
-    def seekable(self):
-        file = self._get_file()
-        if file is None:
-            file = self.get_file()  # noqa: F821
-        if hasattr(file, "seekable"):
-            return file.seekable()
-        return True
-
-    def seek(self, *args, **kwargs):
-        file = self._get_file()
-        if file is None:
-            file = self.get_file()  # noqa: F821
-        return file.seek(*args, **kwargs)
-
-    def tell(self):
-        file = self._get_file()
-        if file is None:
-            file = self.get_file()  # noqa: F821
-        return file.tell()
-
-    def multiple_chunks(self, chunk_size=None):
-        file = self._get_file()
-        if file is None:
-            file = self.get_file()  # noqa: F821
-        return file.multiple_chunks(chunk_size)
-
-    def chunks(self, chunk_size=None):
-        file = self._get_file()
-        if file is None:
-            file = self.get_file()  # noqa: F821
-        return file.chunks(chunk_size)
+        if self.__file is not None:
+            self.__file.close()
+            self.__file = None
 
 
 class FileFieldProxyMixin:
@@ -178,12 +135,10 @@ class FileFieldProxyMixin:
 
     @property
     def path(self):
-        self._require_file()  # noqa: F821
         return self.get_file().path  # noqa: F821
 
     @property
     def url(self):
-        self._require_file()  # noqa: F821
         return self.get_file().url  # noqa: F821
 
 

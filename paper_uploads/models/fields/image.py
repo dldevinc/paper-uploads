@@ -5,17 +5,15 @@ import tempfile
 from django.core import checks
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.files import File
-from django.db import models
 from django.utils.crypto import get_random_string
 from filelock import FileLock, Timeout
 
 from ... import forms
-from ...helpers import build_variations
 from ...typing import VariationConfig
-from .base import FileResourceFieldBase
+from .base import DynamicStorageFileField, FileResourceFieldBase
 
 
-class VariationalFileField(models.FileField):
+class VariationalFileField(DynamicStorageFileField):
     """
     Из-за того, что вариация может самостоятельно установить свой формат,
     возможна ситуация, когда вариации одного изображения перезапишут вариации
@@ -24,21 +22,22 @@ class VariationalFileField(models.FileField):
     не допустить перезапись.
     """
 
-    def _variations_collapsed(self, instance, name):
-        if self.storage.exists(name):
+    @staticmethod
+    def _variations_collapsed(instance, name, storage):
+        if storage.exists(name):
             return True
 
         for variation in instance.get_variations().values():
             variation_filename = variation.get_output_filename(name)
-            if self.storage.exists(variation_filename):
+            if storage.exists(variation_filename):
                 return True
         return False
 
-    def _find_available_name(self, instance, name):
+    def _find_available_name(self, instance, name, storage):
         max_length = self.max_length
         dir_name, file_name = os.path.split(name)
         file_root, file_ext = os.path.splitext(file_name)
-        while self._variations_collapsed(instance, name) or (
+        while self._variations_collapsed(instance, name, storage) or (
             max_length and len(name) > max_length
         ):
             name = os.path.join(
@@ -61,7 +60,7 @@ class VariationalFileField(models.FileField):
                 )
         return name
 
-    def _create_placeholder_files(self, instance, name):
+    def _create_placeholder_files(self, instance, name, storage):
         """
         Создаем файлы-заглушки, которые "забронируют" имена
         итоговых файлов вариаций.
@@ -70,27 +69,27 @@ class VariationalFileField(models.FileField):
         именем, но разными расширением загружаются одновременно
         в разных процессах / потоках.
         """
-        buffer = File(io.BytesIO(b"dummy"))
         for variation in instance.get_variations().values():
             variation_filename = variation.get_output_filename(name)
-            self.storage.save(variation_filename, buffer)
+            storage.save(variation_filename, File(io.BytesIO(b"dummy")))
 
     def generate_filename(self, instance, filename):
         name = super().generate_filename(instance, filename)
+        storage = instance.get_file_storage()
         lock = FileLock(os.path.join(tempfile.gettempdir(), "paper_uploads.lock"))
         try:
             with lock.acquire(timeout=5):
-                available_name = self._find_available_name(instance, name)
-                self._create_placeholder_files(instance, available_name)
+                available_name = self._find_available_name(instance, name, storage)
+                self._create_placeholder_files(instance, available_name, storage)
         except Timeout:
-            available_name = self._find_available_name(instance, name)
+            available_name = self._find_available_name(instance, name, storage)
         return available_name
 
 
 class ImageField(FileResourceFieldBase):
     def __init__(self, *args, variations: VariationConfig = None, **kwargs):
         kwargs.setdefault("to", "paper_uploads.UploadedImage")
-        self.variations = build_variations(variations or {})
+        self.variations = variations or {}
         super().__init__(*args, **kwargs)
 
     def check(self, **kwargs):

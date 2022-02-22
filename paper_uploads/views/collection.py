@@ -162,6 +162,9 @@ class UploadFileView(UploadFileViewBase):
 
         item.save()
 
+        if not file.closed:
+            file.close()
+
         return self.success(item)
 
     def success(self, instance: CollectionItemBase) -> HttpResponse:

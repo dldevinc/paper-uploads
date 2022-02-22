@@ -48,7 +48,7 @@ def storage(request, class_scoped_db):
                 storage.object.delete()
     """
     storage = local()
-    if hasattr(request.cls, 'init_class'):
+    if hasattr(request.cls, "init_class"):
         gen = request.cls.init_class(storage)
         next(gen)
 

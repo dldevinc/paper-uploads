@@ -12,16 +12,28 @@ def get_file_suffix(filepath: str) -> str:
     match = re_suffix.search(name)
     if match is not None:
         return match.group(1)
-    return ''
+    return ""
 
 
-def get_target_filepath(pattern: str, filepath: str) -> str:
+def match_path(target: str, pattern: str, *, source: str = None):
     """
-    Build filepath, similar to FileSystemStorage
+    Проверка соответствия пути target паттерну pattern.
+    Для проверки наличия суффикса, добавляемого FileSystemStorage,
+    требуется указать путь к исходному файлу source.
     """
     value = datetime.datetime.now().strftime(pattern)
-    suffix = get_file_suffix(filepath)
-    value = value.format(
-        suffix=suffix or ''
-    )
-    return value
+
+    if source:
+        value = value.format(
+            suffix=get_file_suffix(source)
+        )
+    else:
+        value = value.format(
+            suffix=get_file_suffix(target)
+        )
+
+    return target == value or target.endswith(value)
+
+
+def is_equal_dates(date1, date2, delta=5):
+    return abs((date2 - date1).seconds) < delta
