@@ -37,10 +37,10 @@ class TestFileItem(CollectionItemTestBase):
     resource_attachment = EXCEL_FILEPATH
     resource_basename = "table"
     resource_extension = "xls"
-    resource_name = "collections/files/%Y-%m-%d/table{suffix}.xls"
+    resource_name = "collections/files/%Y/%m/%d/table{suffix}.xls"
     resource_size = 8704
     resource_checksum = "c9c8ad905aa5142731b1e8ab34d5862f871627fa7ad8005264494c2489d2061e"
-    resource_folder = "collections/files/%Y-%m-%d"
+    resource_folder = "collections/files/%Y/%m/%d"
     resource_field_name = "file"
 
     def test_get_file_storage(self, storage):
@@ -212,10 +212,10 @@ class TestMediaItem(CollectionItemTestBase):
     resource_attachment = VIDEO_FILEPATH
     resource_basename = "video"
     resource_extension = "avi"
-    resource_name = "collections/files/%Y-%m-%d/video{suffix}"
+    resource_name = "collections/files/%Y/%m/%d/video{suffix}"
     resource_size = 1496576
     resource_checksum = "68f7b2833c52df5ecfcb809509677f499acbe6a93cb1df79508a8ac0e1f7e3d3"
-    resource_folder = "collections/files/%Y-%m-%d"
+    resource_folder = "collections/files/%Y/%m/%d"
     resource_field_name = "file"
 
     def test_get_file_storage(self, storage):
@@ -466,10 +466,10 @@ class TestImageItem(CollectionItemTestBase):
     resource_attachment = CALLIPHORA_FILEPATH
     resource_basename = "calliphora"
     resource_extension = "jpg"
-    resource_name = "collections/images/%Y-%m-%d/calliphora{suffix}"
+    resource_name = "collections/images/%Y/%m/%d/calliphora{suffix}"
     resource_size = 254766
     resource_checksum = "d4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386"
-    resource_folder = "collections/images/%Y-%m-%d"
+    resource_folder = "collections/images/%Y/%m/%d"
     resource_field_name = "file"
 
     @classmethod

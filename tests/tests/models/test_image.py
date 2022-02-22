@@ -22,8 +22,8 @@ class TestUploadedImage(BacklinkModelTestMixin, TestVersatileImageResource):
     resource_attachment = CALLIPHORA_FILEPATH
     resource_basename = "calliphora"
     resource_extension = "jpg"
-    resource_name = "images/%Y-%m-%d/calliphora{suffix}.jpg"
-    resource_folder = "images/%Y-%m-%d"
+    resource_name = "images/%Y/%m/%d/calliphora{suffix}.jpg"
+    resource_folder = "images/%Y/%m/%d"
     resource_field_name = "file"
     owner_fieldname = "image_group"
     owner_model = Page

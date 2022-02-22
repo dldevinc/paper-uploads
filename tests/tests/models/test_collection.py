@@ -442,10 +442,10 @@ class TestFileItem(CollectionItemTestBase):
     resource_attachment = NATURE_FILEPATH
     resource_basename = "Nature Tree"
     resource_extension = "Jpeg"
-    resource_name = "collections/files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg"
+    resource_name = "collections/files/%Y/%m/%d/Nature_Tree{suffix}.Jpeg"
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    resource_folder = "collections/files/%Y-%m-%d"
+    resource_folder = "collections/files/%Y/%m/%d"
     resource_field_name = "file"
 
     def test_item_type(self, storage):
@@ -547,10 +547,10 @@ class TestSVGItem(CollectionItemTestBase):
     resource_attachment = MEDITATION_FILEPATH
     resource_basename = "Meditation"
     resource_extension = "svg"
-    resource_name = "collections/files/%Y-%m-%d/Meditation{suffix}.svg"
+    resource_name = "collections/files/%Y/%m/%d/Meditation{suffix}.svg"
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
-    resource_folder = "collections/files/%Y-%m-%d"
+    resource_folder = "collections/files/%Y/%m/%d"
     resource_field_name = "file"
 
     def test_name(self, storage):
@@ -679,10 +679,10 @@ class TestImageItem(CollectionItemTestBase):
     resource_attachment = NATURE_FILEPATH
     resource_basename = "Nature Tree"
     resource_extension = "jpg"
-    resource_name = "collections/images/%Y-%m-%d/Nature_Tree{suffix}.jpg"
+    resource_name = "collections/images/%Y/%m/%d/Nature_Tree{suffix}.jpg"
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    resource_folder = "collections/images/%Y-%m-%d"
+    resource_folder = "collections/images/%Y/%m/%d"
     resource_field_name = "file"
 
     def test_name(self, storage):

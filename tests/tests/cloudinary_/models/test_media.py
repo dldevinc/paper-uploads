@@ -28,10 +28,10 @@ class TestCloudinaryMedia(BacklinkModelTestMixin, TestFileFieldResource):
     resource_attachment = AUDIO_FILEPATH
     resource_basename = "audio"
     resource_extension = "mp3"
-    resource_name = "files/%Y-%m-%d/audio{suffix}"
+    resource_name = "files/%Y/%m/%d/audio{suffix}"
     resource_size = 2113939
     resource_checksum = "4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d"
-    resource_folder = "files/%Y-%m-%d"
+    resource_folder = "files/%Y/%m/%d"
     owner_fieldname = "media"
     owner_model = Page
 

@@ -27,10 +27,10 @@ class TestCloudinaryImage(BacklinkModelTestMixin, TestImageFieldResource):
     resource_attachment = CALLIPHORA_FILEPATH
     resource_basename = "calliphora"
     resource_extension = "jpg"
-    resource_name = "images/%Y-%m-%d/calliphora{suffix}"
+    resource_name = "images/%Y/%m/%d/calliphora{suffix}"
     resource_size = 254766
     resource_checksum = "d4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386"
-    resource_folder = "images/%Y-%m-%d"
+    resource_folder = "images/%Y/%m/%d"
     resource_field_name = "file"
     owner_fieldname = "image"
     owner_model = Page

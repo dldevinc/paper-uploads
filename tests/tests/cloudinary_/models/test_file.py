@@ -26,10 +26,10 @@ class TestCloudinaryFile(BacklinkModelTestMixin, TestFileFieldResource):
     resource_attachment = NATURE_FILEPATH
     resource_basename = "Nature Tree"
     resource_extension = "Jpeg"
-    resource_name = "files/%Y-%m-%d/Nature_Tree{suffix}.Jpeg"
+    resource_name = "files/%Y/%m/%d/Nature_Tree{suffix}.Jpeg"
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    resource_folder = "files/%Y-%m-%d"
+    resource_folder = "files/%Y/%m/%d"
     owner_fieldname = "file"
     owner_model = Page
 
