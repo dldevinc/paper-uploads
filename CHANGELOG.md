@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.8.1](https://github.com/dldevinc/paper-uploads/tree/v0.8.1) - 2021-02-22
+### Bug Fixes
+- Fixed an issue with serialization.
+
 ## [0.8.0](https://github.com/dldevinc/paper-uploads/tree/v0.8.0) - 2021-02-21
 ### ⚠ BREAKING CHANGES
 - Changed default values `FILES_UPLOAD_TO`, `IMAGES_UPLOAD_TO`, 
