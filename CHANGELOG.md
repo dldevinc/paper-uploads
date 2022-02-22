@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.8.0rc5](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc5) - 2021-02-21
+## [0.8.0](https://github.com/dldevinc/paper-uploads/tree/v0.8.0) - 2021-02-21
 ### ⚠ BREAKING CHANGES
 - Changed default values `FILES_UPLOAD_TO`, `IMAGES_UPLOAD_TO`, 
   `COLLECTION_FILES_UPLOAD_TO` and `COLLECTION_IMAGES_UPLOAD_TO` settings.
