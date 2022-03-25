@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.8.2](https://github.com/dldevinc/paper-uploads/tree/v0.8.2) - 2021-03-25
+### Bug Fixes
+- Fixed an issue where file descriptor offset was not reset before `prepare()` call.
+
 ## [0.8.1](https://github.com/dldevinc/paper-uploads/tree/v0.8.1) - 2021-02-22
 ### Bug Fixes
 - Fixed an issue with serialization.

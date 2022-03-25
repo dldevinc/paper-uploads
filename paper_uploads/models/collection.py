@@ -557,7 +557,6 @@ class SVGItemBase(CollectionFileItemBase):
 
     def _prepare_file(self, file: File, **options) -> File:
         mimetype = magic.from_buffer(file.read(1024), mime=True)
-        file.seek(0)
         if mimetype != "image/svg+xml":
             raise exceptions.UnsupportedResource(
                 _("File `%s` is not an svg image") % file.name
