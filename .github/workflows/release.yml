@@ -17,7 +17,8 @@ jobs:
           node-version: '15'
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip setuptools wheel twine
+          python -m pip install setuptools==60.10.0
+          python -m pip install --upgrade pip wheel twine
       - name: Install NPM dependencies
         run: npm ci
       - name: Run webpack
