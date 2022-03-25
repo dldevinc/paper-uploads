@@ -47,6 +47,7 @@
   - [Вариации](#Вариации)
     - [Версии вариаций](#Версии-вариаций)
     - [Redis Queue](#Redis Queue)
+- [SVGFileField](#SVGFileField)
 - [Коллекции](#Коллекции)
   - [Элементы коллекции](#Элементы-коллекции)
     - [Storage и каталог загрузки файлов](#Storage-и-каталог-загрузки-файлов)
@@ -510,6 +511,31 @@ PAPER_UPLOADS = {
 
 Теперь при загрузке изображений, в очередь под именем `default` будет добавляться
 задача, которая создаст все необходимые вариации.
+
+## SVGFileField
+
+Поле `SVGFileField` предназначено для загрузки SVG-файлов. Оно идентично `FileField`,
+но связанная с ним модель `UploadedSVGFile` включает несколько дополнительных полей:
+
+| Поле | Описание |
+|------|----------|
+| width | Ширина изображения в формате `Decimal`. Может быть вещественным числом. |
+| height | Высота изображения в формате `Decimal`. Может быть вещественным числом. |
+| title | Название изображения, которое можно вставить в атрибут `title` тэга `<img>`. |
+| description | Описание изображения, которое можно вставить в атрибут `alt` тэга `<img>`. |
+
+```python
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from paper_uploads.models import SVGFileField
+
+
+class Page(models.Model):
+    svg = SVGFileField(
+        _("svg"),
+        blank=True
+    )
+```
 
 ## Коллекции
 

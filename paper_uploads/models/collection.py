@@ -37,6 +37,7 @@ from .base import (
     NoPermissionsMetaBase,
     Resource,
     ResourceBaseMeta,
+    SVGFileResourceMixin,
     VersatileImageResourceMixin,
 )
 from .fields import CollectionItem
@@ -513,8 +514,8 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
         return True
 
 
-class SVGItemBase(CollectionFileItemBase):
-    change_form_class = "paper_uploads.forms.dialogs.collection.ChangeFileItemDialog"
+class SVGItemBase(SVGFileResourceMixin, CollectionFileItemBase):
+    change_form_class = "paper_uploads.forms.dialogs.collection.ChangeSVGItemDialog"
     template_name = "paper_uploads/items/svg.html"
     preview_template_name = "paper_uploads/items/preview/svg.html"
 
@@ -554,14 +555,6 @@ class SVGItemBase(CollectionFileItemBase):
     def accept(cls, file: File) -> bool:
         filename, ext = posixpath.splitext(file.name)
         return ext.lower() == ".svg"
-
-    def _prepare_file(self, file: File, **options) -> File:
-        mimetype = magic.from_buffer(file.read(1024), mime=True)
-        if mimetype != "image/svg+xml":
-            raise exceptions.UnsupportedResource(
-                _("File `%s` is not an svg image") % file.name
-            )
-        return super()._prepare_file(file, **options)
 
 
 class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
