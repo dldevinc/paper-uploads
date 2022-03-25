@@ -316,6 +316,10 @@ class FileResource(FileProxyMixin, Resource):
         else:
             file = File(file, name=name)
 
+        # reset file position before prepare
+        if file.seekable():
+            file.seek(0)
+
         prepared_file = self._prepare_file(file, **options)
 
         signals.pre_attach_file.send(
