@@ -575,6 +575,10 @@ class TestSVGItem(CollectionItemTestBase):
                 self.resource_extension
             ),
             "size": self.resource_size,
+            "width": "626",
+            "height": "660.0532",
+            "title": "",
+            "description": "",
             "url": storage.resource.url,
             "order": 0,
             "preview": render_to_string(

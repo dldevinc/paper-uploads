@@ -9,6 +9,10 @@ class Page(models.Model):
         _("file"),
         blank=True
     )
+    svg = SVGFileField(
+        _("svg"),
+        blank=True
+    )
     image = ImageField(
         _("image"),
         blank=True

@@ -21,6 +21,10 @@ Class hierarchy:
  │    ├────►  UploadedFileBase  ├───►  UploadedFile  │
  │    │    └────────────────────┘   └────────────────┘
  │    │
+ │    │    ┌───────────────────────┐   ┌───────────────────┐
+ │    ├────►  UploadedSVGFileBase  ├───►  UploadedSVGFile  │
+ │    │    └───────────────────────┘   └───────────────────┘
+ │    │
  │    │    ┌─────────────────────┐   ┌─────────────────┐
  │    ├────►  UploadedImageBase  ├───►  UploadedImage  │
  │    │    └─────────────────────┘   └─────────────────┘
@@ -81,16 +85,20 @@ from .collection import (
     ImageItem,
     SVGItem,
 )
-from .fields import CollectionField, CollectionItem, FileField, ImageField
+from .fields import CollectionField, CollectionItem, FileField, SVGFileField, ImageField
 from .file import UploadedFileBase, UploadedFile
+from .svg import UploadedSVGFileBase, UploadedSVGFile
 from .image import UploadedImageBase, UploadedImage
 
 __all__ = [
     "UploadedFileBase",
     "UploadedFile",
+    "UploadedSVGFileBase",
+    "UploadedSVGFile",
     "UploadedImageBase",
     "UploadedImage",
     "FileField",
+    "SVGFileField",
     "ImageField",
     "CollectionField",
     "CollectionItemBase",

@@ -1,4 +1,5 @@
 import datetime
+import decimal
 import io
 import os
 import pathlib
@@ -6,6 +7,7 @@ import posixpath
 import warnings
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Tuple, Union
+from xml.dom.minidom import parse
 
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.files import File
@@ -17,6 +19,7 @@ from django.db.models.utils import make_model_tuple
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from PIL import Image
+from pyexpat import ExpatError
 from variations.typing import Size
 from variations.utils import prepare_image, replace_extension
 
@@ -54,6 +57,7 @@ __all__ = [
     "Resource",
     "FileResource",
     "FileFieldResource",
+    "SVGFileResourceMixin",
     "ImageFileResourceMixin",
     "VariationFile",
     "VersatileImageResourceMixin",
@@ -542,6 +546,89 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
             **super().as_dict(),
             "url": self.url,
         }
+
+
+class SVGFileResourceMixin(models.Model):
+    """
+    Подкласс файлового ресурса для SVG-изображений.
+    """
+
+    title = models.CharField(
+        _("title"),
+        max_length=255,
+        blank=True,
+        help_text=_(
+            "The title is being used as a tooltip when the user hovers the mouse over the image"
+        ),
+    )
+    description = models.TextField(
+        _("description"),
+        blank=True,
+        help_text=_(
+            "This text will be used by screen readers, search engines, or when the image cannot be loaded"
+        ),
+    )
+    width = models.DecimalField(_("width"), max_digits=10, decimal_places=4, default=0, editable=False)
+    height = models.DecimalField(_("height"), max_digits=10, decimal_places=4, default=0, editable=False)
+
+    class Meta:
+        abstract = True
+
+    @property
+    def width_display(self):
+        width = str(self.width)
+        return width.rstrip("0").rstrip(".") if "." in width else width
+
+    @property
+    def height_display(self):
+        height = str(self.height)
+        return height.rstrip("0").rstrip(".") if "." in height else height
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            **super().as_dict(),  # noqa
+            "width": self.width_display,
+            "height": self.height_display,
+            "title": self.title,
+            "description": self.description,
+        }
+
+    def _prepare_file(self, file: File, **options) -> File:
+        try:
+            dom = parse(file)
+        except ExpatError:
+            raise exceptions.UnsupportedResource(
+                _("File `%s` is not an svg image") % file.name
+            )
+
+        root = dom.documentElement
+        if root.tagName.lower() != "svg":
+            raise exceptions.UnsupportedResource(
+                _("File `%s` is not an svg image") % file.name
+            )
+
+        width = root.getAttribute("width")
+        height = root.getAttribute("height")
+        view_box = root.getAttribute("viewBox")
+        view_box = view_box.split(" ") if view_box else []
+
+        if not width and len(view_box) == 4:
+            width = view_box[2]
+
+        if not height and len(view_box) == 4:
+            height = view_box[3]
+
+        try:
+            self.width = round(decimal.Decimal(width), 4)
+        except decimal.InvalidOperation:
+            self.width = 0
+
+        try:
+            self.height = round(decimal.Decimal(height), 4)
+        except decimal.InvalidOperation:
+            self.height = 0
+
+        return super()._prepare_file(file, **options)  # noqa: F821
 
 
 class ImageFileResourceMixin(models.Model):
