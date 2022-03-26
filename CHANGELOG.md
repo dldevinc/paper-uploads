@@ -1,18 +1,18 @@
 # Change Log
 
-## [0.8.2](https://github.com/dldevinc/paper-uploads/tree/v0.9.0) - 2021-03-26
+## [0.9.0](https://github.com/dldevinc/paper-uploads/tree/v0.9.0) - 2022-03-26
 ### Features
-- Added new `SVGFileField` class.
+- Added `SVGFileField`.
 
-## [0.8.2](https://github.com/dldevinc/paper-uploads/tree/v0.8.2) - 2021-03-25
+## [0.8.2](https://github.com/dldevinc/paper-uploads/tree/v0.8.2) - 2022-03-25
 ### Bug Fixes
 - Fixed an issue where file descriptor offset was not reset before `prepare()` call.
 
-## [0.8.1](https://github.com/dldevinc/paper-uploads/tree/v0.8.1) - 2021-02-22
+## [0.8.1](https://github.com/dldevinc/paper-uploads/tree/v0.8.1) - 2022-02-22
 ### Bug Fixes
 - Fixed an issue with serialization.
 
-## [0.8.0](https://github.com/dldevinc/paper-uploads/tree/v0.8.0) - 2021-02-21
+## [0.8.0](https://github.com/dldevinc/paper-uploads/tree/v0.8.0) - 2022-02-21
 ### ⚠ BREAKING CHANGES
 - Changed default values `FILES_UPLOAD_TO`, `IMAGES_UPLOAD_TO`, 
   `COLLECTION_FILES_UPLOAD_TO` and `COLLECTION_IMAGES_UPLOAD_TO` settings.
@@ -20,7 +20,7 @@
 - Added field checks for `upload_to` parameter.
 - Added new `FileFieldResource.generate_filename()` method.
 
-## [0.8.0rc4](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc4) - 2021-02-21
+## [0.8.0rc4](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc4) - 2022-02-21
 ### Features
 - Added new method `Collection.get_last_modified()`.
 - Add an ability to specify `storage` and `upload_to` for particular fields.
@@ -31,7 +31,7 @@
 ### Bug Fixes
 - Fix a not creation variations with non-filesystem storages.
 
-## [0.8.0rc3](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc3) - 2021-02-02
+## [0.8.0rc3](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc3) - 2022-02-02
 ### ⚠ BREAKING CHANGES
 - Method `set_owner_from()` has been rewritten and renamed to `set_owner_field()`.
 - **Note**: `paper_uploads.cloudinary` will be moved to a separate package.
@@ -42,7 +42,7 @@
 ### Bug Fixes
 - Fixed `remove_variations` and `recreate_variations` management commands.
 
-## [0.8.0rc2](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc2) - 2021-02-01
+## [0.8.0rc2](https://github.com/dldevinc/paper-uploads/tree/v0.8.0rc2) - 2022-02-01
 ### Features
 - Add Django 4.0 support
 - Add Python 3.10 support
