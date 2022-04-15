@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.9.1](https://github.com/dldevinc/paper-uploads/tree/v0.9.1) - 2022-04-15
+### Features
+- Update `npm` dependencies.
+
 ## [0.9.0](https://github.com/dldevinc/paper-uploads/tree/v0.9.0) - 2022-03-26
 ### Features
 - Added `SVGFileField`.
