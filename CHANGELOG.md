@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.9.2](https://github.com/dldevinc/paper-uploads/tree/v0.9.2) - 2022-05-19
+### Features
+- Export `Uploader` class. It can be accessed via `window.paperUploads.Uploader`. 
+
 ## [0.9.1](https://github.com/dldevinc/paper-uploads/tree/v0.9.1) - 2022-04-15
 ### Features
 - Update `npm` dependencies.
