@@ -3,6 +3,7 @@
 
 import Dropzone from "dropzone";
 
+// Отмена автоматической инициализации на .dropzone элементах.
 Dropzone.autoDiscover = false;
 
 
