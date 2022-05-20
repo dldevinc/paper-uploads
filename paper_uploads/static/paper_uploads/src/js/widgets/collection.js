@@ -6,7 +6,7 @@ import allSettled from "promise.allsettled";
 import deepmerge from "deepmerge";
 import EventEmitter from "wolfy87-eventemitter";
 import Mustache from "mustache";
-import {Uploader} from "../uploader.js";
+import { Uploader } from "paper-uploader";
 import * as utils from "../utils.js";
 
 // PaperAdmin API
@@ -18,22 +18,19 @@ const formUtils = window.paperAdmin.formUtils;
 // CSS
 import "css/collection_widget.scss";
 
-
 /**
  * Базовый класс элемента коллекции.
  */
 class CollectionItemBase extends EventEmitter {
-    static Defaults = {
-
-    }
+    static Defaults = {};
 
     static STATUS = {
         REMOVING: "removing"
-    }
+    };
 
     static CSS = {
-        container: "collection-item",
-    }
+        container: "collection-item"
+    };
 
     constructor(root, collection, options) {
         super();
@@ -82,7 +79,7 @@ class CollectionItemBase extends EventEmitter {
      */
     getStatus() {
         return Object.values(this.STATUS).find(value => {
-            return this.root.classList.contains(`${this.CSS.container}--${value}`)
+            return this.root.classList.contains(`${this.CSS.container}--${value}`);
         });
     }
 
@@ -91,10 +88,7 @@ class CollectionItemBase extends EventEmitter {
      */
     setStatus(status) {
         Object.values(this.STATUS).forEach(value => {
-            this.root.classList.toggle(
-                `${this.CSS.container}--${value}`,
-                status === value
-            );
+            this.root.classList.toggle(`${this.CSS.container}--${value}`, status === value);
         });
     }
 
@@ -106,7 +100,7 @@ class CollectionItemBase extends EventEmitter {
 
         const animationPromise = new Promise(resolve => {
             this.root.addEventListener("animationend", () => {
-                resolve()
+                resolve();
             });
         });
 
@@ -123,11 +117,8 @@ class CollectionItemBase extends EventEmitter {
      * Private methods
      */
 
-    _addListeners() {
-
-    }
+    _addListeners() {}
 }
-
 
 /**
  * Элемент-заглушка, представляющая файл, находящийся в очереди на загрузку.
@@ -173,7 +164,7 @@ class PreloaderItem extends CollectionItemBase {
 
     static STATUS = Object.assign({}, super.STATUS, {
         PRELOADER: "preloader",
-        PROCESSING: "processing",
+        PROCESSING: "processing"
     });
 
     get uuid() {
@@ -218,7 +209,9 @@ class PreloaderItem extends CollectionItemBase {
                 // Добавление минимальной задержки для стадии processing,
                 // чтобы переход от стадии loading к finished был более плавным.
                 this.processingPromise = new Promise(resolve => {
-                    setTimeout(() => {resolve()}, 500);
+                    setTimeout(() => {
+                        resolve();
+                    }, 500);
                 });
             }
         });
@@ -270,7 +263,6 @@ class PreloaderItem extends CollectionItemBase {
     }
 }
 
-
 class PermanentCollectionItemBase extends CollectionItemBase {
     static Defaults = Object.assign({}, super.Defaults, {
         checkbox: ".collection-item__checkbox",
@@ -282,7 +274,7 @@ class PermanentCollectionItemBase extends CollectionItemBase {
     });
 
     static STATUS = Object.assign({}, super.STATUS, {
-        READY: "ready",
+        READY: "ready"
     });
 
     get id() {
@@ -326,33 +318,33 @@ class PermanentCollectionItemBase extends CollectionItemBase {
                         modalClass: "paper-modal--warning fade",
                         title: gettext("Confirm deletion"),
                         body: gettext("Are you sure you want to <b>DELETE</b> this item?"),
-                        buttons: [{
-                            label: gettext("Cancel"),
-                            buttonClass: "btn-light",
-                            onClick: (event, popup) => {
-                                popup.destroy();
+                        buttons: [
+                            {
+                                label: gettext("Cancel"),
+                                buttonClass: "btn-light",
+                                onClick: (event, popup) => {
+                                    popup.destroy();
+                                }
+                            },
+                            {
+                                autofocus: true,
+                                label: gettext("Delete"),
+                                buttonClass: "btn-danger",
+                                onClick: (event, popup) => {
+                                    Promise.all([popup.destroy(), this.delete()]).catch(reason => {
+                                        if (reason instanceof Error) {
+                                            // JS-ошибки дублируем в консоль
+                                            console.error(reason);
+                                        }
+                                        modals.showErrors(reason);
+                                    });
+                                }
                             }
-                        }, {
-                            autofocus: true,
-                            label: gettext("Delete"),
-                            buttonClass: "btn-danger",
-                            onClick: (event, popup) => {
-                                Promise.all([
-                                    popup.destroy(),
-                                    this.delete()
-                                ]).catch(reason => {
-                                    if (reason instanceof Error) {
-                                        // JS-ошибки дублируем в консоль
-                                        console.error(reason);
-                                    }
-                                    modals.showErrors(reason);
-                                });
-                            }
-                        }],
-                        onInit: function() {
+                        ],
+                        onInit: function () {
                             this.show();
                         },
-                        onDestroy: function() {
+                        onDestroy: function () {
                             deleteButton.disabled = false;
                         }
                     });
@@ -371,57 +363,65 @@ class PermanentCollectionItemBase extends CollectionItemBase {
                     // Препятствуем открытию нескольких окон
                     changeButton.disabled = true;
 
-                    this.fetchChangeForm(
+                    this
+                        .fetchChangeForm
                         //
-                    ).then(response => {
-                        if (response.errors && response.errors.length) {
-                            throw response.errors;
-                        }
-
-                        modals.createModal({
-                            title: gettext("Edit item"),
-                            body: response.form,
-                            buttons: [{
-                                label: gettext("Cancel"),
-                                buttonClass: "btn-light",
-                                onClick: (event, popup) => {
-                                    popup.destroy();
-                                }
-                            }, {
-                                label: gettext("Save"),
-                                buttonClass: "btn-success",
-                                onClick: (event, popup) => {
-                                    this.sendChangeForm(popup);
-                                }
-                            }],
-                            onInit: function() {
-                                const popup = this;
-                                const form = popup._body.querySelector("form");
-                                form && form.addEventListener("submit", event => {
-                                    event.preventDefault();
-                                    _this.sendChangeForm(popup);
-                                });
-
-                                popup.show();
-
-                                // autofocus first field
-                                $(popup._element).on("autofocus.bs.modal", () => {
-                                    const firstWidget = popup._body.querySelector(".paper-widget");
-                                    const firstField = firstWidget && firstWidget.querySelector("input, select, textarea");
-                                    firstField && firstField.focus();
-                                });
-                            },
-                            onDestroy: function() {
-                                changeButton.disabled = false;
+                        ()
+                        .then(response => {
+                            if (response.errors && response.errors.length) {
+                                throw response.errors;
                             }
+
+                            modals.createModal({
+                                title: gettext("Edit item"),
+                                body: response.form,
+                                buttons: [
+                                    {
+                                        label: gettext("Cancel"),
+                                        buttonClass: "btn-light",
+                                        onClick: (event, popup) => {
+                                            popup.destroy();
+                                        }
+                                    },
+                                    {
+                                        label: gettext("Save"),
+                                        buttonClass: "btn-success",
+                                        onClick: (event, popup) => {
+                                            this.sendChangeForm(popup);
+                                        }
+                                    }
+                                ],
+                                onInit: function () {
+                                    const popup = this;
+                                    const form = popup._body.querySelector("form");
+                                    form &&
+                                        form.addEventListener("submit", event => {
+                                            event.preventDefault();
+                                            _this.sendChangeForm(popup);
+                                        });
+
+                                    popup.show();
+
+                                    // autofocus first field
+                                    $(popup._element).on("autofocus.bs.modal", () => {
+                                        const firstWidget = popup._body.querySelector(".paper-widget");
+                                        const firstField =
+                                            firstWidget && firstWidget.querySelector("input, select, textarea");
+                                        firstField && firstField.focus();
+                                    });
+                                },
+                                onDestroy: function () {
+                                    changeButton.disabled = false;
+                                }
+                            });
+                        })
+                        .catch(reason => {
+                            if (reason instanceof Error) {
+                                // JS-ошибки дублируем в консоль
+                                console.error(reason);
+                            }
+                            modals.showErrors(reason);
                         });
-                    }).catch(reason => {
-                        if (reason instanceof Error) {
-                            // JS-ошибки дублируем в консоль
-                            console.error(reason);
-                        }
-                        modals.showErrors(reason);
-                    });
                 }
             });
         }
@@ -457,24 +457,26 @@ class PermanentCollectionItemBase extends CollectionItemBase {
         formData.append("itemId", this.id.toString());
         formData.append("itemType", this.itemType.toString());
 
-        return modals.showSmartPreloader(
-            fetch(this.collection.root.dataset.deleteItemUrl, {
-                method: "POST",
-                credentials: "same-origin",
-                body: formData
-            }).then(response => {
-                if (!response.ok) {
-                    throw `${response.status} ${response.statusText}`;
+        return modals
+            .showSmartPreloader(
+                fetch(this.collection.root.dataset.deleteItemUrl, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) {
+                        throw `${response.status} ${response.statusText}`;
+                    }
+                    return response.json();
+                })
+            )
+            .then(response => {
+                if (response.errors && response.errors.length) {
+                    throw response.errors;
                 }
-                return response.json();
-            })
-        ).then(response => {
-            if (response.errors && response.errors.length) {
-                throw response.errors;
-            }
 
-            this.removeDOM();
-        });
+                this.removeDOM();
+            });
     }
 
     /**
@@ -500,14 +502,14 @@ class PermanentCollectionItemBase extends CollectionItemBase {
 
         return modals.showSmartPreloader(
             fetch(`${this.collection.root.dataset.changeItemUrl}?${queryString}`, {
-                credentials: "same-origin",
+                credentials: "same-origin"
             }).then(response => {
                 if (!response.ok) {
                     throw `${response.status} ${response.statusText}`;
                 }
                 return response.json();
             })
-        )
+        );
     }
 
     /**
@@ -527,49 +529,48 @@ class PermanentCollectionItemBase extends CollectionItemBase {
 
         const formData = new FormData(form);
 
-        return modals.showSmartPreloader(
-            fetch(form.action, {
-                method: "POST",
-                credentials: "same-origin",
-                body: formData
-            }).then(response => {
-                if (!response.ok) {
-                    throw `${response.status} ${response.statusText}`;
+        return modals
+            .showSmartPreloader(
+                fetch(form.action, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) {
+                        throw `${response.status} ${response.statusText}`;
+                    }
+                    return response.json();
+                })
+            )
+            .then(response => {
+                if (response.errors && response.errors.length) {
+                    throw response.errors;
                 }
-                return response.json();
+
+                formUtils.cleanAllErrors(modal._body);
+                if (response.form_errors) {
+                    formUtils.setErrorsFromJSON(modal._body, response.form_errors);
+                } else {
+                    modal.destroy();
+
+                    const caption = this.root.querySelector(this.config.caption);
+                    caption && (caption.textContent = response.caption);
+
+                    const previewLink = this.root.querySelector(this.config.viewButton);
+                    previewLink && (previewLink.href = response.url);
+                }
             })
-        ).then(response => {
-            if (response.errors && response.errors.length) {
-                throw response.errors;
-            }
-
-            formUtils.cleanAllErrors(modal._body);
-            if (response.form_errors) {
-                formUtils.setErrorsFromJSON(modal._body, response.form_errors);
-            } else {
-                modal.destroy();
-
-                const caption = this.root.querySelector(this.config.caption);
-                caption && (caption.textContent = response.caption);
-
-                const previewLink = this.root.querySelector(this.config.viewButton);
-                previewLink && (previewLink.href = response.url);
-            }
-        }).catch(reason => {
-            if (reason instanceof Error) {
-                // JS-ошибки дублируем в консоль
-                console.error(reason);
-            }
-            modals.showErrors(reason);
-        });
+            .catch(reason => {
+                if (reason instanceof Error) {
+                    // JS-ошибки дублируем в консоль
+                    console.error(reason);
+                }
+                modals.showErrors(reason);
+            });
     }
 }
 
-
-class CollectionItem extends PermanentCollectionItemBase {
-
-}
-
+class CollectionItem extends PermanentCollectionItemBase {}
 
 class Collection extends EventEmitter {
     static Defaults = {
@@ -593,18 +594,18 @@ class Collection extends EventEmitter {
 
         // JSON с данными о элементах коллекции
         dataJSON: ".collection--data"
-    }
+    };
 
     static STATUS = {
         EMPTY: "empty",
         LOADING: "loading",
         READY: "ready",
         REMOVING: "removing"
-    }
+    };
 
     static CSS = {
-        container: "collection",
-    }
+        container: "collection"
+    };
 
     constructor(root, options) {
         super();
@@ -644,12 +645,14 @@ class Collection extends EventEmitter {
     }
 
     get maxOrderValue() {
-        let orderValues = Array.from(this.items).map(item => {
-            const instance = item.collectionItem;
-            return parseInt(instance.root.dataset.order);
-        }).filter(order => {
-            return !isNaN(order);
-        });
+        let orderValues = Array.from(this.items)
+            .map(item => {
+                const instance = item.collectionItem;
+                return parseInt(instance.root.dataset.order);
+            })
+            .filter(order => {
+                return !isNaN(order);
+            });
 
         if (!orderValues.length) {
             return -1;
@@ -679,7 +682,7 @@ class Collection extends EventEmitter {
         // Отключение Drag-n-drop, если коллекция не поддерживает файлы
         const uploadItemButton = this.root.querySelector(this.config.uploadItemButton);
         if (uploadItemButton) {
-            this._initUploader();
+            this.root.uploader = this._createUploader();
         }
 
         this._initSortable();
@@ -689,6 +692,7 @@ class Collection extends EventEmitter {
     destroy() {
         if (this.uploader) {
             this.uploader.destroy();
+            this.root.uploader = null;
         }
 
         this.root.collection = null;
@@ -699,7 +703,7 @@ class Collection extends EventEmitter {
      */
     getStatus() {
         return Object.values(this.STATUS).find(value => {
-            return this.root.classList.contains(`${this.CSS.container}--${value}`)
+            return this.root.classList.contains(`${this.CSS.container}--${value}`);
         });
     }
 
@@ -708,10 +712,7 @@ class Collection extends EventEmitter {
      */
     setStatus(status) {
         Object.values(this.STATUS).forEach(value => {
-            this.root.classList.toggle(
-                `${this.CSS.container}--${value}`,
-                status === value
-            );
+            this.root.classList.toggle(`${this.CSS.container}--${value}`, status === value);
         });
     }
 
@@ -745,32 +746,35 @@ class Collection extends EventEmitter {
             formData.append(name, params[name]);
         });
 
-        return modals.showSmartPreloader(
-            fetch(this.root.dataset.createCollectionUrl, {
-                method: "POST",
-                credentials: "same-origin",
-                body: formData
-            }).then(response => {
-                if (!response.ok) {
-                    throw `${response.status} ${response.statusText}`;
+        return modals
+            .showSmartPreloader(
+                fetch(this.root.dataset.createCollectionUrl, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) {
+                        throw `${response.status} ${response.statusText}`;
+                    }
+                    return response.json();
+                })
+            )
+            .then(response => {
+                if (response.errors && response.errors.length) {
+                    throw response.errors;
                 }
-                return response.json();
+
+                this.setStatus(this.STATUS.READY);
+
+                this._fillCollection(response);
             })
-        ).then(response => {
-            if (response.errors && response.errors.length) {
-                throw response.errors;
-            }
-
-            this.setStatus(this.STATUS.READY);
-
-            this._fillCollection(response);
-        }).catch(reason => {
-            if (reason instanceof Error) {
-                // JS-ошибки дублируем в консоль
-                console.error(reason);
-            }
-            modals.showErrors(reason);
-        });
+            .catch(reason => {
+                if (reason instanceof Error) {
+                    // JS-ошибки дублируем в консоль
+                    console.error(reason);
+                }
+                modals.showErrors(reason);
+            });
     }
 
     /**
@@ -796,30 +800,32 @@ class Collection extends EventEmitter {
             this.uploader.cancelAll();
         }
 
-        return modals.showSmartPreloader(
-            fetch(this.root.dataset.deleteCollectionUrl, {
-                method: "POST",
-                credentials: "same-origin",
-                body: formData
-            }).then(response => {
-                if (!response.ok) {
-                    throw `${response.status} ${response.statusText}`;
+        return modals
+            .showSmartPreloader(
+                fetch(this.root.dataset.deleteCollectionUrl, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) {
+                        throw `${response.status} ${response.statusText}`;
+                    }
+                    return response.json();
+                })
+            )
+            .then(response => {
+                if (response.errors && response.errors.length) {
+                    throw response.errors;
                 }
-                return response.json();
-            })
-        ).then(response => {
-            if (response.errors && response.errors.length) {
-                throw response.errors;
-            }
 
-            this.setStatus(this.STATUS.REMOVING);
+                this.setStatus(this.STATUS.REMOVING);
 
-            this._disposeCollection(response);
+                this._disposeCollection(response);
 
-            return this._removeAllItems().then(() => {
-                this.setStatus(this.STATUS.EMPTY);
+                return this._removeAllItems().then(() => {
+                    this.setStatus(this.STATUS.EMPTY);
+                });
             });
-        });
     }
 
     /**
@@ -881,28 +887,32 @@ class Collection extends EventEmitter {
 
     /**
      * @private
+     * @returns {Uploader}
      */
-    _initUploader() {
-        const options = Object.assign({
-            url: this.root.dataset.uploadItemUrl,
-            uploadMultiple: true,
-            params: file => {
-                const params = utils.getPaperParams(this.root);
-                params.collectionId = this.instanceId;
+    _createUploader() {
+        const options = Object.assign(
+            {
+                url: this.root.dataset.uploadItemUrl,
+                uploadMultiple: true,
+                params: file => {
+                    const params = utils.getPaperParams(this.root);
+                    params.collectionId = this.instanceId;
 
-                const preloader = this._getPreloaderByFile(file);
-                params.order = preloader.root.dataset.order;
+                    const preloader = this._getPreloaderByFile(file);
+                    params.order = preloader.root.dataset.order;
 
-                return params
+                    return params;
+                },
+
+                container: this.root,
+                button: this.root.querySelector(this.config.uploadItemButton),
+                dropzone: this.root.querySelector(this.config.dropzone),
+                dropzoneActiveClassName: this.config.dropzoneActiveClassName
             },
+            utils.processConfiguration(this.root.dataset.configuration)
+        );
 
-            root: this.root,
-            button: this.root.querySelector(this.config.uploadItemButton),
-            dropzone: this.root.querySelector(this.config.dropzone),
-            dropzoneActiveClassName: this.config.dropzoneActiveClassName
-        }, utils.processConfiguration(this.root.dataset.configuration));
-
-        new Uploader(options);
+        return new Uploader(options);
     }
 
     /**
@@ -984,10 +994,9 @@ class Collection extends EventEmitter {
                     // Предотвращаем повторные нажатия
                     createCollectionButton.disabled = true;
 
-                    this.createCollection()
-                        .finally(() => {
-                            createCollectionButton.disabled = false;
-                        });
+                    this.createCollection().finally(() => {
+                        createCollectionButton.disabled = false;
+                    });
                 }
             });
         }
@@ -1006,33 +1015,33 @@ class Collection extends EventEmitter {
                         modalClass: "paper-modal--warning fade",
                         title: gettext("Confirm deletion"),
                         body: gettext("Are you sure you want to <b>DELETE</b> this collection?"),
-                        buttons: [{
-                            label: gettext("Cancel"),
-                            buttonClass: "btn-light",
-                            onClick: (event, popup) => {
-                                popup.destroy();
+                        buttons: [
+                            {
+                                label: gettext("Cancel"),
+                                buttonClass: "btn-light",
+                                onClick: (event, popup) => {
+                                    popup.destroy();
+                                }
+                            },
+                            {
+                                autofocus: true,
+                                label: gettext("Delete"),
+                                buttonClass: "btn-danger",
+                                onClick: (event, popup) => {
+                                    Promise.all([popup.destroy(), this.deleteCollection()]).catch(reason => {
+                                        if (reason instanceof Error) {
+                                            // JS-ошибки дублируем в консоль
+                                            console.error(reason);
+                                        }
+                                        modals.showErrors(reason);
+                                    });
+                                }
                             }
-                        }, {
-                            autofocus: true,
-                            label: gettext("Delete"),
-                            buttonClass: "btn-danger",
-                            onClick: (event, popup) => {
-                                Promise.all([
-                                    popup.destroy(),
-                                    this.deleteCollection()
-                                ]).catch(reason => {
-                                    if (reason instanceof Error) {
-                                        // JS-ошибки дублируем в консоль
-                                        console.error(reason);
-                                    }
-                                    modals.showErrors(reason);
-                                });
-                            }
-                        }],
-                        onInit: function() {
+                        ],
+                        onInit: function () {
                             this.show();
                         },
-                        onDestroy: function() {
+                        onDestroy: function () {
                             deleteCollectionButton.disabled = false;
                         }
                     });
@@ -1046,17 +1055,18 @@ class Collection extends EventEmitter {
         this.root.addEventListener("click", event => {
             const item = event.target.closest(this.config.item);
             if (!item) {
-                return
+                return;
             }
 
             const instance = item.collectionItem;
             if (!(instance instanceof PermanentCollectionItemBase)) {
-                return
+                return;
             }
 
             let isCheckboxClick;
             if (instance.config.checkbox) {
-                if (event.target.htmlFor) {  // <label> tag
+                if (event.target.htmlFor) {
+                    // <label> tag
                     const labelFor = document.getElementById(event.target.htmlFor);
                     isCheckboxClick = Boolean(labelFor.closest(instance.config.checkbox));
                 } else {
@@ -1112,7 +1122,7 @@ class Collection extends EventEmitter {
         // удаление выделенных элементов при нажатии Delete
         this.root.addEventListener("keyup", event => {
             if (event.code !== "Delete") {
-                return
+                return;
             }
 
             const items = Array.from(this.items);
@@ -1138,24 +1148,24 @@ class Collection extends EventEmitter {
                         count: selectedItems.length
                     }
                 ),
-                buttons: [{
-                    label: gettext("Cancel"),
-                    buttonClass: "btn-light",
-                    onClick: (event, popup) => {
-                        popup.destroy();
+                buttons: [
+                    {
+                        label: gettext("Cancel"),
+                        buttonClass: "btn-light",
+                        onClick: (event, popup) => {
+                            popup.destroy();
+                        }
+                    },
+                    {
+                        autofocus: true,
+                        label: gettext("Delete"),
+                        buttonClass: "btn-danger",
+                        onClick: (event, popup) => {
+                            Promise.all([popup.destroy(), this._deleteItems(selectedItems)]);
+                        }
                     }
-                }, {
-                    autofocus: true,
-                    label: gettext("Delete"),
-                    buttonClass: "btn-danger",
-                    onClick: (event, popup) => {
-                        Promise.all([
-                            popup.destroy(),
-                            this._deleteItems(selectedItems)
-                        ]);
-                    }
-                }],
-                onInit: function() {
+                ],
+                onInit: function () {
                     this.show();
                 }
             });
@@ -1174,17 +1184,17 @@ class Collection extends EventEmitter {
                 // Отключение сортировки при нажатой Ctrl или Shift,
                 // чтобы сортировка не мешала выделять элементы.
                 if (event.ctrlKey || event.shiftKey) {
-                    return true
+                    return true;
                 }
 
                 // Отключение сортировки при загрузке и удалении.
                 const status = this.getStatus();
-                if ((status === this.STATUS.LOADING) || (status === this.STATUS.REMOVING)) {
+                if (status === this.STATUS.LOADING || status === this.STATUS.REMOVING) {
                     return true;
                 }
 
                 if (!target) {
-                    return true
+                    return true;
                 }
 
                 const item = target.closest(this.config.item);
@@ -1192,24 +1202,26 @@ class Collection extends EventEmitter {
 
                 // Фильтрация прелоадеров
                 if (instance instanceof PreloaderItem) {
-                    return true
+                    return true;
                 }
 
                 // Фильтрация удаляемых элементов
                 const itemStatus = instance.getStatus();
                 if (itemStatus === instance.STATUS.REMOVING) {
-                    return true
+                    return true;
                 }
             },
             handle: ".sortable-handler",
             ghostClass: "sortable-ghost",
             onEnd: () => {
-                const orderList = Array.from(this.items).map(item => {
-                    const instance = item.collectionItem;
-                    if (instance instanceof PermanentCollectionItemBase) {
-                        return instance.id;
-                    }
-                }).filter(Boolean);
+                const orderList = Array.from(this.items)
+                    .map(item => {
+                        const instance = item.collectionItem;
+                        if (instance instanceof PermanentCollectionItemBase) {
+                            return instance.id;
+                        }
+                    })
+                    .filter(Boolean);
 
                 const data = new FormData();
                 const params = utils.getPaperParams(this.root);
@@ -1223,30 +1235,33 @@ class Collection extends EventEmitter {
                     method: "POST",
                     credentials: "same-origin",
                     body: data
-                }).then(response => {
-                    if (!response.ok) {
-                        throw `${response.status} ${response.statusText}`;
-                    }
-                    return response.json();
-                }).then(response => {
-                    if (response.errors && response.errors.length) {
-                        throw response.errors;
-                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw `${response.status} ${response.statusText}`;
+                        }
+                        return response.json();
+                    })
+                    .then(response => {
+                        if (response.errors && response.errors.length) {
+                            throw response.errors;
+                        }
 
-                    response.orderMap = response.orderMap || {};
+                        response.orderMap = response.orderMap || {};
 
-                    // update order
-                    this.items.forEach(item => {
-                        const id = parseInt(item.dataset.id);
-                        item.dataset.order = response.orderMap[id];
+                        // update order
+                        this.items.forEach(item => {
+                            const id = parseInt(item.dataset.id);
+                            item.dataset.order = response.orderMap[id];
+                        });
+                    })
+                    .catch(reason => {
+                        if (reason instanceof Error) {
+                            // JS-ошибки дублируем в консоль
+                            console.error(reason);
+                        }
+                        modals.showErrors(reason);
                     });
-                }).catch(reason => {
-                    if (reason instanceof Error) {
-                        // JS-ошибки дублируем в консоль
-                        console.error(reason);
-                    }
-                    modals.showErrors(reason);
-                });
             }
         });
     }
@@ -1274,12 +1289,14 @@ class Collection extends EventEmitter {
      * @returns {Promise}
      */
     _removeAllItems() {
-        return Promise.all(Array.from(this.items).map(item => {
-            const instance = item.collectionItem;
-            if (instance) {
-                return instance.removeDOM();
-            }
-        }));
+        return Promise.all(
+            Array.from(this.items).map(item => {
+                const instance = item.collectionItem;
+                if (instance) {
+                    return instance.removeDOM();
+                }
+            })
+        );
     }
 
     /**
@@ -1333,7 +1350,6 @@ class Collection extends EventEmitter {
     }
 }
 
-
 class CollectionWidget extends Widget {
     _init(element) {
         new Collection(element);
@@ -1346,11 +1362,4 @@ class CollectionWidget extends Widget {
     }
 }
 
-
-export {
-    CollectionItemBase,
-    PreloaderItem,
-    PermanentCollectionItemBase,
-    Collection,
-    CollectionWidget
-}
+export { CollectionItemBase, PreloaderItem, PermanentCollectionItemBase, Collection, CollectionWidget };

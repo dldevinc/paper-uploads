@@ -1,7 +1,7 @@
 /* global gettext */
 
 import EventEmitter from "wolfy87-eventemitter";
-import {Uploader} from "../uploader.js";
+import { Uploader } from "paper-uploader";
 import * as utils from "../utils.js";
 
 // PaperAdmin API
@@ -11,7 +11,6 @@ const formUtils = window.paperAdmin.formUtils;
 
 // CSS
 import "css/image_widget.scss";
-
 
 class ImageUploader extends EventEmitter {
     static Defaults = {
@@ -26,19 +25,19 @@ class ImageUploader extends EventEmitter {
         cancelButton: ".image-uploader__cancel-button",
         viewButton: ".image-uploader__view-button",
         changeButton: ".image-uploader__change-button",
-        deleteButton: ".image-uploader__delete-button",
-    }
+        deleteButton: ".image-uploader__delete-button"
+    };
 
     static STATUS = {
         EMPTY: "empty",
         LOADING: "loading",
         PROCESSING: "processing",
         READY: "ready"
-    }
+    };
 
     static CSS = {
-        container: "image-uploader",
-    }
+        container: "image-uploader"
+    };
 
     constructor(root, options) {
         super();
@@ -92,13 +91,14 @@ class ImageUploader extends EventEmitter {
         // store instance
         this.root.imageUploader = this;
 
-        this._createUploader();
+        this.root.uploader = this._createUploader();
         this._addListeners();
     }
 
     destroy() {
         if (this.uploader) {
             this.uploader.destroy();
+            this.root.uploader = null;
         }
 
         this.root.imageUploader = null;
@@ -109,7 +109,7 @@ class ImageUploader extends EventEmitter {
      */
     getStatus() {
         return Object.values(this.STATUS).find(value => {
-            return this.root.classList.contains(`${this.CSS.container}--${value}`)
+            return this.root.classList.contains(`${this.CSS.container}--${value}`);
         });
     }
 
@@ -118,10 +118,7 @@ class ImageUploader extends EventEmitter {
      */
     setStatus(status) {
         Object.values(this.STATUS).forEach(value => {
-            this.root.classList.toggle(
-                `${this.CSS.container}--${value}`,
-                status === value
-            );
+            this.root.classList.toggle(`${this.CSS.container}--${value}`, status === value);
         });
     }
 
@@ -156,26 +153,28 @@ class ImageUploader extends EventEmitter {
         });
         formData.append("pk", this.instanceId);
 
-        return modals.showSmartPreloader(
-            fetch(this.root.dataset.deleteUrl, {
-                method: "POST",
-                credentials: "same-origin",
-                body: formData
-            }).then(response => {
-                if (!response.ok) {
-                    throw `${response.status} ${response.statusText}`;
+        return modals
+            .showSmartPreloader(
+                fetch(this.root.dataset.deleteUrl, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) {
+                        throw `${response.status} ${response.statusText}`;
+                    }
+                    return response.json();
+                })
+            )
+            .then(response => {
+                if (response.errors && response.errors.length) {
+                    throw response.errors;
                 }
-                return response.json();
-            })
-        ).then(response => {
-            if (response.errors && response.errors.length) {
-                throw response.errors;
-            }
 
-            this.setStatus(this.STATUS.EMPTY);
+                this.setStatus(this.STATUS.EMPTY);
 
-            this._disposeFile(response);
-        });
+                this._disposeFile(response);
+            });
     }
 
     /**
@@ -200,14 +199,14 @@ class ImageUploader extends EventEmitter {
 
         return modals.showSmartPreloader(
             fetch(`${this.root.dataset.changeUrl}?${queryString}`, {
-                credentials: "same-origin",
+                credentials: "same-origin"
             }).then(response => {
                 if (!response.ok) {
                     throw `${response.status} ${response.statusText}`;
                 }
                 return response.json();
             })
-        )
+        );
     }
 
     /**
@@ -228,37 +227,40 @@ class ImageUploader extends EventEmitter {
 
         const formData = new FormData(form);
 
-        return modals.showSmartPreloader(
-            fetch(form.action, {
-                method: "POST",
-                credentials: "same-origin",
-                body: formData
-            }).then(response => {
-                if (!response.ok) {
-                    throw `${response.status} ${response.statusText}`;
+        return modals
+            .showSmartPreloader(
+                fetch(form.action, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) {
+                        throw `${response.status} ${response.statusText}`;
+                    }
+                    return response.json();
+                })
+            )
+            .then(response => {
+                if (response.errors && response.errors.length) {
+                    throw response.errors;
                 }
-                return response.json();
+
+                formUtils.cleanAllErrors(modal._body);
+                if (response.form_errors) {
+                    formUtils.setErrorsFromJSON(modal._body, response.form_errors);
+                } else {
+                    modal.destroy();
+
+                    this._updateFile(response);
+                }
             })
-        ).then(response => {
-            if (response.errors && response.errors.length) {
-                throw response.errors;
-            }
-
-            formUtils.cleanAllErrors(modal._body);
-            if (response.form_errors) {
-                formUtils.setErrorsFromJSON(modal._body, response.form_errors);
-            } else {
-                modal.destroy();
-
-                this._updateFile(response);
-            }
-        }).catch(reason => {
-            if (reason instanceof Error) {
-                // JS-ошибки дублируем в консоль
-                console.error(reason);
-            }
-            modals.showErrors(reason);
-        });
+            .catch(reason => {
+                if (reason instanceof Error) {
+                    // JS-ошибки дублируем в консоль
+                    console.error(reason);
+                }
+                modals.showErrors(reason);
+            });
     }
 
     /**
@@ -267,19 +269,23 @@ class ImageUploader extends EventEmitter {
 
     /**
      * @private
+     * @returns {Uploader}
      */
     _createUploader() {
-        const options = Object.assign({
-            url: this.root.dataset.uploadUrl,
-            params: utils.getPaperParams(this.root),
+        const options = Object.assign(
+            {
+                url: this.root.dataset.uploadUrl,
+                params: utils.getPaperParams(this.root),
 
-            root: this.root,
-            button: this.root.querySelector(this.config.uploadButton),
-            dropzone: this.root.querySelector(this.config.dropzone),
-            dropzoneActiveClassName: this.config.dropzoneActiveClassName
-        }, utils.processConfiguration(this.root.dataset.configuration));
+                container: this.root,
+                button: this.root.querySelector(this.config.uploadButton),
+                dropzone: this.root.querySelector(this.config.dropzone),
+                dropzoneActiveClassName: this.config.dropzoneActiveClassName
+            },
+            utils.processConfiguration(this.root.dataset.configuration)
+        );
 
-        new Uploader(options);
+        return new Uploader(options);
     }
 
     /**
@@ -310,7 +316,9 @@ class ImageUploader extends EventEmitter {
                 // Добавление минимальной задержки для стадии processing,
                 // чтобы переход от стадии loading к finished был более плавным.
                 this.processingPromise = new Promise(resolve => {
-                    setTimeout(() => {resolve()}, 600);
+                    setTimeout(() => {
+                        resolve();
+                    }, 600);
                 });
             }
         });
@@ -388,33 +396,33 @@ class ImageUploader extends EventEmitter {
                         modalClass: "paper-modal--warning fade",
                         title: gettext("Confirm deletion"),
                         body: gettext("Are you sure you want to <b>DELETE</b> this file?"),
-                        buttons: [{
-                            label: gettext("Cancel"),
-                            buttonClass: "btn-light",
-                            onClick: (event, popup) => {
-                                popup.destroy();
+                        buttons: [
+                            {
+                                label: gettext("Cancel"),
+                                buttonClass: "btn-light",
+                                onClick: (event, popup) => {
+                                    popup.destroy();
+                                }
+                            },
+                            {
+                                autofocus: true,
+                                label: gettext("Delete"),
+                                buttonClass: "btn-danger",
+                                onClick: (event, popup) => {
+                                    Promise.all([popup.destroy(), this.deleteFile()]).catch(reason => {
+                                        if (reason instanceof Error) {
+                                            // JS-ошибки дублируем в консоль
+                                            console.error(reason);
+                                        }
+                                        modals.showErrors(reason);
+                                    });
+                                }
                             }
-                        }, {
-                            autofocus: true,
-                            label: gettext("Delete"),
-                            buttonClass: "btn-danger",
-                            onClick: (event, popup) => {
-                                Promise.all([
-                                    popup.destroy(),
-                                    this.deleteFile()
-                                ]).catch(reason => {
-                                    if (reason instanceof Error) {
-                                        // JS-ошибки дублируем в консоль
-                                        console.error(reason);
-                                    }
-                                    modals.showErrors(reason);
-                                });
-                            }
-                        }],
-                        onInit: function() {
+                        ],
+                        onInit: function () {
                             this.show();
                         },
-                        onDestroy: function() {
+                        onDestroy: function () {
                             deleteButton.disabled = false;
                         }
                     });
@@ -432,57 +440,65 @@ class ImageUploader extends EventEmitter {
                     // Препятствуем открытию нескольких окон
                     changeButton.disabled = true;
 
-                    this.fetchChangeForm(
+                    this
+                        .fetchChangeForm
                         //
-                    ).then(response => {
-                        if (response.errors && response.errors.length) {
-                            throw response.errors;
-                        }
-
-                        modals.createModal({
-                            title: gettext("Edit image"),
-                            body: response.form,
-                            buttons: [{
-                                label: gettext("Cancel"),
-                                buttonClass: "btn-light",
-                                onClick: (event, popup) => {
-                                    popup.destroy();
-                                }
-                            }, {
-                                label: gettext("Save"),
-                                buttonClass: "btn-success",
-                                onClick: (event, popup) => {
-                                    this.sendChangeForm(popup);
-                                }
-                            }],
-                            onInit: function() {
-                                const popup = this;
-                                const form = popup._body.querySelector("form");
-                                form && form.addEventListener("submit", event => {
-                                    event.preventDefault();
-                                    _this.sendChangeForm(popup);
-                                });
-
-                                popup.show();
-
-                                // autofocus first field
-                                $(popup._element).on("autofocus.bs.modal", () => {
-                                    const firstWidget = popup._body.querySelector(".paper-widget");
-                                    const firstField = firstWidget && firstWidget.querySelector("input, select, textarea");
-                                    firstField && firstField.focus();
-                                });
-                            },
-                            onDestroy: function() {
-                                changeButton.disabled = false;
+                        ()
+                        .then(response => {
+                            if (response.errors && response.errors.length) {
+                                throw response.errors;
                             }
+
+                            modals.createModal({
+                                title: gettext("Edit image"),
+                                body: response.form,
+                                buttons: [
+                                    {
+                                        label: gettext("Cancel"),
+                                        buttonClass: "btn-light",
+                                        onClick: (event, popup) => {
+                                            popup.destroy();
+                                        }
+                                    },
+                                    {
+                                        label: gettext("Save"),
+                                        buttonClass: "btn-success",
+                                        onClick: (event, popup) => {
+                                            this.sendChangeForm(popup);
+                                        }
+                                    }
+                                ],
+                                onInit: function () {
+                                    const popup = this;
+                                    const form = popup._body.querySelector("form");
+                                    form &&
+                                        form.addEventListener("submit", event => {
+                                            event.preventDefault();
+                                            _this.sendChangeForm(popup);
+                                        });
+
+                                    popup.show();
+
+                                    // autofocus first field
+                                    $(popup._element).on("autofocus.bs.modal", () => {
+                                        const firstWidget = popup._body.querySelector(".paper-widget");
+                                        const firstField =
+                                            firstWidget && firstWidget.querySelector("input, select, textarea");
+                                        firstField && firstField.focus();
+                                    });
+                                },
+                                onDestroy: function () {
+                                    changeButton.disabled = false;
+                                }
+                            });
+                        })
+                        .catch(reason => {
+                            if (reason instanceof Error) {
+                                // JS-ошибки дублируем в консоль
+                                console.error(reason);
+                            }
+                            modals.showErrors(reason);
                         });
-                    }).catch(reason => {
-                        if (reason instanceof Error) {
-                            // JS-ошибки дублируем в консоль
-                            console.error(reason);
-                        }
-                        modals.showErrors(reason);
-                    });
                 }
             });
         }
@@ -535,7 +551,6 @@ class ImageUploader extends EventEmitter {
     }
 }
 
-
 class ImageUploaderWidget extends Widget {
     _init(element) {
         new ImageUploader(element);
@@ -548,8 +563,4 @@ class ImageUploaderWidget extends Widget {
     }
 }
 
-
-export {
-    ImageUploader,
-    ImageUploaderWidget
-}
+export { ImageUploader, ImageUploaderWidget };
