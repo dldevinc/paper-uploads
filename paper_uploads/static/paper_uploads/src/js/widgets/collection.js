@@ -682,7 +682,7 @@ class Collection extends EventEmitter {
         // Отключение Drag-n-drop, если коллекция не поддерживает файлы
         const uploadItemButton = this.root.querySelector(this.config.uploadItemButton);
         if (uploadItemButton) {
-            this._initUploader();
+            this.root.uploader = this._createUploader();
         }
 
         this._initSortable();
@@ -692,6 +692,7 @@ class Collection extends EventEmitter {
     destroy() {
         if (this.uploader) {
             this.uploader.destroy();
+            this.root.uploader = null;
         }
 
         this.root.collection = null;
@@ -886,8 +887,9 @@ class Collection extends EventEmitter {
 
     /**
      * @private
+     * @returns {Uploader}
      */
-    _initUploader() {
+    _createUploader() {
         const options = Object.assign(
             {
                 url: this.root.dataset.uploadItemUrl,
@@ -902,7 +904,7 @@ class Collection extends EventEmitter {
                     return params;
                 },
 
-                root: this.root,
+                container: this.root,
                 button: this.root.querySelector(this.config.uploadItemButton),
                 dropzone: this.root.querySelector(this.config.dropzone),
                 dropzoneActiveClassName: this.config.dropzoneActiveClassName
@@ -910,7 +912,7 @@ class Collection extends EventEmitter {
             utils.processConfiguration(this.root.dataset.configuration)
         );
 
-        new Uploader(options);
+        return new Uploader(options);
     }
 
     /**

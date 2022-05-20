@@ -91,13 +91,14 @@ class ImageUploader extends EventEmitter {
         // store instance
         this.root.imageUploader = this;
 
-        this._createUploader();
+        this.root.uploader = this._createUploader();
         this._addListeners();
     }
 
     destroy() {
         if (this.uploader) {
             this.uploader.destroy();
+            this.root.uploader = null;
         }
 
         this.root.imageUploader = null;
@@ -268,6 +269,7 @@ class ImageUploader extends EventEmitter {
 
     /**
      * @private
+     * @returns {Uploader}
      */
     _createUploader() {
         const options = Object.assign(
@@ -275,7 +277,7 @@ class ImageUploader extends EventEmitter {
                 url: this.root.dataset.uploadUrl,
                 params: utils.getPaperParams(this.root),
 
-                root: this.root,
+                container: this.root,
                 button: this.root.querySelector(this.config.uploadButton),
                 dropzone: this.root.querySelector(this.config.dropzone),
                 dropzoneActiveClassName: this.config.dropzoneActiveClassName
@@ -283,7 +285,7 @@ class ImageUploader extends EventEmitter {
             utils.processConfiguration(this.root.dataset.configuration)
         );
 
-        new Uploader(options);
+        return new Uploader(options);
     }
 
     /**
