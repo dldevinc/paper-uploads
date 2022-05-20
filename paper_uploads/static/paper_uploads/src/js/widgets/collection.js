@@ -6,7 +6,7 @@ import allSettled from "promise.allsettled";
 import deepmerge from "deepmerge";
 import EventEmitter from "wolfy87-eventemitter";
 import Mustache from "mustache";
-import {Uploader} from "../uploader.js";
+import {Uploader} from "paper-uploader";
 import * as utils from "../utils.js";
 
 // PaperAdmin API

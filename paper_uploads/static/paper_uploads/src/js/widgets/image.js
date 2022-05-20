@@ -1,7 +1,7 @@
 /* global gettext */
 
 import EventEmitter from "wolfy87-eventemitter";
-import {Uploader} from "../uploader.js";
+import {Uploader} from "paper-uploader";
 import * as utils from "../utils.js";
 
 // PaperAdmin API
