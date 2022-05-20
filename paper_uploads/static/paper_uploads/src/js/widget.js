@@ -1,4 +1,3 @@
-import {Uploader} from "./uploader.js";
 import * as file from "./widgets/file.js";
 import * as image from "./widgets/image.js";
 import * as collection from "./widgets/collection.js";
@@ -26,7 +25,6 @@ collectionWidget.initAll(".collection");
 
 
 export const paperUploads = {
-    Uploader,
     file,
     image,
     collection
