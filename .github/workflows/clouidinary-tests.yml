@@ -1,12 +1,15 @@
-name: Tests
+name: Cloudinary Tests
 
 on:
-  push:
-    branches:
-      - master
-      - dev
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
 
 env:
+  CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
   DROPBOX_OAUTH2_TOKEN: ${{ secrets.DROPBOX_OAUTH2_TOKEN }}
   DROPBOX_ROOT_PATH: /uploads/
   DROPBOX_WRITE_MODE: overwrite
@@ -44,4 +47,4 @@ jobs:
         run: |
           ENV_PREFIX=$(tr -C -d "0-9" <<< "${{ matrix.python-version }}")
           TOXENV=$(tox --listenvs | grep "^py$ENV_PREFIX" | tr '\n' ',')
-          tox -e "$TOXENV" -- -n auto --ignore-glob="*/cloudinary_"
+          tox -e "$TOXENV" -- -n auto -k "cloudinary_"
