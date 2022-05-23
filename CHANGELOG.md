@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.10.0](https://github.com/dldevinc/paper-uploads/tree/v0.10.0) - 2022-05-23
+### ⚠ BREAKING CHANGES
+- The minimum supported version of `paper-admin` is increased from 3.0 to 4.1.0.
+
 ## [0.9.3](https://github.com/dldevinc/paper-uploads/tree/v0.9.3) - 2022-05-20
 ### Features
 - Migrate to `paper-uploader` npm package.

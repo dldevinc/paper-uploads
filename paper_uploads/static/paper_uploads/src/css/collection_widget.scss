@@ -1,6 +1,3 @@
-@import "dropzone";
-
-
 @keyframes zoomOut {
   100% {
     transform: scale(0);
@@ -188,7 +185,7 @@
   }
 
   // запрещаем перетаскивать файлы в пустой виджет
-  &--empty .dropzone__overlay {
+  &--empty .paper-dropzone__overlay {
     display: none;
   }
 

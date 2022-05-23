@@ -15,8 +15,7 @@ import "css/file_widget.scss";
 class FileUploader extends EventEmitter {
     static Defaults = {
         input: ".file-uploader__input",
-        dropzone: ".dropzone__overlay",
-        dropzoneActiveClassName: "dropzone__overlay--highlighted",
+        dropzone: ".paper-dropzone__overlay",
         progressBar: ".progress-bar",
         fileName: ".file-name",
         fileInfo: ".file-info",
@@ -279,8 +278,7 @@ class FileUploader extends EventEmitter {
 
                 container: this.root,
                 button: this.root.querySelector(this.config.uploadButton),
-                dropzone: this.root.querySelector(this.config.dropzone),
-                dropzoneActiveClassName: this.config.dropzoneActiveClassName
+                dropzone: this.root.querySelector(this.config.dropzone)
             },
             utils.processConfiguration(this.root.dataset.configuration)
         );
