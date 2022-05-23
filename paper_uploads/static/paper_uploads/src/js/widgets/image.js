@@ -15,8 +15,7 @@ import "css/image_widget.scss";
 class ImageUploader extends EventEmitter {
     static Defaults = {
         input: ".image-uploader__input",
-        dropzone: ".dropzone__overlay",
-        dropzoneActiveClassName: "dropzone__overlay--highlighted",
+        dropzone: ".paper-dropzone__overlay",
         progressBar: ".progress-bar",
         fileName: ".file-name",
         fileInfo: ".file-info",
@@ -279,8 +278,7 @@ class ImageUploader extends EventEmitter {
 
                 container: this.root,
                 button: this.root.querySelector(this.config.uploadButton),
-                dropzone: this.root.querySelector(this.config.dropzone),
-                dropzoneActiveClassName: this.config.dropzoneActiveClassName
+                dropzone: this.root.querySelector(this.config.dropzone)
             },
             utils.processConfiguration(this.root.dataset.configuration)
         );

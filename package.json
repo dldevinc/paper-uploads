@@ -25,7 +25,7 @@
     "mime-match": "^1.0.2",
     "mini-css-extract-plugin": "^2.6.0",
     "mustache": "^4.2.0",
-    "paper-uploader": "^0.0.4",
+    "paper-uploader": "^0.0.5",
     "pixrem": "^5.0.0",
     "postcss": "^8.4.14",
     "postcss-loader": "^7.0.0",

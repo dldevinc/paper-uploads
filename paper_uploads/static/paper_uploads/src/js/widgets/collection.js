@@ -575,8 +575,7 @@ class CollectionItem extends PermanentCollectionItemBase {}
 class Collection extends EventEmitter {
     static Defaults = {
         input: ".collection__input",
-        dropzone: ".dropzone__overlay",
-        dropzoneActiveClassName: "dropzone__overlay--highlighted",
+        dropzone: ".paper-dropzone__overlay",
 
         // контейнер, содержащий элементы коллекции
         itemContainer: ".collection__items",
@@ -906,8 +905,7 @@ class Collection extends EventEmitter {
 
                 container: this.root,
                 button: this.root.querySelector(this.config.uploadItemButton),
-                dropzone: this.root.querySelector(this.config.dropzone),
-                dropzoneActiveClassName: this.config.dropzoneActiveClassName
+                dropzone: this.root.querySelector(this.config.dropzone)
             },
             utils.processConfiguration(this.root.dataset.configuration)
         );
