@@ -17,7 +17,9 @@
     background: rgba(250, 226, 72, 0.65);
     transition: opacity 0.1s, background 0.1s, z-index 0s 0.1s;
 
-    @at-root .ondrag & {
+    @at-root
+    .ondrag &,  // TODO: deprecated
+    .on-drag-file & {
       opacity: 1;
       z-index: 1;
       transition: opacity 0.1s, background 0.1s, z-index 0s 0s;
