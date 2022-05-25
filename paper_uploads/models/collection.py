@@ -162,9 +162,16 @@ class CollectionManager(models.Manager):
 class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
     collection_content_type = models.ForeignKey(
         ContentType,
+        on_delete=models.CASCADE,
+        editable=False,
+        related_name="+"
+    )
+    concrete_collection_content_type = models.ForeignKey(
+        ContentType,
         null=True,
-        on_delete=models.SET_NULL,
-        editable=False
+        on_delete=models.CASCADE,
+        editable=False,
+        related_name="+"
     )
     items = ContentItemRelation(
         "paper_uploads.CollectionItemBase",
@@ -198,9 +205,13 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         return self.get_items().iterator()
 
     def save(self, *args, **kwargs):
-        if not self.collection_content_type:
+        if self.collection_content_type_id is None:
             self.collection_content_type = ContentType.objects.get_for_model(
                 self, for_concrete_model=False
+            )
+        if self.concrete_collection_content_type_id is None:
+            self.concrete_collection_content_type = ContentType.objects.get_for_model(
+                self, for_concrete_model=True
             )
         super().save(*args, **kwargs)
 
@@ -278,7 +289,15 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
 
     collection_content_type = models.ForeignKey(
         ContentType,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="+"
+    )
+    concrete_collection_content_type = models.ForeignKey(
+        ContentType,
+        null=True,
+        on_delete=models.CASCADE,
+        editable=False,
+        related_name="+"
     )
     collection_id = models.IntegerField()
     collection = GenericForeignKey(
@@ -358,6 +377,10 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         return 0 if max_order is None else max_order + 1
 
     def save(self, *args, **kwargs):
+        if self.concrete_collection_content_type_id is None and self.collection_content_type_id is not None:
+            collection_cls = self.get_collection_class()
+            self.concrete_collection_content_type = ContentType.objects.get_for_model(collection_cls)
+
         if not self.pk and self.collection_id:
             # Попытка решить проблему того, что при создании коллекции элементы
             # отсортированы в порядке загрузки, а не в порядке добавления.
@@ -408,6 +431,9 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         """
         self.collection_content_type = ContentType.objects.get_for_model(
             collection, for_concrete_model=False
+        )
+        self.concrete_collection_content_type = ContentType.objects.get_for_model(
+            collection, for_concrete_model=True
         )
         self.collection_id = collection.pk
         for name, field in collection.item_types.items():

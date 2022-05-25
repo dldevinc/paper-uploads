@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.10.1](https://github.com/dldevinc/paper-uploads/tree/v0.10.1) - 2022-05-24
+### Features
+- A new `concrete_collection_content_type` field was added to the `Collection` 
+  and `CollectionItemBase` models.
+
 ## [0.10.0](https://github.com/dldevinc/paper-uploads/tree/v0.10.0) - 2022-05-23
 ### ⚠ BREAKING CHANGES
 - The minimum supported version of `paper-admin` is increased from 3.0 to 4.1.0.
