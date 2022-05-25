@@ -20,7 +20,11 @@ class UploadedSVGFileBase(SVGFileResourceMixin, BacklinkModelMixin, EditableReso
         _("file"),
         max_length=255,
     )
-    display_name = models.CharField(_("display name"), max_length=255, blank=True)
+    display_name = models.CharField(
+        _("display name"),
+        max_length=255,
+        blank=True
+    )
 
     class Meta(FileFieldResource.Meta):
         abstract = True

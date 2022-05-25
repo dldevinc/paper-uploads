@@ -276,7 +276,10 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
     # путь к шаблону, представляющему картинку-превью элемента коллекции в админке
     preview_template_name: Optional[str] = None
 
-    collection_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    collection_content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE
+    )
     collection_id = models.IntegerField()
     collection = GenericForeignKey(
         ct_field="collection_content_type",
@@ -285,9 +288,16 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
     )
 
     type = models.CharField(
-        _("type"), max_length=32, db_index=True, editable=False
+        _("type"),
+        max_length=32,
+        db_index=True,
+        editable=False
     )
-    order = models.IntegerField(_("order"), default=0, editable=False)
+    order = models.IntegerField(
+        _("order"),
+        default=0,
+        editable=False
+    )
 
     class Meta:
         # Используется обратный порядок полей в составном индексе,
@@ -484,7 +494,11 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
         _("file"),
         max_length=255,
     )
-    display_name = models.CharField(_("display name"), max_length=255, blank=True)
+    display_name = models.CharField(
+        _("display name"),
+        max_length=255,
+        blank=True
+    )
 
     class Meta(CollectionItemBase.Meta):
         abstract = True
@@ -526,7 +540,11 @@ class SVGItemBase(SVGFileResourceMixin, CollectionFileItemBase):
         _("file"),
         max_length=255,
     )
-    display_name = models.CharField(_("display name"), max_length=255, blank=True)
+    display_name = models.CharField(
+        _("display name"),
+        max_length=255,
+        blank=True
+    )
 
     class Meta(CollectionItemBase.Meta):
         abstract = True

@@ -38,7 +38,11 @@ class CloudinaryFileItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase)
         type=settings.CLOUDINARY_TYPE,
         resource_type="raw",
     )
-    display_name = models.CharField(_("display name"), max_length=255, blank=True)
+    display_name = models.CharField(
+        _("display name"),
+        max_length=255,
+        blank=True
+    )
 
     class Meta(CollectionCloudinaryFileItemBase.Meta):
         abstract = True
@@ -86,7 +90,11 @@ class CloudinaryMediaItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase
         type=settings.CLOUDINARY_TYPE,
         resource_type="video",
     )
-    display_name = models.CharField(_("display name"), max_length=255, blank=True)
+    display_name = models.CharField(
+        _("display name"),
+        max_length=255,
+        blank=True
+    )
 
     class Meta(CollectionCloudinaryFileItemBase.Meta):
         abstract = True

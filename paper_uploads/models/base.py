@@ -568,8 +568,20 @@ class SVGFileResourceMixin(models.Model):
             "This text will be used by screen readers, search engines, or when the image cannot be loaded"
         ),
     )
-    width = models.DecimalField(_("width"), max_digits=10, decimal_places=4, default=0, editable=False)
-    height = models.DecimalField(_("height"), max_digits=10, decimal_places=4, default=0, editable=False)
+    width = models.DecimalField(
+        _("width"),
+        max_digits=10,
+        decimal_places=4,
+        default=0,
+        editable=False
+    )
+    height = models.DecimalField(
+        _("height"),
+        max_digits=10,
+        decimal_places=4,
+        default=0,
+        editable=False
+    )
 
     class Meta:
         abstract = True
@@ -651,10 +663,21 @@ class ImageFileResourceMixin(models.Model):
             "This text will be used by screen readers, search engines, or when the image cannot be loaded"
         ),
     )
-    width = models.PositiveSmallIntegerField(_("width"), default=0, editable=False)
-    height = models.PositiveSmallIntegerField(_("height"), default=0, editable=False)
+    width = models.PositiveSmallIntegerField(
+        _("width"),
+        default=0,
+        editable=False
+    )
+    height = models.PositiveSmallIntegerField(
+        _("height"),
+        default=0,
+        editable=False
+    )
     cropregion = models.CharField(
-        _("crop region"), max_length=24, blank=True, editable=False
+        _("crop region"),
+        max_length=24,
+        blank=True,
+        editable=False
     )
 
     class Meta:

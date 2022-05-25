@@ -17,7 +17,11 @@ class CloudinaryMedia(BacklinkModelMixin, CloudinaryFileFieldResourceMixin, File
         type=settings.CLOUDINARY_TYPE,
         resource_type="video",
     )
-    display_name = models.CharField(_("display name"), max_length=255, blank=True)
+    display_name = models.CharField(
+        _("display name"),
+        max_length=255,
+        blank=True
+    )
 
     class Meta(FileFieldResource.Meta):
         verbose_name = _("media")
