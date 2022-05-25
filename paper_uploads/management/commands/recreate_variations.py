@@ -28,7 +28,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "model",
-            metavar="app_label.ModelName",
+            metavar="[APP_LABEL].[MODEL_NAME]",
             help="Specifies the model to recreate variations for",
         )
         parser.add_argument(

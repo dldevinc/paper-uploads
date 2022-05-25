@@ -28,8 +28,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "model",
-            metavar="app_label.ModelName",
-            help="Specifies the model to remove variations from",
+            metavar="[APP_LABEL].[MODEL_NAME]",
+            help="Specifies the model to remove variation files for",
         )
         parser.add_argument(
             "--field",
