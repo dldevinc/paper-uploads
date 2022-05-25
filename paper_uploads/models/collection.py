@@ -376,7 +376,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         )
         self.type = value
 
-    def get_order(self):
+    def get_next_order_value(self):
         max_order = CollectionItemBase.objects.filter(
             collection_content_type_id=self.collection_content_type_id,
             collection_id=self.collection_id,
@@ -396,7 +396,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
             # отсортированы в порядке загрузки, а не в порядке добавления.
             # Код ниже не решает проблему полностью, но уменьшает её влияние.
             if self.order is None or self.collection.get_items().filter(order=self.order).exists():
-                self.order = self.get_order()
+                self.order = self.get_next_order_value()
         super().save(*args, **kwargs)
 
     @classmethod

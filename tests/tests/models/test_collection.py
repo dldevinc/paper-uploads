@@ -139,9 +139,9 @@ class TestCollection:
         order_values = storage.mixed_collection.get_items().values_list("order", flat=True)
         assert sorted(order_values) == [0, 1, 2]
 
-    def test_get_order(self, storage):
+    def test_get_next_order_value(self, storage):
         image_item = storage.mixed_collection.get_items("image").first()
-        assert image_item.get_order() == 3
+        assert image_item.get_next_order_value() == 3
 
     def test_get_items(self, storage):
         assert storage.file_collection.get_items("file").count() == 1
@@ -366,8 +366,8 @@ class CollectionItemMixin:
     def test_collection_id(self, storage):
         assert storage.resource.collection_id == storage.collection.pk
 
-    def test_get_order(self, storage):
-        assert storage.resource.get_order() == 1
+    def test_get_next_order_value(self, storage):
+        assert storage.resource.get_next_order_value() == 1
 
     def test_order(self, storage):
         assert storage.resource.order == 0
