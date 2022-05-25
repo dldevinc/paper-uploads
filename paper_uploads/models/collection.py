@@ -136,14 +136,17 @@ class CollectionMeta(NoPermissionsMetaBase, ModelBase):
 
 class CollectionManager(models.Manager):
     """
-    Из-за того, что в большинстве случаев коллекции являются прокси-моделями
-    для Collection, любые запросы от имени любой прокси-коллекции будут распространяться
-    на все экземпляры Collection.
+    Из-за того, что в большинстве случаев коллекции являются прокси-моделями,
+    любые запросы от имени такой модели будут работать с экземплярами конкретной
+    модели (обычно Collection).
 
-    Этот менеджер ограничивает область действия запросов той прокси-коллекцией,
-    от которой исходит запрос.
-    
-    Для не-прокси моделей поведение стандартное: запрос вернёт все экземпляры таблицы.
+    Например, запрос
+        MyProxyCollection.objects.all()
+    вернёт все коллекции, а не только экземпляры MyCustomCollection.
+
+    Данный менеджер ограничивает область действия подобных запросов.
+    Для прокси-моделей запросы работают только с экземплярами данной прокси-модели.
+    Для конкретных моделей поведение стандартное: запрос вернёт все экземпляры таблицы.
     """
 
     def get_queryset(self):
@@ -204,7 +207,7 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
     def delete(self, using=None, keep_parents=False):
         # Удаляем элементы вручную из-за рекурсии.
         # Удалить элементы с помощью `.all().delete()` нельзя из-за того, что в
-        # файле (django/db/models/deletion.py:248) указано следующее:
+        # файле (django/db/models/deletion.py:284) указано следующее:
         #   model = new_objs[0].__class__
         # Это приводит к тому, что все полиморфные модели удаляются через модель
         # первого экземпляра в QuerySet.
@@ -288,7 +291,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
 
     class Meta:
         # Используется обратный порядок полей в составном индексе,
-        # т.к. слективность поля collection_id выше, а для поля
+        # т.к. селективность поля collection_id выше, а для поля
         # `collection_content_type` уже есть отдельный индекс.
         index_together = [("collection_id", "collection_content_type")]
         verbose_name = _("item")
