@@ -173,7 +173,7 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         editable=False,
         related_name="+"
     )
-    items = ContentItemRelation(
+    items = ContentItemRelation(  # TODO: deprecated since v0.10.1
         "paper_uploads.CollectionItemBase",
         content_type_field="collection_content_type",
         object_id_field="collection_id",
@@ -241,18 +241,28 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         return cls.item_types[item_type].model
 
     def get_items(self, item_type: str = None) -> 'models.QuerySet[CollectionItemBase]':
+        # Получение элементов коллекции работает как через прокси-модель,
+        # так и через соответствующую конкретную модель.
+        concrete_model_ct = ContentType.objects.get_for_model(self._meta.concrete_model)
+        qs = CollectionItemBase.objects.filter(
+            concrete_collection_content_type=concrete_model_ct,
+            collection_id=self.pk
+        ).order_by("order")
+
         if item_type is None:
-            return self.items.order_by("order")
+            return qs
+
         if item_type not in self.item_types:
             raise exceptions.InvalidItemType(item_type)
-        return self.items.filter(type=item_type).order_by("order")
+
+        return qs.filter(type=item_type)
 
     def get_last_modified(self) -> datetime.datetime:
         """
         Получение даты модификации коллекции с учётом её элементов.
         """
         dates = [self.created_at, self.modified_at]
-        item_date = self.items.aggregate(
+        item_date = self.get_items().aggregate(
             date=models.Max("modified_at")
         )["date"]
 
@@ -385,7 +395,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
             # Попытка решить проблему того, что при создании коллекции элементы
             # отсортированы в порядке загрузки, а не в порядке добавления.
             # Код ниже не решает проблему полностью, но уменьшает её влияние.
-            if self.order is None or self.collection.items.filter(order=self.order).exists():
+            if self.order is None or self.collection.get_items().filter(order=self.order).exists():
                 self.order = self.get_order()
         super().save(*args, **kwargs)
 

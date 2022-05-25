@@ -123,7 +123,7 @@ class TestCollection:
             storage.image_collection,
             storage.mixed_collection
         }:
-            for c_item in collection.items.all():
+            for c_item in collection.get_items().all():
                 c_item.delete_file()
             collection.delete()
 
@@ -131,12 +131,12 @@ class TestCollection:
         assert utils.is_equal_dates(storage.file_collection.created_at, storage.now)
 
     def test_item_count(self, storage):
-        assert storage.file_collection.items.count() == 1
-        assert storage.image_collection.items.count() == 1
-        assert storage.mixed_collection.items.count() == 3
+        assert storage.file_collection.get_items().count() == 1
+        assert storage.image_collection.get_items().count() == 1
+        assert storage.mixed_collection.get_items().count() == 3
 
     def test_order_values(self, storage):
-        order_values = storage.mixed_collection.items.values_list("order", flat=True)
+        order_values = storage.mixed_collection.get_items().values_list("order", flat=True)
         assert sorted(order_values) == [0, 1, 2]
 
     def test_get_order(self, storage):
@@ -151,6 +151,10 @@ class TestCollection:
         assert storage.mixed_collection.get_items("image").count() == 1
 
         assert storage.mixed_collection.get_items("svg").count() == 1
+
+    def test_get_items_on_concrete_model(self, storage):
+        collection = Collection.objects.get(pk=storage.mixed_collection.pk)
+        assert collection.get_items().count() == 3
 
     def test_iter(self, storage):
         iterator = iter(storage.mixed_collection)
@@ -307,7 +311,7 @@ class TestDeleteCustomImageCollection:
 
     def test_explicit_deletion(self):
         collection = self._create_collection()
-        item = collection.items.first()  # type: CustomImageItem
+        item = collection.get_items().first()  # type: CustomImageItem
         item_files = [item.get_file(), *(pair[1] for pair in item.variation_files())]
 
         collection.delete()
@@ -317,7 +321,7 @@ class TestDeleteCustomImageCollection:
 
     def test_sql_deletion(self):
         collection = self._create_collection()
-        item = collection.items.first()  # type: CustomImageItem
+        item = collection.get_items().first()  # type: CustomImageItem
         item_files = [item.get_file(), *(pair[1] for pair in item.variation_files())]
 
         CustomCollection.objects.filter(pk=collection.pk).delete()
@@ -348,6 +352,12 @@ class CollectionItemMixin:
         assert storage.resource.collection_content_type == ContentType.objects.get_for_model(
             self.collection_class,
             for_concrete_model=False
+        )
+
+    def test_concrete_collection_content_type(self, storage):
+        assert storage.resource.concrete_collection_content_type == ContentType.objects.get_for_model(
+            self.collection_class,
+            for_concrete_model=True
         )
 
     def test_get_collection_class(self, storage):

@@ -4,6 +4,9 @@
 ### Features
 - A new `concrete_collection_content_type` field was added to the `Collection` 
   and `CollectionItemBase` models.
+- The `Collection.get_items()` now works properly not only with the proxy collection 
+  models, but also with corresponding concrete model.
+- Field `Collection.items` is now deprecated.
 
 ## [0.10.0](https://github.com/dldevinc/paper-uploads/tree/v0.10.0) - 2022-05-23
 ### ⚠ BREAKING CHANGES
