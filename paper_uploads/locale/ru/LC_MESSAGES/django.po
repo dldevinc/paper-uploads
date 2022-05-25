@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-02-14 10:05+0400\n"
+"POT-Creation-Date: 2022-05-25 10:34+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,51 +22,52 @@ msgstr ""
 msgid "Uploaded Files"
 msgstr "Загруженные файлы"
 
-#: cloudinary/models/base.py:251 models/base.py:530
+#: cloudinary/models/base.py:232
 #, python-format
-msgid "File `%s` is not an image"
-msgstr "Файл `%s` не является изображением"
+msgid "File `%s` may be corrupt, or in an unsupported format."
+msgstr "Файл `%s` повреждён или имеет неизвестный формат."
 
-#: cloudinary/models/collection.py:45 cloudinary/models/collection.py:86
-#: cloudinary/models/collection.py:131 cloudinary/models/file.py:15
-#: cloudinary/models/file.py:22 cloudinary/models/image.py:15
-#: cloudinary/models/media.py:15 models/collection.py:459
-#: models/collection.py:501 models/collection.py:554 models/file.py:20
-#: models/file.py:27 models/image.py:21
+#: cloudinary/models/collection.py:37 cloudinary/models/collection.py:89
+#: cloudinary/models/collection.py:139 cloudinary/models/file.py:16
+#: cloudinary/models/file.py:27 cloudinary/models/image.py:15
+#: cloudinary/models/media.py:16 models/collection.py:530
+#: models/collection.py:576 models/collection.py:624 models/file.py:20
+#: models/file.py:31 models/image.py:21 models/svg.py:20
 msgid "file"
 msgstr "файл"
 
-#: cloudinary/models/collection.py:49 cloudinary/models/collection.py:90
-#: cloudinary/models/file.py:19 cloudinary/models/media.py:19
-#: models/collection.py:462 models/collection.py:504 models/file.py:23
+#: cloudinary/models/collection.py:42 cloudinary/models/collection.py:94
+#: cloudinary/models/file.py:21 cloudinary/models/media.py:21
+#: models/collection.py:534 models/collection.py:580 models/file.py:24
+#: models/svg.py:24
 msgid "display name"
 msgstr "отображаемое название"
 
-#: cloudinary/models/collection.py:53 models/collection.py:466
+#: cloudinary/models/collection.py:49 models/collection.py:541
 msgid "File item"
 msgstr "Файл"
 
-#: cloudinary/models/collection.py:54 models/collection.py:467
+#: cloudinary/models/collection.py:50 models/collection.py:542
 msgid "File items"
 msgstr "Файлы"
 
-#: cloudinary/models/collection.py:94
+#: cloudinary/models/collection.py:101
 msgid "Media item"
 msgstr "Мультимедиа"
 
-#: cloudinary/models/collection.py:95
+#: cloudinary/models/collection.py:102
 msgid "Media items"
 msgstr "Мультимедиа"
 
-#: cloudinary/models/collection.py:138 models/collection.py:560
+#: cloudinary/models/collection.py:146 models/collection.py:630
 msgid "Image item"
 msgstr "Изображение"
 
-#: cloudinary/models/collection.py:139 models/collection.py:561
+#: cloudinary/models/collection.py:147 models/collection.py:631
 msgid "Image items"
 msgstr "Изображения"
 
-#: cloudinary/models/file.py:23 models/file.py:28
+#: cloudinary/models/file.py:28 models/file.py:32
 msgid "files"
 msgstr "файлы"
 
@@ -78,7 +79,7 @@ msgstr "изображение"
 msgid "images"
 msgstr "изображения"
 
-#: cloudinary/models/media.py:22 cloudinary/models/media.py:23
+#: cloudinary/models/media.py:27 cloudinary/models/media.py:28
 msgid "media"
 msgstr "мультимедиа"
 
@@ -163,63 +164,63 @@ msgstr "Максимальная ширина"
 msgid "Maximum image height"
 msgstr "Максимальная высота"
 
-#: models/base.py:111 models/collection.py:170
+#: models/base.py:140 models/collection.py:183
 msgid "created at"
 msgstr "дата создания"
 
-#: models/base.py:116
+#: models/base.py:145 models/collection.py:188
 msgid "changed at"
 msgstr "дата изменения"
 
-#: models/base.py:156
-msgid "basename"
+#: models/base.py:185
+msgid "resource name"
 msgstr "имя файла"
 
-#: models/base.py:159
+#: models/base.py:188
 msgid "Human-readable resource name"
 msgstr "Удобочитаемое имя файла"
 
-#: models/base.py:162
+#: models/base.py:191
 msgid "extension"
 msgstr "расширение"
 
-#: models/base.py:165
+#: models/base.py:194
 msgid "Lowercase, without leading dot"
 msgstr "В нижнем регистре, без точки"
 
-#: models/base.py:168
+#: models/base.py:197
 msgid "size"
 msgstr "размер"
 
-#: models/base.py:173
+#: models/base.py:202
 msgid "checksum"
 msgstr "контрольная сумма"
 
-#: models/base.py:178
+#: models/base.py:207
 msgid "uploaded at"
 msgstr "дата загрузки файла"
 
-#: models/base.py:418
+#: models/base.py:468
 #, python-format
 msgid "The '%s' attribute has no file associated with it."
 msgstr "Не найден файл, связанный с атибутом '%s'."
 
-#: models/base.py:492
+#: models/base.py:557 models/base.py:652
 msgid "title"
 msgstr "название"
 
-#: models/base.py:496
+#: models/base.py:561 models/base.py:656
 msgid ""
 "The title is being used as a tooltip when the user hovers the mouse over the "
 "image"
 msgstr ""
 "Используется в качестве всплывающей подсказки при наведении на картинку"
 
-#: models/base.py:500
+#: models/base.py:565 models/base.py:660
 msgid "description"
 msgstr "описание"
 
-#: models/base.py:503
+#: models/base.py:568 models/base.py:663
 msgid ""
 "This text will be used by screen readers, search engines, or when the image "
 "cannot be loaded"
@@ -227,59 +228,72 @@ msgstr ""
 "Этот текст будет использоваться программами чтения с экрана, поисковыми "
 "системами или в случае, когда изображение не может быть загружено."
 
-#: models/base.py:506
+#: models/base.py:572 models/base.py:667
 msgid "width"
 msgstr "ширина"
 
-#: models/base.py:507
+#: models/base.py:579 models/base.py:672
 msgid "height"
 msgstr "высота"
 
-#: models/base.py:509
+#: models/base.py:613 models/base.py:619
+#, python-format
+msgid "File `%s` is not an svg image"
+msgstr "Файл `%s` не является SVG-изображением"
+
+#: models/base.py:677
 msgid "crop region"
 msgstr ""
 
-#: models/collection.py:183
+#: models/base.py:701
+#, python-format
+msgid "File `%s` is not an image"
+msgstr "Файл `%s` не является изображением"
+
+#: models/collection.py:201
 msgid "collection"
 msgstr "коллекция"
 
-#: models/collection.py:184
+#: models/collection.py:202
 msgid "collections"
 msgstr "коллекции"
 
-#: models/collection.py:263
+#: models/collection.py:320
 msgid "type"
 msgstr "тип"
 
-#: models/collection.py:265
+#: models/collection.py:326
 msgid "order"
 msgstr "порядок"
 
-#: models/collection.py:272
+#: models/collection.py:336
 msgid "item"
 msgstr "элемент коллекции"
 
-#: models/collection.py:273
+#: models/collection.py:337
 msgid "items"
 msgstr "элементы коллекции"
 
-#: models/collection.py:383
+#: models/collection.py:454
 #, python-format
 msgid "Unsupported collection item: %s"
 msgstr "Неподдерживаемый элемент коллекции: %s"
 
-#: models/collection.py:508
+#: models/collection.py:587
 msgid "SVG item"
 msgstr "SVG-элемент"
 
-#: models/collection.py:509
+#: models/collection.py:588
 msgid "SVG items"
 msgstr "SVG-элементы"
 
-#: models/collection.py:542
-#, python-format
-msgid "File `%s` is not an svg image"
-msgstr "Файл `%s` не является SVG-изображением"
+#: models/svg.py:31
+msgid "SVG file"
+msgstr "SVG файл"
+
+#: models/svg.py:32
+msgid "SVG files"
+msgstr "SVG файлы"
 
 #: templates/paper_uploads/items/preloader.html:14
 #: templates/paper_uploads/widgets/file.html:70
@@ -449,7 +463,7 @@ msgstr "Объект не найден"
 
 #: views/base.py:89
 msgid "Multiple objects returned"
-msgstr ""
+msgstr "Найдено несколько объектов"
 
 #: views/base.py:114 views/base.py:202 views/base.py:241 views/base.py:258
 #: views/collection.py:34 views/collection.py:69 views/collection.py:247
