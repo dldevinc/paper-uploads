@@ -1,5 +1,3 @@
-import logging
-
 from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 
@@ -28,6 +26,5 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         helpers.create_missing_variations(
             async_=options["async"],
-            database=options["database"],
-            verbosity=logging.DEBUG
+            database=options["database"]
         )

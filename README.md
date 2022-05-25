@@ -816,13 +816,10 @@ page = Page.objects.create(
 
 Список производимых тестов:
 * загруженный файл существует
-* модель-владелец (указанная в `owner_app_label`
-и `owner_model_name`) существует
-* в модели-владельце существует поле, указанное в `owner_fieldname`
-* существует единственный экземпляр модели-владельца,
-ссылающийся на текущий
+* класс модели владельца (указанный в `owner_app_label` и `owner_model_name`) существует
+* в классе модели владельца существует поле, указанное в `owner_fieldname`
 * у элементов коллекций указано корректное значение в поле `type`
-* модель элемента коллекции идентична модели, указанной в классе коллекции
+* модель элемента коллекции соответствует модели, указанной в классе коллекции
 
 ```shell
 python3 manage.py check_uploads
@@ -862,20 +859,13 @@ python3 manage.py create_missing_variations
 ### recreate_variations
 
 Создание/перезапись вариаций для всех экземпляров указанной модели.
-Модель указывается в формате `app_label.model_name`.
-
-Если модель является коллекцией, необходимо указать параметр `--item-type`:
 
 ```shell
-python3 manage.py recreate_variations "app.Photos" \
-        --item-type="image"
-```
+# for collections
+python3 manage.py recreate_variations --model app.Photos --item-type image
 
-Для обычных моделей необходимо указать параметр `--field`:
-
-```shell
-python3 manage.py recreate_variations "app.Page" \
-        --field="image"
+# for regular models
+python3 manage.py recreate_variations --model app.Page --field image
 ```
 
 По умолчанию перенарезаются все возможные вариации для каждого
@@ -883,8 +873,7 @@ python3 manage.py recreate_variations "app.Page" \
 которые нужно перенарезать:
 
 ```shell
-python3 manage.py recreate_variations "app.Page" \
-        --field="image" \
+python3 manage.py recreate_variations --model app.Page --field image \
         --variations desktop mobile
 ```
 
@@ -895,7 +884,11 @@ python3 manage.py recreate_variations "app.Page" \
 Параметры аналогичны параметрам `recreate_variations`.
 
 ```shell
-python3 manage.py remove_variations "app.Page" --field="image"
+# for collections
+python3 manage.py remove_variations --model app.Photos --item-type image
+
+# for regular models
+python3 manage.py remove_variations --model app.Page --field image
 ```
 
 ## Cloudinary

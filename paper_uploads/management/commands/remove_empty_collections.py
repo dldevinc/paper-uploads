@@ -1,5 +1,3 @@
-import logging
-
 from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 
@@ -20,7 +18,7 @@ class Command(BaseCommand):
             help="Nominates the database to use. Defaults to the 'default' database.",
         )
         parser.add_argument(
-            "--threshold",
+            "--min-age",
             type=int,
             default=24 * 3600,
             help="Minimum instance age in seconds to look for",
@@ -28,7 +26,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         helpers.remove_empty_collections(
-            threshold=options["threshold"],
-            database=options["database"],
-            verbosity=logging.DEBUG
+            min_age=options["min_age"],
+            database=options["database"]
         )
