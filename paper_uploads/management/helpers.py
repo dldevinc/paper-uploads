@@ -3,11 +3,14 @@ import sys
 from datetime import timedelta
 
 from anytree import LevelOrderIter
+from django.contrib.contenttypes.models import ContentType
 from django.core.management import color_style
 from django.db import DEFAULT_DB_ALIAS
+from django.db.models import Exists, OuterRef
 from django.utils.timezone import now
 
 from .. import helpers
+from ..models.collection import CollectionItemBase
 from . import utils
 
 
@@ -33,10 +36,15 @@ def remove_empty_collections(
     for root in helpers.get_collection_trees():
         for node in reversed(tuple(LevelOrderIter(root))):
             model = node.model
+            concrete_ct = ContentType.objects.using(database).get_for_model(model)
 
             created_before = now() - timedelta(seconds=threshold)
             queryset = model.objects.using(database).filter(
-                items=None,
+                ~Exists(CollectionItemBase.objects.filter(
+                    concrete_collection_content_type=concrete_ct,
+                    collection_id=OuterRef("pk")
+                )),
+                concrete_collection_content_type=concrete_ct,
                 created_at__lte=created_before
             )
 
