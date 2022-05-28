@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from django.contrib.auth.models import Permission, User
+from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.base import ContentFile
@@ -18,11 +18,7 @@ class TestUploadFileView:
     @staticmethod
     def init_class(storage):
         storage.content_type = ContentType.objects.get_for_model(UploadedFileProxy, for_concrete_model=False)
-
-        storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
-        permission = Permission.objects.get(name="Can upload files")
-        storage.user.user_permissions.add(permission)
-
+        storage.user = User.objects.get(username="jon")
         storage.view = UploadFileView()
         yield
 
@@ -103,11 +99,7 @@ class TestDeleteFileView:
     @staticmethod
     def init_class(storage):
         storage.content_type = ContentType.objects.get_for_model(UploadedFileProxy, for_concrete_model=False)
-
-        storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
-        permission = Permission.objects.get(name="Can upload files")
-        storage.user.user_permissions.add(permission)
-
+        storage.user = User.objects.get(username="jon")
         storage.view = DeleteFileView()
         yield
 
@@ -191,11 +183,7 @@ class TestChangeFileView:
     @staticmethod
     def init_class(storage):
         storage.content_type = ContentType.objects.get_for_model(UploadedFileProxy, for_concrete_model=False)
-
-        storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
-        permission = Permission.objects.get(name="Can upload files")
-        storage.user.user_permissions.add(permission)
-
+        storage.user = User.objects.get(username="jon")
         storage.object = UploadedFileProxy(
             pk=5487
         )

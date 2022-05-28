@@ -5,6 +5,27 @@ import re
 re_suffix = re.compile(r'(_[\w]{6,7})$')
 
 
+def compare_dicts(dict1, dict2, ignore=None):
+    """
+    Сравнение двух словарей с опциональным исключением определённых ключей.
+    """
+    ignore = ignore or set()
+
+    if not ignore:
+        assert dict1 == dict2
+        return
+
+    assert {
+        k: v
+        for k, v in dict1.items()
+        if k not in ignore
+    } == {
+        k: v
+        for k, v in dict2.items()
+        if k not in ignore
+    }
+
+
 def get_file_suffix(filepath: str) -> str:
     basename = os.path.basename(filepath)
     name, _ = os.path.splitext(basename)

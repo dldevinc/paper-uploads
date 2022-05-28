@@ -462,28 +462,32 @@ class TestFileItem(CollectionItemTestBase):
         assert storage.resource.type == "file"
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "collectionId": 1,
-            "itemType": "file",  # TODO: deprecated
-            "type": "file",
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "url": storage.resource.url,
-            "order": 0,
-            "preview": render_to_string(
-                "paper_uploads/items/preview/file.html",
-                storage.resource.get_preview_context()
-            ),
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "collectionId": 1,
+                "itemType": "file",  # TODO: deprecated
+                "type": "file",
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "url": storage.resource.url,
+                "order": 0,
+                "preview": render_to_string(
+                    "paper_uploads/items/preview/file.html",
+                    storage.resource.get_preview_context()
+                ),
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id", "collectionId"}
+        )
 
     def test_accept(self, storage):
         with open(DOCUMENT_FILEPATH, "rb") as fp:
@@ -573,32 +577,36 @@ class TestSVGItem(CollectionItemTestBase):
         assert storage.resource.type == "svg"
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "collectionId": 1,
-            "itemType": "svg",  # TODO: deprecated
-            "type": "svg",
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "width": "626",
-            "height": "660.0532",
-            "title": "",
-            "description": "",
-            "url": storage.resource.url,
-            "order": 0,
-            "preview": render_to_string(
-                "paper_uploads/items/preview/svg.html",
-                storage.resource.get_preview_context()
-            ),
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "collectionId": 1,
+                "itemType": "svg",  # TODO: deprecated
+                "type": "svg",
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "width": "626",
+                "height": "660.0532",
+                "title": "",
+                "description": "",
+                "url": storage.resource.url,
+                "order": 0,
+                "preview": render_to_string(
+                    "paper_uploads/items/preview/svg.html",
+                    storage.resource.get_preview_context()
+                ),
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id", "collectionId"}
+        )
 
     def test_path(self, storage):
         assert utils.match_path(
@@ -725,33 +733,37 @@ class TestImageItem(CollectionItemTestBase):
             assert fp.read(5) == b'\xff\xd8\xff\xe0\x00'
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "collectionId": 1,
-            "itemType": "image",  # TODO: deprecated
-            "type": "image",
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "width": 1534,
-            "height": 2301,
-            "cropregion": "",
-            "title": "",
-            "description": "",
-            "order": 0,
-            "preview": render_to_string(
-                "paper_uploads/items/preview/image.html",
-                storage.resource.get_preview_context()
-            ),
-            "url": storage.resource.get_file_url(),
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "collectionId": 1,
+                "itemType": "image",  # TODO: deprecated
+                "type": "image",
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "width": 1534,
+                "height": 2301,
+                "cropregion": "",
+                "title": "",
+                "description": "",
+                "order": 0,
+                "preview": render_to_string(
+                    "paper_uploads/items/preview/image.html",
+                    storage.resource.get_preview_context()
+                ),
+                "url": storage.resource.get_file_url(),
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id", "collectionId"}
+        )
 
     def test_get_variations(self, storage):
         variations = storage.resource.get_variations()

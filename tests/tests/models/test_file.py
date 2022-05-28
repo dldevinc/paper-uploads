@@ -5,6 +5,7 @@ from examples.fields.standard.models import Page
 
 from paper_uploads.models import UploadedFile
 
+from .. import utils
 from ..dummy import *
 from ..mixins import BacklinkModelTestMixin
 from .test_dummy import (
@@ -43,21 +44,25 @@ class TestUploadedFile(BacklinkModelTestMixin, TestFileFieldResource):
         assert storage.resource.display_name == self.resource_basename
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "url": storage.resource.url,
-            "file_info": "(Jpeg, 672.8\xa0KB)",
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "url": storage.resource.url,
+                "file_info": "(Jpeg, 672.8\xa0KB)",
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id"}
+        )
 
 
 class TestUploadedFileAttach(TestFileFieldResourceAttach):

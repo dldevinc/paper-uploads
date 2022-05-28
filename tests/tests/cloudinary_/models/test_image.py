@@ -109,26 +109,30 @@ class TestCloudinaryImage(BacklinkModelTestMixin, TestImageFieldResource):
         assert storage.resource.height == 1198
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "width": 804,
-            "height": 1198,
-            "cropregion": "",
-            "title": "Nasa",
-            "description": "Calliphora is a genus of blow flies, also known as bottle flies",
-            "url": storage.resource.url,
-            "file_info": "(jpg, 804x1198, 254.8\xa0KB)",
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "width": 804,
+                "height": 1198,
+                "cropregion": "",
+                "title": "Nasa",
+                "description": "Calliphora is a genus of blow flies, also known as bottle flies",
+                "url": storage.resource.url,
+                "file_info": "(jpg, 804x1198, 254.8\xa0KB)",
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id"}
+        )
 
     def test_get_cloudinary_options(self, storage):
         options = storage.resource.get_cloudinary_options()

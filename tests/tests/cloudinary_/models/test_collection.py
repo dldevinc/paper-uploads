@@ -89,28 +89,32 @@ class TestFileItem(CollectionItemTestBase):
             assert fp.read(4) == b'\xd0\xcf\x11\xe0'
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "collectionId": 1,
-            "itemType": "file",
-            "type": "file",
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "order": 0,
-            "preview": render_to_string(
-                "paper_uploads/items/preview/file.html",
-                storage.resource.get_preview_context()
-            ),
-            "url": storage.resource.get_file_url(),
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "collectionId": 1,
+                "itemType": "file",
+                "type": "file",
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "order": 0,
+                "preview": render_to_string(
+                    "paper_uploads/items/preview/file.html",
+                    storage.resource.get_preview_context()
+                ),
+                "url": storage.resource.get_file_url(),
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id", "collectionId"}
+        )
 
     def test_accept(self, storage):
         with open(EXCEL_FILEPATH, "rb") as fp:
@@ -274,28 +278,32 @@ class TestMediaItem(CollectionItemTestBase):
             assert fp.read(4) == b'RIFF'
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "collectionId": 1,
-            "itemType": "media",
-            "type": "media",
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "order": 0,
-            "preview": render_to_string(
-                "paper_uploads/items/preview/file.html",
-                storage.resource.get_preview_context()
-            ),
-            "url": storage.resource.get_file_url(),
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "collectionId": 1,
+                "itemType": "media",
+                "type": "media",
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "order": 0,
+                "preview": render_to_string(
+                    "paper_uploads/items/preview/file.html",
+                    storage.resource.get_preview_context()
+                ),
+                "url": storage.resource.get_file_url(),
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id", "collectionId"}
+        )
 
     def test_accept(self, storage):
         with open(EXCEL_FILEPATH, "rb") as fp:
@@ -539,33 +547,37 @@ class TestImageItem(CollectionItemTestBase):
         )
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "collectionId": 1,
-            "itemType": "image",
-            "type": "image",
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "order": 0,
-            "width": 804,
-            "height": 1198,
-            "cropregion": "",
-            "title": "Nasa",
-            "description": "Calliphora is a genus of blow flies, also known as bottle flies",
-            "preview": render_to_string(
-                "paper_uploads_cloudinary/items/preview/image.html",
-                storage.resource.get_preview_context()
-            ),
-            "url": storage.resource.get_file_url(),
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "collectionId": 1,
+                "itemType": "image",
+                "type": "image",
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "order": 0,
+                "width": 804,
+                "height": 1198,
+                "cropregion": "",
+                "title": "Nasa",
+                "description": "Calliphora is a genus of blow flies, also known as bottle flies",
+                "preview": render_to_string(
+                    "paper_uploads_cloudinary/items/preview/image.html",
+                    storage.resource.get_preview_context()
+                ),
+                "url": storage.resource.get_file_url(),
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id", "collectionId"}
+        )
 
     def test_accept(self, storage):
         with open(EXCEL_FILEPATH, "rb") as fp:

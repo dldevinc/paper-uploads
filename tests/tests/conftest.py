@@ -1,7 +1,19 @@
 from threading import local
 
 import pytest
+from django.core.management import call_command
 from django.utils.timezone import now
+
+
+@pytest.fixture(scope='session')
+def django_db_modify_db_settings():
+    pass
+
+
+@pytest.fixture(scope='session')
+def django_db_setup(django_db_setup, django_db_blocker):
+    with django_db_blocker.unblock():
+        call_command("loaddata", "tests/test_fixtures.json")
 
 
 @pytest.fixture(scope="class")

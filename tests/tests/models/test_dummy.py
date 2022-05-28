@@ -43,11 +43,15 @@ class TestResource:
         )
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+            },
+            ignore={"id"}
+        )
 
 
 class TestFileResource(FileProxyTestMixin, TestResource):
@@ -97,19 +101,23 @@ class TestFileResource(FileProxyTestMixin, TestResource):
         assert storage.resource.name == self.resource_name
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id"}
+        )
 
     def test_read(self, storage):
         with storage.resource.open("r") as fp:
@@ -180,16 +188,20 @@ class TestEmptyFileResource:
         assert storage.resource.checksum == ""
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": None,
-            "name": "",
-            "extension": "",
-            "caption": "",
-            "size": 0,
-            "created": storage.resource.created_at.isoformat(),
-            "modified": None,
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": None,
+                "name": "",
+                "extension": "",
+                "caption": "",
+                "size": 0,
+                "created": storage.resource.created_at.isoformat(),
+                "modified": None,
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id"}
+        )
 
     def test_name(self, storage):
         assert storage.resource.name == ""
@@ -734,20 +746,24 @@ class TestFileFieldResource(TestFileResource):
         )
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "url": storage.resource.url,
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "url": storage.resource.url,
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id"}
+        )
 
 
 class TestFileFieldResourceAttach(TestFileResourceAttach):
@@ -881,25 +897,29 @@ class TestImageFieldResource(TestFileFieldResource):
         )
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "width": 3501,
-            "height": 2525,
-            "cropregion": "",
-            "title": "Nasa",
-            "description": "Calliphora is a genus of blow flies, also known as bottle flies",
-            "url": storage.resource.url,
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "width": 3501,
+                "height": 2525,
+                "cropregion": "",
+                "title": "Nasa",
+                "description": "Calliphora is a genus of blow flies, also known as bottle flies",
+                "url": storage.resource.url,
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id"}
+        )
 
     def test_title(self, storage):
         assert storage.resource.title == "Nasa"
@@ -1046,25 +1066,29 @@ class TestVersatileImageResource(TestImageFieldResource):
         assert storage.resource.height == 1198
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "width": 804,
-            "height": 1198,
-            "cropregion": "",
-            "title": "Nasa",
-            "description": "Calliphora is a genus of blow flies, also known as bottle flies",
-            "url": storage.resource.url,
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "width": 804,
+                "height": 1198,
+                "cropregion": "",
+                "title": "Nasa",
+                "description": "Calliphora is a genus of blow flies, also known as bottle flies",
+                "url": storage.resource.url,
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id"}
+        )
 
     def test_get_variations(self, storage):
         variations = storage.resource.get_variations()
