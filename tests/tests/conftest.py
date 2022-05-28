@@ -1,28 +1,11 @@
 from threading import local
 
 import pytest
-import pytest_django.fixtures
 from django.utils.timezone import now
 
 
 @pytest.fixture(scope="class")
-def class_scoped_db(request, django_db_setup, django_db_blocker):
-    """
-    Like `db` fixture, but class-scoped.
-    """
-    if "django_db_reset_sequences" in request.fixturenames:
-        request.getfixturevalue("django_db_reset_sequences")
-    if (
-        "transactional_db" in request.fixturenames
-        or "live_server" in request.fixturenames
-    ):
-        request.getfixturevalue("transactional_db")
-    else:
-        pytest_django.fixtures._django_db_fixture_helper(request, django_db_blocker, transactional=False)
-
-
-@pytest.fixture(scope='class')
-def storage(request, class_scoped_db):
+def storage(request, django_db_setup, django_db_blocker):
     """
     Инициализация тестируемых объектов для класса.
     В отличие от fixture, позволяет использовать
@@ -47,18 +30,19 @@ def storage(request, class_scoped_db):
                 yield
                 storage.object.delete()
     """
-    storage = local()
-    if hasattr(request.cls, "init_class"):
-        gen = request.cls.init_class(storage)
-        next(gen)
+    with django_db_blocker.unblock():
+        storage = local()
+        if hasattr(request.cls, "init_class"):
+            gen = request.cls.init_class(storage)
+            next(gen)
 
-    # Time right after `init()` call. For date / time tests.
-    storage.now = now()
+        # Time right after `init()` call. For date / time tests.
+        storage.now = now()
 
-    yield storage
+        yield storage
 
-    # release resources
-    try:
-        next(gen)
-    except StopIteration:
-        pass
+        # release resources
+        try:
+            next(gen)
+        except StopIteration:
+            pass
