@@ -421,7 +421,11 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         }
 
     def get_collection_class(self) -> Type[CollectionBase]:
-        return self.collection_content_type.model_class()
+        # Прямое обращение к полю `self.collection_content_type` дёргает БД.
+        # Вместо него используется метод `get_for_id()` класса ContentType,
+        # который использует общий кэш.
+        collection_ct = ContentType.objects.get_for_id(self.collection_content_type_id)
+        return collection_ct.model_class()
 
     def get_item_type_field(self) -> Optional[CollectionItem]:
         collection_cls = self.get_collection_class()

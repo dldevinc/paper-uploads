@@ -2,6 +2,8 @@
 
 ## [0.10.1](https://github.com/dldevinc/paper-uploads/tree/v0.10.1) - 2022-05-24
 ### Features
+- `ContentType.objects.get_for_id()` method has been used to get rid of redundant 
+  SQL queries.
 - The `get_file_field()` method is now a classmethod.
 - A new `concrete_collection_content_type` field was added to the `Collection` 
   and `CollectionItemBase` models.

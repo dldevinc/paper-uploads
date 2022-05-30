@@ -13,7 +13,7 @@ def get_model_class(content_type_id: int, base_class: Type[T]) -> Type[T]:
     Получение класса модели загружаемого файла по ContentType ID.
     """
     try:
-        content_type = ContentType.objects.get(pk=content_type_id)
+        content_type = ContentType.objects.get_for_id(content_type_id)
     except ContentType.DoesNotExist:
         raise exceptions.InvalidContentType(content_type_id)
 
