@@ -2,6 +2,7 @@
 
 ## [0.10.1](https://github.com/dldevinc/paper-uploads/tree/v0.10.1) - 2022-05-24
 ### Features
+- The `get_file_field()` method is now a classmethod.
 - A new `concrete_collection_content_type` field was added to the `Collection` 
   and `CollectionItemBase` models.
 - The `Collection.get_items()` now works properly not only with the proxy collection 

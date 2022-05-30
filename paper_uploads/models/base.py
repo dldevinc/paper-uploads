@@ -489,7 +489,8 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
         self._require_file()
         return self.get_file().name
 
-    def get_file_field(self):
+    @classmethod
+    def get_file_field(cls):
         """
         Получение файлового поля модели.
         """

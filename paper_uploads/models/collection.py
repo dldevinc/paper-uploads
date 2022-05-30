@@ -553,8 +553,9 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
     def get_file(self) -> FieldFile:
         return self.file
 
-    def get_file_field(self) -> models.FileField:
-        return self._meta.get_field("file")
+    @classmethod
+    def get_file_field(cls) -> models.FileField:
+        return cls._meta.get_field("file")
 
     def get_caption(self):
         name = self.display_name or self.basename
@@ -599,8 +600,9 @@ class SVGItemBase(SVGFileResourceMixin, CollectionFileItemBase):
     def get_file(self) -> FieldFile:
         return self.file
 
-    def get_file_field(self) -> models.FileField:
-        return self._meta.get_field("file")
+    @classmethod
+    def get_file_field(cls) -> models.FileField:
+        return cls._meta.get_field("file")
 
     def get_caption(self):
         name = self.display_name or self.basename
@@ -646,8 +648,9 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
     def get_file(self) -> FieldFile:
         return self.file
 
-    def get_file_field(self) -> VariationalFileField:
-        return self._meta.get_field("file")
+    @classmethod
+    def get_file_field(cls) -> VariationalFileField:
+        return cls._meta.get_field("file")
 
     def recut_async(self, names: Iterable[str] = ()):
         """

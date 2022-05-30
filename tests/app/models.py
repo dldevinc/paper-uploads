@@ -99,8 +99,9 @@ class DummyFileFieldResource(FileFieldResource):
     def get_file(self) -> FieldFile:
         return self.file
 
-    def get_file_field(self) -> models.FileField:
-        return self._meta.get_field("file")
+    @classmethod
+    def get_file_field(cls) -> models.FileField:
+        return cls._meta.get_field("file")
 
     def get_file_folder(self) -> str:
         return "file_field"
@@ -115,8 +116,9 @@ class DummyImageFieldResource(ImageFileResourceMixin, FileFieldResource):
     def get_file(self) -> FieldFile:
         return self.image
 
-    def get_file_field(self) -> models.FileField:
-        return self._meta.get_field("image")
+    @classmethod
+    def get_file_field(cls) -> models.FileField:
+        return cls._meta.get_field("image")
 
     def get_file_folder(self) -> str:
         return "image_field"
@@ -131,8 +133,9 @@ class DummyVersatileImageResource(VersatileImageResourceMixin, FileFieldResource
     def get_file(self) -> FieldFile:
         return self.image
 
-    def get_file_field(self) -> models.FileField:
-        return self._meta.get_field("image")
+    @classmethod
+    def get_file_field(cls) -> models.FileField:
+        return cls._meta.get_field("image")
 
     def get_file_folder(self) -> str:
         return "versatile_image_field"

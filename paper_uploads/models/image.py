@@ -41,8 +41,9 @@ class UploadedImageBase(VersatileImageResourceMixin, BacklinkModelMixin, Editabl
     def get_file(self) -> FieldFile:
         return self.file
 
-    def get_file_field(self) -> VariationalFileField:
-        return self._meta.get_field("file")
+    @classmethod
+    def get_file_field(cls) -> VariationalFileField:
+        return cls._meta.get_field("file")
 
     def as_dict(self) -> Dict[str, Any]:
         return {

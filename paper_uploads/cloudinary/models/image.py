@@ -30,8 +30,9 @@ class CloudinaryImage(ImageFileResourceMixin, BacklinkModelMixin, CloudinaryFile
         owner_field = self.get_owner_field()
         return getattr(owner_field, "upload_to", "") or settings.IMAGES_UPLOAD_TO
 
-    def get_file_field(self) -> CloudinaryField:
-        return self._meta.get_field("file")
+    @classmethod
+    def get_file_field(cls) -> CloudinaryField:
+        return cls._meta.get_field("file")
 
     def as_dict(self) -> Dict[str, Any]:
         return {

@@ -66,8 +66,9 @@ class CloudinaryFileItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase)
     def set_file(self, value):
         self.file = value
 
-    def get_file_field(self) -> CloudinaryField:
-        return self._meta.get_field("file")
+    @classmethod
+    def get_file_field(cls) -> CloudinaryField:
+        return cls._meta.get_field("file")
 
     def get_caption(self):
         name = self.display_name or self.resource_name
@@ -118,8 +119,9 @@ class CloudinaryMediaItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase
     def set_file(self, value):
         self.file = value
 
-    def get_file_field(self) -> CloudinaryField:
-        return self._meta.get_field("file")
+    @classmethod
+    def get_file_field(cls) -> CloudinaryField:
+        return cls._meta.get_field("file")
 
     @classmethod
     def accept(cls, file: File) -> bool:
@@ -158,8 +160,9 @@ class CloudinaryImageItemBase(ImageFileResourceMixin, CollectionCloudinaryFileIt
     def set_file(self, value):
         self.file = value
 
-    def get_file_field(self) -> CloudinaryField:
-        return self._meta.get_field("file")
+    @classmethod
+    def get_file_field(cls) -> CloudinaryField:
+        return cls._meta.get_field("file")
 
     @classmethod
     def accept(cls, file: File) -> bool:
