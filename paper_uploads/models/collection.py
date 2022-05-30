@@ -152,9 +152,12 @@ class CollectionManager(models.Manager):
     def get_queryset(self):
         if self.model._meta.proxy:
             collection_ct = ContentType.objects.get_for_model(
-                self.model, for_concrete_model=False
+                self.model,
+                for_concrete_model=False
             )
-            return super().get_queryset().filter(collection_content_type=collection_ct)
+            return super().get_queryset().filter(
+                collection_content_type=collection_ct
+            )
         else:
             return super().get_queryset()
 

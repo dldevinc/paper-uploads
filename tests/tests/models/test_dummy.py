@@ -1121,6 +1121,7 @@ class TestVersatileImageResource(TestImageFieldResource):
         assert isinstance(storage.resource.desktop, VariationFile)
         assert isinstance(storage.resource.mobile, VariationFile)
 
+    def test_missing_variation_attribute(self, storage):
         with pytest.raises(AttributeError):
             storage.resource.tablet  # noqa
 

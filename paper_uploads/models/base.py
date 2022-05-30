@@ -23,10 +23,11 @@ from pyexpat import ExpatError
 from variations.typing import Size
 from variations.utils import prepare_image, replace_extension
 
-from .. import exceptions, helpers, signals, utils
+from .. import exceptions, helpers, signals
 from ..conf import settings
 from ..files import VariationFile
 from ..typing import FileLike
+from ..utils import cached_method, checksum
 from ..variations import PaperVariation
 from .mixins import FileFieldProxyMixin, FileProxyMixin
 
@@ -278,7 +279,7 @@ class FileResource(FileProxyMixin, Resource):
     def update_checksum(self, file: FileLike = None) -> bool:
         file = file or self.get_file()
         old_checksum = self.checksum
-        new_checksum = utils.checksum(file)
+        new_checksum = checksum(file)
         if new_checksum and new_checksum != old_checksum:
             signals.checksum_update.send(
                 sender=type(self),

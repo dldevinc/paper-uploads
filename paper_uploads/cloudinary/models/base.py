@@ -16,10 +16,10 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from filelock import FileLock
 
-from ... import exceptions, helpers, utils
+from ... import exceptions, helpers
 from ...conf import settings
+from ...utils import checksum
 from ...logging import logger
-from ...models.base import FileFieldResource
 from ...models.mixins import BacklinkModelMixin
 from .mixins import ReadonlyCloudinaryFileProxyMixin
 
@@ -104,7 +104,7 @@ class CloudinaryFieldFile(FileProxyMixin):
         tempfile_path = self._get_tempfile_path()
         if os.path.exists(tempfile_path):
             with open(tempfile_path, "rb") as fp:
-                file_checksum = utils.checksum(fp)
+                file_checksum = checksum(fp)
             if file_checksum == self.checksum:
                 return File(open(tempfile_path, mode))
 

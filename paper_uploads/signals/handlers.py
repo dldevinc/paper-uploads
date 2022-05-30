@@ -14,7 +14,9 @@ def on_delete_collection_item(sender, instance, **kwargs):
     """
     if instance.collection_id and instance.collection_content_type_id:
         collection_cls = instance.get_collection_class()
-        collection_cls.objects.filter(pk=instance.collection_id).update(
+        collection_cls.objects.filter(
+            pk=instance.collection_id
+        ).update(
             modified_at=now()
         )
 
