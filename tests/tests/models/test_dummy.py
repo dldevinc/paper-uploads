@@ -1320,14 +1320,13 @@ class TestVariations:
             "square": False,
         }
 
-        def signal_handler(sender, instance, file, **kwargs):
+        def signal_handler(sender, instance, name, **kwargs):
             nonlocal signal_fired_times
             nonlocal signals_fired
             signal_fired_times += 1
-            signals_fired[file.variation_name] = True
+            signals_fired[name] = True
             assert sender is self.resource_class
             assert instance is resource
-            assert isinstance(file, VariationFile)
 
         signals.variation_created.connect(signal_handler)
         resource.save()

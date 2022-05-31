@@ -1,6 +1,9 @@
 # Change Log
 
-## [0.10.1](https://github.com/dldevinc/paper-uploads/tree/v0.10.1) - 2022-05-24
+## [0.11.0](https://github.com/dldevinc/paper-uploads/tree/v0.11.0) - 2022-06-01
+### ⚠ BREAKING CHANGES
+- Removed `file` parameter from `variation_created` signal. Added `name` parameter
+  instead.
 ### Features
 - `ContentType.objects.get_for_id()` method has been used to get rid of redundant 
   SQL queries.

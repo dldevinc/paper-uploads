@@ -805,19 +805,21 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
             draft_size = self.calculate_max_size(img.size)
             img = prepare_image(img, draft_size=draft_size)
 
-            for name, variation in self.get_variations().items():
-                if names and name not in names:
+            for vname, variation in self.get_variations().items():
+                if names and vname not in names:
                     continue
 
                 image = variation.process(img)
-                self._save_variation(name, variation, image)
+                self._save_variation(vname, variation, image)
 
-                vfile = self.get_variation_file(name)
-                self.__dict__[name] = vfile
-                self._variation_files_cache[name] = vfile
+                vfile = self.get_variation_file(vname)
+                self.__dict__[vname] = vfile
+                self._variation_files_cache[vname] = vfile
 
                 signals.variation_created.send(
-                    sender=type(self), instance=self, file=vfile
+                    sender=type(self),
+                    instance=self,
+                    name=vname
                 )
 
     def calculate_max_size(self, source_size: Size) -> Optional[Tuple[int, int]]:
