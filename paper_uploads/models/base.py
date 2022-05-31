@@ -743,11 +743,6 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
             "{!r} object has no attribute {!r}".format(self.__class__.__name__, item)
         )
 
-    def _setup_variation_files(self):
-        self._variation_files_cache = {}
-        for vname, vfile in self.variation_files():
-            self.__dict__[vname] = vfile
-
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if self.need_recut:
@@ -756,6 +751,27 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
                 self.recut_async()
             else:
                 self.recut()
+
+    def _setup_variation_files(self):
+        self._variation_files_cache = {}
+        for vname, vfile in self.variation_files():
+            self.__dict__[vname] = vfile
+
+    def variation_files(self) -> Iterable[Tuple[str, VariationFile]]:
+        if not self._variation_files_cache:
+            if not self.get_file():
+                return
+
+            self._variation_files_cache = {
+                vname: self.get_variation_file(vname) for vname in self.get_variations()
+            }
+        yield from self._variation_files_cache.items()
+
+    def get_variation_file(self, variation_name: str) -> VariationFile:
+        return self.variation_class(instance=self, variation_name=variation_name)
+
+    def get_variations(self) -> Dict[str, PaperVariation]:
+        raise NotImplementedError
 
     def attach(self, file: FileLike, name: str = None, **options):
         super().attach(file, name=name, **options)  # noqa: F821
@@ -771,25 +787,38 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         super().delete_file(**options)  # noqa: F821
         self.delete_variations()
 
-    def get_variations(self) -> Dict[str, PaperVariation]:
-        raise NotImplementedError
-
     def delete_variations(self):
         for vname, vfile in self.variation_files():
             vfile.delete()
 
-    def variation_files(self) -> Iterable[Tuple[str, VariationFile]]:
-        if not self._variation_files_cache:
-            if not self.get_file():
-                return
+    def recut(self, names: Iterable[str] = ()):
+        """
+        Нарезка вариаций.
+        Можно указать имена конкретных вариаций в параметре `names`.
+        """
+        if not self.file_exists():
+            raise FileNotFoundError(self.name)
 
-            self._variation_files_cache = {
-                vname: self.get_variation_file(vname) for vname in self.get_variations()
-            }
-        yield from self._variation_files_cache.items()
+        file = self.get_file()
+        with file.open() as source:
+            img = Image.open(source)
+            draft_size = self.calculate_max_size(img.size)
+            img = prepare_image(img, draft_size=draft_size)
 
-    def get_variation_file(self, variation_name: str) -> VariationFile:
-        return self.variation_class(instance=self, variation_name=variation_name)
+            for name, variation in self.get_variations().items():
+                if names and name not in names:
+                    continue
+
+                image = variation.process(img)
+                self._save_variation(name, variation, image)
+
+                vfile = self.get_variation_file(name)
+                self.__dict__[name] = vfile
+                self._variation_files_cache[name] = vfile
+
+                signals.variation_created.send(
+                    sender=type(self), instance=self, file=vfile
+                )
 
     def calculate_max_size(self, source_size: Size) -> Optional[Tuple[int, int]]:
         """
@@ -821,35 +850,6 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
                 variation.save(image, buffer)
                 content = File(buffer, name=variation_file.name)
                 variation_file.storage._save(variation_file.name, content)
-
-    def recut(self, names: Iterable[str] = ()):
-        """
-        Нарезка вариаций.
-        Можно указать имена конкретных вариаций в параметре `names`.
-        """
-        if not self.file_exists():
-            raise FileNotFoundError(self.name)
-
-        file = self.get_file()
-        with file.open() as source:
-            img = Image.open(source)
-            draft_size = self.calculate_max_size(img.size)
-            img = prepare_image(img, draft_size=draft_size)
-
-            for name, variation in self.get_variations().items():
-                if names and name not in names:
-                    continue
-
-                image = variation.process(img)
-                self._save_variation(name, variation, image)
-
-                vfile = self.get_variation_file(name)
-                self.__dict__[name] = vfile
-                self._variation_files_cache[name] = vfile
-
-                signals.variation_created.send(
-                    sender=type(self), instance=self, file=vfile
-                )
 
     def recut_async(self, names: Iterable[str] = ()):
         """
