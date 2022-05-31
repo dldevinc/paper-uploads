@@ -732,7 +732,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._setup_variation_files()
+        self._reset_variation_files()
 
     def __getattr__(self, item):
         # реализация-заглушка, чтобы PyCharm не ругался на атрибуты-вариации
@@ -749,7 +749,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
             else:
                 self.recut()
 
-    def _setup_variation_files(self):
+    def _reset_variation_files(self):
         """
         Обновление файлов вариаций в текущем экземпляре.
         """
@@ -780,12 +780,12 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
     def attach(self, file: FileLike, name: str = None, **options):
         super().attach(file, name=name, **options)  # noqa: F821
         self.need_recut = True
-        self._setup_variation_files()
+        self._reset_variation_files()
 
     def rename(self, new_name: str, **options):
         super().rename(new_name, **options)  # noqa: F821
         self.need_recut = True
-        self._setup_variation_files()
+        self._reset_variation_files()
 
     def delete_file(self, **options):
         super().delete_file(**options)  # noqa: F821
@@ -795,7 +795,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         for vname, vfile in self.variation_files():
             vfile.delete()
 
-        self._setup_variation_files()
+        self._reset_variation_files()
 
     def recut(self, names: Iterable[str] = ()):
         """
