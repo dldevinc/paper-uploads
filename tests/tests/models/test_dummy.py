@@ -1188,9 +1188,9 @@ class TestVersatileImageEmpty(TestImageFieldResourceEmpty):
     def test_variation_files(self, storage):
         assert list(storage.resource.variation_files()) == []
 
-    def test_variation_attribute(self, storage):
+    def test_missing_variation_attribute(self, storage):
         with pytest.raises(AttributeError):
-            storage.resource.desktop  # noqa
+            storage.resource.tablet  # noqa
 
 
 @pytest.mark.django_db
@@ -1207,17 +1207,12 @@ class TestVariations:
         assert os.path.exists(resource.desktop.path) is True
         assert os.path.exists(resource.mobile.path) is True
         assert os.path.exists(resource.square.path) is True
+
         resource.delete_variations()
         assert os.path.exists(resource.path) is True
-
-        with pytest.raises(ValueError):
-            resource.desktop.path
-
-        with pytest.raises(ValueError):
-            resource.mobile.path
-
-        with pytest.raises(ValueError):
-            resource.square.path
+        assert os.path.exists(resource.desktop.path) is False
+        assert os.path.exists(resource.mobile.path) is False
+        assert os.path.exists(resource.square.path) is False
 
         resource.delete_file()
         resource.delete()
@@ -1231,6 +1226,7 @@ class TestVariations:
         assert os.path.exists(resource.desktop.path) is True
         assert os.path.exists(resource.mobile.path) is True
         assert os.path.exists(resource.square.path) is True
+
         resource.delete_file()
 
         with pytest.raises(ValueError):
@@ -1294,23 +1290,14 @@ class TestVariations:
         resource.delete_variations()
 
         assert os.path.exists(resource.path) is True
-
-        with pytest.raises(ValueError):
-            resource.desktop.path
-
-        with pytest.raises(ValueError):
-            resource.mobile.path
-
-        with pytest.raises(ValueError):
-            resource.square.path
+        assert os.path.exists(resource.desktop.path) is False
+        assert os.path.exists(resource.mobile.path) is False
+        assert os.path.exists(resource.square.path) is False
 
         resource.recut(["mobile", "square"])
 
         assert os.path.exists(resource.path) is True
-
-        with pytest.raises(ValueError):
-            resource.desktop.path
-
+        assert os.path.exists(resource.desktop.path) is False
         assert os.path.exists(resource.mobile.path) is True
         assert os.path.exists(resource.square.path) is True
 

@@ -5,6 +5,7 @@ import os
 import pathlib
 import posixpath
 import warnings
+from functools import partial
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Tuple, Union
 from xml.dom.minidom import parse
@@ -16,6 +17,7 @@ from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
 from django.db.models.utils import make_model_tuple
+from django.utils.functional import SimpleLazyObject
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from PIL import Image
@@ -730,10 +732,7 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # инициализация атрибутов вариаций для уже загруженных файлов
-        if self.pk:
-            self._setup_variation_files()
+        self._setup_variation_files()
 
     def __getattr__(self, item):
         # реализация-заглушка, чтобы PyCharm не ругался на атрибуты-вариации
@@ -755,8 +754,8 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         if hasattr(self, self.variation_files.cache_key):
             delattr(self, self.variation_files.cache_key)
 
-        for vname, vfile in self.variation_files():
-            self.__dict__[vname] = vfile
+        for vname in self.get_variations():
+            self.__dict__[vname] = SimpleLazyObject(partial(self.get_variation_file, vname))
 
     @cached_method("_variation_files_cache")
     def variation_files(self) -> Tuple[Tuple[str, VariationFile]]:
@@ -791,6 +790,8 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
     def delete_variations(self):
         for vname, vfile in self.variation_files():
             vfile.delete()
+
+        self._setup_variation_files()
 
     def recut(self, names: Iterable[str] = ()):
         """
