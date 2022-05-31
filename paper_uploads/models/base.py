@@ -743,14 +743,8 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
             "{!r} object has no attribute {!r}".format(self.__class__.__name__, item)
         )
 
-    def _reset_variation_files(self):
-        self._variation_files_cache = {}
-        for vname in self.get_variations():
-            if vname in self.__dict__:
-                del self.__dict__[vname]
-
     def _setup_variation_files(self):
-        self._variation_files_cache.clear()
+        self._variation_files_cache = {}
         for vname, vfile in self.variation_files():
             self.__dict__[vname] = vfile
 
