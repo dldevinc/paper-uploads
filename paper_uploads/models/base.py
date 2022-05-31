@@ -750,6 +750,10 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
                 self.recut()
 
     def _setup_variation_files(self):
+        """
+        Обновление файлов вариаций в текущем экземпляре.
+        """
+
         # Очистка кэша метода variation_files()
         if hasattr(self, self.variation_files.cache_key):
             delattr(self, self.variation_files.cache_key)

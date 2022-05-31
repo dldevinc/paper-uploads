@@ -784,10 +784,16 @@ class TestImageItem(CollectionItemTestBase):
         assert ImageItem.PREVIEW_VARIATIONS["admin_preview"]["size"] == (180, 135)
         assert IMAGE_ITEM_VARIATIONS["admin_preview"]["size"] == (180, 135)
 
-    def test_empty_variations(self):
-        empty_resource = self.resource_class()
-        variations = empty_resource.get_variations()
+    def test_get_variations_on_empty_resource(self):
+        resource = self.resource_class()
+        variations = resource.get_variations()
         assert variations == {}
+
+    def test_get_variations_on_minimal_resource(self):
+        resource = self.resource_class()
+        resource.collection_content_type = ContentType.objects.get_for_model(self.collection_class)
+        variations = resource.get_variations()
+        assert len(variations) == 4
 
     def test_width(self, storage):
         assert storage.resource.width == 1534

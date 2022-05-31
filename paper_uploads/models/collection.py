@@ -220,9 +220,9 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         super().save(*args, **kwargs)
 
     def delete(self, using=None, keep_parents=False):
-        # Удаляем элементы вручную из-за рекурсии.
-        # Удалить элементы с помощью `.all().delete()` нельзя из-за того, что в
-        # файле (django/db/models/deletion.py:284) указано следующее:
+        # Удаляем элементы группами, из-за рекурсии.
+        # Удалить элементы с помощью `.all().delete()` - нельзя. Из-за того,
+        # что в файле (django/db/models/deletion.py:284) указано следующее:
         #   model = new_objs[0].__class__
         # Это приводит к тому, что все полиморфные модели удаляются через модель
         # первого экземпляра в QuerySet.
@@ -393,7 +393,10 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
     def save(self, *args, **kwargs):
         if self.concrete_collection_content_type_id is None and self.collection_content_type_id is not None:
             collection_cls = self.get_collection_class()
-            self.concrete_collection_content_type = ContentType.objects.get_for_model(collection_cls)
+            self.concrete_collection_content_type = ContentType.objects.get_for_model(
+                collection_cls,
+                for_concrete_model=True
+            )
 
         if not self.pk and self.collection_id:
             # Попытка решить проблему того, что при создании коллекции элементы
@@ -421,10 +424,12 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
             "preview": self.render_preview(),
         }
 
-    def get_collection_class(self) -> Type[CollectionBase]:
+    def get_collection_class(self) -> Optional[Type[CollectionBase]]:
         # Прямое обращение к полю `self.collection_content_type` дёргает БД.
         # Вместо него используется метод `get_for_id()` класса ContentType,
         # который использует общий кэш.
+        # (!) Если класс модели для указанного ContentType удалён, то
+        # метод вернёт None.
         collection_ct = ContentType.objects.get_for_id(self.collection_content_type_id)
         return collection_ct.model_class()
 
@@ -454,8 +459,12 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
             collection, for_concrete_model=True
         )
         self.collection_id = collection.pk
+
         for name, field in collection.item_types.items():
-            if field.model is type(self):
+            if (
+                field.model is type(self)
+                or (field.model._meta.proxy and field.model._meta.concrete_model is type(self))
+            ):
                 self.type = name
                 break
         else:

@@ -134,7 +134,7 @@ def find_missing_variations(
             for instance in model.objects.using(database).iterator():
                 missing_variations = []
                 for vname, vfile in instance.variation_files():
-                    if vfile is not None and not vfile.exists():
+                    if not vfile.exists():
                         missing_variations.append(vname)
 
                 if missing_variations and instance.file_exists():
