@@ -731,11 +731,9 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # нельзя использовать `_reset_variation_files`, т.к. он обращается
-        # к `get_variations`, что может быть неопределено для элементов коллекций.
         self._variation_files_cache = {}
 
-        # инициализация аттрибутов вариаций для уже загруженных файлов
+        # инициализация атрибутов вариаций для уже загруженных файлов
         if self.pk:
             self._setup_variation_files()
 
