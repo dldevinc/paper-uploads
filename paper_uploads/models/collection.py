@@ -31,6 +31,7 @@ from ..helpers import (
     iterate_variation_names,
 )
 from ..storage import default_storage
+from ..utils import cached_method
 from ..variations import PaperVariation
 from .base import (
     FileFieldResource,
@@ -672,6 +673,7 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         rest_variations = tuple(set(names).difference(preview_variations))
         super().recut_async(rest_variations)
 
+    @cached_method("_variations_cache")
     def get_variations(self) -> Dict[str, PaperVariation]:
         """
         Перебираем возможные места вероятного определения вариаций и берем
@@ -680,12 +682,13 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
             2) член класса галереи VARIATIONS
         К найденному словарю примешиваются вариации для админки.
         """
-        if not hasattr(self, "_variations_cache"):
-            collection_cls = self.get_collection_class()
-            item_type_field = self.get_item_type_field()
-            variation_config = self.get_variation_config(collection_cls, item_type_field)
-            self._variations_cache = build_variations(variation_config)
-        return self._variations_cache
+        if not self.collection_content_type_id:
+            raise cached_method.Bypass({})
+
+        collection_cls = self.get_collection_class()
+        item_type_field = self.get_item_type_field()
+        variation_config = self.get_variation_config(collection_cls, item_type_field)
+        return build_variations(variation_config)
 
     @classmethod
     def accept(cls, file: File) -> bool:

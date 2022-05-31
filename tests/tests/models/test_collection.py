@@ -784,6 +784,11 @@ class TestImageItem(CollectionItemTestBase):
         assert ImageItem.PREVIEW_VARIATIONS["admin_preview"]["size"] == (180, 135)
         assert IMAGE_ITEM_VARIATIONS["admin_preview"]["size"] == (180, 135)
 
+    def test_empty_variations(self):
+        empty_resource = self.resource_class()
+        variations = empty_resource.get_variations()
+        assert variations == {}
+
     def test_width(self, storage):
         assert storage.resource.width == 1534
 

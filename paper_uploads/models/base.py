@@ -757,15 +757,15 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         for vname, vfile in self.variation_files():
             self.__dict__[vname] = vfile
 
-    def variation_files(self) -> Iterable[Tuple[str, VariationFile]]:
-        if not self._variation_files_cache:
-            if not self.get_file():
-                return
+    @cached_method("_variation_files_cache")
+    def variation_files(self) -> Tuple[Tuple[str, VariationFile]]:
+        if not self.get_file():
+            raise cached_method.Bypass(tuple())
 
-            self._variation_files_cache = {
-                vname: self.get_variation_file(vname) for vname in self.get_variations()
-            }
-        yield from self._variation_files_cache.items()
+        return tuple(
+            (vname, self.get_variation_file(vname))
+            for vname in self.get_variations()
+        )
 
     def get_variation_file(self, variation_name: str) -> VariationFile:
         return self.variation_class(instance=self, variation_name=variation_name)

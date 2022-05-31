@@ -55,6 +55,11 @@ class TestUploadedImage(BacklinkModelTestMixin, TestVersatileImageResource):
         assert set(variations.keys()) == {"desktop", "mobile", "mobile_webp", "mobile_2x", "mobile_webp_2x"}
         assert all(isinstance(v, PaperVariation) for v in variations.values()) is True
 
+    def test_empty_variations(self):
+        empty_resource = self.resource_class()
+        variations = empty_resource.get_variations()
+        assert variations == {}
+
     def test_variation_files(self, storage):
         assert dict(storage.resource.variation_files()) == {
             "desktop": storage.resource.desktop,

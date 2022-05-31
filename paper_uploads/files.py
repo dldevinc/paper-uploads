@@ -4,6 +4,7 @@ from django.core.files import File
 from django.core.files.uploadedfile import UploadedFile
 from django.utils.translation import gettext_lazy as _
 
+from .utils import cached_method
 from .variations import PaperVariation
 
 
@@ -130,10 +131,8 @@ class VariationFile(File):
     def height(self) -> int:
         return self._get_image_dimensions()[1]
 
+    @cached_method("_dimensions_cache")
     def _get_image_dimensions(self):
-        if not hasattr(self, "_dimensions_cache"):
-            dimensions = self.variation.get_output_size(
-                (self.instance.width, self.instance.height)
-            )
-            self._dimensions_cache = dimensions
-        return self._dimensions_cache
+        return self.variation.get_output_size(
+            (self.instance.width, self.instance.height)
+        )
