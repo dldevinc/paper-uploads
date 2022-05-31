@@ -731,8 +731,6 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._variation_files_cache = {}
-
         # инициализация атрибутов вариаций для уже загруженных файлов
         if self.pk:
             self._setup_variation_files()
@@ -753,7 +751,10 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
                 self.recut()
 
     def _setup_variation_files(self):
-        self._variation_files_cache = {}
+        # Очистка кэша метода variation_files()
+        if hasattr(self, self.variation_files.cache_key):
+            delattr(self, self.variation_files.cache_key)
+
         for vname, vfile in self.variation_files():
             self.__dict__[vname] = vfile
 
@@ -811,10 +812,6 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
 
                 image = variation.process(img)
                 self._save_variation(vname, variation, image)
-
-                vfile = self.get_variation_file(vname)
-                self.__dict__[vname] = vfile
-                self._variation_files_cache[vname] = vfile
 
                 signals.variation_created.send(
                     sender=type(self),

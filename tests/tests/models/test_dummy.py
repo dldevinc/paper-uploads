@@ -1256,11 +1256,15 @@ class TestVariations:
             "{}/initial{{suffix}}.desktop.jpg".format(self.resource_folder),
             source=resource.url
         )
-        assert resource._variation_files_cache == {
-            "desktop": resource.desktop,
-            "mobile": resource.mobile,
-            "square": resource.square,
-        }
+
+        # check `variation_files()` cache
+        assert not hasattr(resource, "_variation_files_cache")
+        resource.variation_files()
+        assert resource._variation_files_cache == tuple([
+            ("desktop", resource.desktop),
+            ("mobile", resource.mobile),
+            ("square", resource.square),
+        ])
 
         os.remove(resource.path)
         resource.attach(NATURE_FILEPATH, name="reattached.jpg")
@@ -1270,11 +1274,15 @@ class TestVariations:
             "{}/reattached{{suffix}}.desktop.jpg".format(self.resource_folder),
             source=resource.url
         )
-        assert resource._variation_files_cache == {
-            "desktop": resource.desktop,
-            "mobile": resource.mobile,
-            "square": resource.square,
-        }
+
+        # check `variation_files()` cache
+        assert not hasattr(resource, "_variation_files_cache")
+        resource.variation_files()
+        assert resource._variation_files_cache == tuple([
+            ("desktop", resource.desktop),
+            ("mobile", resource.mobile),
+            ("square", resource.square),
+        ])
 
         resource.delete_file()
 
