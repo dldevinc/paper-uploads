@@ -17,6 +17,15 @@ class CollectionItemNotFoundError(Exception):
     pass
 
 
+class UnsupportedCollectionItemError(Exception):
+    """
+    Исключение, вызываемое методом `attach_to()` элемента коллекции,
+    когда класс текущего элемента не подходит ни к одному из возможных
+    типов коллекции.
+    """
+    pass
+
+
 class InvalidParameter(Exception):
     def __init__(self, value):
         self.value = value

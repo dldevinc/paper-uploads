@@ -489,7 +489,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
                 self.type = name
                 break
         else:
-            raise TypeError(_("Unsupported collection item: %s") % type(self).__name__)
+            raise exceptions.UnsupportedCollectionItemError(type(self).__name__)
 
     def render_preview(self):
         """ Отображение элемента коллекции в админке """

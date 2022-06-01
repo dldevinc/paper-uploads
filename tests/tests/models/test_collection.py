@@ -336,7 +336,7 @@ class TestAttachWrongItemClassToCollection:
         collection = ImagesOnlyCollection.objects.create()
         resource = FileItem()
 
-        with pytest.raises(TypeError):
+        with pytest.raises(exceptions.UnsupportedCollectionItemError):
             resource.attach_to(collection)
 
         collection.delete()
@@ -1021,6 +1021,5 @@ class TestInvalidCollectionContentType:
 
     def test_attach_to(self, storage):
         item = FileItem()
-
-        with pytest.raises(TypeError):
+        with pytest.raises(exceptions.UnsupportedCollectionItemError):
             item.attach_to(storage.collection)

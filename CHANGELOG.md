@@ -1,11 +1,12 @@
 # Change Log
 
-## [0.11.0](https://github.com/dldevinc/paper-uploads/tree/v0.11.0) - 2022-06-01
+## [0.11.0](https://github.com/dldevinc/paper-uploads/tree/v0.11.0) - 2022-06-02
 ### ⚠ BREAKING CHANGES
 - Removed `file` parameter from `variation_created` signal. Added `name` parameter
   instead.
 - `CollectionModelNotFoundError` and `CollectionItemNotFoundError` exceptions 
   have been added.
+- Added `UnsupportedCollectionItemError` exception.  
 ### Features
 - `ContentType.objects.get_for_id()` method has been used to get rid of redundant 
   SQL queries.
