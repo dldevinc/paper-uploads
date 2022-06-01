@@ -6,6 +6,7 @@ from django.core.files import File
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from ... import exceptions
 from ...conf import IMAGE_ITEM_VARIATIONS, settings
 from ...models.base import ImageFileResourceMixin
 from ...models.collection import Collection, CollectionFileItemBase, FilePreviewMixin
@@ -55,7 +56,11 @@ class CloudinaryFileItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase)
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
-        item_type_field = self.get_item_type_field()
+        try:
+            item_type_field = self.get_item_type_field()
+        except (exceptions.CollectionModelNotFoundError, exceptions.CollectionItemNotFoundError):
+            return settings.COLLECTION_FILES_UPLOAD_TO
+
         return item_type_field.options.get("upload_to") or settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
@@ -109,7 +114,11 @@ class CloudinaryMediaItemBase(FilePreviewMixin, CollectionCloudinaryFileItemBase
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
-        item_type_field = self.get_item_type_field()
+        try:
+            item_type_field = self.get_item_type_field()
+        except (exceptions.CollectionModelNotFoundError, exceptions.CollectionItemNotFoundError):
+            return settings.COLLECTION_FILES_UPLOAD_TO
+
         return item_type_field.options.get("upload_to") or settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
@@ -151,7 +160,11 @@ class CloudinaryImageItemBase(ImageFileResourceMixin, CollectionCloudinaryFileIt
         verbose_name_plural = _("Image items")
 
     def get_file_folder(self) -> str:
-        item_type_field = self.get_item_type_field()
+        try:
+            item_type_field = self.get_item_type_field()
+        except (exceptions.CollectionModelNotFoundError, exceptions.CollectionItemNotFoundError):
+            return settings.COLLECTION_IMAGES_UPLOAD_TO
+
         return item_type_field.options.get("upload_to") or settings.COLLECTION_IMAGES_UPLOAD_TO
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:

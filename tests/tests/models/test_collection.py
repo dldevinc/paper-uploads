@@ -789,11 +789,20 @@ class TestImageItem(CollectionItemTestBase):
         variations = resource.get_variations()
         assert variations == {}
 
+    @pytest.mark.django_db
     def test_get_variations_on_minimal_resource(self):
-        resource = self.resource_class()
-        resource.collection_content_type = ContentType.objects.get_for_model(self.collection_class)
+        resource = self.resource_class(
+            collection_content_type_id=ContentType.objects.get_for_model(
+                self.collection_class,
+                for_concrete_model=False
+            ).pk,
+            concrete_collection_content_type_id=ContentType.objects.get_for_model(
+                self.collection_class
+            ).pk,
+            type="image"
+        )
         variations = resource.get_variations()
-        assert len(variations) == 4
+        assert len(variations) == 6
 
     def test_width(self, storage):
         assert storage.resource.width == 1534
@@ -944,3 +953,74 @@ class TestImageItemDelete(CollectionItemDeleteTestBase):
 
 class TestImageItemEmpty(TestVersatileImageEmpty):
     recource_class = ImageItem
+
+
+class TestInvalidCollectionContentType:
+    @classmethod
+    def init_class(cls, storage):
+        storage.content_type = ContentType.objects.create(
+            app_label="standard_collections",
+            model="deletedmodel"
+        )
+
+        storage.collection = Collection.objects.create(
+            collection_content_type=storage.content_type,
+            concrete_collection_content_type=ContentType.objects.get_for_model(Collection),
+            owner_app_label="standard_collections",
+            owner_model_name="page",
+            owner_fieldname="temp_collection"
+        )
+
+        storage.file_item = FileItem.objects.create(
+            pk=1,
+            collection_content_type_id=storage.content_type.pk,
+            concrete_collection_content_type_id=storage.collection.concrete_collection_content_type.pk,
+            collection_id=storage.collection.pk,
+            order=1
+        )
+        with open(DOCUMENT_FILEPATH, "rb") as fp:
+            storage.file_item.file.save("invalid_ct.pdf", fp)
+
+        storage.image_item = FileItem.objects.create(
+            pk=2,
+            collection_content_type_id=storage.content_type.pk,
+            concrete_collection_content_type_id=storage.collection.concrete_collection_content_type.pk,
+            collection_id=storage.collection.pk,
+            order=2
+        )
+        with open(NATURE_FILEPATH, "rb") as fp:
+            storage.image_item.file.save("invalid_ct.jpg", fp)
+
+        yield
+
+        storage.file_item.delete_file()
+        storage.file_item.delete()
+
+        storage.image_item.delete_file()
+        storage.image_item.delete()
+
+        storage.collection.delete()
+
+    def test_collection_class(self, storage):
+        ct = ContentType.objects.get_for_id(storage.collection.collection_content_type_id)
+        assert ct.model_class() is None
+
+    def test_get_owner_model(self, storage):
+        assert storage.collection.get_owner_model() is Page
+
+    def test_get_items(self, storage):
+        assert storage.collection.get_items().count() == 2
+
+    def test_get_collection_class(self, storage):
+        with pytest.raises(exceptions.CollectionModelNotFoundError):
+            storage.file_item.get_collection_class()
+
+    def test_get_item_type_field(self, storage):
+        with pytest.raises(exceptions.CollectionModelNotFoundError):
+            assert storage.file_item.get_item_type_field() is None
+
+    def test_attach_to(self, storage):
+        item = FileItem()
+
+        with pytest.raises(TypeError):
+            item.attach_to(storage.collection)

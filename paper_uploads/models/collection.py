@@ -5,6 +5,7 @@ from collections import OrderedDict
 from typing import Any, ClassVar, Dict, Iterable, Optional, Type
 
 import magic
+from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.finders import find
@@ -392,11 +393,17 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
 
     def save(self, *args, **kwargs):
         if self.concrete_collection_content_type_id is None and self.collection_content_type_id is not None:
-            collection_cls = self.get_collection_class()
-            self.concrete_collection_content_type = ContentType.objects.get_for_model(
-                collection_cls,
-                for_concrete_model=True
-            )
+            try:
+                collection_cls = self.get_collection_class()
+            except exceptions.CollectionModelNotFoundError:
+                # TODO: Добавленный в такую коллекцию элемент не сможет быть
+                #       получен через get_items().
+                pass
+            else:
+                self.concrete_collection_content_type = ContentType.objects.get_for_model(
+                    collection_cls,
+                    for_concrete_model=True
+                )
 
         if not self.pk and self.collection_id:
             # Попытка решить проблему того, что при создании коллекции элементы
@@ -404,6 +411,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
             # Код ниже не решает проблему полностью, но уменьшает её влияние.
             if self.order is None or self.collection.get_items().filter(order=self.order).exists():
                 self.order = self.get_next_order_value()
+
         super().save(*args, **kwargs)
 
     @classmethod
@@ -424,20 +432,36 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
             "preview": self.render_preview(),
         }
 
-    def get_collection_class(self) -> Optional[Type[CollectionBase]]:
+    def get_collection_class(self) -> Type[CollectionBase]:
         # Прямое обращение к полю `self.collection_content_type` дёргает БД.
         # Вместо него используется метод `get_for_id()` класса ContentType,
         # который использует общий кэш.
         # (!) Если класс модели для указанного ContentType удалён, то
         # метод вернёт None.
         collection_ct = ContentType.objects.get_for_id(self.collection_content_type_id)
-        return collection_ct.model_class()
 
-    def get_item_type_field(self) -> Optional[CollectionItem]:
+        try:
+            return apps.get_model(collection_ct.app_label, collection_ct.model)
+        except LookupError:
+            raise exceptions.CollectionModelNotFoundError(
+                "{}.{}".format(collection_ct.app_label, collection_ct.model)
+            )
+
+    def get_item_type_field(self) -> CollectionItem:
+        """
+        Получение поля CollectionItem, с которым связан текущий элемент.
+        """
         collection_cls = self.get_collection_class()
-        for name, field in collection_cls.item_types.items():
-            if field.model is type(self) or (field.model._meta.proxy and field.model._meta.concrete_model is type(self)):
-                return field
+
+        field = collection_cls.item_types.get(self.type)
+        if field is None:
+            raise exceptions.CollectionItemNotFoundError()
+
+        # support proxy models
+        if self._meta.concrete_model is field.model._meta.concrete_model:
+            return field
+
+        raise exceptions.CollectionItemNotFoundError()
 
     def get_itemtype_field(self) -> Optional[CollectionItem]:
         warnings.warn(
@@ -460,10 +484,8 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         self.collection_id = collection.pk
 
         for name, field in collection.item_types.items():
-            if (
-                field.model is type(self)
-                or (field.model._meta.proxy and field.model._meta.concrete_model is type(self))
-            ):
+            # support proxy models
+            if self._meta.concrete_model is field.model._meta.concrete_model:
                 self.type = name
                 break
         else:
@@ -495,7 +517,11 @@ class CollectionFileItemBase(CollectionItemBase, FileFieldResource):
         raise NotImplementedError
 
     def get_file_storage(self) -> Storage:
-        item_type_field = self.get_item_type_field()
+        try:
+            item_type_field = self.get_item_type_field()
+        except (exceptions.CollectionModelNotFoundError, exceptions.CollectionItemNotFoundError):
+            return default_storage
+
         storage = item_type_field.options.get("storage") or default_storage
         if callable(storage):
             storage = storage()
@@ -563,7 +589,11 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
-        item_type_field = self.get_item_type_field()
+        try:
+            item_type_field = self.get_item_type_field()
+        except (exceptions.CollectionModelNotFoundError, exceptions.CollectionItemNotFoundError):
+            return settings.COLLECTION_FILES_UPLOAD_TO
+
         return item_type_field.options.get("upload_to") or settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
@@ -610,7 +640,11 @@ class SVGItemBase(SVGFileResourceMixin, CollectionFileItemBase):
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
-        item_type_field = self.get_item_type_field()
+        try:
+            item_type_field = self.get_item_type_field()
+        except (exceptions.CollectionModelNotFoundError, exceptions.CollectionItemNotFoundError):
+            return settings.COLLECTION_FILES_UPLOAD_TO
+
         return item_type_field.options.get("upload_to") or settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
@@ -649,7 +683,11 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         verbose_name_plural = _("Image items")
 
     def get_file_folder(self) -> str:
-        item_type_field = self.get_item_type_field()
+        try:
+            item_type_field = self.get_item_type_field()
+        except (exceptions.CollectionModelNotFoundError, exceptions.CollectionItemNotFoundError):
+            return settings.COLLECTION_IMAGES_UPLOAD_TO
+
         return item_type_field.options.get("upload_to") or settings.COLLECTION_IMAGES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
@@ -698,12 +736,13 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
 
     @classmethod
     def get_variation_config(
-        cls, collection_cls: Type[CollectionBase], item_type_field: Optional[CollectionItem],
+        cls, collection_cls: Type[CollectionBase], item_type_field: CollectionItem,
     ) -> Dict[str, Any]:
-        if item_type_field is not None and "variations" in item_type_field.options:
+        if "variations" in item_type_field.options:
             variations = item_type_field.options["variations"]
         else:
             variations = getattr(collection_cls, "VARIATIONS", None)
+
         variations = variations or {}
         variations = dict(cls.PREVIEW_VARIATIONS, **variations)
         return variations

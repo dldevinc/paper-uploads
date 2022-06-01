@@ -4,6 +4,8 @@
 ### ⚠ BREAKING CHANGES
 - Removed `file` parameter from `variation_created` signal. Added `name` parameter
   instead.
+- `CollectionModelNotFoundError` and `CollectionItemNotFoundError` exceptions 
+  have been added.
 ### Features
 - `ContentType.objects.get_for_id()` method has been used to get rid of redundant 
   SQL queries.

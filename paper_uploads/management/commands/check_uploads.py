@@ -7,7 +7,7 @@ from django.core.exceptions import FieldDoesNotExist
 from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 
-from ... import helpers
+from ... import exceptions, helpers
 from ...models.base import FileFieldResource, FileResource, VersatileImageResourceMixin
 from ...models.collection import Collection, CollectionItemBase
 from ...models.mixins import BacklinkModelMixin
@@ -254,7 +254,11 @@ class Command(BaseCommand):
         """
         queryset = CollectionItemBase.objects.using(self.database)
         for item in queryset.iterator():
-            collection_cls = item.get_collection_class()
+            try:
+                collection_cls = item.get_collection_class()
+            except exceptions.CollectionModelNotFoundError:
+                continue
+
             if item.type not in collection_cls.item_types:
                 print(
                     "\033[31mERROR\033[0m: "

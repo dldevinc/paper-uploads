@@ -3,7 +3,8 @@ from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django.utils.timezone import now
 
-from paper_uploads.models import CollectionItemBase
+from .. import exceptions
+from ..models import CollectionItemBase
 
 
 @receiver(post_delete, sender=CollectionItemBase)
@@ -13,7 +14,11 @@ def on_delete_collection_item(sender, instance, **kwargs):
     чтобы метод `get_last_modified()` возвращал корректные данные.
     """
     if instance.collection_id and instance.collection_content_type_id:
-        collection_cls = instance.get_collection_class()
+        try:
+            collection_cls = instance.get_collection_class()
+        except exceptions.CollectionModelNotFoundError:
+            return
+
         collection_cls.objects.filter(
             pk=instance.collection_id
         ).update(
