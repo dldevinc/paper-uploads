@@ -36,7 +36,7 @@ class BacklinkModelMixin(models.Model):
 
     def get_owner_model(self) -> Optional[Type[models.Model]]:
         if not self.owner_app_label or not self.owner_model_name:
-            return None
+            return
 
         try:
             return apps.get_model(self.owner_app_label, self.owner_model_name)
@@ -48,10 +48,10 @@ class BacklinkModelMixin(models.Model):
     def get_owner_field(self) -> Optional[models.Field]:
         owner_model = self.get_owner_model()
         if owner_model is None:
-            return None
+            return
 
         if not self.owner_fieldname:
-            return None
+            return
 
         try:
             return owner_model._meta.get_field(self.owner_fieldname)

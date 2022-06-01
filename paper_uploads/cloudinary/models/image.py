@@ -23,7 +23,8 @@ class CloudinaryImage(ImageFileResourceMixin, BacklinkModelMixin, CloudinaryFile
 
     def get_file(self) -> Optional[CloudinaryFieldFile]:
         if not self.file:
-            return None
+            return
+
         return CloudinaryFieldFile(self.file, checksum=self.checksum)
 
     def get_file_folder(self) -> str:

@@ -60,7 +60,7 @@ def perform_import(val, setting_name):
     then perform the necessary import or imports.
     """
     if val is None:
-        return None
+        return
     elif isinstance(val, str):
         return import_from_string(val, setting_name)
     elif isinstance(val, (list, tuple)):

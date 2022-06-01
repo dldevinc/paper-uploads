@@ -438,7 +438,6 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         for name, field in collection_cls.item_types.items():
             if field.model is type(self) or (field.model._meta.proxy and field.model._meta.concrete_model is type(self)):
                 return field
-        return None
 
     def get_itemtype_field(self) -> Optional[CollectionItem]:
         warnings.warn(

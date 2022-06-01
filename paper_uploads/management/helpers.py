@@ -258,7 +258,7 @@ def select_resource_model(
         choices.extend(append_choices)
 
     if not choices:
-        return None
+        return
 
     if multiple:
         return prompt_variants(
@@ -327,7 +327,7 @@ def select_collection_item_type(
         choices.extend(append_choices)
 
     if not choices:
-        return None
+        return
 
     if multiple:
         return prompt_variants(
@@ -405,7 +405,7 @@ def select_resource_field(
         choices.extend(append_choices)
 
     if not choices:
-        return None
+        return
 
     if multiple:
         return prompt_variants(
@@ -489,7 +489,7 @@ def select_collection_variations(
         choices.extend(append_choices)
 
     if not choices:
-        return None
+        return
 
     if multiple:
         return prompt_variants(
@@ -578,7 +578,7 @@ def select_resource_variations(
         choices.extend(append_choices)
 
     if not choices:
-        return None
+        return
 
     if multiple:
         return prompt_variants(
