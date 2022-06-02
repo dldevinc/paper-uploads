@@ -10,6 +10,4 @@ class Config(AppConfig):
     def ready(self):
         from .signals import handlers
 
-        # Переименование поля файла или модели-владельца файла,
-        # изменит также и соответствующие значения, хранящиеся в БД
-        pre_migrate.connect(handlers.inject_rename_filefield_operations, sender=self)
+        pre_migrate.connect(handlers.inject_operations, sender=self)
