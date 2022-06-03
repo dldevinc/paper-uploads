@@ -758,8 +758,11 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
         if hasattr(self, self.variation_files.cache_key):
             delattr(self, self.variation_files.cache_key)
 
-        for vname in self.get_variations():
-            self.__dict__[vname] = SimpleLazyObject(partial(self.get_variation_file, vname))
+        try:
+            for vname in self.get_variations():
+                self.__dict__[vname] = SimpleLazyObject(partial(self.get_variation_file, vname))
+        except exceptions.CollectionModelNotFoundError:
+            pass
 
     @cached_method("_variation_files_cache")
     def variation_files(self) -> Tuple[Tuple[str, VariationFile]]:
