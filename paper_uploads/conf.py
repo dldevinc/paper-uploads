@@ -14,15 +14,6 @@ DEFAULTS = {
     "RQ_ENABLED": False,
     "RQ_QUEUE_NAME": "default",
     "VARIATION_DEFAULTS": None,
-
-    "CLOUDINARY_TYPE": "private",
-    "CLOUDINARY_TEMP_DIR": "cloudinary",
-    "CLOUDINARY_UPLOADER_OPTIONS": {
-        "use_filename": True,
-        "unique_filename": True,
-        "overwrite": True,
-        "invalidate": True
-    },
 }
 
 # List of settings that may be in string import notation.

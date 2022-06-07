@@ -30,9 +30,6 @@
   для отложенной нарезки картинок на вариации.
 * Возможность создавать коллекции файлов. В частности, галерей 
   изображений с возможностью сортировки элементов.
-* Внутренний подмодуль `paper_uploads.cloudinary` предоставляет 
-  поля и классы, реализующие хранение файлов в облаке
-  [Cloudinary][pycloudinary].
 
 ## Table of Contents
 
@@ -56,11 +53,6 @@
     - [Вариации](#Вариации-2)
   - [HTML Template Example](#HTML-Template-Example)
 - [Management команды](#Management-команды)
-- [Cloudinary](#Cloudinary)
-  - [Installation](#Installation)
-  - [Файловые поля](#Файловые-поля)
-  - [Коллекции](#Коллекции-2)
-  - [paper_cloudinary_url](#paper_cloudinary_url)
 - [Settings](#Settings)
 
 ## Installation
@@ -891,126 +883,6 @@ python3 manage.py remove_variations --model app.Photos --item-type image
 python3 manage.py remove_variations --model app.Page --field image
 ```
 
-## Cloudinary
-
-Во встроенном модуле `paper_uploads.cloudinary` находятся поля и классы,
-позволяющие загружать файлы и картинки в облачный сервис Cloudinary.
-
-Помимо очевидной выгоды от хранения данных в облаке, использование
-Cloudinary в качестве хранилища файлов даёт возможность пользоваться
-API для трансформации [изображений](https://cloudinary.com/documentation/image_transformations)
-и [медиа](https://cloudinary.com/documentation/video_manipulation_and_delivery).
-
-### Installation
-1) `pip install cloudinary`
-2) Добавить `paper_uploads.cloudinary` и `cloudinary` в `INSTALLED_APPS`.
-    ```python
-    INSTALLED_APPS = [
-        # ...
-        'paper_uploads',
-        'paper_uploads.cloudinary',
-        'cloudinary',
-        # ...
-    ]
-    ```
-3) Задать [данные учетной записи](https://github.com/cloudinary/pycloudinary#configuration) Cloudinary
-   ```shell
-   $ export CLOUDINARY_URL=cloudinary://API-Key:API-Secret@Cloud-name?sign_url=1&secure=1
-   ``` 
-
-Чтобы предотвратить генерацию трасформаций конечными пользователями, рекомендуется
-включить в вашем аккаунте Cloudinary [Strict transformations](https://cloudinary.com/documentation/control_access_to_media#strict_transformations).
-
-### Файловые поля
-
-Вместо `FileField` и `ImageField` используются поля `CloudinaryFileField`,
-`CloudinaryImageField` и `CloudinaryMediaField`.
-
-```python
-from django.db import models
-from paper_uploads.cloudinary.models import *
-
-class Page(models.Model):
-    file = CloudinaryFileField(_('file'), blank=True)
-    image = CloudinaryImageField(_('image'), blank=True)
-    media = CloudinaryMediaField(_('media'), blank=True)
-```
-
-Дополнительные [параметры загрузки Cloudinary](https://cloudinary.com/documentation/image_upload_api_reference#upload_optional_parameters) 
-можно задать с помощью параметра `cloudinary`:
-```python
-from django.db import models
-from paper_uploads.cloudinary.models import *
-
-
-class Page(models.Model):
-    file = CloudinaryFileField(_('file'), blank=True, cloudinary={
-        "use_filename": False
-    })
-```
-
-### <a id="Коллекции-2" />Коллекции
-
-Для коллекций используется тот же класс `Collection`, что используется
-при локальном хранении файлов. Отличаются только классы элементов коллекций.
-
-В состав библиотеки входит три класса элементов коллекции:
-`CloudinaryFileItem`, `CloudinaryImageItem` и `CloudinaryMediaItem` 
-(для аудио и видео).
-
-```python
-from django.db import models
-from paper_uploads.models import *
-from paper_uploads.cloudinary.models import *
-
-
-class PageFiles(Collection):
-    image = CollectionItem(CloudinaryImageItem)
-    file = CollectionItem(CloudinaryFileItem)
-
-
-class Page(models.Model):
-    files = CollectionField(PageFiles)
-```
-
-Также, как и для обычных коллекций, для Cloudinary объявлена готовая 
-коллекция для изображений &mdash; `CloudinaryImageCollection`:
-
-```python
-from django.db import models
-from paper_uploads.models import *
-from paper_uploads.cloudinary.models import *
-
-
-class PageGallery(CloudinaryImageCollection):
-    pass
-
-
-class Page(models.Model):
-    gallery = CollectionField(PageGallery)
-```
-
-### paper_cloudinary_url
-
-Для вывода ссылки на файл, загруженный в Cloudinary, библиотека содержит 
-шаблонный тэг `paper_cloudinary_url`:
-
-```djangotemplate
-{% load paper_cloudinary %}
-
-<img src={% paper_cloudinary_url page.image width=1024 crop=fill %}>
-```
-
-Для `jinja2`:
-```jinja2
-<img src={% paper_cloudinary_url page.image, width=1024, crop=fill %}>
-```
-
-Также, для `jinja2` доступна одноименная глобальная функция:
-```jinja2
-<img src={{ paper_cloudinary_url(page.image, width=1024, crop='fill') }}>
-```
-
 ## Settings
 
 Все настройки указываются в словаре `PAPER_UPLOADS`.
@@ -1100,30 +972,6 @@ PAPER_UPLOADS = {
 
 Значение по умолчанию: `None`
 
-### `CLOUDINARY_TYPE`
-Тип загрузки файлов. Возможные значения: `private`, `upload`.
-Значение по умолчанию: `private`
-
-### `CLOUDINARY_TEMP_DIR`
-Папка в разделе `/tmp/`, в которую скачиваются файлы из Cloudinary
-при чтении их содержимого.
-
-### `CLOUDINARY_UPLOADER_OPTIONS`
-Словарь, задающий глобальные [параметры загрузки](https://cloudinary.com/documentation/image_upload_api_reference#required_parameters)
-для Cloudinary.
-
-Значение по умолчанию:
-```python
-PAPER_UPLOADS = {
-    "CLOUDINARY_UPLOADER_OPTIONS": {
-        "use_filename": True,
-        "unique_filename": True,
-        "overwrite": True,
-        "invalidate": True
-    }
-}
-```
-
 ## Development and Testing
 After cloning the Git repository, you should install this
 in a virtualenv and set up for development:
@@ -1140,14 +988,8 @@ npm ci
 npx webpack
 ```
 
-Create `.env` file:
-```.env
-CLOUDINARY_URL=cloudinary://XXXXXXXXXXXXXXX:YYYYYYYYYYYYYYYYYYYYYYYYYYY@ZZZZZZ?sign_url=1&secure=1
-```
-
 [paper-admin]: https://github.com/dldevinc/paper-admin
 [variations]: https://github.com/dldevinc/variations
-[pycloudinary]: https://github.com/cloudinary/pycloudinary
 [pilkit]: https://github.com/matthewwithanm/pilkit
 [django-storages]: https://github.com/jschneier/django-storages
 [django-rq]: https://github.com/rq/django-rq

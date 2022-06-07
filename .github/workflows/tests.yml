@@ -44,4 +44,4 @@ jobs:
         run: |
           ENV_PREFIX=$(tr -C -d "0-9" <<< "${{ matrix.python-version }}")
           TOXENV=$(tox --listenvs | grep "^py$ENV_PREFIX" | tr '\n' ',')
-          tox -e "$TOXENV" -- -n auto --ignore-glob="*/cloudinary_"
+          tox -e "$TOXENV" -- -n auto

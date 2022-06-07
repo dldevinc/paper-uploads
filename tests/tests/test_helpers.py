@@ -250,11 +250,11 @@ class TestImplicitVariations:
 class TestGetResourceModelTrees:
     def test_concrete_count(self):
         trees = helpers.get_resource_model_trees()
-        assert len(trees) == 14
+        assert len(trees) == 11
 
     def test_proxy_count(self):
         trees = helpers.get_resource_model_trees(include_proxy=True)
-        assert len(trees) == 14
+        assert len(trees) == 11
 
     def test_concrete_heights(self):
         trees = helpers.get_resource_model_trees()
@@ -263,7 +263,7 @@ class TestGetResourceModelTrees:
             value: len([item for item in tree_heights if item == value])
             for value in set(tree_heights)
         }
-        assert height_map == {0: 13, 1: 1}
+        assert height_map == {0: 10, 1: 1}
 
     def test_proxy_heights(self):
         trees = helpers.get_resource_model_trees(include_proxy=True)
@@ -272,7 +272,7 @@ class TestGetResourceModelTrees:
             value: len([item for item in tree_heights if item == value])
             for value in set(tree_heights)
         }
-        assert height_map == {0: 11, 1: 2, 2: 1}
+        assert height_map == {0: 8, 1: 2, 2: 1}
 
 
 @pytest.mark.django_db
@@ -286,7 +286,7 @@ class TestGetCollectionTrees:
 
     def test_proxy_count(self):
         trees = helpers.get_collection_trees(include_proxy=True)
-        assert len(trees[0].children) == 9
+        assert len(trees[0].children) == 6
 
     def test_concrete_heights(self):
         trees = helpers.get_collection_trees()
@@ -304,7 +304,7 @@ class TestGetCollectionTrees:
             value: len([item for item in tree_heights if item == value])
             for value in set(tree_heights)
         }
-        assert height_map == {0: 7, 1: 2}
+        assert height_map == {0: 5, 1: 1}
 
 
 @pytest.mark.django_db

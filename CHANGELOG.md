@@ -2,6 +2,7 @@
 
 ## [0.11.0](https://github.com/dldevinc/paper-uploads/tree/v0.11.0) - 2022-06-02
 ### ⚠ BREAKING CHANGES
+- Removed `cloudinary` submodule.
 - Removed `file` parameter from `variation_created` signal. Added `name` parameter
   instead.
 - `CollectionModelNotFoundError` and `CollectionItemNotFoundError` exceptions 
