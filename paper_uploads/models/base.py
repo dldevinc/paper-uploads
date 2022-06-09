@@ -5,6 +5,7 @@ import os
 import pathlib
 import posixpath
 import warnings
+from functools import partial
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Tuple, Union
 from xml.dom.minidom import parse
@@ -16,6 +17,7 @@ from django.db import models
 from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
 from django.db.models.utils import make_model_tuple
+from django.utils.functional import SimpleLazyObject
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from PIL import Image
@@ -23,10 +25,11 @@ from pyexpat import ExpatError
 from variations.typing import Size
 from variations.utils import prepare_image, replace_extension
 
-from .. import exceptions, helpers, signals, utils
+from .. import exceptions, helpers, signals
 from ..conf import settings
 from ..files import VariationFile
 from ..typing import FileLike
+from ..utils import cached_method, checksum
 from ..variations import PaperVariation
 from .mixins import FileFieldProxyMixin, FileProxyMixin
 
@@ -278,7 +281,7 @@ class FileResource(FileProxyMixin, Resource):
     def update_checksum(self, file: FileLike = None) -> bool:
         file = file or self.get_file()
         old_checksum = self.checksum
-        new_checksum = utils.checksum(file)
+        new_checksum = checksum(file)
         if new_checksum and new_checksum != old_checksum:
             signals.checksum_update.send(
                 sender=type(self),
@@ -489,7 +492,8 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
         self._require_file()
         return self.get_file().name
 
-    def get_file_field(self):
+    @classmethod
+    def get_file_field(cls):
         """
         Получение файлового поля модели.
         """
@@ -568,8 +572,20 @@ class SVGFileResourceMixin(models.Model):
             "This text will be used by screen readers, search engines, or when the image cannot be loaded"
         ),
     )
-    width = models.DecimalField(_("width"), max_digits=10, decimal_places=4, default=0, editable=False)
-    height = models.DecimalField(_("height"), max_digits=10, decimal_places=4, default=0, editable=False)
+    width = models.DecimalField(
+        _("width"),
+        max_digits=10,
+        decimal_places=4,
+        default=0,
+        editable=False
+    )
+    height = models.DecimalField(
+        _("height"),
+        max_digits=10,
+        decimal_places=4,
+        default=0,
+        editable=False
+    )
 
     class Meta:
         abstract = True
@@ -651,10 +667,21 @@ class ImageFileResourceMixin(models.Model):
             "This text will be used by screen readers, search engines, or when the image cannot be loaded"
         ),
     )
-    width = models.PositiveSmallIntegerField(_("width"), default=0, editable=False)
-    height = models.PositiveSmallIntegerField(_("height"), default=0, editable=False)
+    width = models.PositiveSmallIntegerField(
+        _("width"),
+        default=0,
+        editable=False
+    )
+    height = models.PositiveSmallIntegerField(
+        _("height"),
+        default=0,
+        editable=False
+    )
     cropregion = models.CharField(
-        _("crop region"), max_length=24, blank=True, editable=False
+        _("crop region"),
+        max_length=24,
+        blank=True,
+        editable=False
     )
 
     class Meta:
@@ -705,31 +732,13 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # нельзя использовать `_reset_variation_files`, т.к. он обращается
-        # к `get_variations`, что может быть неопределено для элементов коллекций.
-        self._variation_files_cache = {}
-
-        # инициализация аттрибутов вариаций для уже загруженных файлов
-        if self.pk:
-            self._setup_variation_files()
+        self._reset_variation_files()
 
     def __getattr__(self, item):
         # реализация-заглушка, чтобы PyCharm не ругался на атрибуты-вариации
         raise AttributeError(
             "{!r} object has no attribute {!r}".format(self.__class__.__name__, item)
         )
-
-    def _reset_variation_files(self):
-        self._variation_files_cache = {}
-        for vname in self.get_variations():
-            if vname in self.__dict__:
-                del self.__dict__[vname]
-
-    def _setup_variation_files(self):
-        self._variation_files_cache.clear()
-        for vname, vfile in self.variation_files():
-            self.__dict__[vname] = vfile
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -740,39 +749,83 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
             else:
                 self.recut()
 
+    def _reset_variation_files(self):
+        """
+        Обновление файлов вариаций в текущем экземпляре.
+        """
+
+        # Очистка кэша метода variation_files()
+        if hasattr(self, self.variation_files.cache_key):
+            delattr(self, self.variation_files.cache_key)
+
+        try:
+            for vname in self.get_variations():
+                self.__dict__[vname] = SimpleLazyObject(partial(self.get_variation_file, vname))
+        except exceptions.CollectionModelNotFoundError:
+            pass
+
+    @cached_method("_variation_files_cache")
+    def variation_files(self) -> Tuple[Tuple[str, VariationFile]]:
+        if not self.get_file():
+            raise cached_method.Bypass(tuple())
+
+        return tuple(
+            (vname, self.get_variation_file(vname))
+            for vname in self.get_variations()
+        )
+
+    def get_variation_file(self, variation_name: str) -> VariationFile:
+        return self.variation_class(instance=self, variation_name=variation_name)
+
+    def get_variations(self) -> Dict[str, PaperVariation]:
+        raise NotImplementedError
+
     def attach(self, file: FileLike, name: str = None, **options):
         super().attach(file, name=name, **options)  # noqa: F821
         self.need_recut = True
-        self._setup_variation_files()
+        self._reset_variation_files()
 
     def rename(self, new_name: str, **options):
         super().rename(new_name, **options)  # noqa: F821
         self.need_recut = True
-        self._setup_variation_files()
+        self._reset_variation_files()
 
     def delete_file(self, **options):
         super().delete_file(**options)  # noqa: F821
         self.delete_variations()
 
-    def get_variations(self) -> Dict[str, PaperVariation]:
-        raise NotImplementedError
-
     def delete_variations(self):
         for vname, vfile in self.variation_files():
             vfile.delete()
 
-    def variation_files(self) -> Iterable[Tuple[str, VariationFile]]:
-        if not self._variation_files_cache:
-            if not self.get_file():
-                return
+        self._reset_variation_files()
 
-            self._variation_files_cache = {
-                vname: self.get_variation_file(vname) for vname in self.get_variations()
-            }
-        yield from self._variation_files_cache.items()
+    def recut(self, names: Iterable[str] = ()):
+        """
+        Нарезка вариаций.
+        Можно указать имена конкретных вариаций в параметре `names`.
+        """
+        if not self.file_exists():
+            raise FileNotFoundError(self.name)
 
-    def get_variation_file(self, variation_name: str) -> VariationFile:
-        return self.variation_class(instance=self, variation_name=variation_name)
+        file = self.get_file()
+        with file.open() as source:
+            img = Image.open(source)
+            draft_size = self.calculate_max_size(img.size)
+            img = prepare_image(img, draft_size=draft_size)
+
+            for vname, variation in self.get_variations().items():
+                if names and vname not in names:
+                    continue
+
+                image = variation.process(img)
+                self._save_variation(vname, variation, image)
+
+                signals.variation_created.send(
+                    sender=type(self),
+                    instance=self,
+                    name=vname
+                )
 
     def calculate_max_size(self, source_size: Size) -> Optional[Tuple[int, int]]:
         """
@@ -804,35 +857,6 @@ class VersatileImageResourceMixin(ImageFileResourceMixin):
                 variation.save(image, buffer)
                 content = File(buffer, name=variation_file.name)
                 variation_file.storage._save(variation_file.name, content)
-
-    def recut(self, names: Iterable[str] = ()):
-        """
-        Нарезка вариаций.
-        Можно указать имена конкретных вариаций в параметре `names`.
-        """
-        if not self.file_exists():
-            raise FileNotFoundError(self.name)
-
-        file = self.get_file()
-        with file.open() as source:
-            img = Image.open(source)
-            draft_size = self.calculate_max_size(img.size)
-            img = prepare_image(img, draft_size=draft_size)
-
-            for name, variation in self.get_variations().items():
-                if names and name not in names:
-                    continue
-
-                image = variation.process(img)
-                self._save_variation(name, variation, image)
-
-                vfile = self.get_variation_file(name)
-                self.__dict__[name] = vfile
-                self._variation_files_cache[name] = vfile
-
-                signals.variation_created.send(
-                    sender=type(self), instance=self, file=vfile
-                )
 
     def recut_async(self, names: Iterable[str] = ()):
         """

@@ -2,7 +2,7 @@ import json
 import os
 
 import pytest
-from django.contrib.auth.models import Permission, User
+from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
@@ -38,11 +38,7 @@ class TestCreateCollectionView:
     @staticmethod
     def init_class(storage):
         storage.content_type = ContentType.objects.get_for_model(FilesOnlyCollection, for_concrete_model=False)
-
-        storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
-        permission = Permission.objects.get(name="Can upload files")
-        storage.user.user_permissions.add(permission)
-
+        storage.user = User.objects.get(username="jon")
         storage.view = CreateCollectionView()
         yield
 
@@ -95,11 +91,7 @@ class TestDeleteCollectionView:
     @staticmethod
     def init_class(storage):
         storage.content_type = ContentType.objects.get_for_model(FilesOnlyCollection, for_concrete_model=False)
-
-        storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
-        permission = Permission.objects.get(name="Can upload files")
-        storage.user.user_permissions.add(permission)
-
+        storage.user = User.objects.get(username="jon")
         storage.view = DeleteCollectionView()
         yield
 
@@ -182,11 +174,7 @@ class TestUploadFileView:
     @staticmethod
     def init_class(storage):
         storage.content_type = ContentType.objects.get_for_model(FilesOnlyCollection, for_concrete_model=False)
-
-        storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
-        permission = Permission.objects.get(name="Can upload files")
-        storage.user.user_permissions.add(permission)
-
+        storage.user = User.objects.get(username="jon")
         storage.view = UploadFileView()
         yield
 
@@ -300,7 +288,7 @@ class TestUploadFileView:
         assert collection.get_items().count() == 1
 
         item_id = json.loads(response.content)["id"]
-        item = collection.items.get(pk=item_id)
+        item = collection.get_items().get(pk=item_id)
         item.delete_file()
 
         collection.delete()
@@ -363,11 +351,7 @@ class TestDeleteFileView:
     @staticmethod
     def init_class(storage):
         storage.content_type = ContentType.objects.get_for_model(CustomCollection, for_concrete_model=False)
-
-        storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
-        permission = Permission.objects.get(name="Can upload files")
-        storage.user.user_permissions.add(permission)
-
+        storage.user = User.objects.get(username="jon")
         storage.view = DeleteFileView()
 
         # collection
@@ -472,11 +456,7 @@ class TestChangeFileView:
     @staticmethod
     def init_class(storage):
         storage.content_type = ContentType.objects.get_for_model(CustomCollection, for_concrete_model=False)
-
-        storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
-        permission = Permission.objects.get(name="Can upload files")
-        storage.user.user_permissions.add(permission)
-
+        storage.user = User.objects.get(username="jon")
         storage.view = ChangeFileView()
 
         # collection
@@ -589,11 +569,7 @@ class TestSortItemsView:
     @staticmethod
     def init_class(storage):
         storage.content_type = ContentType.objects.get_for_model(ImagesOnlyCollection, for_concrete_model=False)
-
-        storage.user = User.objects.create_user(username="jon", email="jon@mail.com", password="password")
-        permission = Permission.objects.get(name="Can upload files")
-        storage.user.user_permissions.add(permission)
-
+        storage.user = User.objects.get(username="jon")
         storage.view = SortItemsView()
 
         # collection

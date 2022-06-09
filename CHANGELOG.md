@@ -1,5 +1,26 @@
 # Change Log
 
+## [0.11.0](https://github.com/dldevinc/paper-uploads/tree/v0.11.0) - 2022-06-02
+### ⚠ BREAKING CHANGES
+- Removed `cloudinary` submodule.
+- Removed `file` parameter from `variation_created` signal. Added `name` parameter
+  instead.
+- `CollectionModelNotFoundError` and `CollectionItemNotFoundError` exceptions 
+  have been added.
+- Added `UnsupportedCollectionItemError` exception.  
+### Features
+- `ContentType.objects.get_for_id()` method has been used to get rid of redundant 
+  SQL queries.
+- The `get_file_field()` method is now a classmethod.
+- A new `concrete_collection_content_type` field was added to the `Collection` 
+  and `CollectionItemBase` models.
+- The `Collection.get_items()` now works properly not only with the proxy collection 
+  models, but also with corresponding concrete model.
+- Field `Collection.items` is now deprecated.
+### Bug Fixes
+- Fixed an issue where `remove_empty_collections` command deletes non-empty collections.
+- Fixed an issue where `create_missing_variations` command skips some instaces.
+
 ## [0.10.0](https://github.com/dldevinc/paper-uploads/tree/v0.10.0) - 2022-05-23
 ### ⚠ BREAKING CHANGES
 - The minimum supported version of `paper-admin` is increased from 3.0 to 4.1.0.

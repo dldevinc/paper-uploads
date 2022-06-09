@@ -12,6 +12,64 @@ filesize_regex = re.compile(r"^([.\d]+)\s*([KMGT])?B?$")
 filesize_units = {"K": 10 ** 3, "M": 10 ** 6, "G": 10 ** 9, "T": 10 ** 12}
 
 
+class cached_method:
+    """
+    Декоратор для кэширования результата вызова метода класса без параметров.
+    Если декорируемый метод при выполнении вызовет исключение cached_method.Bypass
+    с некоторым значением, то это значение будет возвращено как результат вызова метода,
+    но не будет закэшировано.
+
+    Пример:
+        class Letters:
+            def __init__(self, value: str = None):
+                self.value = value
+
+            @cached_method(key="_cache")
+            def get_letters(self):
+                if self.value is None:
+                    raise cached_method.Bypass(set())
+
+                return set(self.values)
+
+
+        l = Letters()
+        result = l.get_letters()
+        assert result == set()    # пустое множество, которое не попало в кэш
+
+        l.value = "paper"
+        result = l.get_letters()
+        assert result == {"p", "a", "e", "r"}  # множество было закэшировано
+    """
+
+    class Bypass(Exception):
+        def __init__(self, value=None):
+            self.value = value
+
+    def __init__(self, key: str):
+        self.key = key
+
+    def __call__(self, func):
+        def inner(instance):
+            try:
+                return getattr(instance, self.key)
+            except AttributeError:
+                pass
+
+            try:
+                value = func(instance)
+            except self.Bypass as exc:
+                return exc.value
+
+            setattr(instance, self.key, value)
+            return value
+
+        # Привязка ключа кэша к функции-декоратору для возможности
+        # очистки кэша извне метода.
+        inner.cache_key = self.key
+
+        return inner
+
+
 def checksum(file: FileLike) -> str:
     """
     DropBox checksum realization.

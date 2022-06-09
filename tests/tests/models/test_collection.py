@@ -123,7 +123,7 @@ class TestCollection:
             storage.image_collection,
             storage.mixed_collection
         }:
-            for c_item in collection.items.all():
+            for c_item in collection.get_items().all():
                 c_item.delete_file()
             collection.delete()
 
@@ -131,17 +131,17 @@ class TestCollection:
         assert utils.is_equal_dates(storage.file_collection.created_at, storage.now)
 
     def test_item_count(self, storage):
-        assert storage.file_collection.items.count() == 1
-        assert storage.image_collection.items.count() == 1
-        assert storage.mixed_collection.items.count() == 3
+        assert storage.file_collection.get_items().count() == 1
+        assert storage.image_collection.get_items().count() == 1
+        assert storage.mixed_collection.get_items().count() == 3
 
     def test_order_values(self, storage):
-        order_values = storage.mixed_collection.items.values_list("order", flat=True)
+        order_values = storage.mixed_collection.get_items().values_list("order", flat=True)
         assert sorted(order_values) == [0, 1, 2]
 
-    def test_get_order(self, storage):
+    def test_get_next_order_value(self, storage):
         image_item = storage.mixed_collection.get_items("image").first()
-        assert image_item.get_order() == 3
+        assert image_item.get_next_order_value() == 3
 
     def test_get_items(self, storage):
         assert storage.file_collection.get_items("file").count() == 1
@@ -151,6 +151,10 @@ class TestCollection:
         assert storage.mixed_collection.get_items("image").count() == 1
 
         assert storage.mixed_collection.get_items("svg").count() == 1
+
+    def test_get_items_on_concrete_model(self, storage):
+        collection = Collection.objects.get(pk=storage.mixed_collection.pk)
+        assert collection.get_items().count() == 3
 
     def test_iter(self, storage):
         iterator = iter(storage.mixed_collection)
@@ -307,7 +311,7 @@ class TestDeleteCustomImageCollection:
 
     def test_explicit_deletion(self):
         collection = self._create_collection()
-        item = collection.items.first()  # type: CustomImageItem
+        item = collection.get_items().first()  # type: CustomImageItem
         item_files = [item.get_file(), *(pair[1] for pair in item.variation_files())]
 
         collection.delete()
@@ -317,7 +321,7 @@ class TestDeleteCustomImageCollection:
 
     def test_sql_deletion(self):
         collection = self._create_collection()
-        item = collection.items.first()  # type: CustomImageItem
+        item = collection.get_items().first()  # type: CustomImageItem
         item_files = [item.get_file(), *(pair[1] for pair in item.variation_files())]
 
         CustomCollection.objects.filter(pk=collection.pk).delete()
@@ -332,7 +336,7 @@ class TestAttachWrongItemClassToCollection:
         collection = ImagesOnlyCollection.objects.create()
         resource = FileItem()
 
-        with pytest.raises(TypeError):
+        with pytest.raises(exceptions.UnsupportedCollectionItemError):
             resource.attach_to(collection)
 
         collection.delete()
@@ -350,14 +354,20 @@ class CollectionItemMixin:
             for_concrete_model=False
         )
 
+    def test_concrete_collection_content_type(self, storage):
+        assert storage.resource.concrete_collection_content_type == ContentType.objects.get_for_model(
+            self.collection_class,
+            for_concrete_model=True
+        )
+
     def test_get_collection_class(self, storage):
         assert storage.resource.get_collection_class() is self.collection_class
 
     def test_collection_id(self, storage):
         assert storage.resource.collection_id == storage.collection.pk
 
-    def test_get_order(self, storage):
-        assert storage.resource.get_order() == 1
+    def test_get_next_order_value(self, storage):
+        assert storage.resource.get_next_order_value() == 1
 
     def test_order(self, storage):
         assert storage.resource.order == 0
@@ -452,28 +462,32 @@ class TestFileItem(CollectionItemTestBase):
         assert storage.resource.type == "file"
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "collectionId": 1,
-            "itemType": "file",  # TODO: deprecated
-            "type": "file",
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "url": storage.resource.url,
-            "order": 0,
-            "preview": render_to_string(
-                "paper_uploads/items/preview/file.html",
-                storage.resource.get_preview_context()
-            ),
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "collectionId": 1,
+                "itemType": "file",  # TODO: deprecated
+                "type": "file",
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "url": storage.resource.url,
+                "order": 0,
+                "preview": render_to_string(
+                    "paper_uploads/items/preview/file.html",
+                    storage.resource.get_preview_context()
+                ),
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id", "collectionId"}
+        )
 
     def test_accept(self, storage):
         with open(DOCUMENT_FILEPATH, "rb") as fp:
@@ -563,32 +577,36 @@ class TestSVGItem(CollectionItemTestBase):
         assert storage.resource.type == "svg"
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "collectionId": 1,
-            "itemType": "svg",  # TODO: deprecated
-            "type": "svg",
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "width": "626",
-            "height": "660.0532",
-            "title": "",
-            "description": "",
-            "url": storage.resource.url,
-            "order": 0,
-            "preview": render_to_string(
-                "paper_uploads/items/preview/svg.html",
-                storage.resource.get_preview_context()
-            ),
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "collectionId": 1,
+                "itemType": "svg",  # TODO: deprecated
+                "type": "svg",
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "width": "626",
+                "height": "660.0532",
+                "title": "",
+                "description": "",
+                "url": storage.resource.url,
+                "order": 0,
+                "preview": render_to_string(
+                    "paper_uploads/items/preview/svg.html",
+                    storage.resource.get_preview_context()
+                ),
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id", "collectionId"}
+        )
 
     def test_path(self, storage):
         assert utils.match_path(
@@ -715,33 +733,37 @@ class TestImageItem(CollectionItemTestBase):
             assert fp.read(5) == b'\xff\xd8\xff\xe0\x00'
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "collectionId": 1,
-            "itemType": "image",  # TODO: deprecated
-            "type": "image",
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "width": 1534,
-            "height": 2301,
-            "cropregion": "",
-            "title": "",
-            "description": "",
-            "order": 0,
-            "preview": render_to_string(
-                "paper_uploads/items/preview/image.html",
-                storage.resource.get_preview_context()
-            ),
-            "url": storage.resource.get_file_url(),
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "collectionId": 1,
+                "itemType": "image",  # TODO: deprecated
+                "type": "image",
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "width": 1534,
+                "height": 2301,
+                "cropregion": "",
+                "title": "",
+                "description": "",
+                "order": 0,
+                "preview": render_to_string(
+                    "paper_uploads/items/preview/image.html",
+                    storage.resource.get_preview_context()
+                ),
+                "url": storage.resource.get_file_url(),
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id", "collectionId"}
+        )
 
     def test_get_variations(self, storage):
         variations = storage.resource.get_variations()
@@ -761,6 +783,26 @@ class TestImageItem(CollectionItemTestBase):
         # ensure that setting has not changed
         assert ImageItem.PREVIEW_VARIATIONS["admin_preview"]["size"] == (180, 135)
         assert IMAGE_ITEM_VARIATIONS["admin_preview"]["size"] == (180, 135)
+
+    def test_get_variations_on_empty_resource(self):
+        resource = self.resource_class()
+        variations = resource.get_variations()
+        assert variations == {}
+
+    @pytest.mark.django_db
+    def test_get_variations_on_minimal_resource(self):
+        resource = self.resource_class(
+            collection_content_type_id=ContentType.objects.get_for_model(
+                self.collection_class,
+                for_concrete_model=False
+            ).pk,
+            concrete_collection_content_type_id=ContentType.objects.get_for_model(
+                self.collection_class
+            ).pk,
+            type="image"
+        )
+        variations = resource.get_variations()
+        assert len(variations) == 6
 
     def test_width(self, storage):
         assert storage.resource.width == 1534
@@ -911,3 +953,73 @@ class TestImageItemDelete(CollectionItemDeleteTestBase):
 
 class TestImageItemEmpty(TestVersatileImageEmpty):
     recource_class = ImageItem
+
+
+class TestInvalidCollectionContentType:
+    @classmethod
+    def init_class(cls, storage):
+        storage.content_type = ContentType.objects.create(
+            app_label="standard_collections",
+            model="deletedmodel"
+        )
+
+        storage.collection = Collection.objects.create(
+            collection_content_type=storage.content_type,
+            concrete_collection_content_type=ContentType.objects.get_for_model(Collection),
+            owner_app_label="standard_collections",
+            owner_model_name="page",
+            owner_fieldname="temp_collection"
+        )
+
+        storage.file_item = FileItem.objects.create(
+            pk=1,
+            collection_content_type_id=storage.content_type.pk,
+            concrete_collection_content_type_id=storage.collection.concrete_collection_content_type.pk,
+            collection_id=storage.collection.pk,
+            order=1
+        )
+        with open(DOCUMENT_FILEPATH, "rb") as fp:
+            storage.file_item.file.save("invalid_ct.pdf", fp)
+
+        storage.image_item = FileItem.objects.create(
+            pk=2,
+            collection_content_type_id=storage.content_type.pk,
+            concrete_collection_content_type_id=storage.collection.concrete_collection_content_type.pk,
+            collection_id=storage.collection.pk,
+            order=2
+        )
+        with open(NATURE_FILEPATH, "rb") as fp:
+            storage.image_item.file.save("invalid_ct.jpg", fp)
+
+        yield
+
+        storage.file_item.delete_file()
+        storage.file_item.delete()
+
+        storage.image_item.delete_file()
+        storage.image_item.delete()
+
+        storage.collection.delete()
+
+    def test_collection_class(self, storage):
+        ct = ContentType.objects.get_for_id(storage.collection.collection_content_type_id)
+        assert ct.model_class() is None
+
+    def test_get_owner_model(self, storage):
+        assert storage.collection.get_owner_model() is Page
+
+    def test_get_items(self, storage):
+        assert storage.collection.get_items().count() == 2
+
+    def test_get_collection_class(self, storage):
+        with pytest.raises(exceptions.CollectionModelNotFoundError):
+            storage.file_item.get_collection_class()
+
+    def test_get_item_type_field(self, storage):
+        with pytest.raises(exceptions.CollectionModelNotFoundError):
+            assert storage.file_item.get_item_type_field() is None
+
+    def test_attach_to(self, storage):
+        item = FileItem()
+        with pytest.raises(exceptions.UnsupportedCollectionItemError):
+            item.attach_to(storage.collection)

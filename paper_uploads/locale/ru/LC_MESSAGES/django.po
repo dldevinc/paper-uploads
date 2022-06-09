@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-02-14 10:05+0400\n"
+"POT-Creation-Date: 2022-06-07 09:49+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,90 +18,11 @@ msgstr ""
 "%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n"
 "%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: apps.py:8 cloudinary/apps.py:8
+#: apps.py:8
 msgid "Uploaded Files"
 msgstr "Загруженные файлы"
 
-#: cloudinary/models/base.py:251 models/base.py:530
-#, python-format
-msgid "File `%s` is not an image"
-msgstr "Файл `%s` не является изображением"
-
-#: cloudinary/models/collection.py:45 cloudinary/models/collection.py:86
-#: cloudinary/models/collection.py:131 cloudinary/models/file.py:15
-#: cloudinary/models/file.py:22 cloudinary/models/image.py:15
-#: cloudinary/models/media.py:15 models/collection.py:459
-#: models/collection.py:501 models/collection.py:554 models/file.py:20
-#: models/file.py:27 models/image.py:21
-msgid "file"
-msgstr "файл"
-
-#: cloudinary/models/collection.py:49 cloudinary/models/collection.py:90
-#: cloudinary/models/file.py:19 cloudinary/models/media.py:19
-#: models/collection.py:462 models/collection.py:504 models/file.py:23
-msgid "display name"
-msgstr "отображаемое название"
-
-#: cloudinary/models/collection.py:53 models/collection.py:466
-msgid "File item"
-msgstr "Файл"
-
-#: cloudinary/models/collection.py:54 models/collection.py:467
-msgid "File items"
-msgstr "Файлы"
-
-#: cloudinary/models/collection.py:94
-msgid "Media item"
-msgstr "Мультимедиа"
-
-#: cloudinary/models/collection.py:95
-msgid "Media items"
-msgstr "Мультимедиа"
-
-#: cloudinary/models/collection.py:138 models/collection.py:560
-msgid "Image item"
-msgstr "Изображение"
-
-#: cloudinary/models/collection.py:139 models/collection.py:561
-msgid "Image items"
-msgstr "Изображения"
-
-#: cloudinary/models/file.py:23 models/file.py:28
-msgid "files"
-msgstr "файлы"
-
-#: cloudinary/models/image.py:21 models/image.py:27
-msgid "image"
-msgstr "изображение"
-
-#: cloudinary/models/image.py:22 models/image.py:28
-msgid "images"
-msgstr "изображения"
-
-#: cloudinary/models/media.py:22 cloudinary/models/media.py:23
-msgid "media"
-msgstr "мультимедиа"
-
-#: cloudinary/templates/paper_uploads_cloudinary/items/image.html:15
-#: templates/paper_uploads/items/item.html:16
-msgid "Delete item"
-msgstr "Удалить файл"
-
-#: cloudinary/templates/paper_uploads_cloudinary/items/image.html:39
-#: templates/paper_uploads/items/item.html:46
-#: templates/paper_uploads/widgets/file.html:48
-#: templates/paper_uploads/widgets/image.html:48
-msgid "Open file"
-msgstr "Открыть файл"
-
-#: cloudinary/templates/paper_uploads_cloudinary/items/image.html:46
-#: templates/paper_uploads/items/item.html:53
-#: templates/paper_uploads/widgets/file.html:55
-#: templates/paper_uploads/widgets/image.html:55
-msgid "Edit file"
-msgstr "Редактировать"
-
-#: files.py:49
+#: files.py:50
 #, python-format
 msgid "Variation '%s' has no file associated with it."
 msgstr "Не найден файл, соответствующий вариации '%s'."
@@ -163,63 +84,63 @@ msgstr "Максимальная ширина"
 msgid "Maximum image height"
 msgstr "Максимальная высота"
 
-#: models/base.py:111 models/collection.py:170
+#: models/base.py:143 models/collection.py:188
 msgid "created at"
 msgstr "дата создания"
 
-#: models/base.py:116
+#: models/base.py:148 models/collection.py:193
 msgid "changed at"
 msgstr "дата изменения"
 
-#: models/base.py:156
-msgid "basename"
+#: models/base.py:188
+msgid "resource name"
 msgstr "имя файла"
 
-#: models/base.py:159
+#: models/base.py:191
 msgid "Human-readable resource name"
 msgstr "Удобочитаемое имя файла"
 
-#: models/base.py:162
+#: models/base.py:194
 msgid "extension"
 msgstr "расширение"
 
-#: models/base.py:165
+#: models/base.py:197
 msgid "Lowercase, without leading dot"
 msgstr "В нижнем регистре, без точки"
 
-#: models/base.py:168
+#: models/base.py:200
 msgid "size"
 msgstr "размер"
 
-#: models/base.py:173
+#: models/base.py:205
 msgid "checksum"
 msgstr "контрольная сумма"
 
-#: models/base.py:178
+#: models/base.py:210
 msgid "uploaded at"
 msgstr "дата загрузки файла"
 
-#: models/base.py:418
+#: models/base.py:471
 #, python-format
 msgid "The '%s' attribute has no file associated with it."
 msgstr "Не найден файл, связанный с атибутом '%s'."
 
-#: models/base.py:492
+#: models/base.py:561 models/base.py:656
 msgid "title"
 msgstr "название"
 
-#: models/base.py:496
+#: models/base.py:565 models/base.py:660
 msgid ""
 "The title is being used as a tooltip when the user hovers the mouse over the "
 "image"
 msgstr ""
 "Используется в качестве всплывающей подсказки при наведении на картинку"
 
-#: models/base.py:500
+#: models/base.py:569 models/base.py:664
 msgid "description"
 msgstr "описание"
 
-#: models/base.py:503
+#: models/base.py:572 models/base.py:667
 msgid ""
 "This text will be used by screen readers, search engines, or when the image "
 "cannot be loaded"
@@ -227,59 +148,121 @@ msgstr ""
 "Этот текст будет использоваться программами чтения с экрана, поисковыми "
 "системами или в случае, когда изображение не может быть загружено."
 
-#: models/base.py:506
+#: models/base.py:576 models/base.py:671
 msgid "width"
 msgstr "ширина"
 
-#: models/base.py:507
+#: models/base.py:583 models/base.py:676
 msgid "height"
 msgstr "высота"
 
-#: models/base.py:509
-msgid "crop region"
-msgstr ""
-
-#: models/collection.py:183
-msgid "collection"
-msgstr "коллекция"
-
-#: models/collection.py:184
-msgid "collections"
-msgstr "коллекции"
-
-#: models/collection.py:263
-msgid "type"
-msgstr "тип"
-
-#: models/collection.py:265
-msgid "order"
-msgstr "порядок"
-
-#: models/collection.py:272
-msgid "item"
-msgstr "элемент коллекции"
-
-#: models/collection.py:273
-msgid "items"
-msgstr "элементы коллекции"
-
-#: models/collection.py:383
-#, python-format
-msgid "Unsupported collection item: %s"
-msgstr "Неподдерживаемый элемент коллекции: %s"
-
-#: models/collection.py:508
-msgid "SVG item"
-msgstr "SVG-элемент"
-
-#: models/collection.py:509
-msgid "SVG items"
-msgstr "SVG-элементы"
-
-#: models/collection.py:542
+#: models/base.py:617 models/base.py:623
 #, python-format
 msgid "File `%s` is not an svg image"
 msgstr "Файл `%s` не является SVG-изображением"
+
+#: models/base.py:681
+msgid "crop region"
+msgstr ""
+
+#: models/base.py:705
+#, python-format
+msgid "File `%s` is not an image"
+msgstr "Файл `%s` не является изображением"
+
+#: models/collection.py:206
+msgid "collection"
+msgstr "коллекция"
+
+#: models/collection.py:207
+msgid "collections"
+msgstr "коллекции"
+
+#: models/collection.py:325
+msgid "type"
+msgstr "тип"
+
+#: models/collection.py:331
+msgid "order"
+msgstr "порядок"
+
+#: models/collection.py:341
+msgid "item"
+msgstr "элемент коллекции"
+
+#: models/collection.py:342
+msgid "items"
+msgstr "элементы коллекции"
+
+#: models/collection.py:572 models/collection.py:623 models/collection.py:676
+#: models/file.py:20 models/file.py:31 models/image.py:21 models/svg.py:20
+msgid "file"
+msgstr "файл"
+
+#: models/collection.py:576 models/collection.py:627 models/file.py:24
+#: models/svg.py:24
+msgid "display name"
+msgstr "отображаемое название"
+
+#: models/collection.py:583
+msgid "File item"
+msgstr "Файл"
+
+#: models/collection.py:584
+msgid "File items"
+msgstr "Файлы"
+
+#: models/collection.py:634
+msgid "SVG item"
+msgstr "SVG-элемент"
+
+#: models/collection.py:635
+msgid "SVG items"
+msgstr "SVG-элементы"
+
+#: models/collection.py:682
+msgid "Image item"
+msgstr "Изображение"
+
+#: models/collection.py:683
+msgid "Image items"
+msgstr "Изображения"
+
+#: models/file.py:32
+msgid "files"
+msgstr "файлы"
+
+#: models/image.py:27
+msgid "image"
+msgstr "изображение"
+
+#: models/image.py:28
+msgid "images"
+msgstr "изображения"
+
+#: models/svg.py:31
+msgid "SVG file"
+msgstr "SVG файл"
+
+#: models/svg.py:32
+msgid "SVG files"
+msgstr "SVG файлы"
+
+#: templates/paper_uploads/items/item.html:16
+msgid "Delete item"
+msgstr "Удалить файл"
+
+#: templates/paper_uploads/items/item.html:46
+#: templates/paper_uploads/widgets/file.html:48
+#: templates/paper_uploads/widgets/image.html:48
+msgid "Open file"
+msgstr "Открыть файл"
+
+#: templates/paper_uploads/items/item.html:53
+#: templates/paper_uploads/widgets/file.html:55
+#: templates/paper_uploads/widgets/image.html:55
+msgid "Edit file"
+msgstr "Редактировать"
 
 #: templates/paper_uploads/items/preloader.html:14
 #: templates/paper_uploads/widgets/file.html:70
@@ -324,34 +307,34 @@ msgstr "Выбрать файл"
 msgid "Delete file"
 msgstr "Удалить файл"
 
-#: utils.py:69 utils.py:86
+#: utils.py:127 utils.py:144
 #, python-format
 msgid "%(size)d byte"
 msgid_plural "%(size)d bytes"
 msgstr[0] "%(size)d байт"
 msgstr[1] "%(size)d байта"
 
-#: utils.py:88
+#: utils.py:146
 #, python-format
 msgid "%s KB"
 msgstr "%s KB"
 
-#: utils.py:90
+#: utils.py:148
 #, python-format
 msgid "%s MB"
 msgstr "%s MB"
 
-#: utils.py:92
+#: utils.py:150
 #, python-format
 msgid "%s GB"
 msgstr "%s GB"
 
-#: utils.py:94
+#: utils.py:152
 #, python-format
 msgid "%s TB"
 msgstr "%s TB"
 
-#: utils.py:96
+#: utils.py:154
 #, python-format
 msgid "%s PB"
 msgstr "%s PB"
@@ -449,7 +432,7 @@ msgstr "Объект не найден"
 
 #: views/base.py:89
 msgid "Multiple objects returned"
-msgstr ""
+msgstr "Найдено несколько объектов"
 
 #: views/base.py:114 views/base.py:202 views/base.py:241 views/base.py:258
 #: views/collection.py:34 views/collection.py:69 views/collection.py:247

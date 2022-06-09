@@ -1,7 +1,0 @@
-{% load paper_cloudinary %}
-
-<img src="{% paper_cloudinary_url item width=width height=height crop="fill" %}"
-     class="collection-item__image"
-     width="{{ width }}"
-     height="{{ height }}"
-     alt="{% if item %}{{ item.alt }}{% endif %}">

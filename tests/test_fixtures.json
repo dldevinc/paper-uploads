@@ -1,0 +1,26 @@
+[
+{
+  "model": "auth.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$320000$bCabzNxL9cPQyoCgiO39Mu$b1wRxclmuiZz5jJt/GakNtA6NdHJIK2LEWcH1nTEIuU=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "jon",
+    "first_name": "",
+    "last_name": "",
+    "email": "jon@mail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2022-05-28T19:08:19.547Z",
+    "groups": [],
+    "user_permissions": [
+      [
+        "upload",
+        "paper_uploads",
+        "permissions"
+      ]
+    ]
+  }
+}
+]

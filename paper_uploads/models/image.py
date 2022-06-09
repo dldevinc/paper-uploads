@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from ..conf import settings
 from ..helpers import build_variations
 from ..storage import default_storage
-from ..utils import filesizeformat
+from ..utils import cached_method, filesizeformat
 from ..variations import PaperVariation
 from .base import FileFieldResource, VersatileImageResourceMixin
 from .fields import VariationalFileField
@@ -41,8 +41,9 @@ class UploadedImageBase(VersatileImageResourceMixin, BacklinkModelMixin, Editabl
     def get_file(self) -> FieldFile:
         return self.file
 
-    def get_file_field(self) -> VariationalFileField:
-        return self._meta.get_field("file")
+    @classmethod
+    def get_file_field(cls) -> VariationalFileField:
+        return cls._meta.get_field("file")
 
     def as_dict(self) -> Dict[str, Any]:
         return {
@@ -55,15 +56,14 @@ class UploadedImageBase(VersatileImageResourceMixin, BacklinkModelMixin, Editabl
             ),
         }
 
+    @cached_method("_variations_cache")
     def get_variations(self) -> Dict[str, PaperVariation]:
-        if not hasattr(self, "_variations_cache"):
-            owner_field = self.get_owner_field()
-            if owner_field is not None:
-                variation_config = getattr(owner_field, "variations", {}).copy()
-                self._variations_cache = build_variations(variation_config)
-            else:
-                return {}
-        return self._variations_cache
+        owner_field = self.get_owner_field()
+        if owner_field is None:
+            raise cached_method.Bypass({})
+
+        variation_config = getattr(owner_field, "variations", {}).copy()
+        return build_variations(variation_config)
 
     @classmethod
     def get_configuration(cls) -> Dict[str, Any]:

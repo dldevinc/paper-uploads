@@ -43,11 +43,15 @@ class TestResource:
         )
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+            },
+            ignore={"id"}
+        )
 
 
 class TestFileResource(FileProxyTestMixin, TestResource):
@@ -97,19 +101,23 @@ class TestFileResource(FileProxyTestMixin, TestResource):
         assert storage.resource.name == self.resource_name
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id"}
+        )
 
     def test_read(self, storage):
         with storage.resource.open("r") as fp:
@@ -180,16 +188,20 @@ class TestEmptyFileResource:
         assert storage.resource.checksum == ""
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": None,
-            "name": "",
-            "extension": "",
-            "caption": "",
-            "size": 0,
-            "created": storage.resource.created_at.isoformat(),
-            "modified": None,
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": None,
+                "name": "",
+                "extension": "",
+                "caption": "",
+                "size": 0,
+                "created": storage.resource.created_at.isoformat(),
+                "modified": None,
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id"}
+        )
 
     def test_name(self, storage):
         assert storage.resource.name == ""
@@ -734,20 +746,24 @@ class TestFileFieldResource(TestFileResource):
         )
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "url": storage.resource.url,
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "url": storage.resource.url,
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id"}
+        )
 
 
 class TestFileFieldResourceAttach(TestFileResourceAttach):
@@ -881,25 +897,29 @@ class TestImageFieldResource(TestFileFieldResource):
         )
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "width": 3501,
-            "height": 2525,
-            "cropregion": "",
-            "title": "Nasa",
-            "description": "Calliphora is a genus of blow flies, also known as bottle flies",
-            "url": storage.resource.url,
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "width": 3501,
+                "height": 2525,
+                "cropregion": "",
+                "title": "Nasa",
+                "description": "Calliphora is a genus of blow flies, also known as bottle flies",
+                "url": storage.resource.url,
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id"}
+        )
 
     def test_title(self, storage):
         assert storage.resource.title == "Nasa"
@@ -1046,25 +1066,29 @@ class TestVersatileImageResource(TestImageFieldResource):
         assert storage.resource.height == 1198
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "width": 804,
-            "height": 1198,
-            "cropregion": "",
-            "title": "Nasa",
-            "description": "Calliphora is a genus of blow flies, also known as bottle flies",
-            "url": storage.resource.url,
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "width": 804,
+                "height": 1198,
+                "cropregion": "",
+                "title": "Nasa",
+                "description": "Calliphora is a genus of blow flies, also known as bottle flies",
+                "url": storage.resource.url,
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id"}
+        )
 
     def test_get_variations(self, storage):
         variations = storage.resource.get_variations()
@@ -1097,6 +1121,7 @@ class TestVersatileImageResource(TestImageFieldResource):
         assert isinstance(storage.resource.desktop, VariationFile)
         assert isinstance(storage.resource.mobile, VariationFile)
 
+    def test_missing_variation_attribute(self, storage):
         with pytest.raises(AttributeError):
             storage.resource.tablet  # noqa
 
@@ -1163,9 +1188,9 @@ class TestVersatileImageEmpty(TestImageFieldResourceEmpty):
     def test_variation_files(self, storage):
         assert list(storage.resource.variation_files()) == []
 
-    def test_variation_attribute(self, storage):
+    def test_missing_variation_attribute(self, storage):
         with pytest.raises(AttributeError):
-            storage.resource.desktop  # noqa
+            storage.resource.tablet  # noqa
 
 
 @pytest.mark.django_db
@@ -1182,17 +1207,12 @@ class TestVariations:
         assert os.path.exists(resource.desktop.path) is True
         assert os.path.exists(resource.mobile.path) is True
         assert os.path.exists(resource.square.path) is True
+
         resource.delete_variations()
         assert os.path.exists(resource.path) is True
-
-        with pytest.raises(ValueError):
-            resource.desktop.path
-
-        with pytest.raises(ValueError):
-            resource.mobile.path
-
-        with pytest.raises(ValueError):
-            resource.square.path
+        assert os.path.exists(resource.desktop.path) is False
+        assert os.path.exists(resource.mobile.path) is False
+        assert os.path.exists(resource.square.path) is False
 
         resource.delete_file()
         resource.delete()
@@ -1206,6 +1226,7 @@ class TestVariations:
         assert os.path.exists(resource.desktop.path) is True
         assert os.path.exists(resource.mobile.path) is True
         assert os.path.exists(resource.square.path) is True
+
         resource.delete_file()
 
         with pytest.raises(ValueError):
@@ -1231,11 +1252,15 @@ class TestVariations:
             "{}/initial{{suffix}}.desktop.jpg".format(self.resource_folder),
             source=resource.url
         )
-        assert resource._variation_files_cache == {
-            "desktop": resource.desktop,
-            "mobile": resource.mobile,
-            "square": resource.square,
-        }
+
+        # check `variation_files()` cache
+        assert not hasattr(resource, "_variation_files_cache")
+        resource.variation_files()
+        assert resource._variation_files_cache == tuple([
+            ("desktop", resource.desktop),
+            ("mobile", resource.mobile),
+            ("square", resource.square),
+        ])
 
         os.remove(resource.path)
         resource.attach(NATURE_FILEPATH, name="reattached.jpg")
@@ -1245,11 +1270,15 @@ class TestVariations:
             "{}/reattached{{suffix}}.desktop.jpg".format(self.resource_folder),
             source=resource.url
         )
-        assert resource._variation_files_cache == {
-            "desktop": resource.desktop,
-            "mobile": resource.mobile,
-            "square": resource.square,
-        }
+
+        # check `variation_files()` cache
+        assert not hasattr(resource, "_variation_files_cache")
+        resource.variation_files()
+        assert resource._variation_files_cache == tuple([
+            ("desktop", resource.desktop),
+            ("mobile", resource.mobile),
+            ("square", resource.square),
+        ])
 
         resource.delete_file()
 
@@ -1261,23 +1290,14 @@ class TestVariations:
         resource.delete_variations()
 
         assert os.path.exists(resource.path) is True
-
-        with pytest.raises(ValueError):
-            resource.desktop.path
-
-        with pytest.raises(ValueError):
-            resource.mobile.path
-
-        with pytest.raises(ValueError):
-            resource.square.path
+        assert os.path.exists(resource.desktop.path) is False
+        assert os.path.exists(resource.mobile.path) is False
+        assert os.path.exists(resource.square.path) is False
 
         resource.recut(["mobile", "square"])
 
         assert os.path.exists(resource.path) is True
-
-        with pytest.raises(ValueError):
-            resource.desktop.path
-
+        assert os.path.exists(resource.desktop.path) is False
         assert os.path.exists(resource.mobile.path) is True
         assert os.path.exists(resource.square.path) is True
 
@@ -1295,14 +1315,13 @@ class TestVariations:
             "square": False,
         }
 
-        def signal_handler(sender, instance, file, **kwargs):
+        def signal_handler(sender, instance, name, **kwargs):
             nonlocal signal_fired_times
             nonlocal signals_fired
             signal_fired_times += 1
-            signals_fired[file.variation_name] = True
+            signals_fired[name] = True
             assert sender is self.resource_class
             assert instance is resource
-            assert isinstance(file, VariationFile)
 
         signals.variation_created.connect(signal_handler)
         resource.save()

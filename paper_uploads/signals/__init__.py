@@ -28,7 +28,7 @@ else:
     checksum_update = Signal(providing_args=["instance", "checksum"])
 
     # создание / перезапись (recut) файла вариации изображения
-    variation_created = Signal(providing_args=["instance", "file"])
+    variation_created = Signal(providing_args=["instance", "name"])
 
     # присоединение файла к ресурсу
     pre_attach_file = Signal(providing_args=["instance", "file", "options"])

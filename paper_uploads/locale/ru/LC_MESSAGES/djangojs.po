@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-11-17 15:00+0400\n"
+"POT-Creation-Date: 2022-06-07 09:49+0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,19 +19,20 @@ msgstr ""
 "%100>=11 && n%100<=14)? 2 : 3);\n"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/dropzone.js:44
+msgid "%"
+msgstr ""
+
+#: static/paper_uploads/dist/widget.js:2
 msgid "File `%(name)s` is too large. Maximum file size is %(limit_value)s."
 msgstr ""
 "Файл `%(name)s` имеет слишком большой размер. Максимальный размер файла - "
 "%(limit_value)s."
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/dropzone.js:70
 msgid "File `%(name)s` has an invalid mimetype '%(mimetype)s'"
 msgstr "Файл `%(name)s` имеет недопустимый тип '%(mimetype)s'"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/dropzone.js:55
 msgid ""
 "File `%(name)s` has an invalid extension. Valid extension(s): %(allowed)s"
 msgstr ""
@@ -39,32 +40,28 @@ msgstr ""
 "%(allowed)s"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/uploader.js:191
 msgid "You can not upload any more files."
 msgstr "Вы не можете загрузить больше файлов."
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/uploader.js:193
 msgid "Server responded with {{statusCode}} code."
 msgstr "Сервер ответил со статусом {{statusCode}}."
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/uploader.js:240
 msgid "File validation failed."
 msgstr "Файл не прошел валидацию."
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/uploader.js:259
 msgid "Unsupported file"
 msgstr "Файл не поддерживается"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/utils.js:140
+#: static/paper_uploads/src/js/utils.js:142
 msgid "File `%(name)s` is not an image"
 msgstr "Файл `%(name)s` не является изображением"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/utils.js:168
+#: static/paper_uploads/src/js/utils.js:171
 msgid ""
 "Image `%(name)s` is too small. Image should be at least %(width_limit)sx"
 "%(height_limit)s pixels."
@@ -73,7 +70,7 @@ msgstr ""
 "%(height_limit)s пикселей."
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/utils.js:178
+#: static/paper_uploads/src/js/utils.js:183
 msgid ""
 "Image `%(name)s` is not wide enough. The minimum width is %(width_limit)s "
 "pixels."
@@ -82,7 +79,7 @@ msgstr ""
 "%(width_limit)s пикселей."
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/utils.js:187
+#: static/paper_uploads/src/js/utils.js:194
 msgid ""
 "Image `%(name)s` is not tall enough. The minimum height is %(height_limit)s "
 "pixels."
@@ -91,7 +88,7 @@ msgstr ""
 "%(height_limit)s пикселей."
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/utils.js:198
+#: static/paper_uploads/src/js/utils.js:207
 msgid ""
 "Image `%(name)s` is too big. Image should be at most %(width_limit)sx"
 "%(height_limit)s pixels."
@@ -100,7 +97,7 @@ msgstr ""
 "%(width_limit)sx%(height_limit)s пикселей."
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/utils.js:208
+#: static/paper_uploads/src/js/utils.js:218
 msgid ""
 "Image `%(name)s` is too wide. The maximum width is %(width_limit)s pixels."
 msgstr ""
@@ -108,7 +105,7 @@ msgstr ""
 "%(width_limit)s пикселей."
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/utils.js:217
+#: static/paper_uploads/src/js/utils.js:227
 msgid ""
 "Image `%(name)s` is too tall. The maximum height is %(height_limit)s pixels."
 msgstr ""
@@ -116,79 +113,79 @@ msgstr ""
 "%(height_limit)s пикселей."
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/collection_widget.js:282
-#: static/paper_uploads/src/js/collection_widget.js:812
-#: static/paper_uploads/src/js/file_widget.js:232
-#: static/paper_uploads/src/js/image_widget.js:232
+#: static/paper_uploads/src/js/widgets/collection.js:319
+#: static/paper_uploads/src/js/widgets/collection.js:1014
+#: static/paper_uploads/src/js/widgets/file.js:395
+#: static/paper_uploads/src/js/widgets/image.js:395
 msgid "Confirm deletion"
 msgstr "Подтвердите удаление"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/file_widget.js:233
-#: static/paper_uploads/src/js/image_widget.js:233
+#: static/paper_uploads/src/js/widgets/file.js:396
+#: static/paper_uploads/src/js/widgets/image.js:396
 msgid "Are you sure you want to <b>DELETE</b> this file?"
 msgstr "Вы уверены, что хотите <b>УДАЛИТЬ</b> этот файл?"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/collection_widget.js:285
-#: static/paper_uploads/src/js/collection_widget.js:340
-#: static/paper_uploads/src/js/collection_widget.js:815
-#: static/paper_uploads/src/js/collection_widget.js:947
-#: static/paper_uploads/src/js/file_widget.js:235
-#: static/paper_uploads/src/js/file_widget.js:289
-#: static/paper_uploads/src/js/image_widget.js:235
-#: static/paper_uploads/src/js/image_widget.js:289
+#: static/paper_uploads/src/js/widgets/collection.js:323
+#: static/paper_uploads/src/js/widgets/collection.js:380
+#: static/paper_uploads/src/js/widgets/collection.js:1018
+#: static/paper_uploads/src/js/widgets/collection.js:1151
+#: static/paper_uploads/src/js/widgets/file.js:399
+#: static/paper_uploads/src/js/widgets/file.js:455
+#: static/paper_uploads/src/js/widgets/image.js:399
+#: static/paper_uploads/src/js/widgets/image.js:455
 msgid "Cancel"
 msgstr "Отмена"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/collection_widget.js:292
-#: static/paper_uploads/src/js/collection_widget.js:822
-#: static/paper_uploads/src/js/collection_widget.js:954
-#: static/paper_uploads/src/js/file_widget.js:242
-#: static/paper_uploads/src/js/image_widget.js:242
+#: static/paper_uploads/src/js/widgets/collection.js:331
+#: static/paper_uploads/src/js/widgets/collection.js:1026
+#: static/paper_uploads/src/js/widgets/collection.js:1159
+#: static/paper_uploads/src/js/widgets/file.js:407
+#: static/paper_uploads/src/js/widgets/image.js:407
 msgid "Delete"
 msgstr "Удалить"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/file_widget.js:286
+#: static/paper_uploads/src/js/widgets/file.js:451
 msgid "Edit file"
 msgstr "Редактирование файла"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/collection_widget.js:346
-#: static/paper_uploads/src/js/file_widget.js:295
-#: static/paper_uploads/src/js/image_widget.js:295
+#: static/paper_uploads/src/js/widgets/collection.js:387
+#: static/paper_uploads/src/js/widgets/file.js:462
+#: static/paper_uploads/src/js/widgets/image.js:462
 msgid "Save"
 msgstr "Сохранить"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/image_widget.js:286
+#: static/paper_uploads/src/js/widgets/image.js:451
 msgid "Edit image"
 msgstr "Редактирование изображения"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/collection_widget.js:283
+#: static/paper_uploads/src/js/widgets/collection.js:320
 msgid "Are you sure you want to <b>DELETE</b> this item?"
 msgstr "Вы уверены, что хотите <b>УДАЛИТЬ</b> этот элемент?"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/collection_widget.js:337
+#: static/paper_uploads/src/js/widgets/collection.js:376
 msgid "Edit item"
 msgstr "Редактировать"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/collection_widget.js:813
+#: static/paper_uploads/src/js/widgets/collection.js:1015
 msgid "Are you sure you want to <b>DELETE</b> this collection?"
 msgstr "Вы уверены, что хотите <b>УДАЛИТЬ</b> эту коллекцию?"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/collection_widget.js:935
+#: static/paper_uploads/src/js/widgets/collection.js:1138
 msgid "Confirmation"
 msgstr "Подтверждение"
 
 #: static/paper_uploads/dist/widget.js:2
-#: static/paper_uploads/src/js/collection_widget.js:938
+#: static/paper_uploads/src/js/widgets/collection.js:1141
 msgid "Are you sure you want to <b>DELETE</b> the selected item?"
 msgid_plural ""
 "Are you sure you want to <b>DELETE</b> the <b>%(count)s</b> selected items?"

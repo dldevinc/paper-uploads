@@ -6,6 +6,7 @@ from examples.fields.standard.models import Page
 from paper_uploads.models import UploadedImage
 from paper_uploads.variations import PaperVariation
 
+from .. import utils
 from ..dummy import *
 from ..mixins import BacklinkModelTestMixin
 from .test_dummy import (
@@ -54,6 +55,17 @@ class TestUploadedImage(BacklinkModelTestMixin, TestVersatileImageResource):
         assert set(variations.keys()) == {"desktop", "mobile", "mobile_webp", "mobile_2x", "mobile_webp_2x"}
         assert all(isinstance(v, PaperVariation) for v in variations.values()) is True
 
+    def test_get_variations_on_empty_resource(self):
+        resource = self.resource_class()
+        variations = resource.get_variations()
+        assert variations == {}
+
+    def test_get_variations_on_minimal_resource(self):
+        resource = self.resource_class()
+        resource.set_owner_field(self.owner_model, self.owner_fieldname)
+        variations = resource.get_variations()
+        assert len(variations) == 5
+
     def test_variation_files(self, storage):
         assert dict(storage.resource.variation_files()) == {
             "desktop": storage.resource.desktop,
@@ -64,26 +76,30 @@ class TestUploadedImage(BacklinkModelTestMixin, TestVersatileImageResource):
         }
 
     def test_as_dict(self, storage):
-        assert storage.resource.as_dict() == {
-            "id": 1,
-            "name": self.resource_basename,
-            "extension": self.resource_extension,
-            "caption": "{}.{}".format(
-                self.resource_basename,
-                self.resource_extension
-            ),
-            "size": self.resource_size,
-            "width": 804,
-            "height": 1198,
-            "cropregion": "",
-            "title": "Calliphora",
-            "description": "Calliphora is a genus of blow flies, also known as bottle flies",
-            "url": storage.resource.url,
-            "file_info": "(jpg, 804x1198, 254.8\xa0KB)",
-            "created": storage.resource.created_at.isoformat(),
-            "modified": storage.resource.modified_at.isoformat(),
-            "uploaded": storage.resource.uploaded_at.isoformat(),
-        }
+        utils.compare_dicts(
+            storage.resource.as_dict(),
+            {
+                "id": 1,
+                "name": self.resource_basename,
+                "extension": self.resource_extension,
+                "caption": "{}.{}".format(
+                    self.resource_basename,
+                    self.resource_extension
+                ),
+                "size": self.resource_size,
+                "width": 804,
+                "height": 1198,
+                "cropregion": "",
+                "title": "Calliphora",
+                "description": "Calliphora is a genus of blow flies, also known as bottle flies",
+                "url": storage.resource.url,
+                "file_info": "(jpg, 804x1198, 254.8\xa0KB)",
+                "created": storage.resource.created_at.isoformat(),
+                "modified": storage.resource.modified_at.isoformat(),
+                "uploaded": storage.resource.uploaded_at.isoformat(),
+            },
+            ignore={"id"}
+        )
 
 
 class TestUploadedImageAttach(TestVersatileImageAttach):

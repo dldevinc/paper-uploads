@@ -5,6 +5,7 @@ from collections import OrderedDict
 from typing import Any, ClassVar, Dict, Iterable, Optional, Type
 
 import magic
+from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.staticfiles.finders import find
@@ -31,6 +32,7 @@ from ..helpers import (
     iterate_variation_names,
 )
 from ..storage import default_storage
+from ..utils import cached_method
 from ..variations import PaperVariation
 from .base import (
     FileFieldResource,
@@ -136,22 +138,28 @@ class CollectionMeta(NoPermissionsMetaBase, ModelBase):
 
 class CollectionManager(models.Manager):
     """
-    Из-за того, что в большинстве случаев коллекции являются прокси-моделями
-    для Collection, любые запросы от имени любой прокси-коллекции будут распространяться
-    на все экземпляры Collection.
+    Из-за того, что в большинстве случаев коллекции являются прокси-моделями,
+    любые запросы от имени такой модели будут работать с экземплярами конкретной
+    модели (обычно Collection).
 
-    Этот менеджер ограничивает область действия запросов той прокси-коллекцией,
-    от которой исходит запрос.
-    
-    Для не-прокси моделей поведение стандартное: запрос вернёт все экземпляры таблицы.
+    Например, запрос
+        MyProxyCollection.objects.all()
+    вернёт все коллекции, а не только экземпляры MyCustomCollection.
+
+    Данный менеджер ограничивает область действия подобных запросов.
+    Для прокси-моделей запросы работают только с экземплярами данной прокси-модели.
+    Для конкретных моделей поведение стандартное: запрос вернёт все экземпляры таблицы.
     """
 
     def get_queryset(self):
         if self.model._meta.proxy:
             collection_ct = ContentType.objects.get_for_model(
-                self.model, for_concrete_model=False
+                self.model,
+                for_concrete_model=False
             )
-            return super().get_queryset().filter(collection_content_type=collection_ct)
+            return super().get_queryset().filter(
+                collection_content_type=collection_ct
+            )
         else:
             return super().get_queryset()
 
@@ -159,11 +167,18 @@ class CollectionManager(models.Manager):
 class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
     collection_content_type = models.ForeignKey(
         ContentType,
-        null=True,
-        on_delete=models.SET_NULL,
-        editable=False
+        on_delete=models.CASCADE,
+        editable=False,
+        related_name="+"
     )
-    items = ContentItemRelation(
+    concrete_collection_content_type = models.ForeignKey(
+        ContentType,
+        null=True,
+        on_delete=models.CASCADE,
+        editable=False,
+        related_name="+"
+    )
+    items = ContentItemRelation(  # TODO: deprecated since v0.10.1
         "paper_uploads.CollectionItemBase",
         content_type_field="collection_content_type",
         object_id_field="collection_id",
@@ -195,16 +210,20 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         return self.get_items().iterator()
 
     def save(self, *args, **kwargs):
-        if not self.collection_content_type:
+        if self.collection_content_type_id is None:
             self.collection_content_type = ContentType.objects.get_for_model(
                 self, for_concrete_model=False
+            )
+        if self.concrete_collection_content_type_id is None:
+            self.concrete_collection_content_type = ContentType.objects.get_for_model(
+                self, for_concrete_model=True
             )
         super().save(*args, **kwargs)
 
     def delete(self, using=None, keep_parents=False):
-        # Удаляем элементы вручную из-за рекурсии.
-        # Удалить элементы с помощью `.all().delete()` нельзя из-за того, что в
-        # файле (django/db/models/deletion.py:248) указано следующее:
+        # Удаляем элементы группами, из-за рекурсии.
+        # Удалить элементы с помощью `.all().delete()` - нельзя. Из-за того,
+        # что в файле (django/db/models/deletion.py:284) указано следующее:
         #   model = new_objs[0].__class__
         # Это приводит к тому, что все полиморфные модели удаляются через модель
         # первого экземпляра в QuerySet.
@@ -227,18 +246,28 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         return cls.item_types[item_type].model
 
     def get_items(self, item_type: str = None) -> 'models.QuerySet[CollectionItemBase]':
+        # Получение элементов коллекции работает как через прокси-модель,
+        # так и через соответствующую конкретную модель.
+        concrete_model_ct = ContentType.objects.get_for_model(self._meta.concrete_model)
+        qs = CollectionItemBase.objects.filter(
+            concrete_collection_content_type=concrete_model_ct,
+            collection_id=self.pk
+        ).order_by("order")
+
         if item_type is None:
-            return self.items.order_by("order")
+            return qs
+
         if item_type not in self.item_types:
             raise exceptions.InvalidItemType(item_type)
-        return self.items.filter(type=item_type).order_by("order")
+
+        return qs.filter(type=item_type)
 
     def get_last_modified(self) -> datetime.datetime:
         """
         Получение даты модификации коллекции с учётом её элементов.
         """
         dates = [self.created_at, self.modified_at]
-        item_date = self.items.aggregate(
+        item_date = self.get_items().aggregate(
             date=models.Max("modified_at")
         )["date"]
 
@@ -273,7 +302,18 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
     # путь к шаблону, представляющему картинку-превью элемента коллекции в админке
     preview_template_name: Optional[str] = None
 
-    collection_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    collection_content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        related_name="+"
+    )
+    concrete_collection_content_type = models.ForeignKey(
+        ContentType,
+        null=True,
+        on_delete=models.CASCADE,
+        editable=False,
+        related_name="+"
+    )
     collection_id = models.IntegerField()
     collection = GenericForeignKey(
         ct_field="collection_content_type",
@@ -282,13 +322,20 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
     )
 
     type = models.CharField(
-        _("type"), max_length=32, db_index=True, editable=False
+        _("type"),
+        max_length=32,
+        db_index=True,
+        editable=False
     )
-    order = models.IntegerField(_("order"), default=0, editable=False)
+    order = models.IntegerField(
+        _("order"),
+        default=0,
+        editable=False
+    )
 
     class Meta:
         # Используется обратный порядок полей в составном индексе,
-        # т.к. слективность поля collection_id выше, а для поля
+        # т.к. селективность поля collection_id выше, а для поля
         # `collection_content_type` уже есть отдельный индекс.
         index_together = [("collection_id", "collection_content_type")]
         verbose_name = _("item")
@@ -334,7 +381,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         )
         self.type = value
 
-    def get_order(self):
+    def get_next_order_value(self):
         max_order = CollectionItemBase.objects.filter(
             collection_content_type_id=self.collection_content_type_id,
             collection_id=self.collection_id,
@@ -345,12 +392,26 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         return 0 if max_order is None else max_order + 1
 
     def save(self, *args, **kwargs):
+        if self.concrete_collection_content_type_id is None and self.collection_content_type_id is not None:
+            try:
+                collection_cls = self.get_collection_class()
+            except exceptions.CollectionModelNotFoundError:
+                # TODO: Добавленный в такую коллекцию элемент не сможет быть
+                #       получен через get_items().
+                pass
+            else:
+                self.concrete_collection_content_type = ContentType.objects.get_for_model(
+                    collection_cls,
+                    for_concrete_model=True
+                )
+
         if not self.pk and self.collection_id:
             # Попытка решить проблему того, что при создании коллекции элементы
             # отсортированы в порядке загрузки, а не в порядке добавления.
             # Код ниже не решает проблему полностью, но уменьшает её влияние.
-            if self.order is None or self.collection.items.filter(order=self.order).exists():
-                self.order = self.get_order()
+            if self.order is None or self.collection.get_items().filter(order=self.order).exists():
+                self.order = self.get_next_order_value()
+
         super().save(*args, **kwargs)
 
     @classmethod
@@ -372,14 +433,35 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         }
 
     def get_collection_class(self) -> Type[CollectionBase]:
-        return self.collection_content_type.model_class()
+        # Прямое обращение к полю `self.collection_content_type` дёргает БД.
+        # Вместо него используется метод `get_for_id()` класса ContentType,
+        # который использует общий кэш.
+        # (!) Если класс модели для указанного ContentType удалён, то
+        # метод вернёт None.
+        collection_ct = ContentType.objects.get_for_id(self.collection_content_type_id)
 
-    def get_item_type_field(self) -> Optional[CollectionItem]:
+        try:
+            return apps.get_model(collection_ct.app_label, collection_ct.model)
+        except LookupError:
+            raise exceptions.CollectionModelNotFoundError(
+                "{}.{}".format(collection_ct.app_label, collection_ct.model)
+            )
+
+    def get_item_type_field(self) -> CollectionItem:
+        """
+        Получение поля CollectionItem, с которым связан текущий элемент.
+        """
         collection_cls = self.get_collection_class()
-        for name, field in collection_cls.item_types.items():
-            if field.model is type(self) or (field.model._meta.proxy and field.model._meta.concrete_model is type(self)):
-                return field
-        return None
+
+        field = collection_cls.item_types.get(self.type)
+        if field is None:
+            raise exceptions.CollectionItemNotFoundError()
+
+        # support proxy models
+        if self._meta.concrete_model is field.model._meta.concrete_model:
+            return field
+
+        raise exceptions.CollectionItemNotFoundError()
 
     def get_itemtype_field(self) -> Optional[CollectionItem]:
         warnings.warn(
@@ -396,13 +478,18 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         self.collection_content_type = ContentType.objects.get_for_model(
             collection, for_concrete_model=False
         )
+        self.concrete_collection_content_type = ContentType.objects.get_for_model(
+            collection, for_concrete_model=True
+        )
         self.collection_id = collection.pk
+
         for name, field in collection.item_types.items():
-            if field.model is type(self):
+            # support proxy models
+            if self._meta.concrete_model is field.model._meta.concrete_model:
                 self.type = name
                 break
         else:
-            raise TypeError(_("Unsupported collection item: %s") % type(self).__name__)
+            raise exceptions.UnsupportedCollectionItemError(type(self).__name__)
 
     def render_preview(self):
         """ Отображение элемента коллекции в админке """
@@ -430,7 +517,11 @@ class CollectionFileItemBase(CollectionItemBase, FileFieldResource):
         raise NotImplementedError
 
     def get_file_storage(self) -> Storage:
-        item_type_field = self.get_item_type_field()
+        try:
+            item_type_field = self.get_item_type_field()
+        except (exceptions.CollectionModelNotFoundError, exceptions.CollectionItemNotFoundError):
+            return default_storage
+
         storage = item_type_field.options.get("storage") or default_storage
         if callable(storage):
             storage = storage()
@@ -481,7 +572,11 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
         _("file"),
         max_length=255,
     )
-    display_name = models.CharField(_("display name"), max_length=255, blank=True)
+    display_name = models.CharField(
+        _("display name"),
+        max_length=255,
+        blank=True
+    )
 
     class Meta(CollectionItemBase.Meta):
         abstract = True
@@ -494,14 +589,19 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
-        item_type_field = self.get_item_type_field()
+        try:
+            item_type_field = self.get_item_type_field()
+        except (exceptions.CollectionModelNotFoundError, exceptions.CollectionItemNotFoundError):
+            return settings.COLLECTION_FILES_UPLOAD_TO
+
         return item_type_field.options.get("upload_to") or settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
         return self.file
 
-    def get_file_field(self) -> models.FileField:
-        return self._meta.get_field("file")
+    @classmethod
+    def get_file_field(cls) -> models.FileField:
+        return cls._meta.get_field("file")
 
     def get_caption(self):
         name = self.display_name or self.basename
@@ -523,7 +623,11 @@ class SVGItemBase(SVGFileResourceMixin, CollectionFileItemBase):
         _("file"),
         max_length=255,
     )
-    display_name = models.CharField(_("display name"), max_length=255, blank=True)
+    display_name = models.CharField(
+        _("display name"),
+        max_length=255,
+        blank=True
+    )
 
     class Meta(CollectionItemBase.Meta):
         abstract = True
@@ -536,14 +640,19 @@ class SVGItemBase(SVGFileResourceMixin, CollectionFileItemBase):
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
-        item_type_field = self.get_item_type_field()
+        try:
+            item_type_field = self.get_item_type_field()
+        except (exceptions.CollectionModelNotFoundError, exceptions.CollectionItemNotFoundError):
+            return settings.COLLECTION_FILES_UPLOAD_TO
+
         return item_type_field.options.get("upload_to") or settings.COLLECTION_FILES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
         return self.file
 
-    def get_file_field(self) -> models.FileField:
-        return self._meta.get_field("file")
+    @classmethod
+    def get_file_field(cls) -> models.FileField:
+        return cls._meta.get_field("file")
 
     def get_caption(self):
         name = self.display_name or self.basename
@@ -573,24 +682,20 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         verbose_name = _("Image item")
         verbose_name_plural = _("Image items")
 
-    def _setup_variation_files(self):
-        # Предотвращение вероятной бесконечной рекурсии.
-        # Ошибка возникает в случае, когда модель коллекции была удалена,
-        # но соответствующий ContentType остался.
-        if "file" not in self.__dict__:
-            return
-
-        super()._setup_variation_files()
-
     def get_file_folder(self) -> str:
-        item_type_field = self.get_item_type_field()
+        try:
+            item_type_field = self.get_item_type_field()
+        except (exceptions.CollectionModelNotFoundError, exceptions.CollectionItemNotFoundError):
+            return settings.COLLECTION_IMAGES_UPLOAD_TO
+
         return item_type_field.options.get("upload_to") or settings.COLLECTION_IMAGES_UPLOAD_TO
 
     def get_file(self) -> FieldFile:
         return self.file
 
-    def get_file_field(self) -> VariationalFileField:
-        return self._meta.get_field("file")
+    @classmethod
+    def get_file_field(cls) -> VariationalFileField:
+        return cls._meta.get_field("file")
 
     def recut_async(self, names: Iterable[str] = ()):
         """
@@ -605,6 +710,7 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
         rest_variations = tuple(set(names).difference(preview_variations))
         super().recut_async(rest_variations)
 
+    @cached_method("_variations_cache")
     def get_variations(self) -> Dict[str, PaperVariation]:
         """
         Перебираем возможные места вероятного определения вариаций и берем
@@ -613,12 +719,13 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
             2) член класса галереи VARIATIONS
         К найденному словарю примешиваются вариации для админки.
         """
-        if not hasattr(self, "_variations_cache"):
-            collection_cls = self.get_collection_class()
-            item_type_field = self.get_item_type_field()
-            variation_config = self.get_variation_config(collection_cls, item_type_field)
-            self._variations_cache = build_variations(variation_config)
-        return self._variations_cache
+        if not self.collection_content_type_id:
+            raise cached_method.Bypass({})
+
+        collection_cls = self.get_collection_class()
+        item_type_field = self.get_item_type_field()
+        variation_config = self.get_variation_config(collection_cls, item_type_field)
+        return build_variations(variation_config)
 
     @classmethod
     def accept(cls, file: File) -> bool:
@@ -629,12 +736,13 @@ class ImageItemBase(VersatileImageResourceMixin, CollectionFileItemBase):
 
     @classmethod
     def get_variation_config(
-        cls, collection_cls: Type[CollectionBase], item_type_field: Optional[CollectionItem],
+        cls, collection_cls: Type[CollectionBase], item_type_field: CollectionItem,
     ) -> Dict[str, Any]:
-        if item_type_field is not None and "variations" in item_type_field.options:
+        if "variations" in item_type_field.options:
             variations = item_type_field.options["variations"]
         else:
             variations = getattr(collection_cls, "VARIATIONS", None)
+
         variations = variations or {}
         variations = dict(cls.PREVIEW_VARIATIONS, **variations)
         return variations

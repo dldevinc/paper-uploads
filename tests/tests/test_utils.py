@@ -5,6 +5,52 @@ from paper_uploads import utils
 from .dummy import *
 
 
+class Multiplier:
+    """
+    Класс для тестирования декоратора cached_method.
+    Метод `duplicate()` возвращает удвоенное значение поля value, если value не равно None.
+    """
+    def __init__(self, value: int = None):
+        self.value = value
+        self.calls = 0
+
+    @utils.cached_method(key="_cache")
+    def duplicate(self):
+        self.calls += 1
+        if self.value is None:
+            raise utils.cached_method.Bypass()
+        else:
+            return self.value * 2
+
+
+def test_cached_method():
+    obj = Multiplier()
+
+    # test initial state
+    assert not hasattr(obj, "_cache")
+    assert obj.calls == 0
+
+    # test cache bypass
+    result = obj.duplicate()
+    assert result is None
+    assert not hasattr(obj, "_cache")
+    assert obj.calls == 1
+
+    # test cached calculation
+    obj.value = 12
+    result = obj.duplicate()
+    assert result is 24
+    assert getattr(obj, "_cache") is 24
+    assert obj.calls == 2
+
+    # test cache usage
+    obj.value = 3
+    result = obj.duplicate()
+    assert result is 24
+    assert getattr(obj, "_cache") is 24
+    assert obj.calls == 2
+
+
 def test_checksum():
     with open(NATURE_FILEPATH, "rb") as fp:
         assert utils.checksum(fp) == "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
