@@ -1,7 +1,6 @@
 import django
 from django.db.models.signals import Signal
 
-
 if django.VERSION >= (4, 0):
     # изменение контрольной суммы файла
     checksum_update = Signal()

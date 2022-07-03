@@ -49,18 +49,18 @@ Class hierarchy:
 from .collection import (
     Collection,
     CollectionItemBase,
-    ImageCollection,
-    FileItemBase,
-    ImageItemBase,
-    SVGItemBase,
     FileItem,
+    FileItemBase,
+    ImageCollection,
     ImageItem,
+    ImageItemBase,
     SVGItem,
+    SVGItemBase,
 )
-from .fields import CollectionField, CollectionItem, FileField, SVGFileField, ImageField
-from .file import UploadedFileBase, UploadedFile
-from .svg import UploadedSVGFileBase, UploadedSVGFile
-from .image import UploadedImageBase, UploadedImage
+from .fields import CollectionField, CollectionItem, FileField, ImageField, SVGFileField
+from .file import UploadedFile, UploadedFileBase
+from .image import UploadedImage, UploadedImageBase
+from .svg import UploadedSVGFile, UploadedSVGFileBase
 
 __all__ = [
     "UploadedFileBase",

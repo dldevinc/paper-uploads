@@ -25,10 +25,10 @@ class ExitException(Exception):
 class Command(BaseCommand):
     help = """
     Удаление вариаций для всех экземпляров указанной модели.
-    
+
     Пример для обычной модели:
         python3 manage.py remove_variations blog.post --field=hero
-    
+
     Пример для коллекции:
         python3 manage.py remove_variations blog.gallery --item-type=image
     """
@@ -273,7 +273,7 @@ class Command(BaseCommand):
 
             for variation_name in instance.get_variations():
                 if variation_name in self._variation_names:
-                    variation_file = item.get_variation_file(variation_name)
+                    variation_file = instance.get_variation_file(variation_name)
                     variation_file.delete()
 
             print("done")

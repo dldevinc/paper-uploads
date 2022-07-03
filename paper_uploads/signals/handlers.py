@@ -50,7 +50,6 @@ def inject_operations(
 
 class PaperMigration(ExtendableMigration):
     def process(self, operation: Operation, **kwargs):
-        apps = kwargs["apps"]
         if isinstance(operation, migrations.RenameField):
             self.insert_after(
                 RenameOwnerField(
@@ -108,7 +107,7 @@ class RenameOwnerField(migrations.RunPython):
                 )
 
 
-class DeleteOwnerModel(migrations.RunPython):
+class RenameOwnerModel(migrations.RunPython):
     """
     При переименовании модели, в которой есть поля, ссылающиеся на ресурсы,
     необходимо исправить значение owner_model_name во всех связанных экземплярах.

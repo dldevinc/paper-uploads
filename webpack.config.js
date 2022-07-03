@@ -9,10 +9,9 @@ const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const SOURCE_DIR = "paper_uploads/static/paper_uploads/src";
 const DIST_DIR = "paper_uploads/static/paper_uploads/dist";
 
-
 let config = {
     entry: {
-        widget: path.resolve(SOURCE_DIR, "js/widget.js"),
+        widget: path.resolve(SOURCE_DIR, "js/widget.js")
     },
     output: {
         clean: true,
@@ -41,61 +40,61 @@ let config = {
 
             {
                 test: /\.css$/,
-                use: [{
-                    loader: MiniCssExtractPlugin.loader,
-                }, {
-                    loader: "fast-css-loader"
-                }]
+                use: [
+                    {
+                        loader: MiniCssExtractPlugin.loader
+                    },
+                    {
+                        loader: "fast-css-loader"
+                    }
+                ]
             },
 
             {
                 test: /\.scss$/,
-                use: [{
-                    loader: MiniCssExtractPlugin.loader,
-                }, {
-                    loader: "fast-css-loader",
-                    options: {
-                        importLoaders: 2
-                    }
-                },
-                {
-                    loader: "postcss-loader",
-                    options: {
-                        postcssOptions: {
-                            plugins: [
-                                pixrem(),
-                                autoprefixer()
-                            ]
+                use: [
+                    {
+                        loader: MiniCssExtractPlugin.loader
+                    },
+                    {
+                        loader: "fast-css-loader",
+                        options: {
+                            importLoaders: 2
+                        }
+                    },
+                    {
+                        loader: "postcss-loader",
+                        options: {
+                            postcssOptions: {
+                                plugins: [pixrem(), autoprefixer()]
+                            }
+                        }
+                    },
+                    {
+                        loader: "sass-loader",
+                        options: {
+                            sassOptions: {
+                                includePaths: [path.resolve(SOURCE_DIR, "css"), path.resolve(__dirname, "node_modules")]
+                            }
                         }
                     }
-                },
-                {
-                    loader: "sass-loader",
-                    options: {
-                        sassOptions: {
-                            includePaths: [
-                                path.resolve(SOURCE_DIR, "css"),
-                                path.resolve(__dirname, "node_modules"),
-                            ]
-                        }
-                    }
-                }]
+                ]
             },
 
             {
                 test: /\.(jpe?g|png|gif|woff2?|ttf|eot|svg)$/i,
-                type: "asset/resource",
+                type: "asset/resource"
             }
         ]
     },
     resolve: {
-        modules: [SOURCE_DIR, "node_modules"],
+        modules: [SOURCE_DIR, "node_modules"]
     },
     plugins: [
         new webpack.ProgressPlugin(),
         new MiniCssExtractPlugin({
             filename: "[name].css"
-        }),
+        })
     ],
     optimization: {
         moduleIds: "deterministic"
@@ -108,10 +107,10 @@ let config = {
         assets: false,
         chunks: true
     }
-}
+};
 
 module.exports = (env, argv) => {
-    config.mode = (argv.mode === "production") ? "production" : "development";
+    config.mode = argv.mode === "production" ? "production" : "development";
 
     if (config.mode === "production") {
         config.devtool = "source-map";
@@ -126,13 +125,13 @@ module.exports = (env, argv) => {
             buildDependencies: {
                 config: [__filename]
             }
-        }
+        };
     }
 
     if (config.mode === "production") {
         config.optimization.minimizer = [
             new TerserPlugin({
-                parallel: true,
+                parallel: true
             }),
             new CssMinimizerPlugin({})
         ];

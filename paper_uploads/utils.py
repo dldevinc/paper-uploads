@@ -12,7 +12,7 @@ filesize_regex = re.compile(r"^([.\d]+)\s*([KMGT])?B?$")
 filesize_units = {"K": 10 ** 3, "M": 10 ** 6, "G": 10 ** 9, "T": 10 ** 12}
 
 
-class cached_method:
+class cached_method:  # noqa: N801
     """
     Декоратор для кэширования результата вызова метода класса без параметров.
     Если декорируемый метод при выполнении вызовет исключение cached_method.Bypass
@@ -41,7 +41,7 @@ class cached_method:
         assert result == {"p", "a", "e", "r"}  # множество было закэшировано
     """
 
-    class Bypass(Exception):
+    class Bypass(Exception):  # noqa: N818
         def __init__(self, value=None):
             self.value = value
 
@@ -130,11 +130,11 @@ def filesizeformat(bytes_: int) -> str:
     def filesize_number_format(value):
         return formats.number_format(round(value, 1), 1)
 
-    KB = 10 ** 3
-    MB = 10 ** 6
-    GB = 10 ** 9
-    TB = 10 ** 12
-    PB = 10 ** 15
+    KB = 10 ** 3  # noqa: N806
+    MB = 10 ** 6  # noqa: N806
+    GB = 10 ** 9  # noqa: N806
+    TB = 10 ** 12  # noqa: N806
+    PB = 10 ** 15  # noqa: N806
 
     negative = bytes_ < 0
     if negative:

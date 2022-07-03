@@ -1,6 +1,7 @@
 import json
-from django.template import library
+
 from django.core.serializers.json import DjangoJSONEncoder
+from django.template import library
 from django.utils.html import _json_script_escapes
 from django.utils.safestring import mark_safe
 
