@@ -273,7 +273,7 @@ class Command(BaseCommand):
 
             for variation_name in instance.get_variations():
                 if variation_name in self._variation_names:
-                    variation_file = item.get_variation_file(variation_name)
+                    variation_file = instance.get_variation_file(variation_name)
                     variation_file.delete()
 
             print("done")
