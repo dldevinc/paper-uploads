@@ -108,7 +108,7 @@ class ResourceBaseMeta(NoPermissionsMetaBase, models.base.ModelBase):
     https://docs.djangoproject.com/en/3.2/topics/db/models/#specifying-the-parent-link-field
     """
 
-    def __new__(mcs, name, bases, attrs, **kwargs):
+    def __new__(mcs, name, bases, attrs, **kwargs):  # noqa: N804
         parents = [b for b in bases if isinstance(b, ModelBase)]
 
         parent_links = {}

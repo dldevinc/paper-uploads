@@ -1,6 +1,6 @@
 from django import forms
 
-from ...models.collection import FileItem, SVGItem, ImageItem
+from ...models.collection import FileItem, ImageItem, SVGItem
 from .base import ChangeFileResourceDialogBase
 
 
