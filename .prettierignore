@@ -1,3 +1,6 @@
-*.css
-*.scss
+paper_uploads/static/paper_uploads/dist
 *.yaml
+*.yml
+*.html
+package.json
+package-lock.json
