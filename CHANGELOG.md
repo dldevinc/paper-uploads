@@ -6,7 +6,6 @@
 
 -   Fixed some typos.
 
-
 ## [0.11.0](https://github.com/dldevinc/paper-uploads/tree/v0.11.0) - 2022-06-02
 
 ### ⚠ BREAKING CHANGES
