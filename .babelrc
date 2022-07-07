@@ -9,5 +9,9 @@
             }
         ]
     ],
-    "plugins": ["@babel/plugin-syntax-dynamic-import", ["module:fast-async", { "spec": true }]]
+    "plugins": [
+        "@babel/plugin-transform-runtime",
+        "@babel/plugin-syntax-dynamic-import",
+        ["module:fast-async", { "spec": true }]
+    ]
 }
