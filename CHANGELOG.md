@@ -1,11 +1,16 @@
 # Change Log
 
+## [0.11.2](https://github.com/dldevinc/paper-uploads/tree/v0.11.2) - 2022-07-03
+
+### Bug Fixes
+
+- Fixed `Class constructors cannot be invoked without 'new'` error.
+
 ## [0.11.1](https://github.com/dldevinc/paper-uploads/tree/v0.11.1) - 2022-07-03
 
 ### Bug Fixes
 
 -   Fixed some typos.
-
 
 ## [0.11.0](https://github.com/dldevinc/paper-uploads/tree/v0.11.0) - 2022-06-02
 
