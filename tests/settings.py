@@ -1,13 +1,16 @@
 import os
+import sys
+from pathlib import Path
 
 from django.utils.translation import gettext_lazy as _
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent
 
+sys.path.insert(0, str(BASE_DIR))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -63,7 +66,7 @@ TEMPLATES = [
         "NAME": "django",
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [
-            os.path.join(BASE_DIR, "templates"),
+            str(BASE_DIR / "templates"),
         ],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -86,7 +89,7 @@ WSGI_APPLICATION = "wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        "NAME": str(BASE_DIR / "db.sqlite3"),
     }
 }
 
@@ -110,10 +113,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, "static"))
+STATIC_ROOT = str(BASE_DIR / "static")
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.abspath(os.path.join(BASE_DIR, "media"))
+MEDIA_ROOT = str(BASE_DIR / "media")
 FILE_UPLOAD_PERMISSIONS = 0o666
 
 
