@@ -1,5 +1,5 @@
 python-dotenv==0.20.0
-django-storages[dropbox]==1.13.1
+django-storages[dropbox]
 
 pytest==7.0.1; python_version == '3.6'
 pytest==7.1.2; python_version >= '3.7'
