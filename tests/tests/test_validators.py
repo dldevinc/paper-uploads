@@ -57,14 +57,14 @@ class TestMimetypeValidator:
         validator = validators.MimeTypeValidator(allowed=["iMaGe/Jpeg"])
 
         # dummy file with JPEG signature
-        with make_dummy_file(content=b'\xff\xd8\xff') as fp:
+        with make_dummy_file(content=b'\xff\xd8\xff\xe0') as fp:
             validator(fp)
 
     def test_asterisk(self):
         validator = validators.MimeTypeValidator(allowed=["image/*"])
 
         # dummy file with JPEG signature
-        with make_dummy_file(content=b'\xff\xd8\xff') as fp:
+        with make_dummy_file(content=b'\xff\xd8\xff\xe0') as fp:
             validator(fp)
 
     def test_fail(self):
