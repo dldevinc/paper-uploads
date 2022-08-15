@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.11.3](https://github.com/dldevinc/paper-uploads/tree/v0.11.3) - 2022-08-15
+
+### Features
+
+- Updated dependencies.
+
+
 ## [0.11.2](https://github.com/dldevinc/paper-uploads/tree/v0.11.2) - 2022-07-03
 
 ### Bug Fixes
