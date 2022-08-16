@@ -9,15 +9,15 @@ from .. import utils
 from ..dummy import *
 from ..mixins import BacklinkModelTestMixin
 from .test_dummy import (
-    TestFileFieldResource,
-    TestFileFieldResourceAttach,
-    TestFileFieldResourceDelete,
-    TestFileFieldResourceEmpty,
-    TestFileFieldResourceRename,
+    TestFileFieldResource as BaseTestFileFieldResource,
+    TestFileFieldResourceAttach as BaseTestFileFieldResourceAttach,
+    TestFileFieldResourceDelete as BaseTestFileFieldResourceDelete,
+    TestFileFieldResourceEmpty as BaseTestFileFieldResourceEmpty,
+    TestFileFieldResourceRename as BaseTestFileFieldResourceRename,
 )
 
 
-class TestUploadedSVGFile(BacklinkModelTestMixin, TestFileFieldResource):
+class TestUploadedSVGFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
     resource_class = UploadedSVGFile
     resource_attachment = MEDITATION_FILEPATH
     resource_basename = "Meditation"
@@ -94,7 +94,7 @@ class TestUploadedSVGFile(BacklinkModelTestMixin, TestFileFieldResource):
         )
 
 
-class TestUploadedFileAttach(TestFileFieldResourceAttach):
+class TestUploadedFileAttach(BaseTestFileFieldResourceAttach):
     resource_class = UploadedSVGFile
     resource_attachment = MEDITATION_FILEPATH
     resource_basename = "Meditation"
@@ -103,7 +103,7 @@ class TestUploadedFileAttach(TestFileFieldResourceAttach):
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
 
 
-class TestUploadedFileRename(BacklinkModelTestMixin, TestFileFieldResourceRename):
+class TestUploadedFileRename(BacklinkModelTestMixin, BaseTestFileFieldResourceRename):
     resource_class = UploadedSVGFile
     resource_attachment = MEDITATION_FILEPATH
     resource_size = 47193
@@ -132,7 +132,7 @@ class TestUploadedFileRename(BacklinkModelTestMixin, TestFileFieldResourceRename
         storage.resource.delete()
 
 
-class TestUploadedFileDelete(BacklinkModelTestMixin, TestFileFieldResourceDelete):
+class TestUploadedFileDelete(BacklinkModelTestMixin, BaseTestFileFieldResourceDelete):
     resource_class = UploadedSVGFile
     resource_attachment = MEDITATION_FILEPATH
     owner_fieldname = "svg"
@@ -156,5 +156,5 @@ class TestUploadedFileDelete(BacklinkModelTestMixin, TestFileFieldResourceDelete
         storage.resource.delete()
 
 
-class TestUploadedFileEmpty(TestFileFieldResourceEmpty):
+class TestUploadedFileEmpty(BaseTestFileFieldResourceEmpty):
     recource_class = UploadedSVGFile

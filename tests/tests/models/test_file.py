@@ -9,15 +9,15 @@ from .. import utils
 from ..dummy import *
 from ..mixins import BacklinkModelTestMixin
 from .test_dummy import (
-    TestFileFieldResource,
-    TestFileFieldResourceAttach,
-    TestFileFieldResourceDelete,
-    TestFileFieldResourceEmpty,
-    TestFileFieldResourceRename,
+    TestFileFieldResource as BaseTestFileFieldResource,
+    TestFileFieldResourceAttach as BaseTestFileFieldResourceAttach,
+    TestFileFieldResourceDelete as BaseTestFileFieldResourceDelete,
+    TestFileFieldResourceEmpty as BaseTestFileFieldResourceEmpty,
+    TestFileFieldResourceRename as BaseTestFileFieldResourceRename,
 )
 
 
-class TestUploadedFile(BacklinkModelTestMixin, TestFileFieldResource):
+class TestUploadedFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
     resource_class = UploadedFile
     resource_attachment = NATURE_FILEPATH
     resource_basename = "Nature Tree"
@@ -65,7 +65,7 @@ class TestUploadedFile(BacklinkModelTestMixin, TestFileFieldResource):
         )
 
 
-class TestUploadedFileAttach(TestFileFieldResourceAttach):
+class TestUploadedFileAttach(BaseTestFileFieldResourceAttach):
     resource_class = UploadedFile
     resource_attachment = DOCUMENT_FILEPATH
     resource_basename = "document"
@@ -74,7 +74,7 @@ class TestUploadedFileAttach(TestFileFieldResourceAttach):
     resource_checksum = "93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e"
 
 
-class TestUploadedFileRename(BacklinkModelTestMixin, TestFileFieldResourceRename):
+class TestUploadedFileRename(BacklinkModelTestMixin, BaseTestFileFieldResourceRename):
     resource_class = UploadedFile
     resource_attachment = DOCUMENT_FILEPATH
     resource_size = 3028
@@ -103,7 +103,7 @@ class TestUploadedFileRename(BacklinkModelTestMixin, TestFileFieldResourceRename
         storage.resource.delete()
 
 
-class TestUploadedFileDelete(BacklinkModelTestMixin, TestFileFieldResourceDelete):
+class TestUploadedFileDelete(BacklinkModelTestMixin, BaseTestFileFieldResourceDelete):
     resource_class = UploadedFile
     resource_attachment = EXCEL_FILEPATH
     owner_fieldname = "file"
@@ -127,5 +127,5 @@ class TestUploadedFileDelete(BacklinkModelTestMixin, TestFileFieldResourceDelete
         storage.resource.delete()
 
 
-class TestUploadedFileEmpty(TestFileFieldResourceEmpty):
+class TestUploadedFileEmpty(BaseTestFileFieldResourceEmpty):
     recource_class = UploadedFile

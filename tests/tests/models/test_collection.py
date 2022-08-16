@@ -23,13 +23,13 @@ from paper_uploads.models import Collection, FileItem, ImageCollection, ImageIte
 from .. import utils
 from ..dummy import *
 from .test_dummy import (
-    TestFileFieldResource,
-    TestFileFieldResourceAttach,
-    TestFileFieldResourceDelete,
-    TestFileFieldResourceEmpty,
-    TestFileFieldResourceRename,
-    TestVersatileImageEmpty,
-    TestVersatileImageRename,
+    TestFileFieldResource as BaseTestFileFieldResource,
+    TestFileFieldResourceAttach as BaseTestFileFieldResourceAttach,
+    TestFileFieldResourceDelete as BaseTestFileFieldResourceDelete,
+    TestFileFieldResourceEmpty as BaseTestFileFieldResourceEmpty,
+    TestFileFieldResourceRename as BaseTestFileFieldResourceRename,
+    TestVersatileImageEmpty as BaseTestVersatileImageEmpty,
+    TestVersatileImageRename as BaseTestVersatileImageRename,
 )
 
 
@@ -391,7 +391,7 @@ class CollectionItemMixin:
         raise NotImplementedError
 
 
-class CollectionItemTestBase(CollectionItemMixin, TestFileFieldResource):
+class CollectionItemTestBase(CollectionItemMixin, BaseTestFileFieldResource):
     @classmethod
     def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
@@ -408,7 +408,7 @@ class CollectionItemTestBase(CollectionItemMixin, TestFileFieldResource):
         storage.collection.delete()
 
 
-class CollectionItemAttachTestBase(TestFileFieldResourceAttach):
+class CollectionItemAttachTestBase(BaseTestFileFieldResourceAttach):
     @contextmanager
     def get_resource(self):
         collection = self.collection_class.objects.create()
@@ -421,7 +421,7 @@ class CollectionItemAttachTestBase(TestFileFieldResourceAttach):
             collection.delete()
 
 
-class CollectionItemDeleteTestBase(TestFileFieldResourceDelete):
+class CollectionItemDeleteTestBase(BaseTestFileFieldResourceDelete):
     @classmethod
     def init_class(cls, storage):
         storage.collection = cls.collection_class.objects.create()
@@ -514,7 +514,7 @@ class TestFileItemAttach(CollectionItemAttachTestBase):
     resource_checksum = "93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e"
 
 
-class TestFileItemRename(TestFileFieldResourceRename):
+class TestFileItemRename(BaseTestFileFieldResourceRename):
     collection_class = FilesOnlyCollection
     resource_class = FileItem
     resource_attachment = NATURE_FILEPATH
@@ -551,7 +551,7 @@ class TestFileItemDelete(CollectionItemDeleteTestBase):
     resource_attachment = EXCEL_FILEPATH
 
 
-class TestFileItemEmpty(TestFileFieldResourceEmpty):
+class TestFileItemEmpty(BaseTestFileFieldResourceEmpty):
     recource_class = FileItem
 
 
@@ -654,7 +654,7 @@ class TestSVGItemAttach(CollectionItemAttachTestBase):
             resource.attach(AUDIO_FILEPATH)
 
 
-class TestSVGItemRename(TestFileFieldResourceRename):
+class TestSVGItemRename(BaseTestFileFieldResourceRename):
     collection_class = MixedCollection
     resource_class = SVGItem
     resource_attachment = MEDITATION_FILEPATH
@@ -691,7 +691,7 @@ class TestSVGItemDelete(CollectionItemDeleteTestBase):
     resource_attachment = MEDITATION_FILEPATH
 
 
-class TestSVGItemEmpty(TestFileFieldResourceEmpty):
+class TestSVGItemEmpty(BaseTestFileFieldResourceEmpty):
     recource_class = SVGItem
 
 
@@ -901,7 +901,7 @@ class TestImageItemAttach(CollectionItemAttachTestBase):
             resource.attach(AUDIO_FILEPATH)
 
 
-class TestImageItemRename(TestVersatileImageRename):
+class TestImageItemRename(BaseTestVersatileImageRename):
     collection_class = ImagesOnlyCollection
     resource_class = ImageItem
     resource_attachment = NATURE_FILEPATH
@@ -951,7 +951,7 @@ class TestImageItemDelete(CollectionItemDeleteTestBase):
     resource_attachment = NATURE_FILEPATH
 
 
-class TestImageItemEmpty(TestVersatileImageEmpty):
+class TestImageItemEmpty(BaseTestVersatileImageEmpty):
     recource_class = ImageItem
 
 
