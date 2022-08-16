@@ -175,4 +175,4 @@ class TestUploadedImageDelete(BacklinkModelTestMixin, BaseTestVersatileImageDele
 
 
 class TestUploadedImageEmpty(BaseTestVersatileImageEmpty):
-    recource_class = UploadedImage
+    resource_class = UploadedImage

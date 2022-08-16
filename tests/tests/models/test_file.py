@@ -128,4 +128,4 @@ class TestUploadedFileDelete(BacklinkModelTestMixin, BaseTestFileFieldResourceDe
 
 
 class TestUploadedFileEmpty(BaseTestFileFieldResourceEmpty):
-    recource_class = UploadedFile
+    resource_class = UploadedFile

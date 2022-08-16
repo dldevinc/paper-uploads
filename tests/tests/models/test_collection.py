@@ -552,7 +552,19 @@ class TestFileItemDelete(CollectionItemDeleteTestBase):
 
 
 class TestFileItemEmpty(BaseTestFileFieldResourceEmpty):
-    recource_class = FileItem
+    collection_class = FilesOnlyCollection
+    resource_class = FileItem
+
+    @classmethod
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+
+        storage.resource = cls.resource_class()
+        storage.resource.attach_to(storage.collection)
+        try:
+            yield
+        finally:
+            storage.collection.delete()
 
 
 class TestSVGItem(CollectionItemTestBase):
@@ -692,7 +704,19 @@ class TestSVGItemDelete(CollectionItemDeleteTestBase):
 
 
 class TestSVGItemEmpty(BaseTestFileFieldResourceEmpty):
-    recource_class = SVGItem
+    collection_class = MixedCollection
+    resource_class = SVGItem
+
+    @classmethod
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+
+        storage.resource = cls.resource_class()
+        storage.resource.attach_to(storage.collection)
+        try:
+            yield
+        finally:
+            storage.collection.delete()
 
 
 class TestImageItem(CollectionItemTestBase):
@@ -952,7 +976,19 @@ class TestImageItemDelete(CollectionItemDeleteTestBase):
 
 
 class TestImageItemEmpty(BaseTestVersatileImageEmpty):
-    recource_class = ImageItem
+    collection_class = ImagesOnlyCollection
+    resource_class = ImageItem
+
+    @classmethod
+    def init_class(cls, storage):
+        storage.collection = cls.collection_class.objects.create()
+
+        storage.resource = cls.resource_class()
+        storage.resource.attach_to(storage.collection)
+        try:
+            yield
+        finally:
+            storage.collection.delete()
 
 
 class TestInvalidCollectionContentType:
