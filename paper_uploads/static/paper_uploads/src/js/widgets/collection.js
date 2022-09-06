@@ -684,11 +684,15 @@ class Collection extends EventEmitter {
             this.root.uploader = this._createUploader();
         }
 
-        this._initSortable();
+        this._sortable = this._initSortable();
         this._addListeners();
     }
 
     destroy() {
+        if (this._sortable) {
+            this._sortable.destroy();
+        }
+
         if (this.uploader) {
             this.uploader.destroy();
             this.root.uploader = null;
