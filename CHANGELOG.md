@@ -1,5 +1,16 @@
 # Change Log
 
+## [0.11.4](https://github.com/dldevinc/paper-uploads/tree/v0.11.4) - 2022-08-15
+
+### Features
+
+- Added default choice for some prompts in management commands.
+
+### Bug Fixes
+
+- Fixed `remove_variations` management command.
+
+
 ## [0.11.3](https://github.com/dldevinc/paper-uploads/tree/v0.11.3) - 2022-08-15
 
 ### Features
