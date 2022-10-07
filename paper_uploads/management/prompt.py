@@ -73,13 +73,16 @@ def prompt_action(message, choices, **kwargs):
         elif action == "Exit":
             ...
     """
+    default = kwargs.pop("default")
     kwargs.setdefault("carousel", True)
+
     return inquirer.prompt(
         [
             inquirer.List(
                 "answer",
                 message=message,
                 choices=choices,
+                default=default,
                 **kwargs
             )
         ],
@@ -92,25 +95,35 @@ def prompt_variants(message, choices, **kwargs):
     Запрос от пользователя множества вариантов из заданного списка.
 
     Пример:
-        action = prompt_variants(
+        actions = prompt_variants(
             message="What fruits do you like?",
             choices=["Apple", "Banana", ""]
         )
 
-        if action == "Run script":
+        if "Apple" in actions:
             ...
-        elif action == "Exit":
+        elif "Exit" in actions:
             ...
     """
+    default = kwargs.pop("default")
+    if isinstance(default, str):
+        default = [default]
+
     kwargs.setdefault("carousel", True)
-    return inquirer.prompt(
-        [
-            inquirer.Checkbox(
-                "answer",
-                message=message,
-                choices=choices,
-                **kwargs
-            )
-        ],
-        render=CustomConsoleRender()
-    )["answer"]
+
+    while True:
+        answer = inquirer.prompt(
+            [
+                inquirer.Checkbox(
+                    "answer",
+                    message=message,
+                    choices=choices,
+                    default=default,
+                    **kwargs
+                )
+            ],
+            render=CustomConsoleRender()
+        )["answer"]
+
+        if answer:
+            return answer

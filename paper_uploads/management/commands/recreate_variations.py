@@ -171,7 +171,8 @@ class Command(BaseCommand):
                 self._field_name,
                 multiple=True,
                 prepend_choices=["[All]"],
-                append_choices=["[Back]", "[Exit]"]
+                append_choices=["[Back]", "[Exit]"],
+                default="[All]"
             )
 
         if "[Exit]" in variations:
@@ -200,7 +201,8 @@ class Command(BaseCommand):
                 self._field_name,
                 multiple=True,
                 prepend_choices=["[All]"],
-                append_choices=["[Back]", "[Exit]"]
+                append_choices=["[Back]", "[Exit]"],
+                default="[All]"
             )
 
         if "[Exit]" in variations:
