@@ -17,7 +17,7 @@
     "@babel/preset-env": "^7.19.3",
     "autoprefixer": "^10.4.12",
     "babel-loader": "^8.2.5",
-    "css-minimizer-webpack-plugin": "^4.2.0",
+    "css-minimizer-webpack-plugin": "^4.2.1",
     "deepmerge": "^4.2.2",
     "fast-async": "^6.3.8",
     "fast-css-loader": "^1.0.2",
@@ -33,7 +33,7 @@
     "prettier": "^2.7.1",
     "promise.allsettled": "^1.0.5",
     "sass": "^1.55.0",
-    "sass-loader": "^13.0.2",
+    "sass-loader": "^13.1.0",
     "webpack": "^5.74.0",
     "webpack-cli": "^4.10.0",
     "wolfy87-eventemitter": "^5.2.9"
