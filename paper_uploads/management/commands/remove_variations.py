@@ -166,7 +166,8 @@ class Command(BaseCommand):
                 self._field_name,
                 multiple=True,
                 prepend_choices=["[All]"],
-                append_choices=["[Back]", "[Exit]"]
+                append_choices=["[Back]", "[Exit]"],
+                default="[All]"
             )
 
         if "[Exit]" in variations:
@@ -195,7 +196,8 @@ class Command(BaseCommand):
                 self._field_name,
                 multiple=True,
                 prepend_choices=["[All]"],
-                append_choices=["[Back]", "[Exit]"]
+                append_choices=["[Back]", "[Exit]"],
+                default="[All]"
             )
 
         if "[Exit]" in variations:
@@ -259,6 +261,10 @@ class Command(BaseCommand):
 
         total = queryset.count()
         for index, instance in enumerate(queryset.iterator(), start=1):
+            field = getattr(instance, self._field_name)
+            if not field.file_exists():
+                continue
+
             print(
                 "Processing \033[92m'{}.{}'\033[0m (ID: {}) ({}/{}) ... ".format(
                     type(instance)._meta.app_label,
@@ -271,9 +277,9 @@ class Command(BaseCommand):
             )
             sys.stdout.flush()
 
-            for variation_name in instance.get_variations():
+            for variation_name in field.get_variations():
                 if variation_name in self._variation_names:
-                    variation_file = instance.get_variation_file(variation_name)
+                    variation_file = field.get_variation_file(variation_name)
                     variation_file.delete()
 
             print("done")

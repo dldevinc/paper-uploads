@@ -10,15 +10,15 @@ from .. import utils
 from ..dummy import *
 from ..mixins import BacklinkModelTestMixin
 from .test_dummy import (
-    TestVersatileImageAttach,
-    TestVersatileImageDelete,
-    TestVersatileImageEmpty,
-    TestVersatileImageRename,
-    TestVersatileImageResource,
+    TestVersatileImageAttach as BaseTestVersatileImageAttach,
+    TestVersatileImageDelete as BaseTestVersatileImageDelete,
+    TestVersatileImageEmpty as BaseTestVersatileImageEmpty,
+    TestVersatileImageRename as BaseTestVersatileImageRename,
+    TestVersatileImageResource as BaseTestVersatileImageResource,
 )
 
 
-class TestUploadedImage(BacklinkModelTestMixin, TestVersatileImageResource):
+class TestUploadedImage(BacklinkModelTestMixin, BaseTestVersatileImageResource):
     resource_class = UploadedImage
     resource_attachment = CALLIPHORA_FILEPATH
     resource_basename = "calliphora"
@@ -102,7 +102,7 @@ class TestUploadedImage(BacklinkModelTestMixin, TestVersatileImageResource):
         )
 
 
-class TestUploadedImageAttach(TestVersatileImageAttach):
+class TestUploadedImageAttach(BaseTestVersatileImageAttach):
     resource_class = UploadedImage
     resource_attachment = NASA_FILEPATH
     resource_basename = "milky-way-nasa"
@@ -111,7 +111,7 @@ class TestUploadedImageAttach(TestVersatileImageAttach):
     resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
 
 
-class TestUploadedImageRename(BacklinkModelTestMixin, TestVersatileImageRename):
+class TestUploadedImageRename(BacklinkModelTestMixin, BaseTestVersatileImageRename):
     resource_class = UploadedImage
     resource_attachment = NATURE_FILEPATH
     resource_size = 672759
@@ -150,7 +150,7 @@ class TestUploadedImageRename(BacklinkModelTestMixin, TestVersatileImageRename):
         storage.resource.delete()
 
 
-class TestUploadedImageDelete(BacklinkModelTestMixin, TestVersatileImageDelete):
+class TestUploadedImageDelete(BacklinkModelTestMixin, BaseTestVersatileImageDelete):
     resource_class = UploadedImage
     resource_attachment = NASA_FILEPATH
     owner_fieldname = "image_group"
@@ -174,5 +174,5 @@ class TestUploadedImageDelete(BacklinkModelTestMixin, TestVersatileImageDelete):
         storage.resource.delete()
 
 
-class TestUploadedImageEmpty(TestVersatileImageEmpty):
-    recource_class = UploadedImage
+class TestUploadedImageEmpty(BaseTestVersatileImageEmpty):
+    resource_class = UploadedImage

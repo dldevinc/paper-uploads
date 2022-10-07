@@ -181,7 +181,8 @@ def select_resource_model(
     multiple: bool = False,
     predicate: Callable = None,
     prepend_choices: List[str] = None,
-    append_choices: List[str] = None
+    append_choices: List[str] = None,
+    default: Union[str, List[str]] = None
 ) -> Union[None, str, List[str]]:
     """
     Диалог выбора одной или нескольких моделей, связанных с файловыми ресурсами.
@@ -271,7 +272,8 @@ def select_resource_model(
                     width=max_model_length + 1
                 )
             ),
-            choices=choices
+            choices=choices,
+            default=default
         )
     else:
         return prompt_action(
@@ -284,7 +286,8 @@ def select_resource_model(
                     width=max_model_length + 1
                 )
             ),
-            choices=choices
+            choices=choices,
+            default=default
         )
 
 
@@ -294,7 +297,8 @@ def select_collection_item_type(
     multiple: bool = False,
     predicate: Callable = None,
     prepend_choices: List[str] = None,
-    append_choices: List[str] = None
+    append_choices: List[str] = None,
+    default: Union[str, List[str]] = None
 ) -> Union[None, str, List[str]]:
     """
     Диалог выбора одного или нескольких типов элементов коллекции.
@@ -340,7 +344,8 @@ def select_collection_item_type(
                     width=max_name_length + 1
                 )
             ),
-            choices=choices
+            choices=choices,
+            default=default
         )
     else:
         return prompt_action(
@@ -353,7 +358,8 @@ def select_collection_item_type(
                     width=max_name_length + 1
                 )
             ),
-            choices=choices
+            choices=choices,
+            default=default
         )
 
 
@@ -363,7 +369,8 @@ def select_resource_field(
     multiple: bool = False,
     predicate: Callable = None,
     prepend_choices: List[str] = None,
-    append_choices: List[str] = None
+    append_choices: List[str] = None,
+    default: Union[str, List[str]] = None
 ) -> Union[None, str, List[str]]:
     """
     Диалог выбора одного или нескольких полей, связанных с типом Resource.
@@ -418,7 +425,8 @@ def select_resource_field(
                     width=max_name_length + 1
                 )
             ),
-            choices=choices
+            choices=choices,
+            default=default
         )
     else:
         return prompt_action(
@@ -431,7 +439,8 @@ def select_resource_field(
                     width=max_name_length + 1
                 )
             ),
-            choices=choices
+            choices=choices,
+            default=default
         )
 
 
@@ -442,7 +451,8 @@ def select_collection_variations(
     multiple: bool = False,
     predicate: Callable = None,
     prepend_choices: List[str] = None,
-    append_choices: List[str] = None
+    append_choices: List[str] = None,
+    default: Union[str, List[str]] = None
 ) -> Union[None, str, List[str]]:
     """
     Диалог выбора одной или нескольких вариаций элемента коллекции.
@@ -499,10 +509,11 @@ def select_collection_variations(
                 "   {line}".format(
                     column_name="Name",
                     line="-" * (max_name_length + 10),
-                    width=max_name_length + 1
+                    width=max_name_length + 3
                 )
             ),
-            choices=choices
+            choices=choices,
+            default=default
         )
     else:
         return prompt_action(
@@ -515,7 +526,8 @@ def select_collection_variations(
                     width=max_name_length + 1
                 )
             ),
-            choices=choices
+            choices=choices,
+            default=default
         )
 
 
@@ -526,7 +538,8 @@ def select_resource_variations(
     multiple: bool = False,
     predicate: Callable = None,
     prepend_choices: List[str] = None,
-    append_choices: List[str] = None
+    append_choices: List[str] = None,
+    default: Union[str, List[str]] = None
 ) -> Union[None, str, List[str]]:
     """
     Диалог выбора одной или нескольких вариаций изображения.
@@ -588,10 +601,11 @@ def select_resource_variations(
                 "   {line}".format(
                     column_name="Name",
                     line="-" * (max_name_length + 10),
-                    width=max_name_length + 1
+                    width=max_name_length + 3
                 )
             ),
-            choices=choices
+            choices=choices,
+            default=default
         )
     else:
         return prompt_action(
@@ -604,5 +618,6 @@ def select_resource_variations(
                     width=max_name_length + 1
                 )
             ),
-            choices=choices
+            choices=choices,
+            default=default
         )
