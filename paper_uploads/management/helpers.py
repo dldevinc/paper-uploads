@@ -509,7 +509,7 @@ def select_collection_variations(
                 "   {line}".format(
                     column_name="Name",
                     line="-" * (max_name_length + 10),
-                    width=max_name_length + 1
+                    width=max_name_length + 3
                 )
             ),
             choices=choices,
@@ -601,7 +601,7 @@ def select_resource_variations(
                 "   {line}".format(
                     column_name="Name",
                     line="-" * (max_name_length + 10),
-                    width=max_name_length + 1
+                    width=max_name_length + 3
                 )
             ),
             choices=choices,
