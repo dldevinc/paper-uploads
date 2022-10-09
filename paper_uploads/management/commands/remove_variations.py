@@ -110,7 +110,8 @@ class Command(BaseCommand):
         model_name = self.options["model"]
         if model_name is None:
             model_name = helpers.select_resource_model(
-                append_choices=["[Exit]"]
+                append_choices=["[Exit]"],
+                predicate=lambda model: utils.includes_variations(model),
             )
 
         if model_name == "[Exit]":

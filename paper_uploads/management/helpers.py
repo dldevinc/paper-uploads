@@ -1,6 +1,8 @@
+import operator
 import sys
 from datetime import timedelta
 from itertools import groupby
+from collections import namedtuple
 from typing import Any, Callable, Generator, List, Tuple, Type, Union
 
 from anytree import LevelOrderIter
@@ -14,6 +16,12 @@ from ..models.base import Resource
 from ..models.collection import Collection, CollectionBase, CollectionItemBase
 from . import utils
 from .prompt import prompt_action, prompt_variants
+
+
+ModelChoice = namedtuple("ModelChoice", ["name", "type"])
+ItemTypeChoice = namedtuple("ItemTypeChoice", ["name", "field"])
+FieldChoice = namedtuple("FieldChoice", ["name", "field"])
+VariationChoice = namedtuple("VariationChoice", ["name", "size"])
 
 
 def find_empty_collections(
@@ -188,7 +196,7 @@ def select_resource_model(
     Диалог выбора одной или нескольких моделей, связанных с файловыми ресурсами.
 
     В списке выводятся регулярные модели, содержащие хотя бы одно поле,
-    ссылающееся на подкласс Resource. А также модели коллекций.
+    ссылающееся на подкласс Resource, а также модели коллекций.
 
     Пример:
         from paper_uploads.management.helpers import *
@@ -203,62 +211,68 @@ def select_resource_model(
             variation_name = select_resource_variations(model, field_name)
     """
     choices_data = []
-    regular_models = sorted(
-        apps.get_models(),
-        key=lambda m: (m._meta.app_label, m._meta.model_name)
-    )
-    for model in regular_models:
-        for field in model._meta.get_fields(include_hidden=True):
-            if (
-                not field.is_relation
-                or not field.concrete
-                or field.auto_created
-                or not issubclass(field.related_model, Resource)
-                or issubclass(field.related_model, CollectionItemBase)
-            ):
-                continue
+    for model in apps.get_models():
+        opts = model._meta
 
-            if predicate is not None and not predicate(field):
-                continue
-
-            choices_data.append([utils.get_model_name(model), "Regular"])
-            break
-
-    collection_models = sorted(
-        (
-            node.model
-            for root in helpers.get_collection_trees(include_proxy=True)
-            for node in reversed(tuple(LevelOrderIter(root)))
-        ),
-        key=lambda m: (m._meta.app_label, m._meta.model_name)
-    )
-    for model in collection_models:
         if predicate is not None and not predicate(model):
             continue
 
-        choices_data.append([utils.get_model_name(model), "Collection"])
+        for field in opts.get_fields(include_hidden=True):
+            if not utils.is_resource_field(field):
+                continue
+
+            choices_data.append(
+                ModelChoice(
+                    name="{}.{}".format(opts.app_label, opts.model_name),
+                    type="Regular",
+                )
+            )
+            break
+
+    collection_models = (
+        node.model
+        for root in helpers.get_collection_trees(include_proxy=True)
+        for node in reversed(tuple(LevelOrderIter(root)))
+    )
+    for model in collection_models:
+        opts = model._meta
+
+        if predicate is not None and not predicate(model):
+            continue
+
+        choices_data.append(
+            ModelChoice(
+                name="{}.{}".format(opts.app_label, opts.model_name),
+                type="Collection",
+            )
+        )
+
+    choices_data = sorted(
+        choices_data,
+        key=operator.attrgetter("name")
+    )
 
     # Оформление опций в виде двух колонок.
-    choices = []
-    max_model_length = max((len(record[0]) for record in choices_data), default=0)
+    rows = []
+    max_model_length = max((len(record.name) for record in choices_data), default=0)
     max_model_length = min(max(max_model_length, 10), 48)
-    for model_name, model_type in choices_data:
-        choices.append([
+    for choice in choices_data:
+        rows.append([
             "{:<{width}} {}".format(
-                model_name,
-                model_type,
+                choice.name,
+                choice.type,
                 width=max_model_length + 1
             ),
-            model_name
+            choice.name
         ])
 
     if prepend_choices:
-        choices = list(prepend_choices) + choices
+        rows = list(prepend_choices) + rows
 
     if append_choices:
-        choices.extend(append_choices)
+        rows.extend(append_choices)
 
-    if not choices:
+    if not rows:
         return
 
     if multiple:
@@ -272,7 +286,7 @@ def select_resource_model(
                     width=max_model_length + 1
                 )
             ),
-            choices=choices,
+            choices=rows,
             default=default
         )
     else:
@@ -286,7 +300,7 @@ def select_resource_model(
                     width=max_model_length + 1
                 )
             ),
-            choices=choices,
+            choices=rows,
             default=default
         )
 
@@ -308,29 +322,39 @@ def select_collection_item_type(
         if predicate is not None and not predicate(field):
             continue
 
-        choices_data.append([name, field])
+        choices_data.append(
+            ItemTypeChoice(
+                name=name,
+                field=field
+            )
+        )
+
+    choices_data = sorted(
+        choices_data,
+        key=operator.attrgetter("name")
+    )
 
     # Оформление опций в виде двух колонок.
-    choices = []
-    max_name_length = max((len(record[0]) for record in choices_data), default=0)
+    rows = []
+    max_name_length = max((len(record.name) for record in choices_data), default=0)
     max_name_length = min(max(max_name_length, 10), 48)
-    for name, field in choices_data:
-        choices.append([
+    for choice in choices_data:
+        rows.append([
             "{:<{width}} {}".format(
-                name,
-                field.model.__name__,
+                choice.name,
+                choice.field.model.__name__,
                 width=max_name_length + 1
             ),
-            name
+            choice.name
         ])
 
     if prepend_choices:
-        choices = list(prepend_choices) + choices
+        rows = list(prepend_choices) + rows
 
     if append_choices:
-        choices.extend(append_choices)
+        rows.extend(append_choices)
 
-    if not choices:
+    if not rows:
         return
 
     if multiple:
@@ -344,7 +368,7 @@ def select_collection_item_type(
                     width=max_name_length + 1
                 )
             ),
-            choices=choices,
+            choices=rows,
             default=default
         )
     else:
@@ -358,7 +382,7 @@ def select_collection_item_type(
                     width=max_name_length + 1
                 )
             ),
-            choices=choices,
+            choices=rows,
             default=default
         )
 
@@ -377,41 +401,45 @@ def select_resource_field(
     """
     choices_data = []
     for field in model._meta.get_fields(include_hidden=True):
-        if (
-            not field.is_relation
-            or not field.concrete
-            or field.auto_created
-            or not issubclass(field.related_model, Resource)
-            or issubclass(field.related_model, CollectionItemBase)
-        ):
+        if not utils.is_resource_field(field):
             continue
 
         if predicate is not None and not predicate(field):
             continue
 
-        choices_data.append([field.name, field])
+        choices_data.append(
+            FieldChoice(
+                name=field.name,
+                field=field
+            )
+        )
+
+    choices_data = sorted(
+        choices_data,
+        key=operator.attrgetter("name")
+    )
 
     # Оформление опций в виде двух колонок.
-    choices = []
-    max_name_length = max((len(record[0]) for record in choices_data), default=0)
+    rows = []
+    max_name_length = max((len(record.name) for record in choices_data), default=0)
     max_name_length = min(max(max_name_length, 10), 48)
-    for name, field in choices_data:
-        choices.append([
+    for choice in choices_data:
+        rows.append([
             "{:<{width}} {}".format(
-                name,
-                type(field).__name__,
+                choice.name,
+                type(choice.field).__name__,
                 width=max_name_length + 1
             ),
-            name
+            choice.name
         ])
 
     if prepend_choices:
-        choices = list(prepend_choices) + choices
+        rows = list(prepend_choices) + rows
 
     if append_choices:
-        choices.extend(append_choices)
+        rows.extend(append_choices)
 
-    if not choices:
+    if not rows:
         return
 
     if multiple:
@@ -425,7 +453,7 @@ def select_resource_field(
                     width=max_name_length + 1
                 )
             ),
-            choices=choices,
+            choices=rows,
             default=default
         )
     else:
@@ -439,7 +467,7 @@ def select_resource_field(
                     width=max_name_length + 1
                 )
             ),
-            choices=choices,
+            choices=rows,
             default=default
         )
 
@@ -466,39 +494,44 @@ def select_collection_variations(
 
     choices_data = []
     for name, variation in utils.get_collection_variations(collection, item_type_field).items():
-        if predicate is not None and not predicate(name):
+        if predicate is not None and not predicate(variation):
             continue
 
         choices_data.append(
-            (
-                name,
-                "×".join(map(str, variation.size))
+            VariationChoice(
+                name=name,
+                size="×".join(map(str, variation.size))
             )
         )
 
+    choices_data = sorted(
+        choices_data,
+        key=operator.attrgetter("name")
+    )
+
     # Оформление опций в виде двух колонок.
-    choices = []
-    max_name_length = max((len(record[0]) for record in choices_data), default=0)
+    rows = []
+    max_name_length = max((len(record.name) for record in choices_data), default=0)
     max_name_length = min(max(max_name_length, 10), 48)
-    for name, size in choices_data:
-        choices.append([
+    for choice in choices_data:
+        rows.append([
             "{:<{width}} {}".format(
-                name,
-                size,
+                choice.name,
+                choice.size,
                 width=max_name_length + 1
             ),
-            name
+            choice.name
         ])
 
-    choices = sorted(choices)
+    rows = sorted(rows)
 
     if prepend_choices:
-        choices = list(prepend_choices) + choices
+        rows = list(prepend_choices) + rows
 
     if append_choices:
-        choices.extend(append_choices)
+        rows.extend(append_choices)
 
-    if not choices:
+    if not rows:
         return
 
     if multiple:
@@ -512,7 +545,7 @@ def select_collection_variations(
                     width=max_name_length + 3
                 )
             ),
-            choices=choices,
+            choices=rows,
             default=default
         )
     else:
@@ -526,7 +559,7 @@ def select_collection_variations(
                     width=max_name_length + 1
                 )
             ),
-            choices=choices,
+            choices=rows,
             default=default
         )
 
@@ -546,51 +579,49 @@ def select_resource_variations(
     """
     field = model._meta.get_field(field_name)
 
-    if (
-        not field.is_relation
-        or not field.concrete
-        or field.auto_created
-        or not issubclass(field.related_model, Resource)
-        or issubclass(field.related_model, CollectionItemBase)
-        or not utils.is_variations_allowed(field.related_model)
-    ):
+    if not utils.is_resource_field(field) or not utils.is_variations_allowed(field.related_model):
         raise RuntimeError("The specified field does not support variations: %s" % field.name)
 
     choices_data = []
     for name, variation in utils.get_field_variations(field).items():
-        if predicate is not None and not predicate(name):
+        if predicate is not None and not predicate(variation):
             continue
 
         choices_data.append(
-            (
-                name,
-                "×".join(map(str, variation.size))
+            VariationChoice(
+                name=name,
+                size="×".join(map(str, variation.size))
             )
         )
 
+    choices_data = sorted(
+        choices_data,
+        key=operator.attrgetter("name")
+    )
+
     # Оформление опций в виде двух колонок.
-    choices = []
-    max_name_length = max((len(record[0]) for record in choices_data), default=0)
+    rows = []
+    max_name_length = max((len(record.name) for record in choices_data), default=0)
     max_name_length = min(max(max_name_length, 10), 48)
-    for name, size in choices_data:
-        choices.append([
+    for choice in choices_data:
+        rows.append([
             "{:<{width}} {}".format(
-                name,
-                size,
+                choice.name,
+                choice.size,
                 width=max_name_length + 1
             ),
-            name
+            choice.name
         ])
 
-    choices = sorted(choices)
+    rows = sorted(rows)
 
     if prepend_choices:
-        choices = list(prepend_choices) + choices
+        rows = list(prepend_choices) + rows
 
     if append_choices:
-        choices.extend(append_choices)
+        rows.extend(append_choices)
 
-    if not choices:
+    if not rows:
         return
 
     if multiple:
@@ -604,7 +635,7 @@ def select_resource_variations(
                     width=max_name_length + 3
                 )
             ),
-            choices=choices,
+            choices=rows,
             default=default
         )
     else:
@@ -618,6 +649,6 @@ def select_resource_variations(
                     width=max_name_length + 1
                 )
             ),
-            choices=choices,
+            choices=rows,
             default=default
         )
