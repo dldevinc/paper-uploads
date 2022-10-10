@@ -35,6 +35,7 @@ class Command(BaseCommand):
     options = None
     verbosity = None
     database = DEFAULT_DB_ALIAS
+    requires_system_checks = []
 
     _step = Step.GET_MODEL
     _model = None
