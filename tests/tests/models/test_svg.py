@@ -1,4 +1,5 @@
 import os
+from decimal import Decimal
 
 from django.utils.crypto import get_random_string
 from examples.fields.standard.models import Page
@@ -8,13 +9,11 @@ from paper_uploads.models import UploadedSVGFile
 from .. import utils
 from ..dummy import *
 from ..mixins import BacklinkModelTestMixin
-from .test_dummy import (
-    TestFileFieldResource as BaseTestFileFieldResource,
-    TestFileFieldResourceAttach as BaseTestFileFieldResourceAttach,
-    TestFileFieldResourceDelete as BaseTestFileFieldResourceDelete,
-    TestFileFieldResourceEmpty as BaseTestFileFieldResourceEmpty,
-    TestFileFieldResourceRename as BaseTestFileFieldResourceRename,
-)
+from .test_dummy import TestFileFieldResource as BaseTestFileFieldResource
+from .test_dummy import TestFileFieldResourceAttach as BaseTestFileFieldResourceAttach
+from .test_dummy import TestFileFieldResourceDelete as BaseTestFileFieldResourceDelete
+from .test_dummy import TestFileFieldResourceEmpty as BaseTestFileFieldResourceEmpty
+from .test_dummy import TestFileFieldResourceRename as BaseTestFileFieldResourceRename
 
 
 class TestUploadedSVGFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
@@ -67,6 +66,18 @@ class TestUploadedSVGFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
             storage.resource.url,
             "/media/{}/Meditation{{suffix}}.svg".format(self.resource_folder),
         )
+
+    def test_width(self, storage):
+        assert storage.resource.width == Decimal("626")
+
+    def test_height(self, storage):
+        assert storage.resource.height == Decimal("660.0532")
+
+    def test_ratio(self, storage):
+        assert storage.resource.ratio == Decimal("0.9484084")
+
+    def test_hw_ratio(self, storage):
+        assert storage.resource.hw_ratio == Decimal("1.05439808")
 
     def test_as_dict(self, storage):
         utils.compare_dicts(

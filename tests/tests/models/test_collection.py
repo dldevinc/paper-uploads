@@ -1,5 +1,6 @@
 import os
 from contextlib import contextmanager
+from decimal import Decimal
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
@@ -22,15 +23,13 @@ from paper_uploads.models import Collection, FileItem, ImageCollection, ImageIte
 
 from .. import utils
 from ..dummy import *
-from .test_dummy import (
-    TestFileFieldResource as BaseTestFileFieldResource,
-    TestFileFieldResourceAttach as BaseTestFileFieldResourceAttach,
-    TestFileFieldResourceDelete as BaseTestFileFieldResourceDelete,
-    TestFileFieldResourceEmpty as BaseTestFileFieldResourceEmpty,
-    TestFileFieldResourceRename as BaseTestFileFieldResourceRename,
-    TestVersatileImageEmpty as BaseTestVersatileImageEmpty,
-    TestVersatileImageRename as BaseTestVersatileImageRename,
-)
+from .test_dummy import TestFileFieldResource as BaseTestFileFieldResource
+from .test_dummy import TestFileFieldResourceAttach as BaseTestFileFieldResourceAttach
+from .test_dummy import TestFileFieldResourceDelete as BaseTestFileFieldResourceDelete
+from .test_dummy import TestFileFieldResourceEmpty as BaseTestFileFieldResourceEmpty
+from .test_dummy import TestFileFieldResourceRename as BaseTestFileFieldResourceRename
+from .test_dummy import TestVersatileImageEmpty as BaseTestVersatileImageEmpty
+from .test_dummy import TestVersatileImageRename as BaseTestVersatileImageRename
 
 
 class TestCollectionMetaclass:
@@ -632,6 +631,18 @@ class TestSVGItem(CollectionItemTestBase):
             "/media/{}/Meditation{{suffix}}.svg".format(self.resource_folder),
         )
 
+    def test_width(self, storage):
+        assert storage.resource.width == Decimal("626")
+
+    def test_height(self, storage):
+        assert storage.resource.height == Decimal("660.0532")
+
+    def test_ratio(self, storage):
+        assert storage.resource.ratio == Decimal("0.9484084")
+
+    def test_hw_ratio(self, storage):
+        assert storage.resource.hw_ratio == Decimal("1.05439808")
+
     def test_read(self, storage):
         with storage.resource.open() as fp:
             assert fp.read(5) == b'<?xml'
@@ -833,6 +844,12 @@ class TestImageItem(CollectionItemTestBase):
 
     def test_height(self, storage):
         assert storage.resource.height == 2301
+
+    def test_ratio(self, storage):
+        assert storage.resource.ratio == Decimal("0.66666667")
+
+    def test_hw_ratio(self, storage):
+        assert storage.resource.hw_ratio == Decimal("1.5")
 
     def test_accept(self, storage):
         with open(DOCUMENT_FILEPATH, "rb") as fp:

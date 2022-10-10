@@ -1,4 +1,6 @@
+import operator
 import os
+from decimal import Decimal
 
 from django.core.files import File
 from django.core.files.uploadedfile import UploadedFile
@@ -16,6 +18,7 @@ class TemporaryUploadedFile(UploadedFile):
     новый временный файл, а оборачивает уже существующий. Используется для передачи
     загруженного файла в функцию сохранения.
     """
+
     def close(self):
         super().close()
         try:
@@ -130,6 +133,24 @@ class VariationFile(File):
     @property
     def height(self) -> int:
         return self._get_image_dimensions()[1]
+
+    @property
+    def ratio(self) -> Decimal:
+        """
+        Width-to-height (W/H) ratio.
+        """
+        return Decimal(str(
+            round(operator.truediv(*self._get_image_dimensions()), 8)
+        ))
+
+    @property
+    def hw_ratio(self) -> Decimal:
+        """
+        Height-to-width (H/W) ratio.
+        """
+        return Decimal(str(
+            round(operator.truediv(*reversed(self._get_image_dimensions())), 8)
+        ))
 
     @cached_method("_dimensions_cache")
     def _get_image_dimensions(self):

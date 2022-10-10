@@ -1,5 +1,6 @@
 import os
 import shutil
+from decimal import Decimal
 
 import pytest
 from django.conf import settings
@@ -73,6 +74,12 @@ class TestVariationFile:
 
     def test_height(self, storage):
         assert storage.file.height == 577
+
+    def test_ratio(self, storage):
+        assert storage.file.ratio == Decimal("1.3864818")
+
+    def test_hw_ratio(self, storage):
+        assert storage.file.hw_ratio == Decimal("0.72125")
 
     def test_read(self, storage):
         assert storage.file.closed is True
