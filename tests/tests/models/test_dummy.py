@@ -2,6 +2,7 @@ import datetime
 import io
 import os
 from contextlib import contextmanager
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -934,6 +935,12 @@ class TestImageFieldResource(TestFileFieldResource):
     def test_height(self, storage):
         assert storage.resource.height == 2525
 
+    def test_ratio(self, storage):
+        assert storage.resource.ratio == Decimal("1.38653465")
+
+    def test_hw_ratio(self, storage):
+        assert storage.resource.hw_ratio == Decimal("0.72122251")
+
     def test_prepare_file(self, storage):
         obj = DummyImageFieldResource()
         with open(CALLIPHORA_FILEPATH, "rb") as fp:
@@ -1064,6 +1071,12 @@ class TestVersatileImageResource(TestImageFieldResource):
 
     def test_height(self, storage):
         assert storage.resource.height == 1198
+
+    def test_ratio(self, storage):
+        assert storage.resource.ratio == Decimal("0.67111853")
+
+    def test_hw_ratio(self, storage):
+        assert storage.resource.hw_ratio == Decimal("1.49004975")
 
     def test_as_dict(self, storage):
         utils.compare_dicts(

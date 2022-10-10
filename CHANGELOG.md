@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.12.0](https://github.com/dldevinc/paper-uploads/tree/v0.12.0) - 2022-10-10
+
+### Features
+
+- Added `ratio` and `hw_ratio` image properties.
+
+
 ## [0.11.5](https://github.com/dldevinc/paper-uploads/tree/v0.11.5) - 2022-10-10
 
 ### Features

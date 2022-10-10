@@ -5,6 +5,7 @@ import os
 import pathlib
 import posixpath
 import warnings
+from decimal import Decimal
 from functools import partial
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Tuple, Union
@@ -600,6 +601,20 @@ class SVGFileResourceMixin(models.Model):
         height = str(self.height)
         return height.rstrip("0").rstrip(".") if "." in height else height
 
+    @property
+    def ratio(self) -> Decimal:
+        """
+        Width-to-height (W/H) ratio.
+        """
+        return Decimal(str(round(self.width / self.height, 8)))
+
+    @property
+    def hw_ratio(self) -> Decimal:
+        """
+        Height-to-width (H/W) ratio.
+        """
+        return Decimal(str(round(self.height / self.width, 8)))
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),  # noqa
@@ -686,6 +701,20 @@ class ImageFileResourceMixin(models.Model):
 
     class Meta:
         abstract = True
+
+    @property
+    def ratio(self) -> Decimal:
+        """
+        Width-to-height (W/H) ratio.
+        """
+        return Decimal(str(round(self.width / self.height, 8)))
+
+    @property
+    def hw_ratio(self) -> Decimal:
+        """
+        Height-to-width (H/W) ratio.
+        """
+        return Decimal(str(round(self.height / self.width, 8)))
 
     def as_dict(self) -> Dict[str, Any]:
         return {
