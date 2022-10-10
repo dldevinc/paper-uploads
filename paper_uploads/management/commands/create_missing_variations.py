@@ -8,6 +8,7 @@ class Command(BaseCommand):
     help = """
     Создаёт отсутствующие файлы вариаций.
     """
+    requires_system_checks = []
 
     def add_arguments(self, parser):
         parser.add_argument(

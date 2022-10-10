@@ -35,6 +35,7 @@ class Command(BaseCommand):
     options = None
     verbosity = None
     database = DEFAULT_DB_ALIAS
+    requires_system_checks = []
 
     _step = Step.GET_MODEL
     _model = None
@@ -115,7 +116,8 @@ class Command(BaseCommand):
         model_name = self.options["model"]
         if model_name is None:
             model_name = helpers.select_resource_model(
-                append_choices=["[Exit]"]
+                append_choices=["[Exit]"],
+                predicate=lambda model: utils.includes_variations(model),
             )
 
         if model_name == "[Exit]":
