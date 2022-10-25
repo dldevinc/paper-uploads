@@ -1,8 +1,8 @@
 import operator
 import sys
+from collections import namedtuple
 from datetime import timedelta
 from itertools import groupby
-from collections import namedtuple
 from typing import Any, Callable, Generator, List, Tuple, Type, Union
 
 from anytree import LevelOrderIter
@@ -16,7 +16,6 @@ from ..models.base import Resource
 from ..models.collection import Collection, CollectionBase, CollectionItemBase
 from . import utils
 from .prompt import prompt_action, prompt_variants
-
 
 ModelChoice = namedtuple("ModelChoice", ["name", "type"])
 ItemTypeChoice = namedtuple("ItemTypeChoice", ["name", "field"])

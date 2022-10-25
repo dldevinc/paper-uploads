@@ -18,6 +18,7 @@
     source env/bin/activate
     ```
 1. Install dependencies as well as a local editable copy of the library
+
     ```shell
     pip install -r ./requirements.txt
     pip install -e .[full]
@@ -27,21 +28,23 @@
     npm i
     npm run build
     ```
+
 1. Create `.env` file:
     ```shell
-    cp .env.example .env 
+    cp .env.example .env
     ```
 1. Run test project
-   ```shell
-   python3 manage.py migrate
-   python3 manage.py createsuperuser
-   ```
 
-   ```shell
-   python3 manage.py runserver
-   ```
+    ```shell
+    python3 manage.py migrate
+    python3 manage.py createsuperuser
+    ```
 
-   > Django admin credentials: `admin` / `admin`
+    ```shell
+    python3 manage.py runserver
+    ```
+
+    > Django admin credentials: `admin` / `admin`
 
 #### Pre-Commit Hooks
 
