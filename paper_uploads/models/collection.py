@@ -585,7 +585,7 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:
-            self.display_name = self.basename
+            self.display_name = self.resource_name
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
@@ -604,7 +604,7 @@ class FileItemBase(FilePreviewMixin, CollectionFileItemBase):
         return cls._meta.get_field("file")
 
     def get_caption(self):
-        name = self.display_name or self.basename
+        name = self.display_name or self.resource_name
         if self.extension:
             return "{}.{}".format(name, self.extension)
         return name
@@ -636,7 +636,7 @@ class SVGItemBase(SVGFileResourceMixin, CollectionFileItemBase):
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.display_name:
-            self.display_name = self.basename
+            self.display_name = self.resource_name
         super().save(*args, **kwargs)
 
     def get_file_folder(self) -> str:
@@ -655,7 +655,7 @@ class SVGItemBase(SVGFileResourceMixin, CollectionFileItemBase):
         return cls._meta.get_field("file")
 
     def get_caption(self):
-        name = self.display_name or self.basename
+        name = self.display_name or self.resource_name
         if self.extension:
             return "{}.{}".format(name, self.extension)
         return name
