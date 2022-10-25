@@ -56,5 +56,5 @@ def match_path(target: str, pattern: str, *, source: str = None):
     return target == value or target.endswith(value)
 
 
-def is_equal_dates(date1, date2, delta=5):
+def is_equal_dates(date1, date2, delta: int = 10):
     return abs((date2 - date1).seconds) < delta
