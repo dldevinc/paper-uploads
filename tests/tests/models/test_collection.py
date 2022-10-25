@@ -792,7 +792,7 @@ class TestImageItem(CollectionItemTestBase):
                     "paper_uploads/items/preview/image.html",
                     storage.resource.get_preview_context()
                 ),
-                "url": storage.resource.get_file_url(),
+                "url": storage.resource.url,
                 "created": storage.resource.created_at.isoformat(),
                 "modified": storage.resource.modified_at.isoformat(),
                 "uploaded": storage.resource.uploaded_at.isoformat(),

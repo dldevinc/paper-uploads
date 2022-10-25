@@ -29,7 +29,7 @@ class TestGetExtensions:
 class TestBuildVariations:
     variations = None
 
-    def setup(self):
+    def setup_method(self):
         from paper_uploads.conf import settings
 
         old_setting = settings.VARIATION_DEFAULTS
@@ -215,7 +215,7 @@ class TestIterateVariationNames:
 class TestImplicitVariations:
     variations = None
 
-    def setup(self):
+    def setup_method(self):
         self.variations = helpers.build_variations(
             dict(
                 tablet=dict(
