@@ -4,39 +4,35 @@
 
 ### Features
 
-- Added `ratio` and `hw_ratio` image properties.
-
+-   Added `ratio` and `hw_ratio` image properties.
 
 ## [0.11.5](https://github.com/dldevinc/paper-uploads/tree/v0.11.5) - 2022-10-10
 
 ### Features
 
-- Improved management commands.
-
+-   Improved management commands.
 
 ## [0.11.4](https://github.com/dldevinc/paper-uploads/tree/v0.11.4) - 2022-08-15
 
 ### Features
 
-- Added default choice for some prompts in management commands.
+-   Added default choice for some prompts in management commands.
 
 ### Bug Fixes
 
-- Fixed `remove_variations` management command.
-
+-   Fixed `remove_variations` management command.
 
 ## [0.11.3](https://github.com/dldevinc/paper-uploads/tree/v0.11.3) - 2022-08-15
 
 ### Features
 
-- Updated dependencies.
-
+-   Updated dependencies.
 
 ## [0.11.2](https://github.com/dldevinc/paper-uploads/tree/v0.11.2) - 2022-07-03
 
 ### Bug Fixes
 
-- Fixed `Class constructors cannot be invoked without 'new'` error.
+-   Fixed `Class constructors cannot be invoked without 'new'` error.
 
 ## [0.11.1](https://github.com/dldevinc/paper-uploads/tree/v0.11.1) - 2022-07-03
 
