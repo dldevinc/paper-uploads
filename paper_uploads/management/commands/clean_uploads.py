@@ -242,6 +242,7 @@ class Command(BaseCommand):
             "owner_model_name",
             "owner_fieldname"
         ]
+
         if issubclass(model, CollectionBase):
             query_fields.extend([
                 "collection_content_type_id",

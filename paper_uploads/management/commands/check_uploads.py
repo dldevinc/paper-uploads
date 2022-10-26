@@ -216,19 +216,12 @@ class Command(BaseCommand):
 
         if issubclass(model, VersatileImageResourceMixin):
             # Для инициализации экземпляров VersatileImageResourceMixin нужны
-            # дополнительные поля - для создания полей вариаций.
+            # дополнительные поля для создания полей вариаций.
             if issubclass(model, BacklinkModelMixin):
                 query_fields.extend([
                     "owner_app_label",
                     "owner_model_name",
                     "owner_fieldname"
-                ])
-
-            if issubclass(model, CollectionItemBase):
-                query_fields.extend([
-                    "collection_content_type_id",
-                    "polymorphic_ctype_id",
-                    "type",
                 ])
 
         queryset = queryset.only(*query_fields)

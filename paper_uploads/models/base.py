@@ -32,6 +32,7 @@ from ..files import VariationFile
 from ..typing import FileLike
 from ..utils import cached_method, checksum
 from ..variations import PaperVariation
+from .query import ResourceQuerySet
 from .mixins import FileFieldProxyMixin, FileProxyMixin
 
 try:
@@ -96,20 +97,26 @@ class NoPermissionsMetaBase:
         return super().__new__(cls, name, bases, attrs, **kwargs)
 
 
-class ResourceBaseMeta(NoPermissionsMetaBase, models.base.ModelBase):
+class OverridableParentLink:
     """
     Приём, позволяющий переопределить OneToOne-связь между моделями при наследовании
-    от абстрактной модели.
+    от промежуточной абстрактной модели.
 
-    По умолчанию, при наследовании от абстрактной модели, унаследованной от конкретной
-    (concrete), попытка переопределния OneToOne-связи не замещает поле по умолчанию,
-    а добавляет второе.
+    По умолчанию, при наследовании от абстрактной модели, которая в свою очередь
+    унаследована от конкретной (concrete), попытка переопределния OneToOne-связи
+    не замещает поле по умолчанию, а добавляет второе.
+
+    Типичный пример использования - удаление обратной связи (related_name)
+    в пользовательским классе, унаследованным от `CollectionItemBase` с целью
+    избежать ошибки 'reverse accessor clashes ...' в тех случаях, когда имя
+    пользовательской модели не уникально.
+
+    См. пример `ImageItem` в папке `tests/examples/collections/custom_models/models.py`.
 
     Ссылка:
     https://docs.djangoproject.com/en/3.2/topics/db/models/#specifying-the-parent-link-field
     """
-
-    def __new__(mcs, name, bases, attrs, **kwargs):  # noqa: N804
+    def __new__(cls, name, bases, attrs, **kwargs):
         parents = [b for b in bases if isinstance(b, ModelBase)]
 
         parent_links = {}
@@ -133,7 +140,59 @@ class ResourceBaseMeta(NoPermissionsMetaBase, models.base.ModelBase):
                         # force delete inherited field
                         attrs[inherited_field.name] = None
 
-        return super().__new__(mcs, name, bases, attrs)
+        return super().__new__(cls, name, bases, attrs, **kwargs)
+
+
+class ResourceOptions:
+    """
+    Опции для моделей ресурса.
+    Добавлить опции можно через вложенный класс `ResourceMeta`:
+
+        class MyResource(Resource):
+            class ResourceMeta:
+                required_fields = []
+    """
+    # Поля, необходимые для инициализации модели. В случаях, когда
+    # набор запрашиваемых из БД полей ограничивается (например, при использовании
+    # методов `Queryset.only()` и `Queryset.defer()`), поля, перечисленные
+    # в этом параметре, автоматически добавляются к списку извлекаемых из БД полей.
+    required_fields = []
+
+    def __init__(self, opts=None, **kwargs):
+        # Override defaults with options provided
+        if opts:
+            opts = list(opts.__dict__.items())
+        else:
+            opts = []
+        opts.extend(list(kwargs.items()))
+
+        for key, value in opts:
+            if not key.startswith("__"):
+                setattr(self, key, value)
+
+    def __iter__(self):
+        return ((k, v) for k, v in self.__dict__.items() if k[0] != "_")
+
+
+class ResourceBaseMeta(NoPermissionsMetaBase, OverridableParentLink, models.base.ModelBase):
+    def __new__(cls, name, bases, attrs, **kwargs):
+        attr_meta = attrs.pop("ResourceMeta", None)
+        if attr_meta is None:
+            attr_meta = type("ResourceMeta", (), {})
+
+        local_options = frozenset(dir(attr_meta))
+        parents = [b for b in bases if isinstance(b, ModelBase)]
+
+        # extend ResourceMeta from base classes
+        for base in parents:
+            if hasattr(base, "_resource_meta"):
+                for key, value in base._resource_meta:
+                    if key not in local_options:
+                        setattr(attr_meta, key, value)
+
+        new_class = super().__new__(cls, name, bases, attrs, **kwargs)
+        new_class.add_to_class("_resource_meta", ResourceOptions(attr_meta))
+        return new_class
 
 
 class ResourceBase(models.Model, metaclass=ResourceBaseMeta):
@@ -150,6 +209,8 @@ class ResourceBase(models.Model, metaclass=ResourceBaseMeta):
         auto_now=True,
         editable=False
     )
+
+    objects = ResourceQuerySet.as_manager()
 
     class Meta:
         abstract = True

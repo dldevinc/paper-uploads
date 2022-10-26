@@ -14,7 +14,6 @@ from django.core import checks
 from django.core.files import File
 from django.core.files.storage import Storage
 from django.db import models
-from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
 from django.db.models.functions import Coalesce
 from django.template import loader
@@ -47,6 +46,7 @@ from .fields.base import DynamicStorageFileField
 from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
 from .mixins import BacklinkModelMixin, EditableResourceMixin
+from .query import PolymorphicResourceManager
 
 __all__ = [
     "CollectionItemBase",
@@ -102,7 +102,7 @@ class ItemTypesDescriptor:
         return item_types
 
 
-class CollectionMeta(NoPermissionsMetaBase, ModelBase):
+class CollectionMeta(NoPermissionsMetaBase, models.base.ModelBase):
     """
     Хак, при котором вместо наследования создаются прокси-модели,
     если явно не указано обратное.
@@ -333,6 +333,8 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         editable=False
     )
 
+    objects = PolymorphicResourceManager()
+
     class Meta:
         # Используется обратный порядок полей в составном индексе,
         # т.к. селективность поля collection_id выше, а для поля
@@ -340,6 +342,13 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         index_together = [("collection_id", "collection_content_type")]
         verbose_name = _("item")
         verbose_name_plural = _("items")
+
+    class ResourceMeta:
+        required_fields = [
+            "polymorphic_ctype_id",
+            "collection_content_type_id",
+            "type"  # required for get_item_type_field()
+        ]
 
     @classmethod
     def check(cls, **kwargs):
@@ -434,7 +443,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
 
     def get_collection_class(self) -> Type[CollectionBase]:
         # Прямое обращение к полю `self.collection_content_type` дёргает БД.
-        # Вместо него используется метод `get_for_id()` класса ContentType,
+        # Вместо этого используется метод `get_for_id()` класса ContentType,
         # который использует общий кэш.
         # (!) Если класс модели для указанного ContentType удалён, то
         # метод вернёт None.
