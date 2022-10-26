@@ -42,6 +42,14 @@ class TestUploadedImage(BacklinkModelTestMixin, BaseTestVersatileImageResource):
         storage.resource.delete_file()
         storage.resource.delete()
 
+    def test_meta_options(self):
+        opts = self.resource_class._resource_meta
+        assert set(opts.required_fields) == {
+            "owner_app_label",
+            "owner_model_name",
+            "owner_fieldname"
+        }
+
     def test_title(self, storage):
         assert storage.resource.title == "Calliphora"
 
