@@ -14,7 +14,6 @@ from django.core import checks
 from django.core.files import File
 from django.core.files.storage import Storage
 from django.db import models
-from django.db.models.base import ModelBase
 from django.db.models.fields.files import FieldFile
 from django.db.models.functions import Coalesce
 from django.template import loader
@@ -102,7 +101,7 @@ class ItemTypesDescriptor:
         return item_types
 
 
-class CollectionMeta(NoPermissionsMetaBase, ModelBase):
+class CollectionMeta(NoPermissionsMetaBase, models.base.ModelBase):
     """
     Хак, при котором вместо наследования создаются прокси-модели,
     если явно не указано обратное.
@@ -434,7 +433,7 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
 
     def get_collection_class(self) -> Type[CollectionBase]:
         # Прямое обращение к полю `self.collection_content_type` дёргает БД.
-        # Вместо него используется метод `get_for_id()` класса ContentType,
+        # Вместо этого используется метод `get_for_id()` класса ContentType,
         # который использует общий кэш.
         # (!) Если класс модели для указанного ContentType удалён, то
         # метод вернёт None.
