@@ -4,7 +4,7 @@
 
 ### Features
 
-- Added `ResourceManager` and inner class `ResourceMeta`.
+- Added `ResourceQuerySet` and inner class `ResourceMeta`.
 
 ## [0.12.0](https://github.com/dldevinc/paper-uploads/tree/v0.12.0) - 2022-10-10
 

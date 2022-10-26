@@ -216,7 +216,7 @@ class Command(BaseCommand):
 
         if issubclass(model, VersatileImageResourceMixin):
             # Для инициализации экземпляров VersatileImageResourceMixin нужны
-            # дополнительные поля - для создания полей вариаций.
+            # дополнительные поля для создания полей вариаций.
             if issubclass(model, BacklinkModelMixin):
                 query_fields.extend([
                     "owner_app_label",

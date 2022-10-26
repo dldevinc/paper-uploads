@@ -32,7 +32,7 @@ from ..files import VariationFile
 from ..typing import FileLike
 from ..utils import cached_method, checksum
 from ..variations import PaperVariation
-from .managers import ResourceManager
+from .query import ResourceQuerySet
 from .mixins import FileFieldProxyMixin, FileProxyMixin
 
 try:
@@ -181,9 +181,10 @@ class ResourceBaseMeta(NoPermissionsMetaBase, OverridableParentLink, models.base
             attr_meta = type("ResourceMeta", (), {})
 
         local_options = frozenset(dir(attr_meta))
+        parents = [b for b in bases if isinstance(b, ModelBase)]
 
         # extend ResourceMeta from base classes
-        for base in bases:
+        for base in parents:
             if hasattr(base, "_resource_meta"):
                 for key, value in base._resource_meta:
                     if key not in local_options:
@@ -209,7 +210,7 @@ class ResourceBase(models.Model, metaclass=ResourceBaseMeta):
         editable=False
     )
 
-    objects = ResourceManager()
+    objects = ResourceQuerySet.as_manager()
 
     class Meta:
         abstract = True

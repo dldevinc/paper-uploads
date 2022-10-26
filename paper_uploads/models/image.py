@@ -27,6 +27,13 @@ class UploadedImageBase(VersatileImageResourceMixin, BacklinkModelMixin, Editabl
         verbose_name = _("image")
         verbose_name_plural = _("images")
 
+    class ResourceMeta:
+        required_fields = [
+            "owner_app_label",
+            "owner_model_name",
+            "owner_fieldname",
+        ]
+
     def get_file_folder(self) -> str:
         owner_field = self.get_owner_field()
         return getattr(owner_field, "upload_to", "") or settings.IMAGES_UPLOAD_TO

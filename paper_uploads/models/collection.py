@@ -45,8 +45,8 @@ from .fields import CollectionItem
 from .fields.base import DynamicStorageFileField
 from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
-from .managers import PolymorphicResourceManager
 from .mixins import BacklinkModelMixin, EditableResourceMixin
+from .query import PolymorphicResourceManager
 
 __all__ = [
     "CollectionItemBase",
