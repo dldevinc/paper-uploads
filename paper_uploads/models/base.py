@@ -32,6 +32,7 @@ from ..files import VariationFile
 from ..typing import FileLike
 from ..utils import cached_method, checksum
 from ..variations import PaperVariation
+from .managers import ResourceManager
 from .mixins import FileFieldProxyMixin, FileProxyMixin
 
 try:
@@ -139,11 +140,58 @@ class OverridableParentLink:
                         # force delete inherited field
                         attrs[inherited_field.name] = None
 
-        return super().__new__(cls, name, bases, attrs)
+        return super().__new__(cls, name, bases, attrs, **kwargs)
+
+
+class ResourceOptions:
+    """
+    Опции для моделей ресурса.
+    Добавлить опции можно через вложенный класс `ResourceMeta`:
+
+        class MyResource(Resource):
+            class ResourceMeta:
+                required_fields = []
+    """
+    # Поля, необходимые для инициализации модели. В случаях, когда
+    # набор запрашиваемых из БД полей ограничивается (например, при использовании
+    # методов `Queryset.only()` и `Queryset.defer()`), поля, перечисленные
+    # в этом параметре, автоматически добавляются к списку извлекаемых из БД полей.
+    required_fields = []
+
+    def __init__(self, opts=None, **kwargs):
+        # Override defaults with options provided
+        if opts:
+            opts = list(opts.__dict__.items())
+        else:
+            opts = []
+        opts.extend(list(kwargs.items()))
+
+        for key, value in opts:
+            if not key.startswith("__"):
+                setattr(self, key, value)
+
+    def __iter__(self):
+        return ((k, v) for k, v in self.__dict__.items() if k[0] != "_")
 
 
 class ResourceBaseMeta(NoPermissionsMetaBase, OverridableParentLink, models.base.ModelBase):
-    pass
+    def __new__(cls, name, bases, attrs, **kwargs):
+        attr_meta = attrs.pop("ResourceMeta", None)
+        if attr_meta is None:
+            attr_meta = type("ResourceMeta", (), {})
+
+        local_options = frozenset(dir(attr_meta))
+
+        # extend ResourceMeta from base classes
+        for base in bases:
+            if hasattr(base, "_resource_meta"):
+                for key, value in base._resource_meta:
+                    if key not in local_options:
+                        setattr(attr_meta, key, value)
+
+        new_class = super().__new__(cls, name, bases, attrs, **kwargs)
+        new_class.add_to_class("_resource_meta", ResourceOptions(attr_meta))
+        return new_class
 
 
 class ResourceBase(models.Model, metaclass=ResourceBaseMeta):
@@ -160,6 +208,8 @@ class ResourceBase(models.Model, metaclass=ResourceBaseMeta):
         auto_now=True,
         editable=False
     )
+
+    objects = ResourceManager()
 
     class Meta:
         abstract = True

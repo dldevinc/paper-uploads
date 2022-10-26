@@ -45,6 +45,7 @@ from .fields import CollectionItem
 from .fields.base import DynamicStorageFileField
 from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
+from .managers import PolymorphicResourceManager
 from .mixins import BacklinkModelMixin, EditableResourceMixin
 
 __all__ = [
@@ -332,6 +333,8 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         editable=False
     )
 
+    objects = PolymorphicResourceManager()
+
     class Meta:
         # Используется обратный порядок полей в составном индексе,
         # т.к. селективность поля collection_id выше, а для поля
@@ -339,6 +342,13 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         index_together = [("collection_id", "collection_content_type")]
         verbose_name = _("item")
         verbose_name_plural = _("items")
+
+    class ResourceMeta:
+        required_fields = [
+            "polymorphic_ctype_id",
+            "collection_content_type_id",
+            "type"  # required for get_item_type_field()
+        ]
 
     @classmethod
     def check(cls, **kwargs):

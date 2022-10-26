@@ -224,13 +224,6 @@ class Command(BaseCommand):
                     "owner_fieldname"
                 ])
 
-            if issubclass(model, CollectionItemBase):
-                query_fields.extend([
-                    "collection_content_type_id",
-                    "polymorphic_ctype_id",
-                    "type",
-                ])
-
         queryset = queryset.only(*query_fields)
 
         for instance in queryset.iterator():

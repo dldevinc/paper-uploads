@@ -73,6 +73,13 @@ class TestFileResource(FileProxyTestMixin, TestResource):
         storage.resource.delete_file()
         storage.resource.delete()
 
+    def test_has_meta(self):
+        assert hasattr(self.resource_class, "_resource_meta")
+
+    def test_meta_options(self):
+        opts = self.resource_class._resource_meta
+        assert opts.required_fields == []
+
     def test_resource_name(self, storage):
         assert storage.resource.resource_name == self.resource_basename
 

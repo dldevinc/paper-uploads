@@ -406,6 +406,14 @@ class CollectionItemTestBase(CollectionItemMixin, BaseTestFileFieldResource):
         storage.resource.delete()
         storage.collection.delete()
 
+    def test_meta_options(self):
+        opts = self.resource_class._resource_meta
+        assert opts.required_fields == [
+            "polymorphic_ctype_id",
+            "collection_content_type_id",
+            "type"
+        ]
+
 
 class CollectionItemAttachTestBase(BaseTestFileFieldResourceAttach):
     @contextmanager
