@@ -96,20 +96,26 @@ class NoPermissionsMetaBase:
         return super().__new__(cls, name, bases, attrs, **kwargs)
 
 
-class ResourceBaseMeta(NoPermissionsMetaBase, models.base.ModelBase):
+class OverridableParentLink:
     """
     Приём, позволяющий переопределить OneToOne-связь между моделями при наследовании
-    от абстрактной модели.
+    от промежуточной абстрактной модели.
 
-    По умолчанию, при наследовании от абстрактной модели, унаследованной от конкретной
-    (concrete), попытка переопределния OneToOne-связи не замещает поле по умолчанию,
-    а добавляет второе.
+    По умолчанию, при наследовании от абстрактной модели, которая в свою очередь
+    унаследована от конкретной (concrete), попытка переопределния OneToOne-связи
+    не замещает поле по умолчанию, а добавляет второе.
+
+    Типичный пример использования - удаление обратной связи (related_name)
+    в пользовательским классе, унаследованным от `CollectionItemBase` с целью
+    избежать ошибки 'reverse accessor clashes ...' в тех случаях, когда имя
+    пользовательской модели не уникально.
+
+    См. пример `ImageItem` в папке `tests/examples/collections/custom_models/models.py`.
 
     Ссылка:
     https://docs.djangoproject.com/en/3.2/topics/db/models/#specifying-the-parent-link-field
     """
-
-    def __new__(mcs, name, bases, attrs, **kwargs):  # noqa: N804
+    def __new__(cls, name, bases, attrs, **kwargs):
         parents = [b for b in bases if isinstance(b, ModelBase)]
 
         parent_links = {}
@@ -133,7 +139,11 @@ class ResourceBaseMeta(NoPermissionsMetaBase, models.base.ModelBase):
                         # force delete inherited field
                         attrs[inherited_field.name] = None
 
-        return super().__new__(mcs, name, bases, attrs)
+        return super().__new__(cls, name, bases, attrs)
+
+
+class ResourceBaseMeta(NoPermissionsMetaBase, OverridableParentLink, models.base.ModelBase):
+    pass
 
 
 class ResourceBase(models.Model, metaclass=ResourceBaseMeta):
