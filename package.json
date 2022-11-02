@@ -1,6 +1,6 @@
 {
   "name": "paper-uploads",
-  "version": "1.0.0",
+  "version": "0.13.0",
   "description": "",
   "main": "src/js/app.js",
   "scripts": {
@@ -15,7 +15,7 @@
     "@babel/plugin-syntax-dynamic-import": "^7.8.3",
     "@babel/plugin-transform-runtime": "^7.19.6",
     "@babel/preset-env": "^7.19.4",
-    "autoprefixer": "^10.4.12",
+    "autoprefixer": "^10.4.13",
     "babel-loader": "^8.2.5",
     "css-minimizer-webpack-plugin": "^4.2.2",
     "deepmerge": "^4.2.2",
