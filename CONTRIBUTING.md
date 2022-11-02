@@ -22,19 +22,17 @@
     ```shell
     pip install -r ./requirements.txt
     pip install -e .[full]
-    ```
-
-    ```shell
     npm i
+    ```
+1. Compile static files
+    ```shell
     npm run build
     ```
-
 1. Create `.env` file:
     ```shell
     cp .env.example .env
     ```
 1. Run test project
-
     ```shell
     python3 manage.py migrate
     python3 manage.py createsuperuser
