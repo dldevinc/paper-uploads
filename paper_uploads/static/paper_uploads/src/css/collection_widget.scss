@@ -10,7 +10,7 @@
   flex: 0 0 auto;
   user-select: none;
   outline-offset: 1px;
-  border-radius: 0.25rem;
+  border-radius: var(--border-radius, 0.25rem);
   background-color: #f8f6f4;
   border: 1px solid #ced4da;
   box-sizing: content-box;
@@ -75,8 +75,8 @@
   }
 
   &.checked {
-    border-color: #1090c0;
-    box-shadow: 0 0 0 1px #1090c0;
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 1px var(--cyan);
   }
 
   &--preloader &__preview,
@@ -160,7 +160,7 @@
     flex: 0 0 auto;
     color: #e3e3e3;
     user-select: none;
-    border-radius: 0.25rem;
+    border-radius: var(--border-radius, 0.25rem);
     border: 1px solid currentColor;
     background-color: currentColor;
     box-sizing: content-box;
