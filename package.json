@@ -22,7 +22,6 @@
     "fast-async": "^6.3.8",
     "fast-css-loader": "^1.0.2",
     "fibers": "^5.0.3",
-    "file-loader": "^6.2.0",
     "mime-match": "^1.0.2",
     "mini-css-extract-plugin": "^2.6.1",
     "mustache": "^4.2.0",
