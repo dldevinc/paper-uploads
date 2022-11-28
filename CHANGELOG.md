@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.13.1](https://github.com/dldevinc/paper-uploads/tree/v0.13.1) - 2022-11-28
+
+### Features
+
+-   Add Python 3.11 support (no code changes were needed, but now we test this release).
+
 ## [0.13.0](https://github.com/dldevinc/paper-uploads/tree/v0.13.0) - 2022-10-26
 
 ### Features
