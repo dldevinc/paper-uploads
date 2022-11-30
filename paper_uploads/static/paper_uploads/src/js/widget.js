@@ -9,16 +9,37 @@ function importAll(r) {
 importAll(require.context("../img/files/", false, /\.svg$/));
 
 const fileWidget = new file.FileUploaderWidget();
-fileWidget.observe(".file-uploader");
-fileWidget.initAll(".file-uploader");
+if (typeof fileWidget.bind === "function") {
+    // new-style widgets
+    fileWidget.bind(".file-uploader");
+    fileWidget.attach();
+} else {
+    // old-style widgets
+    fileWidget.initAll(".file-uploader");
+    fileWidget.observe(".file-uploader");
+}
 
 const imageWidget = new image.ImageUploaderWidget();
-imageWidget.observe(".image-uploader");
-imageWidget.initAll(".image-uploader");
+if (typeof imageWidget.bind === "function") {
+    // new-style widgets
+    imageWidget.bind(".image-uploader");
+    imageWidget.attach();
+} else {
+    // old-style widgets
+    imageWidget.initAll(".image-uploader");
+    imageWidget.observe(".image-uploader");
+}
 
 const collectionWidget = new collection.CollectionWidget();
-collectionWidget.observe(".collection");
-collectionWidget.initAll(".collection");
+if (typeof collectionWidget.bind === "function") {
+    // new-style widgets
+    collectionWidget.bind(".collection");
+    collectionWidget.attach();
+} else {
+    // old-style widgets
+    collectionWidget.initAll(".collection");
+    collectionWidget.observe(".collection");
+}
 
 export const paperUploads = {
     file,

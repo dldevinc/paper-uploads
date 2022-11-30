@@ -57,8 +57,8 @@
   &--empty,
   &--processing {
     .input-group > .form-control:not(:last-child) {
-      border-top-right-radius: 0.25rem;
-      border-bottom-right-radius: 0.25rem;
+      border-top-right-radius: var(--border-radius, 0.25rem);
+      border-bottom-right-radius: var(--border-radius, 0.25rem);
     }
 
     .input-group-append {

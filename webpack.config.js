@@ -91,7 +91,6 @@ let config = {
         modules: [SOURCE_DIR, "node_modules"]
     },
     plugins: [
-        new webpack.ProgressPlugin(),
         new MiniCssExtractPlugin({
             filename: "[name].css"
         })
