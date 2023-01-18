@@ -1,6 +1,6 @@
 from django.db.models.query import QuerySet
-from polymorphic.query import PolymorphicQuerySet
 from polymorphic.managers import PolymorphicManager as DefaultPolymorphicManager
+from polymorphic.query import PolymorphicQuerySet
 
 
 class ResourceQuerysetMixin:

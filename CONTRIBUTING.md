@@ -24,6 +24,7 @@
     pip install -e .[full]
     npm i
     ```
+
 1. Compile static files
     ```shell
     npm run build
@@ -33,6 +34,7 @@
     cp .env.example .env
     ```
 1. Run test project
+
     ```shell
     python3 manage.py migrate
     python3 manage.py createsuperuser
