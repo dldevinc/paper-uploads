@@ -20,7 +20,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--min-age",
             type=int,
-            default=24 * 3600,
+            default=30 * 24 * 3600,
             help="Minimum instance age in seconds to look for",
         )
 
