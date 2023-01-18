@@ -32,8 +32,8 @@ from ..files import VariationFile
 from ..typing import FileLike
 from ..utils import cached_method, checksum
 from ..variations import PaperVariation
-from .query import ResourceQuerySet
 from .mixins import FileFieldProxyMixin, FileProxyMixin
+from .query import ResourceQuerySet
 
 try:
     from django.core.files.utils import validate_file_name

@@ -4,15 +4,15 @@
 
 ### Features
 
--   Support for `paper-admin` >= 5.0.
--   Increase default value of `min-age` parameter for `clean_uploads` 
+-   Add support for `paper-admin` >= 5.0.
+-   Increase default value of `min-age` parameter for `clean_uploads`
     and `remove_empty_collections` commands.
 
 ## [0.13.0](https://github.com/dldevinc/paper-uploads/tree/v0.13.0) - 2022-10-26
 
 ### Features
 
-- Added `ResourceQuerySet` and inner class `ResourceMeta`.
+-   Added `ResourceQuerySet` and inner class `ResourceMeta`.
 
 ## [0.12.0](https://github.com/dldevinc/paper-uploads/tree/v0.12.0) - 2022-10-10
 
