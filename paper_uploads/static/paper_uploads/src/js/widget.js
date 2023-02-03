@@ -33,12 +33,12 @@ if (typeof imageWidget.bind === "function") {
 const collectionWidget = new collection.CollectionWidget();
 if (typeof collectionWidget.bind === "function") {
     // new-style widgets
-    collectionWidget.bind(".collection");
+    collectionWidget.bind(".collection--default");
     collectionWidget.attach();
 } else {
     // old-style widgets
-    collectionWidget.initAll(".collection");
-    collectionWidget.observe(".collection");
+    collectionWidget.initAll(".collection--default");
+    collectionWidget.observe(".collection--default");
 }
 
 export const paperUploads = {
