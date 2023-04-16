@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.15.0](https://github.com/dldevinc/paper-streamfield/tree/v0.15.0) - 2023-04-16
+
+### ⚠ BREAKING CHANGES
+
+-   Minimum required `paper-admin` version is now `6.0.0`.
+
 ## [0.14.1](https://github.com/dldevinc/paper-uploads/tree/v0.14.1) - 2023-02-03
 
 ### Features
