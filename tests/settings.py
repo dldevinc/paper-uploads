@@ -4,6 +4,7 @@ from pathlib import Path
 
 from django.utils.translation import gettext_lazy as _
 from dotenv import load_dotenv
+from paper_admin.menu import Item, Divider
 
 load_dotenv()
 
@@ -151,93 +152,75 @@ PAPER_ENVIRONMENT_NAME = "development"
 PAPER_ENVIRONMENT_COLOR = "#FFFF00"
 
 PAPER_MENU = [
-    dict(
+    Item(
         label=_("Dashboard"),
         url="admin:index",
-        icon="fa fa-fw fa-lg fa-area-chart",
+        icon="bi-lg bi-mb bi-speedometer2",
     ),
-    dict(
+    Item(
         app="app",
-        icon="fa fa-fw fa-lg fa-home",
+        icon="bi-lg bi-mb bi-house-fill",
     ),
-    dict(
+    Item(
         label=_("Examples"),
-        icon="fa fa-fw fa-lg fa-home",
-        models=[
-            dict(
+        icon="bi-lg bi-mb bi-house-fill",
+        children=[
+            Item(
                 label=_("File fields"),
-                models=[
-                    dict(
+                children=[
+                    Item(
                         label=_("Standard"),
-                        models=[
-                            "standard_fields.Page",
-                        ]
+                        model="standard_fields.Page"
                     ),
-                    dict(
+                    Item(
                         label=_("Custom Django storage"),
-                        models=[
-                            "custom_storage_fields.Page",
-                        ]
+                        model="custom_storage_fields.Page"
                     ),
-                    dict(
+                    Item(
                         label=_("Proxy models"),
-                        models=[
-                            "proxy_models_fields.Page",
-                        ]
+                        model="proxy_models_fields.Page"
                     ),
-                    dict(
+                    Item(
                         label=_("Custom models"),
-                        models=[
-                            "custom_models_fields.Page",
-                        ]
+                        model="custom_models_fields.Page"
                     ),
-                    dict(
+                    Item(
                         label=_("Validators"),
-                        models=[
-                            "validators_fields.Page",
-                        ]
-                    ),
+                        model="validators_fields.Page"
+                    )
                 ]
             ),
-            dict(
+            Item(
                 label=_("Collections"),
-                models=[
-                    dict(
+                children=[
+                    Item(
                         label=_("Standard"),
-                        models=[
-                            "standard_collections.Page",
-                        ]
+                        model="standard_collections.Page",
                     ),
-                    dict(
+                    Item(
                         label=_("Custom Django storage"),
-                        models=[
-                            "custom_storage_collections.Page",
-                        ]
+                        model="custom_storage_collections.Page"
                     ),
-                    dict(
+                    Item(
                         label=_("Proxy models"),
-                        models=[
-                            "proxy_models_collections.Page",
-                        ]
+                        model="proxy_models_collections.Page"
                     ),
-                    dict(
+                    Item(
                         label=_("Custom models"),
-                        models=[
-                            "custom_models_collections.Page",
-                        ]
+                        model="custom_models_collections.Page"
                     ),
-                    dict(
+                    Item(
                         label=_("Validators"),
-                        models=[
-                            "validators_collections.Page",
-                        ]
-                    ),
+                        model="validators_collections.Page"
+                    )
                 ]
-            ),
+            )
         ]
     ),
-    "-",
-    "auth",
+    Divider(),
+    Item(
+        app="auth",
+    )
 ]
 
 # ===============
