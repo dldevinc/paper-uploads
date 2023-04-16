@@ -4,6 +4,7 @@
 
 ### ⚠ BREAKING CHANGES
 
+-   Dropped Python 3.6 support.
 -   Minimum required `paper-admin` version is now `6.0.0`.
 
 ## [0.14.1](https://github.com/dldevinc/paper-uploads/tree/v0.14.1) - 2023-02-03
