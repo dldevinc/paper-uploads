@@ -1,45 +1,45 @@
+/* global XClass */
+
+import "./icons.js";
 import * as file from "./widgets/file.js";
 import * as image from "./widgets/image.js";
 import * as collection from "./widgets/collection.js";
 
-// import all SVG images
-function importAll(r) {
-    return r.keys().map(r);
-}
-importAll(require.context("../img/files/", false, /\.svg$/));
+XClass.register("paper-upload-file", {
+    init: function (element) {
+        element._fileUploader = new file.FileUploader(element);
+    },
+    destroy: function (element) {
+        if (element._fileUploader) {
+            element._fileUploader.destroy();
+            delete element._fileUploader;
+        }
+    }
+});
 
-const fileWidget = new file.FileUploaderWidget();
-if (typeof fileWidget.bind === "function") {
-    // new-style widgets
-    fileWidget.bind(".file-uploader");
-    fileWidget.attach();
-} else {
-    // old-style widgets
-    fileWidget.initAll(".file-uploader");
-    fileWidget.observe(".file-uploader");
-}
+XClass.register("paper-upload-image", {
+    init: function (element) {
+        element._imageUploader = new image.ImageUploader(element);
+    },
+    destroy: function (element) {
+        if (element._imageUploader) {
+            element._imageUploader.destroy();
+            delete element._imageUploader;
+        }
+    }
+});
 
-const imageWidget = new image.ImageUploaderWidget();
-if (typeof imageWidget.bind === "function") {
-    // new-style widgets
-    imageWidget.bind(".image-uploader");
-    imageWidget.attach();
-} else {
-    // old-style widgets
-    imageWidget.initAll(".image-uploader");
-    imageWidget.observe(".image-uploader");
-}
-
-const collectionWidget = new collection.CollectionWidget();
-if (typeof collectionWidget.bind === "function") {
-    // new-style widgets
-    collectionWidget.bind(".collection--default");
-    collectionWidget.attach();
-} else {
-    // old-style widgets
-    collectionWidget.initAll(".collection--default");
-    collectionWidget.observe(".collection--default");
-}
+XClass.register("paper-upload-collection", {
+    init: function (element) {
+        element._collectionUploader = new collection.Collection(element);
+    },
+    destroy: function (element) {
+        if (element._collectionUploader) {
+            element._collectionUploader.destroy();
+            delete element._collectionUploader;
+        }
+    }
+});
 
 export const paperUploads = {
     file,

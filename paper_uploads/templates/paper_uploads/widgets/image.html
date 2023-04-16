@@ -1,6 +1,7 @@
 {% load filesizeformat %}
 
 <div class="image-uploader paper-dropzone image-uploader--{{ widget.value|yesno:"ready,empty" }}"
+     data-xclass="paper-upload-image"
      data-upload-url="{{ upload_url }}"
      data-change-url="{{ change_url }}"
      data-delete-url="{{ delete_url }}"
@@ -19,7 +20,7 @@
       <button type="button" class="image-uploader__upload-button input-group-text"
          data-toggle="tooltip" data-placement="top" data-trigger="hover"
          data-html="true" title="{{ _("Select file") }}">
-        <i class="fa fa-fw fa-folder-open"></i>
+        <i class="bi-folder2-open"></i>
       </button>
     </div>
 
@@ -46,21 +47,21 @@
            class="image-uploader__view-button input-group-text"
            data-toggle="tooltip" data-placement="top" data-trigger="hover"
            data-html="true" title="{{ _("Open file") }}">
-          <i class="fa fa-fw fa-eye"></i>
+          <i class="bi-eye"></i>
         </a>
 
         <button type="button" tabindex="0"
                 class="image-uploader__change-button input-group-text"
                 data-toggle="tooltip" data-placement="top" data-trigger="hover"
                 data-html="true" title="{{ _("Edit file") }}">
-          <i class="fa fa-fw fa-pencil"></i>
+          <i class="bi-pencil-square"></i>
         </button>
 
         <button type="button" tabindex="0"
                 class="image-uploader__delete-button input-group-text input-group-text--danger"
                 data-toggle="tooltip" data-placement="top" data-trigger="hover"
                 data-html="true" title="{{ _("Delete file") }}">
-          <i class="fa fa-fw fa-trash"></i>
+          <i class="bi-trash"></i>
         </button>
       </div>
       <div class="image-uploader__loading-buttons">
@@ -68,7 +69,7 @@
                 class="image-uploader__cancel-button input-group-text input-group-text--danger"
                 data-toggle="tooltip" data-placement="top" data-trigger="hover"
                 data-html="true" title="{{ _("Cancel upload") }}">
-          <i class="fa fa-fw fa-times"></i>
+          <i class="bi-x-lg"></i>
         </button>
       </div>
     </div>
@@ -87,7 +88,7 @@
 
   <div class="paper-dropzone__overlay">
     <div class="paper-dropzone__hint">
-      <i class="fa fa-fw fa-upload"></i>
+      <i class="bi-upload"></i>
       {{ _("Drop files here to send") }}
     </div>
   </div>
