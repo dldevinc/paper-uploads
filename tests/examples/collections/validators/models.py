@@ -12,7 +12,7 @@ from paper_uploads.validators import (
 
 class MixedCollection(Collection):
     svg = CollectionItem(SVGItem, validators=[
-        MimeTypeValidator("image/svg+xml")
+        MimeTypeValidator(["image/svg+xml"])
     ])
     image = CollectionItem(ImageItem, validators=[
         ImageMinSizeValidator(640, 480),

@@ -5,7 +5,6 @@ import { Uploader } from "paper-uploader";
 import * as utils from "../utils.js";
 
 // PaperAdmin API
-const Widget = window.paperAdmin.Widget;
 const modals = window.paperAdmin.modals;
 const formUtils = window.paperAdmin.formUtils;
 
@@ -87,9 +86,6 @@ class FileUploader extends EventEmitter {
      */
 
     init() {
-        // store instance
-        this.root.fileUploader = this;
-
         this.root.uploader = this._createUploader();
         this._addListeners();
     }
@@ -99,8 +95,6 @@ class FileUploader extends EventEmitter {
             this.uploader.destroy();
             this.root.uploader = null;
         }
-
-        this.root.fileUploader = null;
     }
 
     /**
@@ -549,16 +543,4 @@ class FileUploader extends EventEmitter {
     }
 }
 
-class FileUploaderWidget extends Widget {
-    _init(element) {
-        new FileUploader(element);
-    }
-
-    _destroy(element) {
-        if (element.fileUploader) {
-            element.fileUploader.destroy();
-        }
-    }
-}
-
-export { FileUploader, FileUploaderWidget };
+export { FileUploader };

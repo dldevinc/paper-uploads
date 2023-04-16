@@ -1,6 +1,7 @@
 /* global gettext */
 /* global ngettext */
 /* global interpolate */
+/* global Sortable */
 
 import allSettled from "promise.allsettled";
 import deepmerge from "deepmerge";
@@ -10,8 +11,6 @@ import { Uploader } from "paper-uploader";
 import * as utils from "../utils.js";
 
 // PaperAdmin API
-const Sortable = window.paperAdmin.Sortable;
-const Widget = window.paperAdmin.Widget;
 const modals = window.paperAdmin.modals;
 const formUtils = window.paperAdmin.formUtils;
 
@@ -673,9 +672,6 @@ class Collection extends EventEmitter {
      */
 
     init() {
-        // store instance
-        this.root.collection = this;
-
         this._initItems();
 
         // Отключение Drag-n-drop, если коллекция не поддерживает файлы
@@ -697,8 +693,6 @@ class Collection extends EventEmitter {
             this.uploader.destroy();
             this.root.uploader = null;
         }
-
-        this.root.collection = null;
     }
 
     /**
@@ -1352,16 +1346,4 @@ class Collection extends EventEmitter {
     }
 }
 
-class CollectionWidget extends Widget {
-    _init(element) {
-        new Collection(element);
-    }
-
-    _destroy(element) {
-        if (element.collection) {
-            element.collection.destroy();
-        }
-    }
-}
-
-export { CollectionItemBase, PreloaderItem, PermanentCollectionItemBase, Collection, CollectionWidget };
+export { CollectionItemBase, PreloaderItem, PermanentCollectionItemBase, Collection };
