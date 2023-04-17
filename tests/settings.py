@@ -155,15 +155,15 @@ PAPER_MENU = [
     Item(
         label=_("Dashboard"),
         url="admin:index",
-        icon="bi-lg bi-mb bi-speedometer2",
+        icon="bi-speedometer",
     ),
     Item(
         app="app",
-        icon="bi-lg bi-mb bi-house-fill",
+        icon="bi-house",
     ),
     Item(
         label=_("Examples"),
-        icon="bi-lg bi-mb bi-house-fill",
+        icon="bi-house-fill",
         children=[
             Item(
                 label=_("File fields"),
@@ -220,6 +220,7 @@ PAPER_MENU = [
     Divider(),
     Item(
         app="auth",
+        icon="bi-person-circle",
     )
 ]
 
