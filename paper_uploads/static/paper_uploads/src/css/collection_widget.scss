@@ -5,8 +5,6 @@
 }
 
 .collection-item {
-  margin-right: 0.75rem;
-  margin-bottom: 1rem;
   flex: 0 0 auto;
   user-select: none;
   outline-offset: 1px;
@@ -148,15 +146,14 @@
 
   &__items {
     display: flex;
-    margin-right: -0.75rem;
+    margin-bottom: 0.75rem;
     flex-flow: row wrap;
+    gap: 1rem 0.75rem;
   }
 
   &__skeleton {
     padding-top: 31px; // header
     padding-bottom: 35px; // footer
-    margin-right: 0.75rem;
-    margin-bottom: 1rem;
     flex: 0 0 auto;
     color: #e3e3e3;
     user-select: none;
@@ -167,6 +164,9 @@
   }
 
   &__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   &--empty &__items {
