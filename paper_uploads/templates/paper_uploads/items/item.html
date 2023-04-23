@@ -1,5 +1,4 @@
 <div class="collection-item collection-item--ready collection-item--{% verbatim %}{{ itemType }}{% endverbatim %}"
-     style="width: {{ preview_width }}px"
      tabindex="0"
      data-id="{% verbatim %}{{ id }}{% endverbatim %}"
      data-item-type="{% verbatim %}{{ itemType }}{% endverbatim %}"
@@ -20,8 +19,7 @@
     {% endblock header %}
   </div>
 
-  <div class="collection-item__preview sortable-handler"
-       style="width: {{ preview_width }}px; height: {{ preview_height }}px">
+  <div class="collection-item__preview sortable-handler">
     {% block preview %}
       {% verbatim %}{{{ preview }}}{% endverbatim %}
     {% endblock preview %}

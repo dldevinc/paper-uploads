@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.15.1](https://github.com/dldevinc/paper-streamfield/tree/v0.15.1) - 2023-04-23
+
+### Features
+
+-   Migrate to CSS grids.
+
 ## [0.15.0](https://github.com/dldevinc/paper-streamfield/tree/v0.15.0) - 2023-04-16
 
 ### ⚠ BREAKING CHANGES
