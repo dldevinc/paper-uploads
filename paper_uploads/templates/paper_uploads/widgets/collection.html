@@ -1,7 +1,7 @@
 {% load json %}
 {% load i18n %}
 
-<div class="collection paper-dropzone collection--default collection--{{ widget.value|yesno:"ready,empty" }}"
+<div class="collection paper-dropzone collection--{{ widget.value|yesno:"ready,empty" }}"
      data-xclass="paper-upload-collection"
      data-create-collection-url="{{ create_collection_url }}"
      data-delete-collection-url="{{ delete_collection_url }}"
@@ -20,9 +20,14 @@
          value="{{ widget.value|default:"" }}"
          {% include "django/forms/widgets/attrs.html" %}/>
 
-  <div class="collection__items">
+  <div class="collection__items"
+       style="--preview-width: {{ preview_width }}px;
+              --preview-height: {{ preview_height }}px;
+              --preview-aspect: {{ preview_aspect }}">
     {% for _ in item_range %}
-      <div class="collection__skeleton" style="width: {{ preview_width }}px; height: {{ preview_height }}px"></div>
+      <div class="collection__skeleton">
+        <div class="collection-item__preview"></div>
+      </div>
     {% endfor %}
   </div>
 

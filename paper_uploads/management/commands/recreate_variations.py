@@ -8,6 +8,7 @@ from django.db import DEFAULT_DB_ALIAS
 from paper_uploads.management import helpers
 
 from .. import utils
+from ..conf import ALL_VARIATIONS
 
 
 class Step(Enum):
@@ -185,11 +186,7 @@ class Command(BaseCommand):
             return
 
         if "[All]" in variations:
-            item_type_field = self._model.item_types[self._field_name]
-            self._variation_names = set(utils.get_collection_variations(
-                self._model,
-                item_type_field
-            ))
+            self._variation_names = ALL_VARIATIONS
         else:
             self._variation_names = set(variations)
 
@@ -215,8 +212,7 @@ class Command(BaseCommand):
             return
 
         if "[All]" in variations:
-            field = self._model._meta.get_field(self._field_name)
-            self._variation_names = set(utils.get_field_variations(field))
+            self._variation_names = ALL_VARIATIONS
         else:
             self._variation_names = set(variations)
 
@@ -224,7 +220,10 @@ class Command(BaseCommand):
 
     def process_collection(self):
         if not self._variation_names:
+            self._step = Step.END
             return
+        elif self._variation_names is ALL_VARIATIONS:
+            self._variation_names = ()
 
         queryset = self._model.objects.using(self.database)
 
@@ -275,7 +274,10 @@ class Command(BaseCommand):
 
     def process_resource(self):
         if not self._variation_names:
+            self._step = Step.END
             return
+        elif self._variation_names is ALL_VARIATIONS:
+            self._variation_names = ()
 
         queryset = self._model.objects.using(self.database).exclude((self._field_name, None))
 

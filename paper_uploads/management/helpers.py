@@ -256,14 +256,14 @@ def select_resource_model(
     max_model_length = max((len(record.name) for record in choices_data), default=0)
     max_model_length = min(max(max_model_length, 10), 48)
     for choice in choices_data:
-        rows.append([
+        rows.append((
             "{:<{width}} {}".format(
                 choice.name,
                 choice.type,
                 width=max_model_length + 1
             ),
             choice.name
-        ])
+        ))
 
     if prepend_choices:
         rows = list(prepend_choices) + rows
@@ -338,14 +338,14 @@ def select_collection_item_type(
     max_name_length = max((len(record.name) for record in choices_data), default=0)
     max_name_length = min(max(max_name_length, 10), 48)
     for choice in choices_data:
-        rows.append([
+        rows.append((
             "{:<{width}} {}".format(
                 choice.name,
                 choice.field.model.__name__,
                 width=max_name_length + 1
             ),
             choice.name
-        ])
+        ))
 
     if prepend_choices:
         rows = list(prepend_choices) + rows
@@ -423,14 +423,14 @@ def select_resource_field(
     max_name_length = max((len(record.name) for record in choices_data), default=0)
     max_name_length = min(max(max_name_length, 10), 48)
     for choice in choices_data:
-        rows.append([
+        rows.append((
             "{:<{width}} {}".format(
                 choice.name,
                 type(choice.field).__name__,
                 width=max_name_length + 1
             ),
             choice.name
-        ])
+        ))
 
     if prepend_choices:
         rows = list(prepend_choices) + rows
@@ -513,14 +513,14 @@ def select_collection_variations(
     max_name_length = max((len(record.name) for record in choices_data), default=0)
     max_name_length = min(max(max_name_length, 10), 48)
     for choice in choices_data:
-        rows.append([
+        rows.append((
             "{:<{width}} {}".format(
                 choice.name,
                 choice.size,
                 width=max_name_length + 1
             ),
             choice.name
-        ])
+        ))
 
     rows = sorted(rows)
 
@@ -603,14 +603,14 @@ def select_resource_variations(
     max_name_length = max((len(record.name) for record in choices_data), default=0)
     max_name_length = min(max(max_name_length, 10), 48)
     for choice in choices_data:
-        rows.append([
+        rows.append((
             "{:<{width}} {}".format(
                 choice.name,
                 choice.size,
                 width=max_name_length + 1
             ),
             choice.name
-        ])
+        ))
 
     rows = sorted(rows)
 
