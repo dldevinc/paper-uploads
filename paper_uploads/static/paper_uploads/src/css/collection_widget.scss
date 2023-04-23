@@ -4,13 +4,12 @@
   }
 }
 
-$mobile-preview-width: 160px;
+$mobile-preview-width: 150px;
 
 .collection-item {
-  flex: 0 0 auto;
-  max-width: var(--preview-width);
+  width: var(--preview-width);
+  max-width: 100%;
   user-select: none;
-  outline-offset: 1px;
   border-radius: var(--border-radius, 0.25rem);
   background-color: #f8f6f4;
   box-sizing: content-box;
@@ -157,10 +156,6 @@ $mobile-preview-width: 160px;
     margin-bottom: 0.75rem;
     grid-template-columns: repeat(auto-fill, minmax($mobile-preview-width, max-content));
     gap: 1rem 0.75rem;
-
-    @media (min-width: 768px) {
-      grid-template-columns: repeat(auto-fill, var(--preview-width));
-    }
   }
 
   &__skeleton {
