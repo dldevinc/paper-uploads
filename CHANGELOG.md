@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.16.0](https://github.com/dldevinc/paper-streamfield/tree/v0.16.0) - 2023-05-06
+
+### ⚠ BREAKING CHANGES
+
+-   Remove Python 3.7 support.
+
 ## [0.15.1](https://github.com/dldevinc/paper-streamfield/tree/v0.15.1) - 2023-04-23
 
 ### Features
@@ -10,7 +16,7 @@
 
 ### ⚠ BREAKING CHANGES
 
--   Dropped Python 3.6 support.
+-   Remove Python 3.6 support.
 -   Minimum required `paper-admin` version is now `6.0.0`.
 
 ## [0.14.1](https://github.com/dldevinc/paper-uploads/tree/v0.14.1) - 2023-02-03
