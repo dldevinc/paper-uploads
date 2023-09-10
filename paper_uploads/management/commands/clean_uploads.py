@@ -163,7 +163,8 @@ class Command(BaseCommand):
                     "app_label": model._meta.app_label,
                     "model": model.__name__,
                 },
-                choices=["Skip", "Print", "Delete", "Exit"]
+                choices=["Skip", "Print", "Delete", "Exit"],
+                default=None
             )
 
             if action == "Exit":
@@ -196,7 +197,7 @@ class Command(BaseCommand):
                 with transaction.atomic(using=self.database):
                     for obj in objects:
                         content_type_id = obj.collection_content_type_id
-                        CollectionItemBase.objects.filter(
+                        CollectionItemBase.objects.using(self.database).filter(
                             collection_content_type_id=content_type_id,
                             collection_id=obj.id
                         ).delete()
@@ -240,7 +241,8 @@ class Command(BaseCommand):
             "pk",
             "owner_app_label",
             "owner_model_name",
-            "owner_fieldname"
+            "owner_fieldname",
+            "created_at"
         ]
 
         if issubclass(model, CollectionBase):
@@ -255,8 +257,16 @@ class Command(BaseCommand):
 
         objects = set()
         for instance in queryset.iterator():
+            owner_model = instance.get_owner_model()
             owner_field = instance.get_owner_field()
             if owner_field is None:
+                objects.add(instance)
+                continue
+
+            references = owner_model.objects.using(self.database).filter(
+                (instance.owner_fieldname, instance.pk)
+            )
+            if not references.exists():
                 objects.add(instance)
 
         if not objects:
@@ -278,7 +288,8 @@ class Command(BaseCommand):
                     "app_label": model._meta.app_label,
                     "model": model.__name__,
                 },
-                choices=["Skip", "Print", "Delete", "Exit"]
+                choices=["Skip", "Print", "Delete", "Exit"],
+                default=None
             )
 
             if action == "Exit":
@@ -359,7 +370,8 @@ class Command(BaseCommand):
                     "app_label": model._meta.app_label,
                     "model": model.__name__,
                 },
-                choices=["Skip", "Print", "Delete", "Exit"]
+                choices=["Skip", "Print", "Delete", "Exit"],
+                default=None
             )
 
             if action == "Exit":
