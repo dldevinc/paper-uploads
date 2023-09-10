@@ -162,6 +162,25 @@ class Command(BaseCommand):
                 sys.stderr.flush()
                 continue
 
+            references = owner_model.objects.using(self.database).filter(
+                (instance.owner_fieldname, instance.pk)
+            )
+            if not references.exists():
+                print(
+                    "\033[31mERROR\033[0m: "
+                    "\033[92m{}.{}\033[0m #{} has no references from \033[91m{}.{}.{}\033[0m".format(
+                        type(instance)._meta.app_label,
+                        type(instance).__name__,
+                        instance.pk,
+                        instance.owner_app_label,
+                        instance.owner_model_name,
+                        instance.owner_fieldname
+                    ),
+                    file=sys.stderr
+                )
+                sys.stderr.flush()
+                continue
+
     def check_content_types(self):
         """
         Проверяет, что для коллекций
