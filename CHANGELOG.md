@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.16.1](https://github.com/dldevinc/paper-streamfield/tree/v0.16.1) - 2023-09-20
+
+### Bug Fixes
+
+-   Set `default_auto_field` to `django.db.models.BigAutoField`.
+
 ## [0.16.0](https://github.com/dldevinc/paper-streamfield/tree/v0.16.0) - 2023-09-10
 
 ### ⚠ BREAKING CHANGES
