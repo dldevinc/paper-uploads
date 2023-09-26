@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.16.2](https://github.com/dldevinc/paper-streamfield/tree/v0.16.2) - 2023-09-26
+
+### Features
+
+-   Upscaling is now forced enabled for `2x`, `3x` and `4x` versions.
+
 ## [0.16.1](https://github.com/dldevinc/paper-streamfield/tree/v0.16.1) - 2023-09-20
 
 ### Bug Fixes

@@ -68,6 +68,9 @@ def generate_scaled_versions(
         max_height=scale_factor * config.get("max_height", 0),
     )
 
+    if scale_factor > 1:
+        variation_config["upscale"] = True
+
     yield PaperVariation(**variation_config)
 
     if webp:
@@ -79,6 +82,9 @@ def generate_scaled_versions(
             max_height=scale_factor * config.get("max_height", 0),
             format="webp"
         )
+
+        if scale_factor > 1:
+            variation_config["upscale"] = True
 
         yield PaperVariation(**variation_config)
 
