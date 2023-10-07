@@ -24,7 +24,6 @@ class TestUploadedSVGFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
     resource_name = "files/%Y/%m/%d/Meditation{suffix}.svg"
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
-    resource_folder = "files/%Y/%m/%d"
     resource_field_name = "file"
     owner_fieldname = "svg"
     owner_model = Page
@@ -48,18 +47,6 @@ class TestUploadedSVGFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
     def test_read(self, storage):
         with storage.resource.open() as fp:
             assert fp.read(5) == b'<?xml'
-
-    def test_path(self, storage):
-        assert utils.match_path(
-            storage.resource.path,
-            "/media/{}/Meditation{{suffix}}.svg".format(self.resource_folder),
-        )
-
-    def test_url(self, storage):
-        assert utils.match_path(
-            storage.resource.url,
-            "/media/{}/Meditation{{suffix}}.svg".format(self.resource_folder),
-        )
 
     def test_width(self, storage):
         assert storage.resource.width == Decimal("626")

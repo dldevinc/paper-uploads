@@ -8,9 +8,10 @@ from PIL import Image
 NASA_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/milky-way-nasa.jpg")
 CALLIPHORA_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/calliphora.jpg")
 NATURE_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/Nature Tree.Jpeg")
+FIRE_BREATHING_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/Fire breathing.webp")
 DOCUMENT_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/document.pdf")
 MEDITATION_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/Meditation.svg")
-AUDIO_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/audio.mp3")
+AUDIO_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/Jomy QA.mp3")
 VIDEO_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/video.avi")
 EXCEL_FILEPATH = os.path.join(settings.BASE_DIR, "tests/samples/table.xls")
 
@@ -18,6 +19,7 @@ __all__ = [
     "NASA_FILEPATH",
     "CALLIPHORA_FILEPATH",
     "NATURE_FILEPATH",
+    "FIRE_BREATHING_FILEPATH",
     "DOCUMENT_FILEPATH",
     "MEDITATION_FILEPATH",
     "AUDIO_FILEPATH",

@@ -1,8 +1,8 @@
 import datetime
-import os
 import re
 
-re_suffix = re.compile(r'(_\w{6,7})$')
+re_suffix_pattern = re.compile(r"\{+\s*suffix\s*}+")
+re_suffix = re.compile(r"(_\w{6,7})$")
 
 
 def compare_dicts(dict1, dict2, ignore=None):
@@ -26,34 +26,42 @@ def compare_dicts(dict1, dict2, ignore=None):
     }
 
 
-def get_file_suffix(filepath: str) -> str:
-    basename = os.path.basename(filepath)
-    name, _ = os.path.splitext(basename)
-
-    match = re_suffix.search(name)
-    if match is not None:
-        return match.group(1)
-    return ""
-
-
-def match_path(target: str, pattern: str, *, source: str = None):
+def match_path(value: str, pattern: str, *, source: str = None):
     """
     Проверка соответствия пути `target` паттерну `pattern`.
+
+    Паттерн может включать
+
     Для проверки наличия суффикса, добавляемого FileSystemStorage,
     требуется указать путь к исходному файлу `source`.
+
+    Пример:
+        match_path(
+            "/media/2023/10/07/file_hUCd5n.jpg",
+            "/media/%Y/%m/%d/file{suffix}.jpg",
+        )
     """
-    value = datetime.datetime.now().strftime(pattern)
+    date = datetime.datetime.now()
 
-    if source:
-        value = value.format(
-            suffix=get_file_suffix(source)
-        )
+    pattern_with_suffix = re_suffix_pattern.search(pattern)
+    if not pattern_with_suffix:
+        target = date.strftime(pattern)
+        return value == target or value.endswith(target)
+
+    before, after = re_suffix_pattern.split(pattern, maxsplit=1)
+    before = date.strftime(before)
+    after = date.strftime(after)
+    if not value.endswith(after):
+        return False
+
+    value = value[:-len(after)]
+    suffix_match = re_suffix.search(value)
+    if suffix_match is not None:
+        target = before + suffix_match.group(1)
     else:
-        value = value.format(
-            suffix=get_file_suffix(target)
-        )
+        target = before
 
-    return target == value or target.endswith(value)
+    return value == target or value.endswith(target)
 
 
 def is_equal_dates(date1, date2, delta: int = 10):
