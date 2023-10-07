@@ -2,7 +2,7 @@ import datetime
 import os
 import re
 
-re_suffix = re.compile(r'(_[\w]{6,7})$')
+re_suffix = re.compile(r'(_\w{6,7})$')
 
 
 def compare_dicts(dict1, dict2, ignore=None):
@@ -38,9 +38,9 @@ def get_file_suffix(filepath: str) -> str:
 
 def match_path(target: str, pattern: str, *, source: str = None):
     """
-    Проверка соответствия пути target паттерну pattern.
+    Проверка соответствия пути `target` паттерну `pattern`.
     Для проверки наличия суффикса, добавляемого FileSystemStorage,
-    требуется указать путь к исходному файлу source.
+    требуется указать путь к исходному файлу `source`.
     """
     value = datetime.datetime.now().strftime(pattern)
 
