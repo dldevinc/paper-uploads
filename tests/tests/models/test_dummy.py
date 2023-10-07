@@ -534,7 +534,7 @@ class TestFileResourceSignals:
 
     def test_pre_rename_file(self):
         resource = self.resource_class()
-        filename = "name_{}.jpg".format(get_random_string(6))
+        original_filename = "name_{}.jpg".format(get_random_string(6))
         signal_fired = False
 
         def signal_handler(sender, instance, old_name, new_name, options, **kwargs):
@@ -543,12 +543,12 @@ class TestFileResourceSignals:
             assert sender is self.resource_class
             assert instance is resource
 
-            assert old_name == "/tmp/{}".format(filename)
+            assert old_name == instance.name
             assert new_name == "new name.png"
 
             # ensure instance filled
-            assert instance.resource_name == helpers.get_filename(filename)
-            assert instance.extension == helpers.get_extension(filename)
+            assert instance.resource_name == helpers.get_filename(original_filename)
+            assert instance.extension == helpers.get_extension(original_filename)
             assert instance.size == 9711423
             assert instance.checksum == "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
 
@@ -558,7 +558,7 @@ class TestFileResourceSignals:
                 "key2": "value2"
             }
 
-        resource.attach(NASA_FILEPATH, name=filename)
+        resource.attach(NASA_FILEPATH, name=original_filename)
 
         signals.pre_rename_file.connect(signal_handler)
         assert signal_fired is False
@@ -570,7 +570,8 @@ class TestFileResourceSignals:
 
     def test_post_rename_file(self):
         resource = self.resource_class()
-        filename = "name_{}.jpg".format(get_random_string(6))
+        original_filename = "name_{}.jpg".format(get_random_string(6))
+        old_filename = ""
         signal_fired = False
 
         def signal_handler(sender, instance, old_name, new_name, options, response, **kwargs):
@@ -579,7 +580,7 @@ class TestFileResourceSignals:
             assert sender is self.resource_class
             assert instance is resource
 
-            assert old_name == "/tmp/{}".format(filename)
+            assert old_name == old_filename
             assert new_name == "new name.png"
 
             # ensure instance filled
@@ -599,7 +600,8 @@ class TestFileResourceSignals:
                 "success": True,
             }
 
-        resource.attach(NASA_FILEPATH, name=filename)
+        resource.attach(NASA_FILEPATH, name=original_filename)
+        old_filename = resource.name
 
         signals.post_rename_file.connect(signal_handler)
         assert signal_fired is False
