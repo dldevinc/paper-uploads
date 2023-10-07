@@ -25,6 +25,7 @@ class TestUploadedImage(BacklinkModelTestMixin, BaseTestVersatileImageResource):
     resource_name = "images/%Y/%m/%d/calliphora{suffix}.jpg"
     resource_size = 254766
     resource_checksum = "d4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386"
+    resource_mimetype = "image/jpeg"
     resource_field_name = "file"
     owner_fieldname = "image_group"
     owner_model = Page
@@ -107,6 +108,7 @@ class TestUploadedImage(BacklinkModelTestMixin, BaseTestVersatileImageResource):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "width": 804,
                 "height": 1198,
                 "cropregion": "",
@@ -133,6 +135,7 @@ class TestUploadedImageAttach(BaseTestVersatileImageAttach):
     resource_extension = "jpg"
     resource_size = 9711423
     resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
+    resource_mimetype = "image/jpeg"
 
 
 class TestUploadedImageRename(BacklinkModelTestMixin, BaseTestVersatileImageRename):
@@ -140,6 +143,7 @@ class TestUploadedImageRename(BacklinkModelTestMixin, BaseTestVersatileImageRena
     resource_attachment = NATURE_FILEPATH
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
+    resource_mimetype = "image/jpeg"
     owner_fieldname = "image_group"
     owner_model = Page
     old_name = "old_name_{}.tiff".format(get_random_string(6))

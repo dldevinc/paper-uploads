@@ -24,6 +24,7 @@ class TestUploadedSVGFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
     resource_name = "files/%Y/%m/%d/Meditation{suffix}.svg"
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
+    resource_mimetype = "image/svg+xml"
     resource_field_name = "file"
     owner_fieldname = "svg"
     owner_model = Page
@@ -72,6 +73,7 @@ class TestUploadedSVGFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "width": "626",
                 "height": "660.0532",
                 "title": "SVG image",
@@ -93,6 +95,7 @@ class TestUploadedFileAttach(BaseTestFileFieldResourceAttach):
     resource_extension = "svg"
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
+    resource_mimetype = "image/svg+xml"
 
 
 class TestUploadedFileRename(BacklinkModelTestMixin, BaseTestFileFieldResourceRename):
@@ -100,6 +103,7 @@ class TestUploadedFileRename(BacklinkModelTestMixin, BaseTestFileFieldResourceRe
     resource_attachment = MEDITATION_FILEPATH
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
+    resource_mimetype = "image/svg+xml"
     owner_fieldname = "svg"
     owner_model = Page
     old_name = "old_name_{}.txt".format(get_random_string(6))

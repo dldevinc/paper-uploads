@@ -61,6 +61,7 @@ class TestFileResource(FileProxyTestMixin, TestResource):
     resource_name = "/tmp/{}{{suffix}}.Jpeg".format(resource_basename)
     resource_size = 13
     resource_checksum = "6246efc88ae4aa025e48c9c7adc723d5c97171a1fa6233623c7251ab8e57602f"
+    resource_mimetype = "text/plain"
 
     @classmethod
     def init_class(cls, storage):
@@ -90,6 +91,9 @@ class TestFileResource(FileProxyTestMixin, TestResource):
 
     def test_checksum(self, storage):
         assert storage.resource.checksum == self.resource_checksum
+
+    def test_mimetype(self, storage):
+        assert storage.resource.mimetype == self.resource_mimetype
 
     def test_uploaded_at(self, storage):
         assert utils.is_equal_dates(storage.resource.uploaded_at, storage.now)
@@ -125,6 +129,7 @@ class TestFileResource(FileProxyTestMixin, TestResource):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "created": storage.resource.created_at.isoformat(),
                 "modified": storage.resource.modified_at.isoformat(),
                 "uploaded": storage.resource.uploaded_at.isoformat(),
@@ -200,6 +205,9 @@ class TestEmptyFileResource:
     def test_checksum(self, storage):
         assert storage.resource.checksum == ""
 
+    def test_mimetype(self, storage):
+        assert storage.resource.mimetype == ""
+
     def test_as_dict(self, storage):
         utils.compare_dicts(
             storage.resource.as_dict(),
@@ -209,6 +217,7 @@ class TestEmptyFileResource:
                 "extension": "",
                 "caption": "",
                 "size": 0,
+                "mimetype": "",
                 "created": storage.resource.created_at.isoformat(),
                 "modified": None,
                 "uploaded": storage.resource.uploaded_at.isoformat(),
@@ -254,6 +263,7 @@ class TestFileResourceAttach:
     resource_extension = "jpg"
     resource_size = 9711423
     resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
+    resource_mimetype = "image/jpeg"
 
     @contextmanager
     def get_resource(self):
@@ -271,6 +281,7 @@ class TestFileResourceAttach:
             assert resource.extension == self.resource_extension
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
+            assert resource.mimetype == self.resource_mimetype
 
     def test_pathlib(self):
         with self.get_resource() as resource:
@@ -280,6 +291,7 @@ class TestFileResourceAttach:
             assert resource.extension == self.resource_extension
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
+            assert resource.mimetype == self.resource_mimetype
 
     def test_file(self):
         with self.get_resource() as resource:
@@ -290,6 +302,7 @@ class TestFileResourceAttach:
             assert resource.extension == self.resource_extension
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
+            assert resource.mimetype == self.resource_mimetype
 
     def test_django_file(self):
         with self.get_resource() as resource:
@@ -364,6 +377,7 @@ class TestFileResourceRename:
     resource_attachment = NATURE_FILEPATH
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
+    resource_mimetype = "image/jpeg"
     old_name = "old_name_{}.txt".format(get_random_string(6))
     new_name = "new_name_{}.log".format(get_random_string(6))
 
@@ -399,6 +413,9 @@ class TestFileResourceRename:
 
     def test_checksum(self, storage):
         assert storage.resource.checksum == self.resource_checksum
+
+    def test_mimetype(self, storage):
+        assert storage.resource.mimetype == self.resource_mimetype
 
     def test_modified_at_updated(self, storage):
         assert storage.resource.modified_at > storage.old_modified_at
@@ -709,6 +726,7 @@ class TestFileFieldResource(TestFileResource):
     resource_name = "file_field/Meditation{suffix}.svg"
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
+    resource_mimetype = "image/svg+xml"
     resource_field_name = "file"
 
     @classmethod
@@ -760,6 +778,7 @@ class TestFileFieldResource(TestFileResource):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "url": storage.resource.url,
                 "created": storage.resource.created_at.isoformat(),
                 "modified": storage.resource.modified_at.isoformat(),
@@ -776,6 +795,7 @@ class TestFileFieldResourceAttach(TestFileResourceAttach):
     resource_extension = "pdf"
     resource_size = 3028
     resource_checksum = "93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e"
+    resource_mimetype = "application/pdf"
 
 
 class TestFileFieldResourceRename(TestFileResourceRename):
@@ -783,6 +803,7 @@ class TestFileFieldResourceRename(TestFileResourceRename):
     resource_attachment = AUDIO_FILEPATH
     resource_size = 2113939
     resource_checksum = "4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d"
+    resource_mimetype = "audio/mpeg"
     old_name = "old_name_{}.mp3".format(get_random_string(6))
     new_name = "new_name_{}.wav".format(get_random_string(6))
 
@@ -867,6 +888,7 @@ class TestImageFieldResource(TestFileFieldResource):
     resource_name = "image_field/milky-way-nasa{suffix}.jpg"
     resource_size = 9711423
     resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
+    resource_mimetype = "image/jpeg"
     resource_field_name = "image"
 
     @classmethod
@@ -893,6 +915,7 @@ class TestImageFieldResource(TestFileFieldResource):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "width": 3501,
                 "height": 2525,
                 "cropregion": "",
@@ -951,6 +974,7 @@ class TestImageFieldResourceAttach(TestFileFieldResourceAttach):
     resource_extension = "webp"
     resource_size = 82698
     resource_checksum = "033e550230bdac841d5443d1c3e063e975a78cdbd4e04416c6583b43eaeede4e"
+    resource_mimetype = "image/webp"
 
     def test_django_file(self):
         with self.get_resource() as resource:
@@ -1018,6 +1042,7 @@ class TestImageFieldResourceRename(TestFileFieldResourceRename):
     resource_attachment = CALLIPHORA_FILEPATH
     resource_size = 254766
     resource_checksum = "d4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386"
+    resource_mimetype = "image/jpeg"
     old_name = "old_name_{}.txt".format(get_random_string(6))
     new_name = "new_name_{}.log".format(get_random_string(6))
 
@@ -1039,6 +1064,7 @@ class TestVersatileImageResource(TestImageFieldResource):
     resource_name = "versatile_image_field/Fire_breathing{suffix}.webp"
     resource_size = 82698
     resource_checksum = "033e550230bdac841d5443d1c3e063e975a78cdbd4e04416c6583b43eaeede4e"
+    resource_mimetype = "image/webp"
     resource_field_name = "image"
 
     def test_width(self, storage):
@@ -1065,6 +1091,7 @@ class TestVersatileImageResource(TestImageFieldResource):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "width": 1024,
                 "height": 752,
                 "cropregion": "",
@@ -1136,6 +1163,7 @@ class TestVersatileImageAttach(TestImageFieldResourceAttach):
     resource_extension = "jpg"
     resource_size = 254766
     resource_checksum = "d4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386"
+    resource_mimetype = "image/jpeg"
 
     def test_need_recut(self):
         with self.get_resource() as resource:
@@ -1150,6 +1178,7 @@ class TestVersatileImageRename(TestImageFieldResourceRename):
     resource_attachment = FIRE_BREATHING_FILEPATH
     resource_size = 82698
     resource_checksum = "033e550230bdac841d5443d1c3e063e975a78cdbd4e04416c6583b43eaeede4e"
+    resource_mimetype = "image/webp"
     old_name = "old_name_{}.webp".format(get_random_string(6))
     new_name = "new_name_{}.jpg".format(get_random_string(6))
 

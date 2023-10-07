@@ -23,6 +23,7 @@ class TestUploadedFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
     resource_name = "files/%Y/%m/%d/Jomy_QA{suffix}.mp3"
     resource_size = 2113939
     resource_checksum = "4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d"
+    resource_mimetype = "audio/mpeg"
     resource_field_name = "file"
     owner_fieldname = "file"
     owner_model = Page
@@ -56,6 +57,7 @@ class TestUploadedFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "url": storage.resource.url,
                 "file_info": "(mp3, 2.1\xa0MB)",
                 "created": storage.resource.created_at.isoformat(),
@@ -73,6 +75,7 @@ class TestUploadedFileAttach(BaseTestFileFieldResourceAttach):
     resource_extension = "avi"
     resource_size = 1496576
     resource_checksum = "68f7b2833c52df5ecfcb809509677f499acbe6a93cb1df79508a8ac0e1f7e3d3"
+    resource_mimetype = "video/x-msvideo"
 
 
 class TestUploadedFileRename(BacklinkModelTestMixin, BaseTestFileFieldResourceRename):
@@ -80,6 +83,7 @@ class TestUploadedFileRename(BacklinkModelTestMixin, BaseTestFileFieldResourceRe
     resource_attachment = DOCUMENT_FILEPATH
     resource_size = 3028
     resource_checksum = "93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e"
+    resource_mimetype = "application/pdf"
     owner_fieldname = "file"
     owner_model = Page
     old_name = "old_name_{}.txt".format(get_random_string(6))

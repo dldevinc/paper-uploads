@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Tuple, Union
 from xml.dom.minidom import parse
 
+import magic
 from django.core.exceptions import SuspiciousFileOperation
 from django.core.files import File
 from django.core.files.storage import FileSystemStorage, Storage
@@ -268,6 +269,11 @@ class FileResource(FileProxyMixin, Resource):
         max_length=64,
         editable=False,
     )
+    mimetype = models.CharField(
+        _("MIME Type"),
+        max_length=128,
+        editable=False,
+    )
     uploaded_at = models.DateTimeField(
         _("uploaded at"),
         default=now,
@@ -337,6 +343,7 @@ class FileResource(FileProxyMixin, Resource):
             "extension": self.extension,
             "caption": self.get_caption(),
             "size": self.size,
+            "mimetype": self.mimetype,
             "uploaded": self.uploaded_at.isoformat() if self.uploaded_at else None
         }
 
@@ -403,6 +410,11 @@ class FileResource(FileProxyMixin, Resource):
         self.size = self.get_file_size()
         self.uploaded_at = now()
         self.modified_at = now()
+
+        # reset file position before MIME detection
+        if prepared_file.seekable() and prepared_file.readable():
+            prepared_file.seek(0)
+            self.mimetype = magic.from_buffer(prepared_file.read(2048), mime=True)
 
         # Рассчет хэша от входного файла, а не от загруженного,
         # т.к. в случае Cloudinary, это приведет к избыточному
