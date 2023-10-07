@@ -141,10 +141,10 @@ class TestFileResource(FileProxyTestMixin, TestResource):
     def test_update_checksum(self, storage):
         storage.resource.checksum = ""
 
-        assert storage.resource.update_checksum() is True
+        assert storage.resource.update_checksum(storage.resource.get_file()) is True
         assert storage.resource.checksum == self.resource_checksum
 
-        assert storage.resource.update_checksum() is False  # not updated
+        assert storage.resource.update_checksum(storage.resource.get_file()) is False  # not updated
         assert storage.resource.checksum == self.resource_checksum
 
     def test_get_caption(self, storage):
@@ -441,7 +441,7 @@ class TestFileResourceSignals:
 
         signals.checksum_update.connect(signal_handler)
         assert signal_fired is False
-        assert resource.update_checksum() is True
+        assert resource.update_checksum(resource.get_file()) is True
         assert signal_fired is True
         signals.checksum_update.disconnect(signal_handler)
 

@@ -341,7 +341,6 @@ class FileResource(FileProxyMixin, Resource):
         }
 
     def update_checksum(self, file: FileLike = None) -> bool:
-        file = file or self.get_file()
         old_checksum = self.checksum
         new_checksum = checksum(file)
         if new_checksum and new_checksum != old_checksum:
@@ -412,7 +411,7 @@ class FileResource(FileProxyMixin, Resource):
             prepared_file.seek(0)
             self.update_checksum(prepared_file)
         else:
-            self.update_checksum()
+            self.update_checksum(self.get_file())
 
         signals.post_attach_file.send(
             sender=type(self),
