@@ -59,7 +59,7 @@ class TestFileResource(FileProxyTestMixin, TestResource):
     resource_class = DummyFileResource
     resource_basename = "Nature Tree_{}".format(get_random_string(6))
     resource_extension = "Jpeg"
-    resource_name = "/tmp/{}.Jpeg".format(resource_basename)
+    resource_name = "/tmp/{}{{suffix}}.Jpeg".format(resource_basename)
     resource_size = 13
     resource_checksum = "6246efc88ae4aa025e48c9c7adc723d5c97171a1fa6233623c7251ab8e57602f"
 
@@ -100,13 +100,19 @@ class TestFileResource(FileProxyTestMixin, TestResource):
         assert str(storage.resource) == storage.resource.get_caption()
 
     def test_repr(self, storage):
-        assert repr(storage.resource) == "{}('{}')".format(
-            type(storage.resource).__name__,
-            self.resource_name
+        assert utils.match_path(
+            repr(storage.resource),
+            "{}('{}')".format(
+                type(storage.resource).__name__,
+                self.resource_name
+            )
         )
 
     def test_name(self, storage):
-        assert storage.resource.name == self.resource_name
+        assert utils.match_path(
+            storage.resource.name,
+            self.resource_name
+        )
 
     def test_as_dict(self, storage):
         utils.compare_dicts(
@@ -721,12 +727,6 @@ class TestFileFieldResource(TestFileResource):
             )
         )
 
-    def test_name(self, storage):
-        assert utils.match_path(
-            storage.resource.name,
-            "{}/Nature_Tree{{suffix}}.Jpeg".format(self.resource_folder),
-        )
-
     def test_read(self, storage):
         with storage.resource.open() as fp:
             assert fp.read(5) == b'\xff\xd8\xff\xe0\x00'
@@ -887,12 +887,6 @@ class TestImageFieldResource(TestFileFieldResource):
         yield
         storage.resource.delete_file()
         storage.resource.delete()
-
-    def test_name(self, storage):
-        assert utils.match_path(
-            storage.resource.name,
-            "{}/milky-way-nasa{{suffix}}.jpg".format(self.resource_folder),
-        )
 
     def test_path(self, storage):
         assert utils.match_path(
@@ -1056,12 +1050,6 @@ class TestVersatileImageResource(TestImageFieldResource):
     resource_checksum = "d4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386"
     resource_folder = "versatile_image_field"
     resource_field_name = "image"
-
-    def test_name(self, storage):
-        assert utils.match_path(
-            storage.resource.name,
-            "{}/calliphora{{suffix}}.jpg".format(self.resource_folder),
-        )
 
     def test_path(self, storage):
         assert utils.match_path(

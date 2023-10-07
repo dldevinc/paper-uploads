@@ -42,12 +42,6 @@ class TestUploadedSVGFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
         storage.resource.delete_file()
         storage.resource.delete()
 
-    def test_name(self, storage):
-        assert utils.match_path(
-            storage.resource.name,
-            "{}/Meditation{{suffix}}.svg".format(self.resource_folder),
-        )
-
     def test_display_name(self, storage):
         assert storage.resource.display_name == self.resource_basename
 

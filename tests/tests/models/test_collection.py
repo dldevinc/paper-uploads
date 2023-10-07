@@ -586,12 +586,6 @@ class TestSVGItem(CollectionItemTestBase):
     resource_folder = "collections/files/%Y/%m/%d"
     resource_field_name = "file"
 
-    def test_name(self, storage):
-        assert utils.match_path(
-            storage.resource.name,
-            "{}/Meditation{{suffix}}.svg".format(self.resource_folder),
-        )
-
     def test_item_type(self, storage):
         assert storage.resource.type == "svg"
 
@@ -749,12 +743,6 @@ class TestImageItem(CollectionItemTestBase):
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
     resource_folder = "collections/images/%Y/%m/%d"
     resource_field_name = "file"
-
-    def test_name(self, storage):
-        assert utils.match_path(
-            storage.resource.name,
-            "{}/Nature_Tree{{suffix}}.jpg".format(self.resource_folder),
-        )
 
     def test_item_type(self, storage):
         assert storage.resource.type == "image"
