@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.17.0](https://github.com/dldevinc/paper-streamfield/tree/v0.17.0) - 2023-10-08
+
+### ⚠ BREAKING CHANGES
+
+-   Added new `mimetype` field.
+
 ## [0.16.2](https://github.com/dldevinc/paper-streamfield/tree/v0.16.2) - 2023-09-26
 
 ### Features

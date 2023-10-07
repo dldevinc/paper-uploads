@@ -1,2 +1,2 @@
-__version__ = "0.16.2"
+__version__ = "0.17.0"
 default_app_config = "paper_uploads.apps.Config"
