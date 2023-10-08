@@ -7,6 +7,7 @@ from django.core.files import File
 from django.core.files.storage import Storage
 from django.db import models
 from django.db.models.fields.files import FieldFile
+from django.utils.crypto import get_random_string
 from django.utils.translation import gettext_lazy as _
 
 from paper_uploads import helpers
@@ -31,21 +32,15 @@ class DummyResource(Resource):
 
 class DummyFileResource(FileResource):
     """
-    Сохраняет файлы в папку /tmp/
+    Сохраняет файлы в папку /tmp/.
+    К имени фала добавляется соль, чтобы при паараллельном запуске
+    разные тесты не использовали один файл.
     """
+    _name = ""
 
     @property
     def name(self) -> str:
-        if not self.resource_name:
-            return ""
-
-        return os.path.join(
-            tempfile.gettempdir(),
-            "{}.{}".format(
-                self.resource_name,
-                self.extension
-            )
-        )
+        return self._name
 
     def _require_file(self):
         if not self.file_exists():
@@ -64,7 +59,17 @@ class DummyFileResource(FileResource):
         self.resource_name = helpers.get_filename(file.name)
         self.extension = helpers.get_extension(file.name)
 
-        with open(self.name, "wb") as fdst:
+        filename = "{}_{}.{}".format(
+            self.resource_name,
+            get_random_string(6),
+            self.extension
+        )
+
+        self._name = os.path.join(
+            tempfile.gettempdir(),
+            filename
+        )
+        with open(self._name, "wb") as fdst:
             shutil.copyfileobj(file, fdst)
 
         return {
@@ -72,14 +77,26 @@ class DummyFileResource(FileResource):
         }
 
     def _rename(self, new_name: str, **options):
-        new_path = os.path.join(
-            tempfile.gettempdir(),
-            new_name
-        )
-        os.rename(self.name, new_path)
+        original_basename = os.path.basename(self.name)
+        if original_basename == new_name:
+            return {
+                "same_name": True
+            }
 
         self.resource_name = helpers.get_filename(new_name)
         self.extension = helpers.get_extension(new_name)
+
+        filename = "{}_{}.{}".format(
+            self.resource_name,
+            get_random_string(6),
+            self.extension
+        )
+        new_name = os.path.join(
+            tempfile.gettempdir(),
+            filename
+        )
+        os.rename(self.name, new_name)
+        self._name = new_name
 
         return {
             "success": True,

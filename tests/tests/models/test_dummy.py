@@ -1,4 +1,3 @@
-import datetime
 import io
 import os
 from contextlib import contextmanager
@@ -59,9 +58,10 @@ class TestFileResource(FileProxyTestMixin, TestResource):
     resource_class = DummyFileResource
     resource_basename = "Nature Tree_{}".format(get_random_string(6))
     resource_extension = "Jpeg"
-    resource_name = "/tmp/{}.Jpeg".format(resource_basename)
+    resource_name = "/tmp/{}{{suffix}}.Jpeg".format(resource_basename)
     resource_size = 13
     resource_checksum = "6246efc88ae4aa025e48c9c7adc723d5c97171a1fa6233623c7251ab8e57602f"
+    resource_mimetype = "text/plain"
 
     @classmethod
     def init_class(cls, storage):
@@ -92,6 +92,9 @@ class TestFileResource(FileProxyTestMixin, TestResource):
     def test_checksum(self, storage):
         assert storage.resource.checksum == self.resource_checksum
 
+    def test_mimetype(self, storage):
+        assert storage.resource.mimetype == self.resource_mimetype
+
     def test_uploaded_at(self, storage):
         assert utils.is_equal_dates(storage.resource.uploaded_at, storage.now)
         assert utils.is_equal_dates(storage.resource.uploaded_at, storage.resource.modified_at)
@@ -100,13 +103,19 @@ class TestFileResource(FileProxyTestMixin, TestResource):
         assert str(storage.resource) == storage.resource.get_caption()
 
     def test_repr(self, storage):
-        assert repr(storage.resource) == "{}('{}')".format(
-            type(storage.resource).__name__,
-            self.resource_name
+        assert utils.match_path(
+            repr(storage.resource),
+            "{}('{}')".format(
+                type(storage.resource).__name__,
+                self.resource_name
+            )
         )
 
     def test_name(self, storage):
-        assert storage.resource.name == self.resource_name
+        assert utils.match_path(
+            storage.resource.name,
+            self.resource_name
+        )
 
     def test_as_dict(self, storage):
         utils.compare_dicts(
@@ -120,6 +129,7 @@ class TestFileResource(FileProxyTestMixin, TestResource):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "created": storage.resource.created_at.isoformat(),
                 "modified": storage.resource.modified_at.isoformat(),
                 "uploaded": storage.resource.uploaded_at.isoformat(),
@@ -141,10 +151,10 @@ class TestFileResource(FileProxyTestMixin, TestResource):
     def test_update_checksum(self, storage):
         storage.resource.checksum = ""
 
-        assert storage.resource.update_checksum() is True
+        assert storage.resource.update_checksum(storage.resource.get_file()) is True
         assert storage.resource.checksum == self.resource_checksum
 
-        assert storage.resource.update_checksum() is False  # not updated
+        assert storage.resource.update_checksum(storage.resource.get_file()) is False  # not updated
         assert storage.resource.checksum == self.resource_checksum
 
     def test_get_caption(self, storage):
@@ -195,6 +205,9 @@ class TestEmptyFileResource:
     def test_checksum(self, storage):
         assert storage.resource.checksum == ""
 
+    def test_mimetype(self, storage):
+        assert storage.resource.mimetype == ""
+
     def test_as_dict(self, storage):
         utils.compare_dicts(
             storage.resource.as_dict(),
@@ -204,6 +217,7 @@ class TestEmptyFileResource:
                 "extension": "",
                 "caption": "",
                 "size": 0,
+                "mimetype": "",
                 "created": storage.resource.created_at.isoformat(),
                 "modified": None,
                 "uploaded": storage.resource.uploaded_at.isoformat(),
@@ -249,6 +263,7 @@ class TestFileResourceAttach:
     resource_extension = "jpg"
     resource_size = 9711423
     resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
+    resource_mimetype = "image/jpeg"
 
     @contextmanager
     def get_resource(self):
@@ -266,6 +281,7 @@ class TestFileResourceAttach:
             assert resource.extension == self.resource_extension
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
+            assert resource.mimetype == self.resource_mimetype
 
     def test_pathlib(self):
         with self.get_resource() as resource:
@@ -275,6 +291,7 @@ class TestFileResourceAttach:
             assert resource.extension == self.resource_extension
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
+            assert resource.mimetype == self.resource_mimetype
 
     def test_file(self):
         with self.get_resource() as resource:
@@ -285,6 +302,7 @@ class TestFileResourceAttach:
             assert resource.extension == self.resource_extension
             assert resource.size == self.resource_size
             assert resource.checksum == self.resource_checksum
+            assert resource.mimetype == self.resource_mimetype
 
     def test_django_file(self):
         with self.get_resource() as resource:
@@ -359,6 +377,7 @@ class TestFileResourceRename:
     resource_attachment = NATURE_FILEPATH
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
+    resource_mimetype = "image/jpeg"
     old_name = "old_name_{}.txt".format(get_random_string(6))
     new_name = "new_name_{}.log".format(get_random_string(6))
 
@@ -394,6 +413,9 @@ class TestFileResourceRename:
 
     def test_checksum(self, storage):
         assert storage.resource.checksum == self.resource_checksum
+
+    def test_mimetype(self, storage):
+        assert storage.resource.mimetype == self.resource_mimetype
 
     def test_modified_at_updated(self, storage):
         assert storage.resource.modified_at > storage.old_modified_at
@@ -441,7 +463,7 @@ class TestFileResourceSignals:
 
         signals.checksum_update.connect(signal_handler)
         assert signal_fired is False
-        assert resource.update_checksum() is True
+        assert resource.update_checksum(resource.get_file()) is True
         assert signal_fired is True
         signals.checksum_update.disconnect(signal_handler)
 
@@ -508,6 +530,10 @@ class TestFileResourceSignals:
             # ensure file type
             assert isinstance(file, File)
 
+            # check file position
+            if file.seekable():
+                assert file.tell() == 0
+
             # extra parameters passed to `attach()`
             assert options == {
                 "key1": "value1",
@@ -534,7 +560,7 @@ class TestFileResourceSignals:
 
     def test_pre_rename_file(self):
         resource = self.resource_class()
-        filename = "name_{}.jpg".format(get_random_string(6))
+        original_filename = "name_{}.jpg".format(get_random_string(6))
         signal_fired = False
 
         def signal_handler(sender, instance, old_name, new_name, options, **kwargs):
@@ -543,12 +569,12 @@ class TestFileResourceSignals:
             assert sender is self.resource_class
             assert instance is resource
 
-            assert old_name == "/tmp/{}".format(filename)
+            assert old_name == instance.name
             assert new_name == "new name.png"
 
             # ensure instance filled
-            assert instance.resource_name == helpers.get_filename(filename)
-            assert instance.extension == helpers.get_extension(filename)
+            assert instance.resource_name == helpers.get_filename(original_filename)
+            assert instance.extension == helpers.get_extension(original_filename)
             assert instance.size == 9711423
             assert instance.checksum == "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
 
@@ -558,7 +584,7 @@ class TestFileResourceSignals:
                 "key2": "value2"
             }
 
-        resource.attach(NASA_FILEPATH, name=filename)
+        resource.attach(NASA_FILEPATH, name=original_filename)
 
         signals.pre_rename_file.connect(signal_handler)
         assert signal_fired is False
@@ -570,7 +596,8 @@ class TestFileResourceSignals:
 
     def test_post_rename_file(self):
         resource = self.resource_class()
-        filename = "name_{}.jpg".format(get_random_string(6))
+        original_filename = "name_{}.jpg".format(get_random_string(6))
+        old_filename = ""
         signal_fired = False
 
         def signal_handler(sender, instance, old_name, new_name, options, response, **kwargs):
@@ -579,7 +606,7 @@ class TestFileResourceSignals:
             assert sender is self.resource_class
             assert instance is resource
 
-            assert old_name == "/tmp/{}".format(filename)
+            assert old_name == old_filename
             assert new_name == "new name.png"
 
             # ensure instance filled
@@ -599,7 +626,8 @@ class TestFileResourceSignals:
                 "success": True,
             }
 
-        resource.attach(NASA_FILEPATH, name=filename)
+        resource.attach(NASA_FILEPATH, name=original_filename)
+        old_filename = resource.name
 
         signals.post_rename_file.connect(signal_handler)
         assert signal_fired is False
@@ -692,13 +720,13 @@ class TestFileResourceSignals:
 
 class TestFileFieldResource(TestFileResource):
     resource_class = DummyFileFieldResource
-    resource_attachment = NATURE_FILEPATH
-    resource_basename = "Nature Tree"
-    resource_extension = "Jpeg"
-    resource_name = "file_field/Nature_Tree{suffix}.Jpeg"
-    resource_size = 672759
-    resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    resource_folder = "file_field"
+    resource_attachment = MEDITATION_FILEPATH
+    resource_basename = "Meditation"
+    resource_extension = "svg"
+    resource_name = "file_field/Meditation{suffix}.svg"
+    resource_size = 47193
+    resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
+    resource_mimetype = "image/svg+xml"
     resource_field_name = "file"
 
     @classmethod
@@ -710,24 +738,9 @@ class TestFileFieldResource(TestFileResource):
         storage.resource.delete_file()
         storage.resource.delete()
 
-    def test_repr(self, storage):
-        assert utils.match_path(
-            repr(storage.resource),
-            "{}('{}')".format(
-                type(storage.resource).__name__,
-                datetime.datetime.now().strftime(self.resource_name)
-            )
-        )
-
-    def test_name(self, storage):
-        assert utils.match_path(
-            storage.resource.name,
-            "{}/Nature_Tree{{suffix}}.Jpeg".format(self.resource_folder),
-        )
-
     def test_read(self, storage):
         with storage.resource.open() as fp:
-            assert fp.read(5) == b'\xff\xd8\xff\xe0\x00'
+            assert fp.read(5) == b'<?xml'
 
     def test_get_file_field(self, storage):
         assert (
@@ -736,7 +749,7 @@ class TestFileFieldResource(TestFileResource):
         )
 
     def test_get_file_folder(self, storage):
-        assert storage.resource.get_file_folder() == self.resource_folder
+        assert storage.resource.get_file_folder() == os.path.dirname(self.resource_name)
 
     def test_get_file_storage(self, storage):
         assert storage.resource.get_file_storage() is default_storage
@@ -744,13 +757,13 @@ class TestFileFieldResource(TestFileResource):
     def test_path(self, storage):
         assert utils.match_path(
             storage.resource.path,
-            "/media/{}/Nature_Tree{{suffix}}.Jpeg".format(self.resource_folder),
+            "/media/" + self.resource_name,
         )
 
     def test_url(self, storage):
         assert utils.match_path(
             storage.resource.url,
-            "/media/{}/Nature_Tree{{suffix}}.Jpeg".format(self.resource_folder),
+            "/media/" + self.resource_name,
         )
 
     def test_as_dict(self, storage):
@@ -765,6 +778,7 @@ class TestFileFieldResource(TestFileResource):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "url": storage.resource.url,
                 "created": storage.resource.created_at.isoformat(),
                 "modified": storage.resource.modified_at.isoformat(),
@@ -776,20 +790,22 @@ class TestFileFieldResource(TestFileResource):
 
 class TestFileFieldResourceAttach(TestFileResourceAttach):
     resource_class = DummyFileFieldResource
-    resource_attachment = NASA_FILEPATH
-    resource_basename = "milky-way-nasa"
-    resource_extension = "jpg"
-    resource_size = 9711423
-    resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
+    resource_attachment = DOCUMENT_FILEPATH
+    resource_basename = "document"
+    resource_extension = "pdf"
+    resource_size = 3028
+    resource_checksum = "93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e"
+    resource_mimetype = "application/pdf"
 
 
 class TestFileFieldResourceRename(TestFileResourceRename):
     resource_class = DummyFileFieldResource
-    resource_attachment = EXCEL_FILEPATH
-    resource_size = 8704
-    resource_checksum = "c9c8ad905aa5142731b1e8ab34d5862f871627fa7ad8005264494c2489d2061e"
-    old_name = "old_name_{}.txt".format(get_random_string(6))
-    new_name = "new_name_{}.log".format(get_random_string(6))
+    resource_attachment = AUDIO_FILEPATH
+    resource_size = 2113939
+    resource_checksum = "4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d"
+    resource_mimetype = "audio/mpeg"
+    old_name = "old_name_{}.mp3".format(get_random_string(6))
+    new_name = "new_name_{}.wav".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):
@@ -819,6 +835,7 @@ class TestFileFieldResourceRename(TestFileResourceRename):
 
 class TestFileFieldResourceDelete(TestFileResourceDelete):
     resource_class = DummyFileFieldResource
+    resource_attachment = VIDEO_FILEPATH
 
     def test_file_existence(self, storage):
         file_storage = storage.resource.get_file_storage()
@@ -871,7 +888,7 @@ class TestImageFieldResource(TestFileFieldResource):
     resource_name = "image_field/milky-way-nasa{suffix}.jpg"
     resource_size = 9711423
     resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
-    resource_folder = "image_field"
+    resource_mimetype = "image/jpeg"
     resource_field_name = "image"
 
     @classmethod
@@ -886,24 +903,6 @@ class TestImageFieldResource(TestFileFieldResource):
         storage.resource.delete_file()
         storage.resource.delete()
 
-    def test_name(self, storage):
-        assert utils.match_path(
-            storage.resource.name,
-            "{}/milky-way-nasa{{suffix}}.jpg".format(self.resource_folder),
-        )
-
-    def test_path(self, storage):
-        assert utils.match_path(
-            storage.resource.path,
-            "/media/{}/milky-way-nasa{{suffix}}.jpg".format(self.resource_folder),
-        )
-
-    def test_url(self, storage):
-        assert utils.match_path(
-            storage.resource.url,
-            "/media/{}/milky-way-nasa{{suffix}}.jpg".format(self.resource_folder),
-        )
-
     def test_as_dict(self, storage):
         utils.compare_dicts(
             storage.resource.as_dict(),
@@ -916,6 +915,7 @@ class TestImageFieldResource(TestFileFieldResource):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "width": 3501,
                 "height": 2525,
                 "cropregion": "",
@@ -928,6 +928,10 @@ class TestImageFieldResource(TestFileFieldResource):
             },
             ignore={"id"}
         )
+
+    def test_read(self, storage):
+        with storage.resource.open("rb") as fp:
+            assert fp.read(5) == b'\xff\xd8\xff\xe0\x00'
 
     def test_title(self, storage):
         assert storage.resource.title == "Nasa"
@@ -965,6 +969,12 @@ class TestImageFieldResource(TestFileFieldResource):
 
 class TestImageFieldResourceAttach(TestFileFieldResourceAttach):
     resource_class = DummyImageFieldResource
+    resource_attachment = FIRE_BREATHING_FILEPATH
+    resource_basename = "Fire breathing"
+    resource_extension = "webp"
+    resource_size = 82698
+    resource_checksum = "033e550230bdac841d5443d1c3e063e975a78cdbd4e04416c6583b43eaeede4e"
+    resource_mimetype = "image/webp"
 
     def test_django_file(self):
         with self.get_resource() as resource:
@@ -1032,12 +1042,14 @@ class TestImageFieldResourceRename(TestFileFieldResourceRename):
     resource_attachment = CALLIPHORA_FILEPATH
     resource_size = 254766
     resource_checksum = "d4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386"
+    resource_mimetype = "image/jpeg"
     old_name = "old_name_{}.txt".format(get_random_string(6))
     new_name = "new_name_{}.log".format(get_random_string(6))
 
 
 class TestImageFieldResourceDelete(TestFileFieldResourceDelete):
     resource_class = DummyImageFieldResource
+    resource_attachment = NATURE_FILEPATH
 
 
 class TestImageFieldResourceEmpty(TestFileFieldResourceEmpty):
@@ -1046,44 +1058,26 @@ class TestImageFieldResourceEmpty(TestFileFieldResourceEmpty):
 
 class TestVersatileImageResource(TestImageFieldResource):
     resource_class = DummyVersatileImageResource
-    resource_attachment = CALLIPHORA_FILEPATH
-    resource_basename = "calliphora"
-    resource_extension = "jpg"
-    resource_name = "versatile_image_field/calliphora{suffix}.jpg"
-    resource_size = 254766
-    resource_checksum = "d4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386"
-    resource_folder = "versatile_image_field"
+    resource_attachment = FIRE_BREATHING_FILEPATH
+    resource_basename = "Fire breathing"
+    resource_extension = "webp"
+    resource_name = "versatile_image_field/Fire_breathing{suffix}.webp"
+    resource_size = 82698
+    resource_checksum = "033e550230bdac841d5443d1c3e063e975a78cdbd4e04416c6583b43eaeede4e"
+    resource_mimetype = "image/webp"
     resource_field_name = "image"
 
-    def test_name(self, storage):
-        assert utils.match_path(
-            storage.resource.name,
-            "{}/calliphora{{suffix}}.jpg".format(self.resource_folder),
-        )
-
-    def test_path(self, storage):
-        assert utils.match_path(
-            storage.resource.path,
-            "/media/{}/calliphora{{suffix}}.jpg".format(self.resource_folder),
-        )
-
-    def test_url(self, storage):
-        assert utils.match_path(
-            storage.resource.url,
-            "/media/{}/calliphora{{suffix}}.jpg".format(self.resource_folder),
-        )
-
     def test_width(self, storage):
-        assert storage.resource.width == 804
+        assert storage.resource.width == 1024
 
     def test_height(self, storage):
-        assert storage.resource.height == 1198
+        assert storage.resource.height == 752
 
     def test_ratio(self, storage):
-        assert storage.resource.ratio == Decimal("0.67111853")
+        assert storage.resource.ratio == Decimal("1.36170213")
 
     def test_hw_ratio(self, storage):
-        assert storage.resource.hw_ratio == Decimal("1.49004975")
+        assert storage.resource.hw_ratio == Decimal("0.734375")
 
     def test_as_dict(self, storage):
         utils.compare_dicts(
@@ -1097,8 +1091,9 @@ class TestVersatileImageResource(TestImageFieldResource):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
-                "width": 804,
-                "height": 1198,
+                "mimetype": self.resource_mimetype,
+                "width": 1024,
+                "height": 752,
                 "cropregion": "",
                 "title": "Nasa",
                 "description": "Calliphora is a genus of blow flies, also known as bottle flies",
@@ -1110,6 +1105,10 @@ class TestVersatileImageResource(TestImageFieldResource):
             ignore={"id"}
         )
 
+    def test_read(self, storage):
+        with storage.resource.open("rb") as fp:
+            assert fp.read(5) == b'RIFF\x02'
+
     def test_get_variations(self, storage):
         variations = storage.resource.get_variations()
         assert len(variations) == 3
@@ -1120,10 +1119,12 @@ class TestVersatileImageResource(TestImageFieldResource):
         vfile = storage.resource.get_variation_file("desktop")
         assert isinstance(vfile, VariationFile)
         assert vfile.exists() is True
+
+        file_path = list(os.path.splitext(self.resource_name))
+        file_path.insert(-1, ".desktop")
         assert utils.match_path(
             vfile.path,
-            "/media/{}/calliphora{{suffix}}.desktop.jpg".format(self.resource_folder),
-            source=storage.resource.url
+            "/media/" + "".join(file_path)
         )
 
     def test_get_non_existed_variation_file(self, storage):
@@ -1157,6 +1158,12 @@ class TestVersatileImageResource(TestImageFieldResource):
 
 class TestVersatileImageAttach(TestImageFieldResourceAttach):
     resource_class = DummyVersatileImageResource
+    resource_attachment = CALLIPHORA_FILEPATH
+    resource_basename = "calliphora"
+    resource_extension = "jpg"
+    resource_size = 254766
+    resource_checksum = "d4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386"
+    resource_mimetype = "image/jpeg"
 
     def test_need_recut(self):
         with self.get_resource() as resource:
@@ -1168,11 +1175,12 @@ class TestVersatileImageAttach(TestImageFieldResourceAttach):
 
 class TestVersatileImageRename(TestImageFieldResourceRename):
     resource_class = DummyVersatileImageResource
-    resource_attachment = NATURE_FILEPATH
-    resource_size = 672759
-    resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    old_name = "old_name_{}.tiff".format(get_random_string(6))
-    new_name = "new_name_{}.tif".format(get_random_string(6))
+    resource_attachment = FIRE_BREATHING_FILEPATH
+    resource_size = 82698
+    resource_checksum = "033e550230bdac841d5443d1c3e063e975a78cdbd4e04416c6583b43eaeede4e"
+    resource_mimetype = "image/webp"
+    old_name = "old_name_{}.webp".format(get_random_string(6))
+    new_name = "new_name_{}.jpg".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):
@@ -1200,6 +1208,7 @@ class TestVersatileImageRename(TestImageFieldResourceRename):
 
 class TestVersatileImageDelete(TestImageFieldResourceDelete):
     resource_class = DummyVersatileImageResource
+    resource_attachment = NASA_FILEPATH
 
 
 class TestVersatileImageEmpty(TestImageFieldResourceEmpty):
@@ -1216,7 +1225,6 @@ class TestVersatileImageEmpty(TestImageFieldResourceEmpty):
 @pytest.mark.django_db
 class TestVariations:
     resource_class = DummyVersatileImageResource
-    resource_folder = "versatile_image_field"
 
     def test_delete_variations(self):
         resource = self.resource_class()
@@ -1269,8 +1277,9 @@ class TestVariations:
 
         assert utils.match_path(
             resource.desktop.name,
-            "{}/initial{{suffix}}.desktop.jpg".format(self.resource_folder),
-            source=resource.url
+            "{}/initial{{suffix}}.desktop.jpg".format(
+                resource.get_file_folder()
+            )
         )
 
         # check `variation_files()` cache
@@ -1287,8 +1296,9 @@ class TestVariations:
 
         assert utils.match_path(
             resource.desktop.name,
-            "{}/reattached{{suffix}}.desktop.jpg".format(self.resource_folder),
-            source=resource.url
+            "{}/reattached{{suffix}}.desktop.jpg".format(
+                resource.get_file_folder()
+            )
         )
 
         # check `variation_files()` cache

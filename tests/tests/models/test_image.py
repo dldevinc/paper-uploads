@@ -1,4 +1,5 @@
 import os
+from decimal import Decimal
 
 from django.utils.crypto import get_random_string
 from examples.fields.standard.models import Page
@@ -9,13 +10,11 @@ from paper_uploads.variations import PaperVariation
 from .. import utils
 from ..dummy import *
 from ..mixins import BacklinkModelTestMixin
-from .test_dummy import (
-    TestVersatileImageAttach as BaseTestVersatileImageAttach,
-    TestVersatileImageDelete as BaseTestVersatileImageDelete,
-    TestVersatileImageEmpty as BaseTestVersatileImageEmpty,
-    TestVersatileImageRename as BaseTestVersatileImageRename,
-    TestVersatileImageResource as BaseTestVersatileImageResource,
-)
+from .test_dummy import TestVersatileImageAttach as BaseTestVersatileImageAttach
+from .test_dummy import TestVersatileImageDelete as BaseTestVersatileImageDelete
+from .test_dummy import TestVersatileImageEmpty as BaseTestVersatileImageEmpty
+from .test_dummy import TestVersatileImageRename as BaseTestVersatileImageRename
+from .test_dummy import TestVersatileImageResource as BaseTestVersatileImageResource
 
 
 class TestUploadedImage(BacklinkModelTestMixin, BaseTestVersatileImageResource):
@@ -24,7 +23,9 @@ class TestUploadedImage(BacklinkModelTestMixin, BaseTestVersatileImageResource):
     resource_basename = "calliphora"
     resource_extension = "jpg"
     resource_name = "images/%Y/%m/%d/calliphora{suffix}.jpg"
-    resource_folder = "images/%Y/%m/%d"
+    resource_size = 254766
+    resource_checksum = "d4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386"
+    resource_mimetype = "image/jpeg"
     resource_field_name = "file"
     owner_fieldname = "image_group"
     owner_model = Page
@@ -50,8 +51,20 @@ class TestUploadedImage(BacklinkModelTestMixin, BaseTestVersatileImageResource):
             "owner_fieldname"
         }
 
+    def test_width(self, storage):
+        assert storage.resource.width == 804
+
+    def test_height(self, storage):
+        assert storage.resource.height == 1198
+
     def test_title(self, storage):
         assert storage.resource.title == "Calliphora"
+
+    def test_ratio(self, storage):
+        assert storage.resource.ratio == Decimal("0.67111853")
+
+    def test_hw_ratio(self, storage):
+        assert storage.resource.hw_ratio == Decimal("1.49004975")
 
     def test_calculate_max_size(self, storage):
         assert storage.resource.calculate_max_size((3000, 2000)) == (1800, 1200)
@@ -95,6 +108,7 @@ class TestUploadedImage(BacklinkModelTestMixin, BaseTestVersatileImageResource):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "width": 804,
                 "height": 1198,
                 "cropregion": "",
@@ -109,6 +123,10 @@ class TestUploadedImage(BacklinkModelTestMixin, BaseTestVersatileImageResource):
             ignore={"id"}
         )
 
+    def test_read(self, storage):
+        with storage.resource.open("rb") as fp:
+            assert fp.read(5) == b'\xff\xd8\xff\xe0\x00'
+
 
 class TestUploadedImageAttach(BaseTestVersatileImageAttach):
     resource_class = UploadedImage
@@ -117,6 +135,7 @@ class TestUploadedImageAttach(BaseTestVersatileImageAttach):
     resource_extension = "jpg"
     resource_size = 9711423
     resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
+    resource_mimetype = "image/jpeg"
 
 
 class TestUploadedImageRename(BacklinkModelTestMixin, BaseTestVersatileImageRename):
@@ -124,6 +143,7 @@ class TestUploadedImageRename(BacklinkModelTestMixin, BaseTestVersatileImageRena
     resource_attachment = NATURE_FILEPATH
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
+    resource_mimetype = "image/jpeg"
     owner_fieldname = "image_group"
     owner_model = Page
     old_name = "old_name_{}.tiff".format(get_random_string(6))
@@ -160,7 +180,7 @@ class TestUploadedImageRename(BacklinkModelTestMixin, BaseTestVersatileImageRena
 
 class TestUploadedImageDelete(BacklinkModelTestMixin, BaseTestVersatileImageDelete):
     resource_class = UploadedImage
-    resource_attachment = NASA_FILEPATH
+    resource_attachment = FIRE_BREATHING_FILEPATH
     owner_fieldname = "image_group"
     owner_model = Page
 

@@ -8,24 +8,22 @@ from paper_uploads.models import UploadedFile
 from .. import utils
 from ..dummy import *
 from ..mixins import BacklinkModelTestMixin
-from .test_dummy import (
-    TestFileFieldResource as BaseTestFileFieldResource,
-    TestFileFieldResourceAttach as BaseTestFileFieldResourceAttach,
-    TestFileFieldResourceDelete as BaseTestFileFieldResourceDelete,
-    TestFileFieldResourceEmpty as BaseTestFileFieldResourceEmpty,
-    TestFileFieldResourceRename as BaseTestFileFieldResourceRename,
-)
+from .test_dummy import TestFileFieldResource as BaseTestFileFieldResource
+from .test_dummy import TestFileFieldResourceAttach as BaseTestFileFieldResourceAttach
+from .test_dummy import TestFileFieldResourceDelete as BaseTestFileFieldResourceDelete
+from .test_dummy import TestFileFieldResourceEmpty as BaseTestFileFieldResourceEmpty
+from .test_dummy import TestFileFieldResourceRename as BaseTestFileFieldResourceRename
 
 
 class TestUploadedFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
     resource_class = UploadedFile
-    resource_attachment = NATURE_FILEPATH
-    resource_basename = "Nature Tree"
-    resource_extension = "Jpeg"
-    resource_name = "files/%Y/%m/%d/Nature_Tree{suffix}.Jpeg"
-    resource_size = 672759
-    resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    resource_folder = "files/%Y/%m/%d"
+    resource_attachment = AUDIO_FILEPATH
+    resource_basename = "Jomy QA"
+    resource_extension = "mp3"
+    resource_name = "files/%Y/%m/%d/Jomy_QA{suffix}.mp3"
+    resource_size = 2113939
+    resource_checksum = "4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d"
+    resource_mimetype = "audio/mpeg"
     resource_field_name = "file"
     owner_fieldname = "file"
     owner_model = Page
@@ -43,6 +41,10 @@ class TestUploadedFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
     def test_display_name(self, storage):
         assert storage.resource.display_name == self.resource_basename
 
+    def test_read(self, storage):
+        with storage.resource.open() as fp:
+            assert fp.read(5) == b'ID3\x03\x00'
+
     def test_as_dict(self, storage):
         utils.compare_dicts(
             storage.resource.as_dict(),
@@ -55,8 +57,9 @@ class TestUploadedFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "url": storage.resource.url,
-                "file_info": "(Jpeg, 672.8\xa0KB)",
+                "file_info": "(mp3, 2.1\xa0MB)",
                 "created": storage.resource.created_at.isoformat(),
                 "modified": storage.resource.modified_at.isoformat(),
                 "uploaded": storage.resource.uploaded_at.isoformat(),
@@ -67,11 +70,12 @@ class TestUploadedFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
 
 class TestUploadedFileAttach(BaseTestFileFieldResourceAttach):
     resource_class = UploadedFile
-    resource_attachment = DOCUMENT_FILEPATH
-    resource_basename = "document"
-    resource_extension = "pdf"
-    resource_size = 3028
-    resource_checksum = "93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e"
+    resource_attachment = VIDEO_FILEPATH
+    resource_basename = "video"
+    resource_extension = "avi"
+    resource_size = 1496576
+    resource_checksum = "68f7b2833c52df5ecfcb809509677f499acbe6a93cb1df79508a8ac0e1f7e3d3"
+    resource_mimetype = "video/x-msvideo"
 
 
 class TestUploadedFileRename(BacklinkModelTestMixin, BaseTestFileFieldResourceRename):
@@ -79,6 +83,7 @@ class TestUploadedFileRename(BacklinkModelTestMixin, BaseTestFileFieldResourceRe
     resource_attachment = DOCUMENT_FILEPATH
     resource_size = 3028
     resource_checksum = "93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e"
+    resource_mimetype = "application/pdf"
     owner_fieldname = "file"
     owner_model = Page
     old_name = "old_name_{}.txt".format(get_random_string(6))

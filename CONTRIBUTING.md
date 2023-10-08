@@ -22,12 +22,12 @@
     ```shell
     pip install -r ./requirements.txt
     pip install -e .[full]
-    npm i
+    yarn install
     ```
 
 1. Compile static files
     ```shell
-    npm run build
+    yarn build
     ```
 1. Create `.env` file:
     ```shell

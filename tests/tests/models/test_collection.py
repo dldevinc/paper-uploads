@@ -462,7 +462,7 @@ class TestFileItem(CollectionItemTestBase):
     resource_name = "collections/files/%Y/%m/%d/Nature_Tree{suffix}.Jpeg"
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    resource_folder = "collections/files/%Y/%m/%d"
+    resource_mimetype = "image/jpeg"
     resource_field_name = "file"
 
     def test_item_type(self, storage):
@@ -483,6 +483,7 @@ class TestFileItem(CollectionItemTestBase):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "url": storage.resource.url,
                 "order": 0,
                 "preview": render_to_string(
@@ -495,6 +496,10 @@ class TestFileItem(CollectionItemTestBase):
             },
             ignore={"id", "collectionId"}
         )
+
+    def test_read(self, storage):
+        with storage.resource.open() as fp:
+            assert fp.read(5) == b'\xff\xd8\xff\xe0\x00'
 
     def test_accept(self, storage):
         with open(DOCUMENT_FILEPATH, "rb") as fp:
@@ -514,21 +519,23 @@ class TestFileItem(CollectionItemTestBase):
 class TestFileItemAttach(CollectionItemAttachTestBase):
     collection_class = MixedCollection
     resource_class = FileItem
-    resource_attachment = DOCUMENT_FILEPATH
-    resource_basename = "document"
-    resource_extension = "pdf"
-    resource_size = 3028
-    resource_checksum = "93e67b2ff2140c3a3f995ff9e536c4cb58b5df482dd34d47a39cf3337393ef7e"
+    resource_attachment = VIDEO_FILEPATH
+    resource_basename = "video"
+    resource_extension = "avi"
+    resource_size = 1496576
+    resource_checksum = "68f7b2833c52df5ecfcb809509677f499acbe6a93cb1df79508a8ac0e1f7e3d3"
+    resource_mimetype = "video/x-msvideo"
 
 
 class TestFileItemRename(BaseTestFileFieldResourceRename):
     collection_class = FilesOnlyCollection
     resource_class = FileItem
-    resource_attachment = NATURE_FILEPATH
-    resource_size = 672759
-    resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    old_name = "old_name_{}.txt".format(get_random_string(6))
-    new_name = "new_name_{}.log".format(get_random_string(6))
+    resource_attachment = AUDIO_FILEPATH
+    resource_size = 2113939
+    resource_checksum = "4792f5f997f82f225299e98a1e396c7d7e479d10ffe6976f0b487361d729a15d"
+    resource_mimetype = "audio/mpeg"
+    old_name = "old_name_{}.mp3".format(get_random_string(6))
+    new_name = "new_name_{}.wav".format(get_random_string(6))
 
     @classmethod
     def init_class(cls, storage):
@@ -583,14 +590,8 @@ class TestSVGItem(CollectionItemTestBase):
     resource_name = "collections/files/%Y/%m/%d/Meditation{suffix}.svg"
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
-    resource_folder = "collections/files/%Y/%m/%d"
+    resource_mimetype = "image/svg+xml"
     resource_field_name = "file"
-
-    def test_name(self, storage):
-        assert utils.match_path(
-            storage.resource.name,
-            "{}/Meditation{{suffix}}.svg".format(self.resource_folder),
-        )
 
     def test_item_type(self, storage):
         assert storage.resource.type == "svg"
@@ -610,6 +611,7 @@ class TestSVGItem(CollectionItemTestBase):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "width": "626",
                 "height": "660.0532",
                 "title": "",
@@ -625,18 +627,6 @@ class TestSVGItem(CollectionItemTestBase):
                 "uploaded": storage.resource.uploaded_at.isoformat(),
             },
             ignore={"id", "collectionId"}
-        )
-
-    def test_path(self, storage):
-        assert utils.match_path(
-            storage.resource.path,
-            "/media/{}/Meditation{{suffix}}.svg".format(self.resource_folder),
-        )
-
-    def test_url(self, storage):
-        assert utils.match_path(
-            storage.resource.url,
-            "/media/{}/Meditation{{suffix}}.svg".format(self.resource_folder),
         )
 
     def test_width(self, storage):
@@ -678,6 +668,7 @@ class TestSVGItemAttach(CollectionItemAttachTestBase):
     resource_extension = "svg"
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
+    resource_mimetype = "image/svg+xml"
 
     def test_unsupported_file(self):
         resource = self.resource_class()
@@ -691,6 +682,7 @@ class TestSVGItemRename(BaseTestFileFieldResourceRename):
     resource_attachment = MEDITATION_FILEPATH
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
+    resource_mimetype = "image/svg+xml"
     old_name = "old_name_{}.svg".format(get_random_string(6))
     new_name = "new_name_{}.svg".format(get_random_string(6))
 
@@ -747,29 +739,11 @@ class TestImageItem(CollectionItemTestBase):
     resource_name = "collections/images/%Y/%m/%d/Nature_Tree{suffix}.jpg"
     resource_size = 672759
     resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
-    resource_folder = "collections/images/%Y/%m/%d"
+    resource_mimetype = "image/jpeg"
     resource_field_name = "file"
-
-    def test_name(self, storage):
-        assert utils.match_path(
-            storage.resource.name,
-            "{}/Nature_Tree{{suffix}}.jpg".format(self.resource_folder),
-        )
 
     def test_item_type(self, storage):
         assert storage.resource.type == "image"
-
-    def test_path(self, storage):
-        assert utils.match_path(
-            storage.resource.path,
-            "/media/{}/Nature_Tree{{suffix}}.jpg".format(self.resource_folder),
-        )
-
-    def test_url(self, storage):
-        assert utils.match_path(
-            storage.resource.url,
-            "/media/{}/Nature_Tree{{suffix}}.jpg".format(self.resource_folder),
-        )
 
     def test_read(self, storage):
         with storage.resource.open() as fp:
@@ -790,6 +764,7 @@ class TestImageItem(CollectionItemTestBase):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "width": 1534,
                 "height": 2301,
                 "cropregion": "",
@@ -883,6 +858,7 @@ class TestImageItemAttach(CollectionItemAttachTestBase):
     resource_extension = "jpg"
     resource_size = 9711423
     resource_checksum = "485291fa0ee50c016982abbfa943957bcd231aae0492ccbaa22c58e3997b35e0"
+    resource_mimetype = "image/jpeg"
 
     def test_django_file(self):
         with self.get_resource() as resource:
@@ -953,9 +929,10 @@ class TestImageItemAttach(CollectionItemAttachTestBase):
 class TestImageItemRename(BaseTestVersatileImageRename):
     collection_class = ImagesOnlyCollection
     resource_class = ImageItem
-    resource_attachment = NATURE_FILEPATH
-    resource_size = 672759
-    resource_checksum = "e3a7f0318daaa395af0b84c1bca249cbfd46b9994b0aceb07f74332de4b061e1"
+    resource_attachment = CALLIPHORA_FILEPATH
+    resource_size = 254766
+    resource_checksum = "d4dec03fae591f0c89776c57f8b5d721c930f5f7cb1b32d456f008700a432386"
+    resource_mimetype = "image/jpeg"
     old_name = "old_name_{}.tiff".format(get_random_string(6))
     new_name = "new_name_{}.tif".format(get_random_string(6))
 
@@ -997,7 +974,7 @@ class TestImageItemRename(BaseTestVersatileImageRename):
 class TestImageItemDelete(CollectionItemDeleteTestBase):
     collection_class = ImagesOnlyCollection
     resource_class = ImageItem
-    resource_attachment = NATURE_FILEPATH
+    resource_attachment = FIRE_BREATHING_FILEPATH
 
 
 class TestImageItemEmpty(BaseTestVersatileImageEmpty):

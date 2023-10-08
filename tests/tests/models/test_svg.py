@@ -24,7 +24,7 @@ class TestUploadedSVGFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
     resource_name = "files/%Y/%m/%d/Meditation{suffix}.svg"
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
-    resource_folder = "files/%Y/%m/%d"
+    resource_mimetype = "image/svg+xml"
     resource_field_name = "file"
     owner_fieldname = "svg"
     owner_model = Page
@@ -42,30 +42,12 @@ class TestUploadedSVGFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
         storage.resource.delete_file()
         storage.resource.delete()
 
-    def test_name(self, storage):
-        assert utils.match_path(
-            storage.resource.name,
-            "{}/Meditation{{suffix}}.svg".format(self.resource_folder),
-        )
-
     def test_display_name(self, storage):
         assert storage.resource.display_name == self.resource_basename
 
     def test_read(self, storage):
         with storage.resource.open() as fp:
             assert fp.read(5) == b'<?xml'
-
-    def test_path(self, storage):
-        assert utils.match_path(
-            storage.resource.path,
-            "/media/{}/Meditation{{suffix}}.svg".format(self.resource_folder),
-        )
-
-    def test_url(self, storage):
-        assert utils.match_path(
-            storage.resource.url,
-            "/media/{}/Meditation{{suffix}}.svg".format(self.resource_folder),
-        )
 
     def test_width(self, storage):
         assert storage.resource.width == Decimal("626")
@@ -91,6 +73,7 @@ class TestUploadedSVGFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
                     self.resource_extension
                 ),
                 "size": self.resource_size,
+                "mimetype": self.resource_mimetype,
                 "width": "626",
                 "height": "660.0532",
                 "title": "SVG image",
@@ -112,6 +95,7 @@ class TestUploadedFileAttach(BaseTestFileFieldResourceAttach):
     resource_extension = "svg"
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
+    resource_mimetype = "image/svg+xml"
 
 
 class TestUploadedFileRename(BacklinkModelTestMixin, BaseTestFileFieldResourceRename):
@@ -119,6 +103,7 @@ class TestUploadedFileRename(BacklinkModelTestMixin, BaseTestFileFieldResourceRe
     resource_attachment = MEDITATION_FILEPATH
     resource_size = 47193
     resource_checksum = "7bdd00038ba30f3a691971de5a32084b18f4af93d4bb91616419ae3828e0141d"
+    resource_mimetype = "image/svg+xml"
     owner_fieldname = "svg"
     owner_model = Page
     old_name = "old_name_{}.txt".format(get_random_string(6))
