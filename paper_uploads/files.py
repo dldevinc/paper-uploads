@@ -152,6 +152,13 @@ class VariationFile(File):
             round(operator.truediv(*reversed(self._get_image_dimensions())), 8)
         ))
 
+    @property
+    def srcset(self) -> str:
+        return "{} {}w".format(
+            self.url,
+            self.width
+        )
+
     @cached_method("_dimensions_cache")
     def _get_image_dimensions(self):
         return self.variation.get_output_size(

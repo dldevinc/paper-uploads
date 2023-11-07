@@ -1,5 +1,18 @@
 # Change Log
 
+## [0.17.1](https://github.com/dldevinc/paper-streamfield/tree/v0.17.1) - 2023-11-07
+
+### Features
+
+-   Added the `srcset` field for image resources.
+-   Removed the automatic selection of the "[All]" option in the dialogs for 
+    the `recreate_variations` and `remove_variations` management commands.
+
+### Bug Fixes
+
+-   Fixed a bug where the number of selected items in a collection was not properly 
+    included in the deletion confirmation message.
+
 ## [0.17.0](https://github.com/dldevinc/paper-streamfield/tree/v0.17.0) - 2023-10-08
 
 ### ⚠ BREAKING CHANGES

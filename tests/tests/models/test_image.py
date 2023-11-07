@@ -66,6 +66,12 @@ class TestUploadedImage(BacklinkModelTestMixin, BaseTestVersatileImageResource):
     def test_hw_ratio(self, storage):
         assert storage.resource.hw_ratio == Decimal("1.49004975")
 
+    def test_srcset(self, storage):
+        assert utils.match_path(
+            storage.resource.srcset,
+            "/media/{} 804w".format(self.resource_name),
+        )
+
     def test_calculate_max_size(self, storage):
         assert storage.resource.calculate_max_size((3000, 2000)) == (1800, 1200)
         assert storage.resource.calculate_max_size((2000, 3000)) == (800, 1200)

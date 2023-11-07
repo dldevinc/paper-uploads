@@ -687,6 +687,13 @@ class SVGFileResourceMixin(models.Model):
         """
         return Decimal(str(round(self.height / self.width, 8)))
 
+    @property
+    def srcset(self) -> str:
+        return "{} {}w".format(
+            self.url,
+            round(self.width)
+        )
+
     def as_dict(self) -> Dict[str, Any]:
         return {
             **super().as_dict(),  # noqa
@@ -787,6 +794,13 @@ class ImageFileResourceMixin(models.Model):
         Height-to-width (H/W) ratio.
         """
         return Decimal(str(round(self.height / self.width, 8)))
+
+    @property
+    def srcset(self) -> str:
+        return "{} {}w".format(
+            self.url,
+            self.width
+        )
 
     def as_dict(self) -> Dict[str, Any]:
         return {
