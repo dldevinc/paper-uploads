@@ -81,6 +81,12 @@ class TestVariationFile:
     def test_hw_ratio(self, storage):
         assert storage.file.hw_ratio == Decimal("0.72125")
 
+    def test_srcset(self, storage):
+        assert utils.match_path(
+            storage.file.srcset,
+            "/media/{}/milky-way-nasa{{suffix}}.desktop.jpg 800w".format(self.resource_folder),
+        )
+
     def test_read(self, storage):
         assert storage.file.closed is True
         with storage.file.open():

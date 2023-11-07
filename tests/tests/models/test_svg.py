@@ -61,6 +61,12 @@ class TestUploadedSVGFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
     def test_hw_ratio(self, storage):
         assert storage.resource.hw_ratio == Decimal("1.05439808")
 
+    def test_srcset(self, storage):
+        assert utils.match_path(
+            storage.resource.srcset,
+            "/media/{} 626w".format(self.resource_name),
+        )
+
     def test_as_dict(self, storage):
         utils.compare_dicts(
             storage.resource.as_dict(),

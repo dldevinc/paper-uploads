@@ -952,6 +952,12 @@ class TestImageFieldResource(TestFileFieldResource):
     def test_hw_ratio(self, storage):
         assert storage.resource.hw_ratio == Decimal("0.72122251")
 
+    def test_srcset(self, storage):
+        assert utils.match_path(
+            storage.resource.srcset,
+            "/media/{} 3501w".format(self.resource_name),
+        )
+
     def test_prepare_file(self, storage):
         obj = DummyImageFieldResource()
         with open(CALLIPHORA_FILEPATH, "rb") as fp:
@@ -1078,6 +1084,12 @@ class TestVersatileImageResource(TestImageFieldResource):
 
     def test_hw_ratio(self, storage):
         assert storage.resource.hw_ratio == Decimal("0.734375")
+
+    def test_srcset(self, storage):
+        assert utils.match_path(
+            storage.resource.srcset,
+            "/media/{} 1024w".format(self.resource_name),
+        )
 
     def test_as_dict(self, storage):
         utils.compare_dicts(
