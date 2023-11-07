@@ -1142,7 +1142,8 @@ class Collection extends EventEmitter {
                     ),
                     {
                         count: selectedItems.length
-                    }
+                    },
+                    true
                 ),
                 buttons: [
                     {
