@@ -26,7 +26,7 @@
       <excludeFolder url="file://$MODULE_DIR$/paper_uploads/static/paper_uploads/dist" />
       <excludeFolder url="file://$MODULE_DIR$/build" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.10 (paper-uploads)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.9 (paper-uploads)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">
