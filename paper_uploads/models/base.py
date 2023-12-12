@@ -290,24 +290,6 @@ class FileResource(FileProxyMixin, Resource):
         return "{}('{}')".format(type(self).__name__, self.name)
 
     @property
-    def basename(self):
-        warnings.warn(
-            "'basename' is deprecated in favor of 'resource_name'",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return self.resource_name
-
-    @basename.setter
-    def basename(self, value):
-        warnings.warn(
-            "'basename' is deprecated in favor of 'resource_name'",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        self.resource_name = value
-
-    @property
     def name(self) -> str:
         """
         Полное имя загруженного файла.
@@ -437,14 +419,6 @@ class FileResource(FileProxyMixin, Resource):
             if not file.closed:
                 file.close()
 
-    def attach_file(self, *args, **kwargs):
-        warnings.warn(
-            "attach_file() is deprecated in favor of attach()",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return self.attach(*args, **kwargs)
-
     def _prepare_file(self, file: File, **options) -> File:
         """
         Подготовка файла к присоединению к модели.
@@ -453,14 +427,6 @@ class FileResource(FileProxyMixin, Resource):
 
     def _attach(self, file: File, **options):
         raise NotImplementedError
-
-    def _attach_file(self, *args, **kwargs):
-        warnings.warn(
-            "_attach_file() is deprecated in favor of _attach()",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return self._attach(*args, **kwargs)
 
     def rename(self, new_name: str, **options):
         """
@@ -496,24 +462,8 @@ class FileResource(FileProxyMixin, Resource):
             response=response,
         )
 
-    def rename_file(self, *args, **kwargs):
-        warnings.warn(
-            "rename_file() is deprecated in favor of rename()",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return self.rename(*args, **kwargs)
-
     def _rename(self, new_name: str, **options):
         raise NotImplementedError
-
-    def _rename_file(self, *args, **kwargs):
-        warnings.warn(
-            "_rename_file() is deprecated in favor of _rename()",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return self._rename(*args, **kwargs)
 
     def delete_file(self, **options):
         """
@@ -603,14 +553,6 @@ class FileFieldResource(FileFieldProxyMixin, FileResource):
     def get_file_size(self) -> int:
         self._require_file()
         return self.get_file().size
-
-    def get_file_url(self) -> str:
-        warnings.warn(
-            "get_file_url() is deprecated in favor of 'url' property",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return self.url
 
     def file_exists(self) -> bool:
         file = self.get_file()

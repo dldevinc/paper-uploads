@@ -372,24 +372,6 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
             )
         return errors
 
-    @property
-    def item_type(self):
-        warnings.warn(
-            "'item_type' is deprecated in favor of 'type'",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return self.type
-
-    @item_type.setter
-    def item_type(self, value: str):
-        warnings.warn(
-            "'item_type' is deprecated in favor of 'type'",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        self.type = value
-
     def get_next_order_value(self):
         max_order = CollectionItemBase.objects.filter(
             collection_content_type_id=self.collection_content_type_id,
@@ -435,7 +417,6 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         return {
             **super().as_dict(),
             "collectionId": self.collection_id,
-            "itemType": self.type,  # TODO: deprecated
             "type": self.type,
             "order": self.order,
             "preview": self.render_preview(),
@@ -471,14 +452,6 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
             raise exceptions.CollectionItemNotFoundError()
 
         return field
-
-    def get_itemtype_field(self) -> Optional[CollectionItem]:
-        warnings.warn(
-            "'get_itemtype_field' is deprecated in favor of 'get_item_type_field'",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return self.get_item_type_field()
 
     def attach_to(self, collection: CollectionBase):
         """
@@ -535,15 +508,6 @@ class CollectionFileItemBase(CollectionItemBase, FileFieldResource):
         if callable(storage):
             storage = storage()
         return storage
-
-    @classmethod
-    def file_supported(cls, file: File) -> bool:
-        warnings.warn(
-            "file_supported() is deprecated in favor of accept()",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return cls.accept(file)
 
 
 class FilePreviewMixin(models.Model):

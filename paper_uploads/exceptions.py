@@ -66,13 +66,3 @@ class UnsupportedResource(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(message)
-
-
-class UnsupportedFileError(UnsupportedResource):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "UnsupportedFileError is deprecated in favor of UnsupportedResource",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        super().__init__(*args, **kwargs)

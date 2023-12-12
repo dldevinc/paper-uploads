@@ -474,7 +474,6 @@ class TestFileItem(CollectionItemTestBase):
             {
                 "id": 1,
                 "collectionId": 1,
-                "itemType": "file",  # TODO: deprecated
                 "type": "file",
                 "name": self.resource_basename,
                 "extension": self.resource_extension,
@@ -602,7 +601,6 @@ class TestSVGItem(CollectionItemTestBase):
             {
                 "id": 1,
                 "collectionId": 1,
-                "itemType": "svg",  # TODO: deprecated
                 "type": "svg",
                 "name": self.resource_basename,
                 "extension": self.resource_extension,
@@ -755,7 +753,6 @@ class TestImageItem(CollectionItemTestBase):
             {
                 "id": 1,
                 "collectionId": 1,
-                "itemType": "image",  # TODO: deprecated
                 "type": "image",
                 "name": self.resource_basename,
                 "extension": self.resource_extension,

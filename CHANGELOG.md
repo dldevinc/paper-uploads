@@ -8,11 +8,23 @@
 -   Dropped support for Django versions below 3.2.
 -   Added support for Python 3.12.
 -   Added support for Django 5.0.
--   In `ImageCollection` subclasses, you can set the file storage path 
-    with the new `UPLOAD_TO` attribute.
+-   Removed deprecated `UnsupportedFileError` exception.
+-   Removed deprecated `SizeValidator`.
+-   Removed deprecated `FileResource.basename` property.
+-   Removed deprecated `FileResource.get_file_url()` method.
+-   Removed deprecated `FileResource.attach_file()` method.
+-   Removed deprecated `FileResource._attach_file()` method.
+-   Removed deprecated `FileResource.rename_file()` method.
+-   Removed deprecated `FileResource._rename_file()` method.
+-   Removed deprecated `CollectionItemBase.item_type` property.
+-   Removed deprecated `CollectionItemBase.get_itemtype_field()` method.
+-   Removed deprecated `CollectionFileItemBase.file_supported()` method.
+-   Removed deprecated `itemType` key from `CollectionItemBase.as_dict()` output.
 
 ### Features
 
+-   In `ImageCollection` subclasses, you can set the file storage path 
+    with the new `UPLOAD_TO` attribute.
 -   The `--field` parameter in the `recreate_variations` and `remove_variations` 
     management commands is an alias for the `--item-type` parameter.
 -   Now, parameters for the `recreate_variations` and `remove_variations` management 
