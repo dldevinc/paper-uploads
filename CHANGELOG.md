@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.18.2](https://github.com/dldevinc/paper-streamfield/tree/v0.18.2) - 2023-12-12
+## [0.18.3](https://github.com/dldevinc/paper-streamfield/tree/v0.18.3) - 2023-12-12
 
 ### Bug Fixes
 
