@@ -467,10 +467,10 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
             raise exceptions.CollectionItemNotFoundError()
 
         # support proxy models
-        if self._meta.concrete_model is field.model._meta.concrete_model:
-            return field
+        if self._meta.concrete_model is not field.model._meta.concrete_model:
+            raise exceptions.CollectionItemNotFoundError()
 
-        raise exceptions.CollectionItemNotFoundError()
+        return field
 
     def get_itemtype_field(self) -> Optional[CollectionItem]:
         warnings.warn(
