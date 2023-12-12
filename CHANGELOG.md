@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.18.1](https://github.com/dldevinc/paper-streamfield/tree/v0.18.1) - 2023-12-12
+
+### Bug Fixes
+
+-   Add missing migration.
+
 ## [0.18.0](https://github.com/dldevinc/paper-streamfield/tree/v0.18.0) - 2023-12-12
 
 ### ⚠ BREAKING CHANGES
