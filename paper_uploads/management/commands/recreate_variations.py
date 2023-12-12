@@ -2,6 +2,7 @@ import sys
 from enum import Enum, auto
 
 from django.apps import apps
+from django.core.exceptions import FieldDoesNotExist
 from django.core.management import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 
@@ -31,8 +32,9 @@ class Command(BaseCommand):
         python3 manage.py recreate_variations blog.post --field=hero
 
     Пример для коллекции:
-        python3 manage.py recreate_variations blog.gallery --item-type=image
+        python3 manage.py recreate_variations blog.gallery --field=image
     """
+    args = None
     options = None
     verbosity = None
     database = DEFAULT_DB_ALIAS
@@ -46,7 +48,12 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
+            "args",
+            nargs="*"
+        )
+        parser.add_argument(
             "--model",
+            nargs="?",
             metavar="[APP_LABEL].[MODEL_NAME]",
             help="Specifies the model to recreate variations for",
         )
@@ -82,6 +89,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        self.args = args
         self.options = options
         self.verbosity = options["verbosity"]
         self.database = options["database"]
@@ -115,21 +123,27 @@ class Command(BaseCommand):
 
     def get_model(self):
         model_name = self.options["model"]
+        if model_name is None and self.args:
+            model_name = self.args[0]
+
         if model_name is None:
             model_name = helpers.select_resource_model(
                 append_choices=["[Exit]"],
                 predicate=lambda model: utils.includes_variations(model),
             )
 
-        if model_name is None or model_name == "[Exit]":
-            raise ExitException
+            if model_name is None or model_name == "[Exit]":
+                raise ExitException
 
         self._model = apps.get_model(model_name)
         self._is_collection = utils.is_collection(self._model)
         self._step = Step.GET_FIELD
 
     def get_collection_field(self):
-        item_type = self.options["item_type"]
+        item_type = self.options["item_type"] or self.options["field"]
+        if item_type is None and len(self.args) >= 2:
+            item_type = self.args[1]
+
         if item_type is None:
             item_type = helpers.select_collection_item_type(
                 self._model,
@@ -137,18 +151,28 @@ class Command(BaseCommand):
                 append_choices=["[Back]", "[Exit]"]
             )
 
-        if item_type is None or item_type == "[Exit]":
-            raise ExitException
+            if item_type is None or item_type == "[Exit]":
+                raise ExitException
 
-        if item_type == "[Back]":
-            self._step = Step.GET_MODEL
-            return
+            if item_type == "[Back]":
+                self._step = Step.GET_MODEL
+                return
+
+        # Check the field exists
+        if item_type not in self._model.item_types:
+            raise FieldDoesNotExist("{} has no field named '{}'".format(
+                self._model.__name__,
+                item_type
+            ))
 
         self._field_name = item_type
         self._step = Step.GET_VARIATIONS
 
     def get_resource_field(self):
         field_name = self.options["field"]
+        if field_name is None and len(self.args) >= 2:
+            field_name = self.args[1]
+
         if field_name is None:
             field_name = helpers.select_resource_field(
                 self._model,
@@ -156,18 +180,29 @@ class Command(BaseCommand):
                 append_choices=["[Back]", "[Exit]"]
             )
 
-        if field_name is None or field_name == "[Exit]":
-            raise ExitException
+            if field_name is None or field_name == "[Exit]":
+                raise ExitException
 
-        if field_name == "[Back]":
-            self._step = Step.GET_MODEL
-            return
+            if field_name == "[Back]":
+                self._step = Step.GET_MODEL
+                return
+
+        # Check the field exists
+        self._model._meta.get_field(field_name)
 
         self._field_name = field_name
         self._step = Step.GET_VARIATIONS
 
     def get_collection_variations(self):
         variations = self.options["variations"]
+        if variations is None and len(self.args) >= 3:
+            variations = set(
+                name.strip()
+                for arg in self.args[2:]
+                for name in arg.split(",")
+                if name.strip()
+            )
+
         if variations is None:
             variations = helpers.select_collection_variations(
                 self._model,
@@ -177,12 +212,12 @@ class Command(BaseCommand):
                 append_choices=["[Back]", "[Exit]"]
             )
 
-        if variations is None or "[Exit]" in variations:
-            raise ExitException
+            if variations is None or "[Exit]" in variations:
+                raise ExitException
 
-        if "[Back]" in variations:
-            self._step = Step.GET_FIELD
-            return
+            if "[Back]" in variations:
+                self._step = Step.GET_FIELD
+                return
 
         if "[All]" in variations:
             self._variation_names = ALL_VARIATIONS
@@ -193,6 +228,14 @@ class Command(BaseCommand):
 
     def get_resource_variations(self):
         variations = self.options["variations"]
+        if variations is None and len(self.args) >= 3:
+            variations = set(
+                name.strip()
+                for arg in self.args[2:]
+                for name in arg.split(",")
+                if name.strip()
+            )
+
         if variations is None:
             variations = helpers.select_resource_variations(
                 self._model,
@@ -202,12 +245,12 @@ class Command(BaseCommand):
                 append_choices=["[Back]", "[Exit]"]
             )
 
-        if variations is None or "[Exit]" in variations:
-            raise ExitException
+            if variations is None or "[Exit]" in variations:
+                raise ExitException
 
-        if "[Back]" in variations:
-            self._step = Step.GET_FIELD
-            return
+            if "[Back]" in variations:
+                self._step = Step.GET_FIELD
+                return
 
         if "[All]" in variations:
             self._variation_names = ALL_VARIATIONS

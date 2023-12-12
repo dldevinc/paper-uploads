@@ -9,6 +9,16 @@
 -   Added support for Python 3.12.
 -   Added support for Django 5.0.
 
+### Features
+
+-   The `--field` parameter in the `recreate_variations` and `remove_variations` 
+    management commands is an alias for the `--item-type` parameter.
+-   Now, parameters for the `recreate_variations` and `remove_variations` management 
+    commands can be positional. Example:
+    ```bash
+    python3 recreate_variations app.Page background -- desktop mobile
+    ```
+
 ### Bug Fixes
 
 -   The behavior of `Ctrl+Z` has been fixed when executing management commands.
