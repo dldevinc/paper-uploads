@@ -116,7 +116,7 @@ class Command(BaseCommand):
                 predicate=lambda model: utils.includes_variations(model),
             )
 
-        if model_name == "[Exit]":
+        if model_name is None or model_name == "[Exit]":
             raise ExitException
 
         self._model = apps.get_model(model_name)
@@ -132,7 +132,7 @@ class Command(BaseCommand):
                 append_choices=["[Back]", "[Exit]"]
             )
 
-        if item_type == "[Exit]":
+        if item_type is None or item_type == "[Exit]":
             raise ExitException
 
         if item_type == "[Back]":
@@ -151,7 +151,7 @@ class Command(BaseCommand):
                 append_choices=["[Back]", "[Exit]"]
             )
 
-        if field_name == "[Exit]":
+        if field_name is None or field_name == "[Exit]":
             raise ExitException
 
         if field_name == "[Back]":
@@ -172,7 +172,7 @@ class Command(BaseCommand):
                 append_choices=["[Back]", "[Exit]"]
             )
 
-        if "[Exit]" in variations:
+        if variations is None or "[Exit]" in variations:
             raise ExitException
 
         if "[Back]" in variations:
@@ -197,7 +197,7 @@ class Command(BaseCommand):
                 append_choices=["[Back]", "[Exit]"]
             )
 
-        if "[Exit]" in variations:
+        if variations is None or "[Exit]" in variations:
             raise ExitException
 
         if "[Back]" in variations:

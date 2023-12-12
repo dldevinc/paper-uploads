@@ -167,7 +167,7 @@ class Command(BaseCommand):
                 default=None
             )
 
-            if action == "Exit":
+            if action is None or action == "Exit":
                 raise ExitException
 
             if action == "Print":
@@ -292,7 +292,7 @@ class Command(BaseCommand):
                 default=None
             )
 
-            if action == "Exit":
+            if action is None or action == "Exit":
                 raise ExitException
 
             if action == "Print":
@@ -374,7 +374,7 @@ class Command(BaseCommand):
                 default=None
             )
 
-            if action == "Exit":
+            if action is None or action == "Exit":
                 raise ExitException
 
             if action == "Print":

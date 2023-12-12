@@ -9,6 +9,10 @@
 -   Added support for Python 3.12.
 -   Added support for Django 5.0.
 
+### Bug Fixes
+
+-   The behavior of `Ctrl+Z` has been fixed when executing management commands.
+
 ## [0.17.1](https://github.com/dldevinc/paper-streamfield/tree/v0.17.1) - 2023-11-07
 
 ### Features

@@ -70,13 +70,13 @@ def prompt_action(message, choices, **kwargs):
 
         if action == "Run script":
             ...
-        elif action == "Exit":
+        elif action is None or action == "Exit":
             ...
     """
     default = kwargs.pop("default")
     kwargs.setdefault("carousel", True)
 
-    return inquirer.prompt(
+    result = inquirer.prompt(
         [
             inquirer.List(
                 "answer",
@@ -87,7 +87,8 @@ def prompt_action(message, choices, **kwargs):
             )
         ],
         render=CustomConsoleRender()
-    )["answer"]
+    )
+    return result["answer"] if result is not None else None
 
 
 def prompt_variants(message, choices, **kwargs):
@@ -100,9 +101,9 @@ def prompt_variants(message, choices, **kwargs):
             choices=["Apple", "Banana", ""]
         )
 
-        if "Apple" in actions:
+        if actions is None or "Exit" in actions:
             ...
-        elif "Exit" in actions:
+        elif "Apple" in actions:
             ...
     """
     default = kwargs.pop("default")
@@ -112,7 +113,7 @@ def prompt_variants(message, choices, **kwargs):
     kwargs.setdefault("carousel", True)
 
     while True:
-        answer = inquirer.prompt(
+        result = inquirer.prompt(
             [
                 inquirer.Checkbox(
                     "answer",
@@ -123,7 +124,11 @@ def prompt_variants(message, choices, **kwargs):
                 )
             ],
             render=CustomConsoleRender()
-        )["answer"]
+        )
 
+        if result is None:
+            return None
+
+        answer = result["answer"]
         if answer:
             return answer

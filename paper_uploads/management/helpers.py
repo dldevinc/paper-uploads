@@ -202,12 +202,20 @@ def select_resource_model(
         from paper_uploads.management import utils
 
         model = select_resource_model()
-        if utils.is_collection(model):
+        if model is None:
+            print("Cancelled by user")
+        elif utils.is_collection(model):
             item_type = select_collection_item_type(model)
-            variation_name = select_collection_variations(model, item_type)
+            if item_type is None:
+                print("Cancelled by user")
+            else:
+                variation_name = select_collection_variations(model, item_type)
         else:
             field_name = select_resource_field(model)
-            variation_name = select_resource_variations(model, field_name)
+            if field_name is None:
+                print("Cancelled by user")
+            else:
+                variation_name = select_resource_variations(model, field_name)
     """
     choices_data = []
     for model in apps.get_models():
