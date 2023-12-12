@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.18.0](https://github.com/dldevinc/paper-streamfield/tree/v0.18.0) - 2023-12-12
+
+### ⚠ BREAKING CHANGES
+
+-   Dropped support for Python 3.8.
+-   Dropped support for Django versions below 3.2.
+-   Added support for Python 3.12.
+-   Added support for Django 5.0.
+
 ## [0.17.1](https://github.com/dldevinc/paper-streamfield/tree/v0.17.1) - 2023-11-07
 
 ### Features

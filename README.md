@@ -8,9 +8,9 @@
 
 ## Requirements
 
--   Python >= 3.8
--   Django >= 2.2
--   [paper-admin][paper-admin] >= 6.0
+-   Python >= 3.9
+-   Django >= 3.2
+-   [paper-admin][paper-admin] >= 7.0
 -   [variations][variations]
 
 ## Features
