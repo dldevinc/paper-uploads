@@ -8,9 +8,9 @@
 
 ## Requirements
 
--   Python >= 3.8
--   Django >= 2.2
--   [paper-admin][paper-admin] >= 6.0
+-   Python >= 3.9
+-   Django >= 3.2
+-   [paper-admin][paper-admin] >= 7.0
 -   [variations][variations]
 
 ## Features
@@ -866,19 +866,19 @@ python3 manage.py create_missing_variations
 
 ```shell
 # for collections
-python3 manage.py recreate_variations --model app.Photos --item-type image
+python3 manage.py recreate_variations app.Photos image
 
 # for regular models
-python3 manage.py recreate_variations --model app.Page --field image
+python3 manage.py recreate_variations app.Page image
 ```
 
-По умолчанию перенарезаются все возможные вариации для каждого
-экземпляра указанной модели. Можно указать конкретные вариации,
-которые нужно перенарезать:
+В результате вызова этих команд, пользователю будет предложено выбрать 
+вариации, которые следует обновить.
+
+Можно сразу указать нужные вариации:
 
 ```shell
-python3 manage.py recreate_variations --model app.Page --field image \
-        --variations desktop mobile
+python3 manage.py recreate_variations app.Page image -- desktop mobile
 ```
 
 ### remove_variations
@@ -889,10 +889,10 @@ python3 manage.py recreate_variations --model app.Page --field image \
 
 ```shell
 # for collections
-python3 manage.py remove_variations --model app.Photos --item-type image
+python3 manage.py remove_variations app.Photos image
 
 # for regular models
-python3 manage.py remove_variations --model app.Page --field image
+python3 manage.py remove_variations app.Page image
 ```
 
 ## Settings

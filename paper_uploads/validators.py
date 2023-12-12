@@ -15,7 +15,6 @@ __all__ = [
     "ExtensionValidator",
     "MimeTypeValidator",
     "MaxSizeValidator",
-    "SizeValidator",
     "ImageMinSizeValidator",
     "ImageMaxSizeValidator",
 ]
@@ -98,16 +97,6 @@ class MaxSizeValidator:
 
     def get_help_text(self):
         return "{}: {}".format(_("Maximum file size"), filesizeformat(self.limit_value))
-
-
-class SizeValidator(MaxSizeValidator):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "SizeValidator is deprecated in favor of MaxSizeValidator",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        super().__init__(*args, **kwargs)
 
 
 @deconstructible

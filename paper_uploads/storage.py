@@ -11,4 +11,3 @@ class UploadStorage(LazyObject):
 
 
 default_storage = UploadStorage()
-upload_storage = default_storage  # deprecated

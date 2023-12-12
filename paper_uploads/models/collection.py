@@ -372,24 +372,6 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
             )
         return errors
 
-    @property
-    def item_type(self):
-        warnings.warn(
-            "'item_type' is deprecated in favor of 'type'",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return self.type
-
-    @item_type.setter
-    def item_type(self, value: str):
-        warnings.warn(
-            "'item_type' is deprecated in favor of 'type'",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        self.type = value
-
     def get_next_order_value(self):
         max_order = CollectionItemBase.objects.filter(
             collection_content_type_id=self.collection_content_type_id,
@@ -435,7 +417,6 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
         return {
             **super().as_dict(),
             "collectionId": self.collection_id,
-            "itemType": self.type,  # TODO: deprecated
             "type": self.type,
             "order": self.order,
             "preview": self.render_preview(),
@@ -467,18 +448,10 @@ class CollectionItemBase(EditableResourceMixin, PolymorphicModel, Resource, meta
             raise exceptions.CollectionItemNotFoundError()
 
         # support proxy models
-        if self._meta.concrete_model is field.model._meta.concrete_model:
-            return field
+        if self._meta.concrete_model is not field.model._meta.concrete_model:
+            raise exceptions.CollectionItemNotFoundError()
 
-        raise exceptions.CollectionItemNotFoundError()
-
-    def get_itemtype_field(self) -> Optional[CollectionItem]:
-        warnings.warn(
-            "'get_itemtype_field' is deprecated in favor of 'get_item_type_field'",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return self.get_item_type_field()
+        return field
 
     def attach_to(self, collection: CollectionBase):
         """
@@ -535,15 +508,6 @@ class CollectionFileItemBase(CollectionItemBase, FileFieldResource):
         if callable(storage):
             storage = storage()
         return storage
-
-    @classmethod
-    def file_supported(cls, file: File) -> bool:
-        warnings.warn(
-            "file_supported() is deprecated in favor of accept()",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        return cls.accept(file)
 
 
 class FilePreviewMixin(models.Model):
@@ -772,11 +736,42 @@ class ImageItem(ImageItemBase):
 # ==============================================================================
 
 
+class ConfigurableImageItem(ImageItem):
+    """
+    Специальный подкласс для ImageCollection, который берёт
+    часть настроек из класса коллекции.
+
+    TODO: было бы неплохо переместить и VARIATIONS, но для management-команд
+          нужно знать список вариации, не имея экземпляра коллекции.
+    """
+    class Meta:
+        proxy = True
+
+    def get_file_folder(self) -> str:
+        collection_cls = self.get_collection_class()
+        folder = getattr(collection_cls, "UPLOAD_TO", None)
+        return folder or super().get_file_folder()
+
+
 class ImageCollection(Collection):
     """
     Коллекция, позволяющая хранить только изображения.
+    Вариации могут быть заданы через атрибут класса VARIATIONS,
+    а путь для хранения файлов - через атрибут UPLOAD_TO.
+
+    Пример:
+
+        class MyCollection(ImageCollection):
+            UPLOAD_TO = "images/%Y-%m-%d"
+            VARIATIONS = dict(
+                gallery=dict(
+                    size=(1600, 900),
+                )
+            )
     """
-    image = CollectionItem(ImageItem)
+    UPLOAD_TO: ClassVar[str]
+
+    image = CollectionItem(ConfigurableImageItem)
 
     @classmethod
     def get_configuration(cls) -> Dict[str, Any]:
