@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.18.2](https://github.com/dldevinc/paper-streamfield/tree/v0.18.2) - 2023-12-12
+
+### Bug Fixes
+
+-   Fixed an issue with using deprecated `itemType` property.
+
 ## [0.18.1](https://github.com/dldevinc/paper-streamfield/tree/v0.18.1) - 2023-12-12
 
 ### Bug Fixes

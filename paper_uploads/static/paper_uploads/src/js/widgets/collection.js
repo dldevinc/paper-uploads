@@ -870,8 +870,7 @@ class Collection extends EventEmitter {
         const dataElement = this.root.querySelector(this.config.dataJSON);
         const data = JSON.parse(dataElement.textContent);
         for (let itemData of data) {
-            const itemType = itemData.itemType;
-
+            const itemType = itemData.type;
             const itemHTML = this.createItem(itemType, itemData);
 
             this.itemContainer.insertAdjacentHTML("beforeend", itemHTML);
