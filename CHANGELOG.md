@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 
+-   Removed deprecated `Collection.items` field.
 -   Fixed an issue with using deprecated `itemType` property.
 
 ## [0.18.1](https://github.com/dldevinc/paper-streamfield/tree/v0.18.1) - 2023-12-12

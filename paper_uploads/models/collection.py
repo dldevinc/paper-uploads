@@ -42,7 +42,6 @@ from .base import (
 )
 from .fields import CollectionItem
 from .fields.base import DynamicStorageFileField
-from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
 from .mixins import BacklinkModelMixin, EditableResourceMixin
 from .query import PolymorphicResourceManager, ProxyPolymorphicManager
@@ -176,12 +175,6 @@ class CollectionBase(BacklinkModelMixin, metaclass=CollectionMeta):
         on_delete=models.CASCADE,
         editable=False,
         related_name="+"
-    )
-    items = ContentItemRelation(  # TODO: deprecated since v0.10.1
-        "paper_uploads.CollectionItemBase",
-        content_type_field="collection_content_type",
-        object_id_field="collection_id",
-        for_concrete_model=False,
     )
     created_at = models.DateTimeField(
         _("created at"),
