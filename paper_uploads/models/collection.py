@@ -1,6 +1,5 @@
 import datetime
 import posixpath
-import warnings
 from collections import OrderedDict
 from typing import Any, ClassVar, Dict, Iterable, Optional, Type
 
@@ -46,7 +45,7 @@ from .fields.base import DynamicStorageFileField
 from .fields.collection import ContentItemRelation
 from .image import VariationalFileField
 from .mixins import BacklinkModelMixin, EditableResourceMixin
-from .query import PolymorphicResourceManager
+from .query import PolymorphicResourceManager, ProxyPolymorphicManager
 
 __all__ = [
     "CollectionItemBase",
@@ -744,6 +743,8 @@ class ConfigurableImageItem(ImageItem):
     TODO: было бы неплохо переместить и VARIATIONS, но для management-команд
           нужно знать список вариации, не имея экземпляра коллекции.
     """
+    objects = ProxyPolymorphicManager()
+
     class Meta:
         proxy = True
 

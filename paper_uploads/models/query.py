@@ -27,3 +27,13 @@ class PolymorphicResourceQuerySet(ResourceQuerysetMixin, PolymorphicQuerySet):
 
 class PolymorphicResourceManager(DefaultPolymorphicManager):
     queryset_class = PolymorphicResourceQuerySet
+
+
+class ProxyPolymorphicManager(PolymorphicResourceManager):
+    """
+    Менеджер, удаляющий из SQL-запроса фильтрацию по полю
+    polymorphic_ctype, чтобы выборка по классу прокси-модели
+    могла возвращать экземпляры проксируемой модели.
+    """
+    def get_queryset(self):
+        return self.queryset_class(self.model, using=self._db, hints=self._hints)
