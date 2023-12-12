@@ -772,11 +772,42 @@ class ImageItem(ImageItemBase):
 # ==============================================================================
 
 
+class ConfigurableImageItem(ImageItem):
+    """
+    Специальный подкласс для ImageCollection, который берёт
+    часть настроек из класса коллекции.
+
+    TODO: было бы неплохо переместить и VARIATIONS, но для management-команд
+          нужно знать список вариации, не имея экземпляра коллекции.
+    """
+    class Meta:
+        proxy = True
+
+    def get_file_folder(self) -> str:
+        collection_cls = self.get_collection_class()
+        folder = getattr(collection_cls, "UPLOAD_TO", None)
+        return folder or super().get_file_folder()
+
+
 class ImageCollection(Collection):
     """
     Коллекция, позволяющая хранить только изображения.
+    Вариации могут быть заданы через атрибут класса VARIATIONS,
+    а путь для хранения файлов - через атрибут UPLOAD_TO.
+
+    Пример:
+
+        class MyCollection(ImageCollection):
+            UPLOAD_TO = "images/%Y-%m-%d"
+            VARIATIONS = dict(
+                gallery=dict(
+                    size=(1600, 900),
+                )
+            )
     """
-    image = CollectionItem(ImageItem)
+    UPLOAD_TO: ClassVar[str]
+
+    image = CollectionItem(ConfigurableImageItem)
 
     @classmethod
     def get_configuration(cls) -> Dict[str, Any]:

@@ -8,6 +8,8 @@
 -   Dropped support for Django versions below 3.2.
 -   Added support for Python 3.12.
 -   Added support for Django 5.0.
+-   In `ImageCollection` subclasses, you can set the file storage path 
+    with the new `UPLOAD_TO` attribute.
 
 ### Features
 
