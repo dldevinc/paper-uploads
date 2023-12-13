@@ -50,7 +50,7 @@ class CollectionWidget(DisplayFileLimitationsMixin, FileResourceWidgetBase):
         return context
 
     def get_instance(self, value):
-        return self.model._base_manager.prefetch_related("items").get(pk=value)
+        return self.model._base_manager.get(pk=value)
 
     def get_extra_context(self, model):
         info = model._meta.app_label, model._meta.model_name
