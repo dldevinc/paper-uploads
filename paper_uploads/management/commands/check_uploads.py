@@ -289,7 +289,8 @@ class Command(BaseCommand):
                 continue
 
             item_model = collection_cls.get_item_model(item.type)
-            if not issubclass(type(item), item_model):
+            is_same_model = (item._meta.concrete_model is item_model._meta.concrete_model)
+            if not is_same_model and not issubclass(type(item), item_model):
                 print(
                     "\033[31mERROR\033[0m: "
                     "\033[92m{}.{}\033[0m #{} has a class type different from that "
