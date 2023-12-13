@@ -383,11 +383,13 @@ class Command(BaseCommand):
                     number = "{})".format(index)
                     print(
                         "{:<3} \033[92m{}.{}\033[0m #{}\n"
+                        "    Filename: {}\n"
                         "    Created at: {}".format(
                             number,
                             obj._meta.app_label,
                             obj.__class__.__name__,
                             obj.pk,
+                            obj.name,
                             obj.created_at.strftime("%Y-%m-%d %H:%M:%S"),
                         )
                     )
