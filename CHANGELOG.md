@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.18.5](https://github.com/dldevinc/paper-streamfield/tree/v0.18.5) - 2023-12-14
+
+### Bug Fixes
+
+-   Fixed an issue where it was impossible to delete all variations at once using 
+    the `remove_variations` command.
+
 ## [0.18.4](https://github.com/dldevinc/paper-streamfield/tree/v0.18.4) - 2023-12-12
 
 ### Bug Fixes

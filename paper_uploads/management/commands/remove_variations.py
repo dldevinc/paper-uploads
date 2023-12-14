@@ -286,9 +286,11 @@ class Command(BaseCommand):
 
             for item in collection_items.iterator():
                 for variation_name in item.get_variations():
-                    if variation_name in self._variation_names:
-                        variation_file = item.get_variation_file(variation_name)
-                        variation_file.delete()
+                    if self._variation_names and variation_name not in self._variation_names:
+                        continue
+
+                    variation_file = item.get_variation_file(variation_name)
+                    variation_file.delete()
 
             print("done")
             sys.stdout.flush()
@@ -323,9 +325,11 @@ class Command(BaseCommand):
             sys.stdout.flush()
 
             for variation_name in field.get_variations():
-                if variation_name in self._variation_names:
-                    variation_file = field.get_variation_file(variation_name)
-                    variation_file.delete()
+                if self._variation_names and variation_name not in self._variation_names:
+                    continue
+
+                variation_file = field.get_variation_file(variation_name)
+                variation_file.delete()
 
             print("done")
             sys.stdout.flush()
