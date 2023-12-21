@@ -1,13 +1,11 @@
 # Change Log
 
-## [0.18.6](https://github.com/dldevinc/paper-streamfield/tree/v0.18.6) - 2023-12-21
+## [0.18.5](https://github.com/dldevinc/paper-streamfield/tree/v0.18.5) - 2023-12-14
 
 ### Features
 
 -   In `ImageCollection` subclasses, you can set the file validators
     with the new `VALIDATORS` attribute.
-
-## [0.18.5](https://github.com/dldevinc/paper-streamfield/tree/v0.18.5) - 2023-12-14
 
 ### Bug Fixes
 

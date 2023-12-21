@@ -1,6 +1,6 @@
 {
   "name": "paper-uploads",
-  "version": "0.18.4",
+  "version": "0.18.5",
   "description": "",
   "main": "src/js/app.js",
   "type": "module",
