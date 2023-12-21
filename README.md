@@ -810,6 +810,39 @@ page = Page.objects.create(
 {% endif %}
 ```
 
+### `ImageCollection`
+
+Для коллекций изображений существует специальный базовый класс `ImageCollection`,
+который не требует для каждого отдельного случая создавать отдельный класс элемента 
+коллекции. Все необходимые параметры можно указать сразу, через атрибуты класса:  
+
+```python
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from paper_uploads.models import *
+from paper_uploads.validators import ImageMaxSizeValidator, ImageMinSizeValidator
+
+
+class PageGallery(ImageCollection):
+    UPLOAD_TO = "page/gallery",
+    VARIATIONS = dict(
+        gallery=dict(
+            size=(1600, 900),
+        )
+    )
+    VALIDATORS = [
+        ImageMinSizeValidator(640, 480),
+        ImageMaxSizeValidator(4000, 3000)
+    ]
+
+
+class Page(models.Model):
+    gallery = CollectionField(
+        PageGallery,
+        verbose_name=_("gallery")
+    )
+```
+
 ## Management команды
 
 ### check_uploads

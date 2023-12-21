@@ -1,5 +1,3 @@
-from typing import Any, Dict
-
 import django
 from django.core import checks
 from django.core.files import File
@@ -7,7 +5,7 @@ from django.db import models
 from django.db.models.fields.files import FieldFile, FileDescriptor
 from django.db.models.signals import post_delete
 
-from ... import validators
+from .helpers import validators_to_options
 
 
 class ResourceFieldBase(models.OneToOneField):
@@ -144,29 +142,12 @@ class FileResourceFieldBase(ResourceFieldBase):
         return name, path, args, kwargs
 
     def formfield(self, **kwargs):
-        return super().formfield(**{"configuration": self.get_configuration(), **kwargs})
-
-    def get_configuration(self) -> Dict[str, Any]:
-        """
-        Превращает Django-валидаторы в словарь конфигурации,
-        который может использоваться для вывода или проверки
-        на стороне клиента.
-        """
-        config = {}
-        for v in self.validators:
-            if isinstance(v, validators.MimeTypeValidator):
-                config["acceptFiles"] = v.allowed
-            elif isinstance(v, validators.ExtensionValidator):
-                config["allowedExtensions"] = v.allowed
-            elif isinstance(v, validators.MaxSizeValidator):
-                config["sizeLimit"] = v.limit_value
-            elif isinstance(v, validators.ImageMinSizeValidator):
-                config["minImageWidth"] = v.width_limit
-                config["minImageHeight"] = v.height_limit
-            elif isinstance(v, validators.ImageMaxSizeValidator):
-                config["maxImageWidth"] = v.width_limit
-                config["maxImageHeight"] = v.height_limit
-        return config
+        return super().formfield(
+            **{
+                "configuration": validators_to_options(self.validators),
+                **kwargs
+            }
+        )
 
 
 class DynamicStorageFieldFile(FieldFile):
@@ -291,7 +272,7 @@ class DynamicStorageFileField(models.FileField):
     attr_class = DynamicStorageFieldFile
     descriptor_class = DynamicStorageFileDescriptor
 
-    def __init__(self, verbose_name=None, name=None, upload_to='', storage=None, **kwargs):
+    def __init__(self, verbose_name=None, name=None, upload_to="", storage=None, **kwargs):
         self._primary_key_set_explicitly = "primary_key" in kwargs
         kwargs.setdefault("max_length", 255)
         super(models.FileField, self).__init__(verbose_name, name, **kwargs)

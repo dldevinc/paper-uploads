@@ -10,6 +10,13 @@ from paper_uploads.validators import (
 )
 
 
+class Gallery(ImageCollection):
+    VALIDATORS = [
+        ImageMinSizeValidator(640, 480),
+        ImageMaxSizeValidator(4000, 3000)
+    ]
+
+
 class MixedCollection(Collection):
     svg = CollectionItem(SVGItem, validators=[
         MimeTypeValidator(["image/svg+xml"])
@@ -24,9 +31,13 @@ class MixedCollection(Collection):
 
 
 class Page(models.Model):
+    gallery = CollectionField(
+        Gallery,
+        verbose_name=_("gallery")
+    )
     collection = CollectionField(
         MixedCollection,
-        verbose_name=_("collection")
+        verbose_name=_("mixed collection")
     )
 
     class Meta:

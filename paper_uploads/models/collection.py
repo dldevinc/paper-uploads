@@ -16,6 +16,7 @@ from django.db import models
 from django.db.models.fields.files import FieldFile
 from django.db.models.functions import Coalesce
 from django.template import loader
+from django.utils.functional import cached_property
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from polymorphic.base import PolymorphicModelBase
@@ -42,6 +43,7 @@ from .base import (
 )
 from .fields import CollectionItem
 from .fields.base import DynamicStorageFileField
+from .fields.helpers import validators_to_options
 from .image import VariationalFileField
 from .mixins import BacklinkModelMixin, EditableResourceMixin
 from .query import PolymorphicResourceManager, ProxyPolymorphicManager
@@ -746,15 +748,20 @@ class ConfigurableImageItem(ImageItem):
         folder = getattr(collection_cls, "UPLOAD_TO", None)
         return folder or super().get_file_folder()
 
+    @cached_property
+    def validators(self):
+        collection_cls = self.get_collection_class()
+        validators = getattr(collection_cls, "VALIDATORS", ())
+        return [*self.default_validators, *validators, *self._validators]
+
 
 class ImageCollection(Collection):
     """
     Коллекция, позволяющая хранить только изображения.
-    Вариации могут быть заданы через атрибут класса VARIATIONS,
-    а путь для хранения файлов - через атрибут UPLOAD_TO.
+    Вариации, путь для хранения файлов и валидаторы
+    указываются в атрибутах класса.
 
     Пример:
-
         class MyCollection(ImageCollection):
             UPLOAD_TO = "images/%Y-%m-%d"
             VARIATIONS = dict(
@@ -762,14 +769,19 @@ class ImageCollection(Collection):
                     size=(1600, 900),
                 )
             )
+            VALIDATORS = [
+                ImageMinSizeValidator(640, 480),
+                ImageMaxSizeValidator(4000, 3000)
+            ]
     """
-    UPLOAD_TO: ClassVar[str]
+    UPLOAD_TO: ClassVar[str] = None
+    VALIDATORS: ClassVar[Any] = ()
 
     image = CollectionItem(ConfigurableImageItem)
 
     @classmethod
     def get_configuration(cls) -> Dict[str, Any]:
-        return {
+        default_configuration = {
             "strictImageValidation": True,
             "acceptFiles": [
                 "image/bmp",
@@ -781,3 +793,6 @@ class ImageCollection(Collection):
                 "image/webp",
             ],
         }
+
+        extra_configuration = validators_to_options(cls.VALIDATORS)
+        return dict(default_configuration, **extra_configuration)
