@@ -25,5 +25,5 @@ class ChangeFileResourceDialogBase(forms.ModelForm):
         if old_name != new_name:
             if self.instance.extension:
                 new_name += "." + self.instance.extension
-            self.instance.rename_file(new_name)
+            self.instance.rename(new_name)
         return super().save(commit)

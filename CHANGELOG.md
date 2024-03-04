@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.18.6](https://github.com/dldevinc/paper-streamfield/tree/v0.18.6) - 2024-03-04
+
+### Bug Fixes
+
+-   Fixed an issue with renaming a file.
+
 ## [0.18.5](https://github.com/dldevinc/paper-streamfield/tree/v0.18.5) - 2023-12-14
 
 ### Features
