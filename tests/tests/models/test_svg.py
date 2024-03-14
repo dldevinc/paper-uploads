@@ -93,6 +93,10 @@ class TestUploadedSVGFile(BacklinkModelTestMixin, BaseTestFileFieldResource):
             ignore={"id"}
         )
 
+    def test_get_content(self, storage):
+        content = storage.resource.get_content()
+        assert "<svg" in content
+
 
 class TestUploadedFileAttach(BaseTestFileFieldResourceAttach):
     resource_class = UploadedSVGFile

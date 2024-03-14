@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.18.7](https://github.com/dldevinc/paper-streamfield/tree/v0.18.7) - 2024-03-14
+
+### Features
+
+-   Added new method `get_content()` to `UploadedSVGFile`.
+
 ## [0.18.6](https://github.com/dldevinc/paper-streamfield/tree/v0.18.6) - 2024-03-04
 
 ### Bug Fixes

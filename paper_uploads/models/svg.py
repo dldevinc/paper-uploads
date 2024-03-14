@@ -69,6 +69,12 @@ class UploadedSVGFileBase(SVGFileResourceMixin, BacklinkModelMixin, EditableReso
             ),
         }
 
+    def get_content(self) -> str:
+        fp = self.open("r")
+        content = fp.read()
+        self.close()
+        return content.strip()
+
     @classmethod
     def get_configuration(cls) -> Dict[str, Any]:
         return {
